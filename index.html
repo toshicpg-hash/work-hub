@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a3a40">
 <meta name="referrer" content="no-referrer">
-<title>ワークHUB</title>
-<meta name="application-name" content="ワークHUB">
+<title>CPG HUB</title>
+<meta name="application-name" content="CPG HUB">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="./work-hub-icon-192.png">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
@@ -180,7 +180,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brand">ワークHUB</span><span class="proto">試作・架空データ</span>
+  <span class="brand">CPG HUB</span><span class="proto">試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -413,7 +413,7 @@ function itemsPanel(c,ro){
 }
 function gcalPreview(c){
   const s=TYPES[c.type].site;
-  const desc=["受付番号："+c.id,"依頼の種類："+TYPES[c.type].label,"依頼元："+c.client+"（"+c.clientKind+"）","担当："+c.tantou,c.symptom?"症状："+c.symptom:"",c.note?"メモ："+c.note:"","ワークHUBで開く：（本番版で案件へのリンクが入ります）"].filter(Boolean).join("\n");
+  const desc=["受付番号："+c.id,"依頼の種類："+TYPES[c.type].label,"依頼元："+c.client+"（"+c.clientKind+"）","担当："+c.tantou,c.symptom?"症状："+c.symptom:"",c.note?"メモ："+c.note:"","CPG HUBで開く：（本番版で案件へのリンクが入ります）"].filter(Boolean).join("\n");
   return '<div class="panel"><h3>Googleカレンダーに登録される内容（本番版）</h3>'+
   '<p class="note" style="margin:0">「日程を決める」と、本番版では担当者（'+h(c.tantou)+'）のGoogleカレンダーにこの内容で登録します。試作ではGoogleには登録しません。</p>'+
   '<dl class="kv"><dt>件名</dt><dd>【'+h(TYPES[c.type].label)+'】'+h(c.property)+' '+h(c.room)+'</dd>'+
@@ -448,13 +448,13 @@ function vDetail(){
       '<div class="row"><label class="f" style="flex:1">次に確認する日（必須）<input type="date" id="d_hold" value="'+h(c.holdDate||addDays(todayS(),7))+'"></label><button class="btn" type="button" data-act="hold" style="align-self:flex-end">保留にする</button></div></div>';
   }else if(c.stage==="won"){
     act='<div class="panel"><h3>次にやること：Accessへ引渡</h3>'+
-      '<p class="note" style="margin:0">Accessで現場管理表を作成し、振られた仕事番号を入力してください。引渡後、この案件はワークHUBでは読み取り専用になり、以降の進捗・売上・入金消込はAccessで管理します。</p>'+
+      '<p class="note" style="margin:0">Accessで現場管理表を作成し、振られた仕事番号を入力してください。引渡後、この案件はCPG HUBでは読み取り専用になり、以降の進捗・売上・入金消込はAccessで管理します。</p>'+
       '<label class="f">仕事番号（Accessで振られた番号）<input type="text" id="d_job" placeholder="Accessの仕事番号"></label>'+
       '<div class="row"><button class="btn pri" type="button" data-act="hand">引渡済にする</button><button class="btn sm" type="button" data-act="csvone">この案件をAccess用に書き出す</button></div></div>';
   }else if(c.stage==="lost"){
     act='<div class="ro">失注（'+h(c.lossReason)+'・'+md(c.lossDate)+'）。毎日の一覧には出ません。<button class="btn sm" type="button" data-act="reopen">見積提出済に戻す</button></div>';
   }else if(ro){
-    act='<div class="ro"><b>Access引渡済</b>　仕事番号 <b class="num">'+h(c.jobNo)+'</b>（'+md(c.handedDate)+'）<br>この後の進捗・売上・入金消込はAccessの現場管理表で管理します。ワークHUBでは編集できません。</div>';
+    act='<div class="ro"><b>Access引渡済</b>　仕事番号 <b class="num">'+h(c.jobNo)+'</b>（'+md(c.handedDate)+'）<br>この後の進捗・売上・入金消込はAccessの現場管理表で管理します。CPG HUBでは編集できません。</div>';
   }
   const ph=photos[c.id]||[];
   return '<button class="back" type="button" data-nav="cases">‹ 案件へ戻る</button>'+
