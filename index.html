@@ -224,13 +224,32 @@ const md=s=>{const d=parseYmd(s);return d?(d.getMonth()+1)+"/"+d.getDate():"—"
 const yen=n=>(n==null||n===""||isNaN(n))?"—":Number(n).toLocaleString("ja-JP")+"円";
 const diffDays=(a,b)=>Math.round((parseYmd(a)-parseYmd(b))/864e5);
 
+/* Stored-data defaults: when a field is added, give it a default here. withDefaults only fills keys that are missing */
+const SCHEMA_VERSION=1;
+const CASE_DEFAULTS=()=>({addr:"",items:[],note:"",symptom:"",planDate:"",estAmount:null,estSentDate:"",siteDate:"",lossReason:"",lossDate:"",holdDate:"",orderDate:"",jobNo:"",billingTenant:"入居者に直接",handedDate:""});
+const TODO_DEFAULTS=()=>({title:"",due:"",tantou:"",done:false});
+const SETTINGS_DEFAULTS=()=>({schedule:2,quote:3,reply:14,jobno:1});
+const withDefaults=(o,defs)=>{for(const k in defs)if(o[k]===undefined)o[k]=defs[k];return o};
+function upgrade(db){
+  const obj=x=>x&&typeof x==="object"&&!Array.isArray(x);
+  db.cases=db.cases.filter(obj);
+  db.cases.forEach(c=>{withDefaults(c,CASE_DEFAULTS());if(!Array.isArray(c.items))c.items=[]});
+  db.todos=(Array.isArray(db.todos)?db.todos:[]).filter(obj);
+  db.todos.forEach((t,i)=>{withDefaults(t,TODO_DEFAULTS());if(t.id==null)t.id="T-old"+(i+1)});
+  if(!obj(db.settings))db.settings={};
+  withDefaults(db.settings,SETTINGS_DEFAULTS());
+  if(typeof db.seq!=="number")db.seq=db.cases.reduce((m,c)=>Math.max(m,Number(String(c.id).replace(/\D/g,""))||0),0);
+  db.schemaVersion=SCHEMA_VERSION;
+  return db;
+}
+
 function sample(){
   const t=todayS(), now=new Date();
   const ago=(mins)=>new Date(now.getTime()-mins*60000).toISOString();
   const d=n=>addDays(t,n);
   const A={"グリーンコート相模台（架空）":"神奈川県相模原市南区（例）","サンプルハイツ（架空）":"神奈川県相模原市中央区（例）","テストマンション（架空）":"神奈川県相模原市緑区（例）","サンプル荘（架空）":"神奈川県相模原市中央区（例）","ベイサイド南（架空）":"神奈川県横浜市中区（例）","ベイサイド北（架空）":"神奈川県横浜市西区（例）","サンプルコーポ（架空）":"神奈川県座間市（例）","テストハイム（架空）":"神奈川県大和市（例）","サンプルビル（架空）":"神奈川県厚木市（例）"};
-  const C=(o)=>Object.assign({addr:A[o.property]||"",items:[],note:"",symptom:"",planDate:"",estAmount:null,estSentDate:"",siteDate:"",lossReason:"",lossDate:"",holdDate:"",orderDate:"",jobNo:"",billingTenant:"入居者に直接",handedDate:""},o);
-  return {seq:16,settings:{schedule:2,quote:3,reply:14,jobno:1},todos:[
+  const C=(o)=>Object.assign(CASE_DEFAULTS(),{addr:A[o.property]||""},o);
+  return {schemaVersion:SCHEMA_VERSION,seq:16,settings:SETTINGS_DEFAULTS(),todos:[
     {id:"T1",title:"管理会社への定期訪問（例）",due:d(1),tantou:"黒木",done:false},
     {id:"T2",title:"見積書のExcel雛形を最新版に差し替え（例）",due:d(-1),tantou:"トシ",done:false}
   ],cases:[
@@ -246,7 +265,7 @@ function sample(){
     C({id:"U-0011",type:"taikyo",stage:"quoted",clientKind:"管理会社",client:"相模ベイ管理（架空）",property:"ベイサイド南（架空）",room:"402",tantou:"黒木",receivedAt:ago(60*24*22),siteDate:d(-19),estSentDate:d(-16),items:[
       {place:"キッチン",state:"油汚れ",burden:"入居者",amount:18000},
       {place:"和室 畳",state:"表替え（経年）",burden:"家主",amount:48000}]}),
-    C({id:"U-0010",type:"reno",stage:"quoted",clientKind:"大家さん",client:"大家 鈴木様（架空）",property:"サンプルコーポ（架空）",room:"201",tantou:"トシ",receivedAt:ago(60*24*12),siteDate:d(-9),estSentDate:d(-5),estAmount:1280000,note:"水回り一式の改修（例）"}),
+    C({id:"U-0010",type:"reno",stage:"quoted",clientKind:"大家さん",client:"大家 中村様（架空）",property:"サンプルコーポ（架空）",room:"201",tantou:"トシ",receivedAt:ago(60*24*12),siteDate:d(-9),estSentDate:d(-5),estAmount:1280000,note:"水回り一式の改修（例）"}),
     C({id:"U-0009",type:"teiki",stage:"quoted",clientKind:"管理会社",client:"相模ベイ管理（架空）",property:"ベイサイド北（架空）",room:"共用部",tantou:"黒木",receivedAt:ago(60*24*10),siteDate:d(-8),estSentDate:d(-6),estAmount:24000,note:"月2回の共用部清掃（例）"}),
     C({id:"U-0008",type:"reno",stage:"hold",clientKind:"大家さん",client:"大家 田中様（架空）",property:"テストハイム（架空）",room:"102",tantou:"トシ",receivedAt:ago(60*24*30),siteDate:d(-27),estSentDate:d(-24),estAmount:860000,holdDate:d(-1),note:"来期の予算で検討とのこと（例）"}),
     C({id:"U-0007",type:"teiki",stage:"won",clientKind:"管理会社",client:"みどり台ハウジング（架空）",property:"グリーンコート相模台（架空）",room:"共用部",tantou:"黒木",receivedAt:ago(60*24*14),siteDate:d(-12),estSentDate:d(-10),estAmount:18000,orderDate:d(-1)}),
@@ -257,14 +276,16 @@ function sample(){
     C({id:"U-0004",type:"reno",stage:"lost",clientKind:"大家さん",client:"大家 高橋様（架空）",property:"テストマンション（架空）",room:"105",tantou:"トシ",receivedAt:ago(60*24*25),siteDate:d(-22),estSentDate:d(-20),estAmount:640000,lossReason:"価格",lossDate:d(-6)}),
     C({id:"U-0003",type:"taikyo",stage:"lost",clientKind:"管理会社",client:"相模ベイ管理（架空）",property:"ベイサイド北（架空）",room:"305",tantou:"黒木",receivedAt:ago(60*24*28),siteDate:d(-26),estSentDate:d(-24),estAmount:88000,lossReason:"他社に決定",lossDate:d(-10)}),
     C({id:"U-0002",type:"teiki",stage:"lost",clientKind:"その他",client:"サンプル商事（架空）",property:"サンプルビル（架空）",room:"事務所",tantou:"黒木",receivedAt:ago(60*24*29),siteDate:d(-27),estSentDate:d(-25),estAmount:30000,lossReason:"連絡なし",lossDate:d(-3)}),
-    C({id:"U-0001",type:"reno",stage:"handed",clientKind:"大家さん",client:"大家 鈴木様（架空）",property:"サンプルコーポ（架空）",room:"103",tantou:"トシ",receivedAt:ago(60*24*35),siteDate:d(-32),estSentDate:d(-28),estAmount:420000,orderDate:d(-15),jobNo:"（例）26-0398",handedDate:d(-14)})
+    C({id:"U-0001",type:"reno",stage:"handed",clientKind:"大家さん",client:"大家 中村様（架空）",property:"サンプルコーポ（架空）",room:"103",tantou:"トシ",receivedAt:ago(60*24*35),siteDate:d(-32),estSentDate:d(-28),estAmount:420000,orderDate:d(-15),jobNo:"（例）26-0398",handedDate:d(-14)})
   ]};
 }
 
 let DB;
 try{const raw=localStorage.getItem(KEY);DB=raw?JSON.parse(raw):null}catch(e){DB=null}
 if(!DB||!Array.isArray(DB.cases))DB=sample();
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(DB))}catch(e){}};
+else upgrade(DB);
+/* The failure toast is deferred so it replaces the success toast the same handler shows after save() */
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(DB));return true}catch(e){setTimeout(()=>toast("保存できませんでした。端末の空き容量やブラウザの設定を確認してください",6000),0);return false}};
 const photos={};
 const ui={view:"home",caseId:null,q:"",type:"all",showEnded:false,tTantou:"all",tPeriod:"week",csv:false,calMonth:todayS().slice(0,7),calDay:todayS()};
 
@@ -611,7 +632,7 @@ function render(){
 }
 function go(view,extra){Object.assign(ui,{view},extra||{});render();window.scrollTo(0,0)}
 let toastT;
-function toast(msg){const el=document.getElementById("toast");el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,2600)}
+function toast(msg,ms){const el=document.getElementById("toast");el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,ms||2600)}
 const val=id=>{const el=document.getElementById(id);return el?el.value:""};
 
 document.addEventListener("click",e=>{
