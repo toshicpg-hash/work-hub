@@ -1,0 +1,17 @@
+{
+  "id": "/work-hub/",
+  "name": "ワークHUB",
+  "short_name": "WORK HUB",
+  "lang": "ja",
+  "start_url": "/work-hub/",
+  "scope": "/work-hub/",
+  "display": "standalone",
+  "background_color": "#f3f6f6",
+  "theme_color": "#0a3a40",
+  "description": "退去立会・リノベーション・定期清掃・緊急対応の受付から受注、Accessへの引渡までを管理する社員向けアプリ（試作）。",
+  "icons": [
+    {"src": "./work-hub-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "./work-hub-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "./work-hub-icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
