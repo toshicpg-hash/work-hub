@@ -589,7 +589,7 @@ function vStats(){
   const maxR=Math.max(1,...reasons.map(r=>r[1]));
   const byType=Object.entries(TYPES).map(([k,v])=>{const w=won.filter(c=>c.type===k).length,l=lost.filter(c=>c.type===k).length;return [v.label,w,l]});
   const S=DB.settings;
-  return '<div class="banner"><b>架空データの集計です。</b>実際の件数・金額ではありません。</div>'+
+  return '<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>'+
   '<section class="sec"><div class="sec-h"><h2>'+(now.getMonth()+1)+'月の見積と受注</h2></div>'+
   '<div class="panel"><div class="row" style="align-items:flex-end;gap:18px"><div><div class="note">見積決定率（受注 ÷ 結論が出た件数）</div><div class="big">'+(rate==null?"—":rate+"%")+'</div></div>'+
   '<div class="note num">受注 '+won.length+'件 ／ 失注 '+lost.length+'件</div></div>'+
