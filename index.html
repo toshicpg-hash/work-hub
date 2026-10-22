@@ -225,7 +225,7 @@ const yen=n=>(n==null||n===""||isNaN(n))?"—":Number(n).toLocaleString("ja-JP")
 const diffDays=(a,b)=>Math.round((parseYmd(a)-parseYmd(b))/864e5);
 
 /* Stored-data defaults: when a field is added, give it a default here. withDefaults only fills keys that are missing */
-const SCHEMA_VERSION=1;
+const SCHEMA_VERSION=2;
 const CASE_DEFAULTS=()=>({addr:"",items:[],note:"",symptom:"",planDate:"",estAmount:null,estSentDate:"",siteDate:"",lossReason:"",lossDate:"",holdDate:"",orderDate:"",jobNo:"",billingTenant:"入居者に直接",handedDate:""});
 const TODO_DEFAULTS=()=>({title:"",due:"",tantou:"",done:false});
 const SETTINGS_DEFAULTS=()=>({schedule:2,quote:3,reply:14,jobno:1});
@@ -239,6 +239,12 @@ function upgrade(db){
   if(!obj(db.settings))db.settings={};
   withDefaults(db.settings,SETTINGS_DEFAULTS());
   if(typeof db.seq!=="number")db.seq=db.cases.reduce((m,c)=>Math.max(m,Number(String(c.id).replace(/\D/g,""))||0),0);
+  /* v2: the sample set was cut to 6 cases; drop the removed samples, but only ones still marked （架空） / （例） so entered data is never touched */
+  if(!(db.schemaVersion>=2)){
+    const gone=["U-0015","U-0014","U-0013","U-0011","U-0009","U-0006","U-0005","U-0003","U-0002","U-0001"];
+    db.cases=db.cases.filter(c=>!(gone.includes(c.id)&&String(c.client).includes("（架空）")));
+    db.todos=db.todos.filter(t=>!(t.id==="T2"&&String(t.title).includes("（例）")));
+  }
   db.schemaVersion=SCHEMA_VERSION;
   return db;
 }
@@ -247,45 +253,32 @@ function sample(){
   const t=todayS(), now=new Date();
   const ago=(mins)=>new Date(now.getTime()-mins*60000).toISOString();
   const d=n=>addDays(t,n);
-  const A={"グリーンコート相模台（架空）":"神奈川県相模原市南区（例）","サンプルハイツ（架空）":"神奈川県相模原市中央区（例）","テストマンション（架空）":"神奈川県相模原市緑区（例）","サンプル荘（架空）":"神奈川県相模原市中央区（例）","ベイサイド南（架空）":"神奈川県横浜市中区（例）","ベイサイド北（架空）":"神奈川県横浜市西区（例）","サンプルコーポ（架空）":"神奈川県座間市（例）","テストハイム（架空）":"神奈川県大和市（例）","サンプルビル（架空）":"神奈川県厚木市（例）"};
+  const A={"グリーンコート相模台（架空）":"神奈川県相模原市南区（例）","テストマンション（架空）":"神奈川県相模原市緑区（例）","サンプルコーポ（架空）":"神奈川県座間市（例）","テストハイム（架空）":"神奈川県大和市（例）"};
   const C=(o)=>Object.assign(CASE_DEFAULTS(),{addr:A[o.property]||""},o);
   return {schemaVersion:SCHEMA_VERSION,seq:16,settings:SETTINGS_DEFAULTS(),todos:[
-    {id:"T1",title:"管理会社への定期訪問（例）",due:d(1),tantou:"黒木",done:false},
-    {id:"T2",title:"見積書のExcel雛形を最新版に差し替え（例）",due:d(-1),tantou:"トシ",done:false}
+    {id:"T1",title:"管理会社への定期訪問（例）",due:d(1),tantou:"黒木",done:false}
   ],cases:[
     C({id:"U-0016",type:"kinkyu",stage:"new",clientKind:"管理会社",client:"みどり台ハウジング（架空）",property:"グリーンコート相模台（架空）",room:"203",tantou:"黒木",receivedAt:ago(95),symptom:"水漏れ",note:"天井から水滴。下階の入居者から連絡あり（例）"}),
-    C({id:"U-0015",type:"taikyo",stage:"new",clientKind:"大家さん",client:"大家 佐藤様（架空）",property:"サンプルハイツ（架空）",room:"102",tantou:"黒木",receivedAt:ago(60*26),planDate:d(4),note:"退去日は来週末の予定（例）"}),
-    C({id:"U-0014",type:"reno",stage:"new",clientKind:"大家さん",client:"大家 高橋様（架空）",property:"テストマンション（架空）",room:"301",tantou:"トシ",receivedAt:ago(60*24*3),planDate:d(2)}),
-    C({id:"U-0013",type:"kinkyu",stage:"site",clientKind:"その他",client:"入居者 直接（架空）",property:"サンプル荘（架空）",room:"1F",tantou:"黒木",receivedAt:ago(60*24*2),symptom:"給湯器凍結",siteDate:d(-2),note:"応急処置済み。交換見積が必要（例）"}),
     C({id:"U-0012",type:"taikyo",stage:"site",clientKind:"管理会社",client:"みどり台ハウジング（架空）",property:"グリーンコート相模台（架空）",room:"105",tantou:"黒木",receivedAt:ago(60*24*5),siteDate:d(-1),items:[
       {place:"洋室 壁クロス",state:"タバコのヤニ汚れ",burden:"入居者",amount:38000},
       {place:"洋室 壁クロス",state:"日焼け（経年）",burden:"家主",amount:22000},
       {place:"フローリング",state:"引きずり傷 30cm",burden:"要確認",amount:15000},
       {place:"室内全体",state:"退去クリーニング",burden:"入居者",amount:35000}]}),
-    C({id:"U-0011",type:"taikyo",stage:"quoted",clientKind:"管理会社",client:"相模ベイ管理（架空）",property:"ベイサイド南（架空）",room:"402",tantou:"黒木",receivedAt:ago(60*24*22),siteDate:d(-19),estSentDate:d(-16),items:[
-      {place:"キッチン",state:"油汚れ",burden:"入居者",amount:18000},
-      {place:"和室 畳",state:"表替え（経年）",burden:"家主",amount:48000}]}),
     C({id:"U-0010",type:"reno",stage:"quoted",clientKind:"大家さん",client:"大家 中村様（架空）",property:"サンプルコーポ（架空）",room:"201",tantou:"トシ",receivedAt:ago(60*24*12),siteDate:d(-9),estSentDate:d(-5),estAmount:1280000,note:"水回り一式の改修（例）"}),
-    C({id:"U-0009",type:"teiki",stage:"quoted",clientKind:"管理会社",client:"相模ベイ管理（架空）",property:"ベイサイド北（架空）",room:"共用部",tantou:"黒木",receivedAt:ago(60*24*10),siteDate:d(-8),estSentDate:d(-6),estAmount:24000,note:"月2回の共用部清掃（例）"}),
     C({id:"U-0008",type:"reno",stage:"hold",clientKind:"大家さん",client:"大家 田中様（架空）",property:"テストハイム（架空）",room:"102",tantou:"トシ",receivedAt:ago(60*24*30),siteDate:d(-27),estSentDate:d(-24),estAmount:860000,holdDate:d(-1),note:"来期の予算で検討とのこと（例）"}),
     C({id:"U-0007",type:"teiki",stage:"won",clientKind:"管理会社",client:"みどり台ハウジング（架空）",property:"グリーンコート相模台（架空）",room:"共用部",tantou:"黒木",receivedAt:ago(60*24*14),siteDate:d(-12),estSentDate:d(-10),estAmount:18000,orderDate:d(-1)}),
-    C({id:"U-0006",type:"kinkyu",stage:"handed",clientKind:"管理会社",client:"相模ベイ管理（架空）",property:"ベイサイド南（架空）",room:"201",tantou:"黒木",receivedAt:ago(60*24*9),symptom:"水漏れ",siteDate:d(-9),estSentDate:d(-8),estAmount:45000,orderDate:d(-8),jobNo:"（例）26-0412",handedDate:d(-7)}),
-    C({id:"U-0005",type:"taikyo",stage:"handed",clientKind:"大家さん",client:"大家 佐藤様（架空）",property:"サンプルハイツ（架空）",room:"203",tantou:"黒木",receivedAt:ago(60*24*20),siteDate:d(-18),estSentDate:d(-16),orderDate:d(-12),jobNo:"（例）26-0405",handedDate:d(-11),items:[
-      {place:"室内全体",state:"退去クリーニング",burden:"入居者",amount:32000},
-      {place:"浴室 コーキング",state:"劣化（経年）",burden:"家主",amount:12000}]}),
-    C({id:"U-0004",type:"reno",stage:"lost",clientKind:"大家さん",client:"大家 高橋様（架空）",property:"テストマンション（架空）",room:"105",tantou:"トシ",receivedAt:ago(60*24*25),siteDate:d(-22),estSentDate:d(-20),estAmount:640000,lossReason:"価格",lossDate:d(-6)}),
-    C({id:"U-0003",type:"taikyo",stage:"lost",clientKind:"管理会社",client:"相模ベイ管理（架空）",property:"ベイサイド北（架空）",room:"305",tantou:"黒木",receivedAt:ago(60*24*28),siteDate:d(-26),estSentDate:d(-24),estAmount:88000,lossReason:"他社に決定",lossDate:d(-10)}),
-    C({id:"U-0002",type:"teiki",stage:"lost",clientKind:"その他",client:"サンプル商事（架空）",property:"サンプルビル（架空）",room:"事務所",tantou:"黒木",receivedAt:ago(60*24*29),siteDate:d(-27),estSentDate:d(-25),estAmount:30000,lossReason:"連絡なし",lossDate:d(-3)}),
-    C({id:"U-0001",type:"reno",stage:"handed",clientKind:"大家さん",client:"大家 中村様（架空）",property:"サンプルコーポ（架空）",room:"103",tantou:"トシ",receivedAt:ago(60*24*35),siteDate:d(-32),estSentDate:d(-28),estAmount:420000,orderDate:d(-15),jobNo:"（例）26-0398",handedDate:d(-14)})
+    C({id:"U-0004",type:"reno",stage:"lost",clientKind:"大家さん",client:"大家 高橋様（架空）",property:"テストマンション（架空）",room:"105",tantou:"トシ",receivedAt:ago(60*24*25),siteDate:d(-22),estSentDate:d(-20),estAmount:640000,lossReason:"価格",lossDate:d(-6)})
   ]};
 }
 
 let DB;
 try{const raw=localStorage.getItem(KEY);DB=raw?JSON.parse(raw):null}catch(e){DB=null}
+let upgraded=false;
 if(!DB||!Array.isArray(DB.cases))DB=sample();
-else upgrade(DB);
+else{upgraded=DB.schemaVersion!==SCHEMA_VERSION;upgrade(DB)}
 /* The failure toast is deferred so it replaces the success toast the same handler shows after save() */
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(DB));return true}catch(e){setTimeout(()=>toast("保存できませんでした。端末の空き容量やブラウザの設定を確認してください",6000),0);return false}};
+if(upgraded)save();
 const photos={};
 const ui={view:"home",caseId:null,q:"",type:"all",showEnded:false,tTantou:"all",tPeriod:"week",csv:false,calMonth:todayS().slice(0,7),calDay:todayS()};
 
@@ -347,7 +340,7 @@ function vHome(){
   const urgent=DB.cases.filter(c=>c.type==="kinkyu"&&(c.stage==="new"||c.stage==="site"));
   const waiting=DB.cases.filter(c=>c.stage==="won");
   const active=DB.cases.filter(c=>!ended(c));
-  return '<div class="banner"><b>試作です。</b>表示している案件・金額・取引先はすべて架空です。入力した内容はこの端末のブラウザにだけ残ります。</div>'+
+  return '<div class="banner"><b>試作です。</b>（架空）と付いた案件は練習用の例です。入力した内容はこの端末のブラウザにだけ残ります。</div>'+
   '<section class="sec"><div class="tiles">'+
     '<button type="button" class="tile'+(over.length?" alert":"")+'" data-nav="todo"><span class="k">期限切れのToDo</span><span class="v">'+over.length+'</span></button>'+
     '<button type="button" class="tile" data-nav="todo"><span class="k">今日までのToDo</span><span class="v">'+todayT.length+'</span></button>'+
@@ -596,7 +589,7 @@ function vStats(){
   const maxR=Math.max(1,...reasons.map(r=>r[1]));
   const byType=Object.entries(TYPES).map(([k,v])=>{const w=won.filter(c=>c.type===k).length,l=lost.filter(c=>c.type===k).length;return [v.label,w,l]});
   const S=DB.settings;
-  return '<div class="banner"><b>架空データの集計です。</b>実際の件数・金額ではありません。</div>'+
+  return '<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>'+
   '<section class="sec"><div class="sec-h"><h2>'+(now.getMonth()+1)+'月の見積と受注</h2></div>'+
   '<div class="panel"><div class="row" style="align-items:flex-end;gap:18px"><div><div class="note">見積決定率（受注 ÷ 結論が出た件数）</div><div class="big">'+(rate==null?"—":rate+"%")+'</div></div>'+
   '<div class="note num">受注 '+won.length+'件 ／ 失注 '+lost.length+'件</div></div>'+
@@ -612,7 +605,9 @@ function vStats(){
     '<label class="f">現地確認 → 見積提出まで（日）<input type="number" min="0" id="s_quote" value="'+S.quote+'"></label>'+
     '<label class="f">見積提出 → 結論の確認まで（日）<input type="number" min="1" id="s_reply" value="'+S.reply+'"></label>'+
     '<label class="f">受注 → 仕事番号の記録まで（日）<input type="number" min="0" id="s_jobno" value="'+S.jobno+'"></label></div>'+
-    '<div class="row"><button class="btn pri" type="submit">保存する</button><span class="sp"></span><button class="btn sm danger" type="button" data-act="reset">架空データに戻す</button></div></form></section>';
+    '<div class="row"><button class="btn pri" type="submit">保存する</button><span class="sp"></span><button class="btn sm danger" type="button" data-act="reset">すべて消して架空データに戻す</button></div>'+
+    (ui.confirmReset?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><b style="color:var(--red)">入力した案件とToDoがすべて消えます。よろしいですか？</b><div class="row"><button class="btn danger" type="button" data-act="resetdo">消して戻す</button><button class="btn" type="button" data-act="resetcancel">やめる</button></div></div>':'')+
+    '</form></section>';
 }
 
 const main=document.getElementById("main");
@@ -630,7 +625,7 @@ function render(){
     const sync=()=>{sw.hidden=ty.value!=="kinkyu"};ty.addEventListener("change",sync);sync();
   }
 }
-function go(view,extra){Object.assign(ui,{view},extra||{});render();window.scrollTo(0,0)}
+function go(view,extra){Object.assign(ui,{view,confirmReset:false},extra||{});render();window.scrollTo(0,0)}
 let toastT;
 function toast(msg,ms){const el=document.getElementById("toast");el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,ms||2600)}
 const val=id=>{const el=document.getElementById(id);return el?el.value:""};
@@ -654,7 +649,9 @@ document.addEventListener("click",e=>{
   if(a==="csvclose"){ui.csv=false;render();return}
   if(a==="copycsv"){const ta=document.getElementById("csvOut");const done=()=>toast("コピーしました");
     try{navigator.clipboard.writeText(ta.value).then(done,()=>{ta.select();toast("選択しました。長押しでコピーしてください")})}catch(err){ta.select();toast("選択しました。長押しでコピーしてください")}return}
-  if(a==="reset"){DB=sample();save();for(const k in photos)delete photos[k];toast("架空データに戻しました");go("home");return}
+  if(a==="reset"){ui.confirmReset=true;render();return}
+  if(a==="resetcancel"){ui.confirmReset=false;render();return}
+  if(a==="resetdo"){ui.confirmReset=false;DB=sample();save();for(const k in photos)delete photos[k];toast("架空データに戻しました");go("home");return}
   if(!c)return;
   if(a==="additem"){c.items.push({place:"",state:"",burden:"要確認",amount:""});save();render();return}
   if(a==="plan"){const d=val("d_plan");if(!d){toast("予定日を入れてください");return}c.planDate=d;save();render();toast(md(d)+"に"+TYPES[c.type].site+"の予定を入れました");return}
