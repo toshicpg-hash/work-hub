@@ -162,6 +162,22 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 .ev.won{background:var(--sunk);color:var(--fg)}
 .ev.td{color:var(--muted);font-weight:400}
 .ev.td.over{color:var(--red);font-weight:700}
+.wk{display:flex;flex-direction:column;gap:6px}
+.wkrow{display:grid;grid-template-columns:4.4em minmax(0,1fr);gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px;min-width:0}
+.wkrow.sel{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.wkd{border:0;background:var(--sunk);border-radius:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 2px;line-height:1.2;color:var(--fg);min-height:52px}
+.wkd .dn{font-family:var(--f-display);font-size:20px;font-weight:900;font-variant-numeric:tabular-nums}
+.wkd .dw{font-size:11.5px;font-weight:700}
+.wkd.sun{color:var(--red)}
+.wkd.sat{color:var(--accent)}
+.wkd.today{background:var(--accent);color:var(--accent-fg)}
+.wki{display:flex;flex-direction:column;gap:3px;min-width:0;justify-content:center}
+.wkev{border:0;background:none;padding:2px 0;text-align:left;cursor:pointer;display:flex;gap:6px;align-items:center;min-width:0;font-size:13px;color:var(--fg)}
+.wkev .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wkev .ev{font-size:11px;flex:none}
+.wkev.td{cursor:default;color:var(--muted)}
+.wkev.td.over{color:var(--red);font-weight:700}
+.wknone{font-size:12.5px;color:var(--muted)}
 .legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);align-items:center}
 .legend i{display:inline-block;width:14px;height:10px;border-radius:2px;vertical-align:middle;margin-right:4px}
 .gwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
@@ -289,7 +305,7 @@ else{upgraded=DB.schemaVersion!==SCHEMA_VERSION;upgrade(DB)}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(DB));return true}catch(e){setTimeout(()=>toast("保存できませんでした。端末の空き容量やブラウザの設定を確認してください",6000),0);return false}};
 if(upgraded)save();
 const photos={};
-const ui={view:"home",caseId:null,q:"",type:"all",showEnded:false,tTantou:"all",tPeriod:"week",csv:false,calMonth:todayS().slice(0,7),calDay:todayS()};
+const ui={view:"home",caseId:null,q:"",type:"all",showEnded:false,tTantou:"all",tPeriod:"week",csv:false,calMonth:todayS().slice(0,7),calDay:todayS(),calView:"month"};
 
 const findCase=id=>DB.cases.find(c=>c.id===id);
 const isTaikyo=c=>c.type==="taikyo";
@@ -548,31 +564,58 @@ function eventsOf(){
   }
   return ev;
 }
+const WD="日月火水木金土";
+const mdw=s=>{const d=parseYmd(s);return (d.getMonth()+1)+"月"+d.getDate()+"日（"+WD[d.getDay()]+"）"};
 function vCal(){
-  const [y,m]=ui.calMonth.split("-").map(Number);
-  const first=new Date(y,m-1,1), start=new Date(y,m-1,1-first.getDay()), t=todayS();
-  const by={};
+  const t=todayS(), by={};
   const slot=d=>by[d]=by[d]||{ev:[],td:[]};
   eventsOf().forEach(e=>slot(e.d).ev.push(e));
   genTodos().forEach(x=>{if(x.due)slot(x.due).td.push(x)});
+  const day=s=>by[s]||{ev:[],td:[]};
+  const legend='<div class="legend"><span><i style="background:var(--accent-soft)"></i>立会・調査の予定</span><span><i style="background:var(--green-soft)"></i>実施</span><span><i style="background:var(--amber-soft)"></i>見積提出</span><span><i style="background:var(--sunk)"></i>受注</span></div>';
+  const note='<p class="note" style="margin:0">試作では祝日を表示していません。社内会議・客先会議・営業活動は次の段階で追加します。</p>';
+  const views='<div class="seg" role="group" aria-label="表示の切り替え">'+[["month","月"],["week","週"],["day","日"]].map(([k,l])=>'<button type="button" data-cv="'+k+'" aria-pressed="'+(ui.calView===k)+'">'+l+'</button>').join("")+'</div>';
+  const nav=(step,title,todayLabel,prevLabel,nextLabel)=>'<div class="calnav"><button class="btn sm" type="button" data-shift="'+(-step)+'" aria-label="'+prevLabel+'">‹</button><h2 class="num">'+title+'</h2>'+
+    '<button class="btn sm" type="button" data-shift="today">'+todayLabel+'</button><button class="btn sm" type="button" data-shift="'+step+'" aria-label="'+nextLabel+'">›</button></div>';
+  if(ui.calView==="week"){
+    const sd=parseYmd(ui.calDay), from=addDays(ui.calDay,-sd.getDay()), to=addDays(from,6);
+    const F=parseYmd(from), T=parseYmd(to);
+    const title=F.getFullYear()+"年"+(F.getMonth()+1)+"月"+F.getDate()+"日〜"+(T.getFullYear()!==F.getFullYear()?T.getFullYear()+"年":"")+(T.getMonth()!==F.getMonth()?(T.getMonth()+1)+"月":"")+T.getDate()+"日";
+    let rows="";
+    for(let i=0;i<7;i++){
+      const s=addDays(from,i), d=parseYmd(s), b=day(s);
+      const cls=["wkd",s===t?"today":"",d.getDay()===0?"sun":d.getDay()===6?"sat":""].join(" ");
+      const items=b.ev.map(e=>'<button type="button" class="wkev" data-open="'+e.c.id+'"><span class="ev '+e.k+'">'+h(e.label)+'</span><span class="t">'+h(e.c.property)+' '+h(e.c.room)+'</span></button>').join("")+
+        b.td.map(x=>'<div class="wkev td'+(s<t?" over":"")+'"><span class="ev td'+(s<t?" over":"")+'">ToDo</span><span class="t">'+h(x.title)+'</span></div>').join("");
+      rows+='<div class="wkrow'+(s===ui.calDay?" sel":"")+'"><button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+mdw(s)+'を日表示で開く"'+(s===t?' aria-current="date"':'')+'><span class="dn">'+d.getDate()+'</span><span class="dw">'+WD[d.getDay()]+'</span></button>'+
+        '<div class="wki">'+(items||'<span class="wknone">予定なし</span>')+'</div></div>';
+    }
+    return '<section class="sec">'+views+
+      nav(7,title,"今週","前の週","次の週")+
+      legend+'<div class="wk">'+rows+'</div>'+note+'</section>';
+  }
+  if(ui.calView==="day"){
+    const sel=day(ui.calDay);
+    const evRows=sel.ev.map(e=>'<button type="button" class="card" data-open="'+e.c.id+'"><div class="row"><span class="ev '+e.k+'" style="font-size:12px;padding:1px 6px">'+h(e.label)+'</span>'+typeChip(e.c)+'<span class="sp"></span>'+stagePill(e.c)+'</div><div class="ttl">'+h(e.c.property)+' '+h(e.c.room)+'</div><div class="row note"><span>'+h(e.c.client)+'</span><span>担当 '+h(e.c.tantou)+'</span></div></button>').join("");
+    return '<section class="sec">'+views+
+      nav(1,mdw(ui.calDay),"今日","前の日","次の日")+
+      '<div class="list">'+evRows+sel.td.map(todoRow).join("")+((evRows||sel.td.length)?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div>'+note+'</section>';
+  }
+  const [y,m]=ui.calMonth.split("-").map(Number);
+  const first=new Date(y,m-1,1), start=new Date(y,m-1,1-first.getDay());
   let cells="";
   for(let i=0;i<42;i++){
-    const dt=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i), s=ymd(dt), b=by[s]||{ev:[],td:[]};
+    const dt=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i), s=ymd(dt), b=day(s);
     const cls=["d",dt.getMonth()!==m-1?"out":"",s===t?"today":"",s===ui.calDay?"sel":"",dt.getDay()===0?"sun":dt.getDay()===6?"sat":""].join(" ");
     const shown=b.ev.slice(0,2).map(e=>'<span class="ev '+e.k+'">'+h(e.label)+'</span>').join("");
     const more=b.ev.length>2?'<span class="ev td">ほか'+(b.ev.length-2)+'件</span>':'';
     const tdl=b.td.length?'<span class="ev td'+(s<t?" over":"")+'">ToDo '+b.td.length+'</span>':'';
-    cells+='<button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+(dt.getMonth()+1)+'月'+dt.getDate()+'日"><span class="n">'+dt.getDate()+'</span>'+shown+more+tdl+'</button>';
+    cells+='<button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+(dt.getMonth()+1)+'月'+dt.getDate()+'日を日表示で開く"><span class="n">'+dt.getDate()+'</span>'+shown+more+tdl+'</button>';
   }
-  const sel=by[ui.calDay]||{ev:[],td:[]};
-  const selD=parseYmd(ui.calDay);
-  const evRows=sel.ev.map(e=>'<button type="button" class="card" data-open="'+e.c.id+'"><div class="row"><span class="ev '+e.k+'" style="font-size:12px;padding:1px 6px">'+h(e.label)+'</span>'+typeChip(e.c)+'<span class="sp"></span>'+stagePill(e.c)+'</div><div class="ttl">'+h(e.c.property)+' '+h(e.c.room)+'</div><div class="row note"><span>'+h(e.c.client)+'</span><span>担当 '+h(e.c.tantou)+'</span></div></button>').join("");
-  return '<section class="sec"><div class="calnav"><button class="btn sm" type="button" data-mon="-1" aria-label="前の月">‹</button><h2 class="num">'+y+'年'+m+'月</h2><button class="btn sm" type="button" data-mon="0">今月</button><button class="btn sm" type="button" data-mon="1" aria-label="次の月">›</button></div>'+
-  '<div class="legend"><span><i style="background:var(--accent-soft)"></i>立会・調査の予定</span><span><i style="background:var(--green-soft)"></i>実施</span><span><i style="background:var(--amber-soft)"></i>見積提出</span><span><i style="background:var(--sunk)"></i>受注</span></div>'+
+  return '<section class="sec">'+views+'<div class="calnav"><button class="btn sm" type="button" data-mon="-1" aria-label="前の月">‹</button><h2 class="num">'+y+'年'+m+'月</h2><button class="btn sm" type="button" data-mon="0">今月</button><button class="btn sm" type="button" data-mon="1" aria-label="次の月">›</button></div>'+
+  legend+
   '<div class="cal">'+["日","月","火","水","木","金","土"].map((w,i)=>'<div class="wd'+(i===0?" sun":i===6?" sat":"")+'">'+w+'</div>').join("")+cells+'</div>'+
-  '<p class="note" style="margin:0">試作では祝日を表示していません。社内会議・客先会議・営業活動は次の段階で追加します。</p></section>'+
-  '<section class="sec"><div class="sec-h"><h2>'+(selD.getMonth()+1)+'月'+selD.getDate()+'日（'+"日月火水木金土"[selD.getDay()]+'）</h2></div>'+
-  '<div class="list">'+evRows+sel.td.map(todoRow).join("")+((evRows||sel.td.length)?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div></section>';
+  '<p class="note" style="margin:0">日付を押すと、その日の予定とToDoを表示します。</p>'+note+'</section>';
 }
 function vGantt(){
   const DAYS=29, W=26, from=addDays(todayS(),-14), t=todayS();
@@ -661,7 +704,9 @@ document.addEventListener("click",e=>{
   if(el.dataset.open){go("detail",{caseId:el.dataset.open});return}
   if(el.dataset.nav){const ex={csv:false};if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";go(el.dataset.nav,ex);return}
   if(el.dataset.type&&ui.view==="cases"){ui.type=el.dataset.type;render();return}
-  if(el.dataset.day){ui.calDay=el.dataset.day;if(el.dataset.day.slice(0,7)!==ui.calMonth)ui.calMonth=el.dataset.day.slice(0,7);render();return}
+  if(el.dataset.day){ui.calDay=el.dataset.day;ui.calMonth=ui.calDay.slice(0,7);ui.calView="day";render();return}
+  if(el.dataset.cv){ui.calView=el.dataset.cv;render();return}
+  if(el.dataset.shift!=null){ui.calDay=el.dataset.shift==="today"?todayS():addDays(ui.calDay,el.dataset.shift);ui.calMonth=ui.calDay.slice(0,7);render();return}
   if(el.dataset.mon!=null){const n=Number(el.dataset.mon);if(n===0){ui.calMonth=todayS().slice(0,7);ui.calDay=todayS()}else{const [y,m]=ui.calMonth.split("-").map(Number);const d=new Date(y,m-1+n,1);ui.calMonth=d.getFullYear()+"-"+pad(d.getMonth()+1);ui.calDay=ymd(d)}render();return}
   if(el.dataset.tp){ui.tPeriod=el.dataset.tp;render();return}
   if(el.dataset.tt){ui.tTantou=el.dataset.tt;render();return}
