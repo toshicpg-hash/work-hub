@@ -21,7 +21,7 @@
 :root{
   --bg:#f3f6f6; --surface:#ffffff; --sunk:#e8eeee; --line:#d3dcdc;
   --fg:#15232b; --muted:#5a6a71; --accent:#0b6b72; --accent-fg:#ffffff; --accent-soft:#dcefef;
-  --red:#b93a26; --red-soft:#fbe6e1; --amber:#9a6412; --amber-soft:#f8ecd6; --green:#2d7449; --green-soft:#e0f0e5; --blue:#1d5fb8; --blue-soft:#e3edfb;
+  --red:#b93a26; --red-soft:#fbe6e1; --amber:#9a6412; --amber-soft:#f8ecd6; --green:#2d7449; --green-soft:#e0f0e5; --blue:#1d5fb8; --blue-soft:#e3edfb; --gc0:#6a3fa0; --gc0-soft:#efe6f8; --gc1:#a3336b; --gc1-soft:#f9e3ee; --gc2:#3d5a80; --gc2-soft:#e2e9f2; --gc3:#6b6b1f; --gc3-soft:#eeeed8;
   --f-display:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
   --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
   --nav-h:62px;
@@ -29,12 +29,12 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0f1719; --surface:#172225; --sunk:#1e2c30; --line:#2c3d42;
   --fg:#e3ecee; --muted:#93a6ac; --accent:#4fb8bf; --accent-fg:#06272a; --accent-soft:#163a3d;
-  --red:#ef8a76; --red-soft:#3a1d18; --amber:#e3b45f; --amber-soft:#35290f; --green:#7cc896; --green-soft:#16301f; --blue:#86b4f5; --blue-soft:#172a44;
+  --red:#ef8a76; --red-soft:#3a1d18; --amber:#e3b45f; --amber-soft:#35290f; --green:#7cc896; --green-soft:#16301f; --blue:#86b4f5; --blue-soft:#172a44; --gc0:#c4a3ee; --gc0-soft:#2b2040; --gc1:#f09cc4; --gc1-soft:#3a1a2a; --gc2:#a9c1e0; --gc2-soft:#1d2836; --gc3:#d4d48a; --gc3-soft:#2c2c14;
   color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0f1719; --surface:#172225; --sunk:#1e2c30; --line:#2c3d42;
   --fg:#e3ecee; --muted:#93a6ac; --accent:#4fb8bf; --accent-fg:#06272a; --accent-soft:#163a3d;
-  --red:#ef8a76; --red-soft:#3a1d18; --amber:#e3b45f; --amber-soft:#35290f; --green:#7cc896; --green-soft:#16301f; --blue:#86b4f5; --blue-soft:#172a44;
+  --red:#ef8a76; --red-soft:#3a1d18; --amber:#e3b45f; --amber-soft:#35290f; --green:#7cc896; --green-soft:#16301f; --blue:#86b4f5; --blue-soft:#172a44; --gc0:#c4a3ee; --gc0-soft:#2b2040; --gc1:#f09cc4; --gc1-soft:#3a1a2a; --gc2:#a9c1e0; --gc2-soft:#1d2836; --gc3:#d4d48a; --gc3-soft:#2c2c14;
   color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.6}
@@ -191,6 +191,23 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 .wkev.td{cursor:default;color:var(--muted)}
 .wkev.td.over{color:var(--red);font-weight:700}
 .wknone{font-size:12.5px;color:var(--muted)}
+.ev.gc0{background:var(--gc0-soft);color:var(--gc0)} .ev.gc1{background:var(--gc1-soft);color:var(--gc1)} .ev.gc2{background:var(--gc2-soft);color:var(--gc2)} .ev.gc3{background:var(--gc3-soft);color:var(--gc3)}
+.wkev.gcev{cursor:default}
+.card.gccard{cursor:default}
+.card.gccard:hover{border-color:var(--line)}
+.gcst{margin:0;font-size:12px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.gcst .ev{font-size:11px}
+.gsync{display:flex;flex-direction:column;gap:6px}
+.gsyncbtn{width:100%;min-height:56px;font-size:16px;font-weight:700;background:var(--blue);color:#fff;border:0;border-radius:12px}
+.gsyncbtn:hover{filter:brightness(1.08)}
+.gsyncbtn:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+.gsyncbtn[disabled]{opacity:.6}
+.gres{margin:0;padding:0;list-style:none;font-size:12.5px;display:flex;flex-direction:column;gap:2px}
+.gres .ng{color:var(--red)}
+.gres .ok{color:var(--green)}
+.gcals{display:flex;flex-direction:column;gap:6px}
+.gcals label{display:flex;gap:8px;align-items:center;font-size:14px}
+.gcals input{width:20px;height:20px}
 .legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);align-items:center}
 .legend i{display:inline-block;width:14px;height:10px;border-radius:2px;vertical-align:middle;margin-right:4px}
 .gwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
@@ -218,7 +235,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><span class="ver">v1.9・10/22更新</span></span><span class="proto">試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><span class="ver">v1.10・10/23更新</span></span><span class="proto">試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -235,6 +252,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </div></nav>
 <div class="toast" id="toast" hidden></div>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
 "use strict";
@@ -264,9 +282,9 @@ const diffDays=(a,b)=>Math.round((parseYmd(a)-parseYmd(b))/864e5);
 
 /* Stored-data defaults: when a field is added, give it a default here. withDefaults only fills keys that are missing */
 const SCHEMA_VERSION=2;
-const CASE_DEFAULTS=()=>({addr:"",items:[],note:"",symptom:"",planDate:"",estAmount:null,estSentDate:"",siteDate:"",lossReason:"",lossDate:"",holdDate:"",orderDate:"",jobNo:"",billingTenant:"入居者に直接",handedDate:""});
+const CASE_DEFAULTS=()=>({addr:"",items:[],note:"",symptom:"",planDate:"",estAmount:null,estSentDate:"",siteDate:"",lossReason:"",lossDate:"",holdDate:"",orderDate:"",jobNo:"",billingTenant:"入居者に直接",handedDate:"",gcal:null});
 const TODO_DEFAULTS=()=>({title:"",due:"",tantou:"",done:false});
-const SETTINGS_DEFAULTS=()=>({schedule:2,quote:3,reply:14,jobno:1});
+const SETTINGS_DEFAULTS=()=>({schedule:2,quote:3,reply:14,jobno:1,gShow:null,gWrite:""});
 const withDefaults=(o,defs)=>{for(const k in defs)if(o[k]===undefined)o[k]=defs[k];return o};
 function upgrade(db){
   const obj=x=>x&&typeof x==="object"&&!Array.isArray(x);
@@ -381,6 +399,7 @@ function vHome(){
   const waiting=DB.cases.filter(c=>c.stage==="won");
   const active=DB.cases.filter(c=>!ended(c));
   return '<div class="banner"><b>試作です。</b>（架空）と付いた案件は練習用の例です。入力した内容はこの端末のブラウザにだけ残ります。</div>'+
+  '<section class="sec">'+gSyncPanel()+'</section>'+
   '<section class="sec"><div class="tiles">'+
     '<button type="button" class="tile'+(over.length?" alert":"")+'" data-nav="todo"><span class="k">期限切れのToDo</span><span class="v">'+over.length+'</span></button>'+
     '<button type="button" class="tile" data-nav="todo"><span class="k">今日までのToDo</span><span class="v">'+todayT.length+'</span></button>'+
@@ -481,14 +500,20 @@ function refreshItemTotals(c){
   const tot=document.getElementById("d_itemsTotal");if(tot)tot.textContent=yen(itemsSum(c));
 }
 function gcalPreview(c){
-  const s=TYPES[c.type].site;
-  const desc=["受付番号："+c.id,"依頼の種類："+TYPES[c.type].label,"依頼元："+c.client+"（"+c.clientKind+"）","担当："+c.tantou,c.symptom?"症状："+c.symptom:"",c.note?"メモ："+c.note:"","CPG HUBで開く：（本番版で案件へのリンクが入ります）"].filter(Boolean).join("\n");
-  return '<div class="panel"><h3>Googleカレンダーに登録される内容（本番版）</h3>'+
-  '<p class="note" style="margin:0">「日程を決める」と、本番版では担当者（'+h(c.tantou)+'）のGoogleカレンダーにこの内容で登録します。試作ではGoogleには登録しません。</p>'+
-  '<dl class="kv"><dt>件名</dt><dd>【'+h(TYPES[c.type].label)+'】'+h(c.property)+' '+h(c.room)+'</dd>'+
-  '<dt>日付</dt><dd class="num">'+(c.planDate?mdh(c.planDate)+' '+s:'日程を決めると入ります')+'</dd>'+
+  const s=TYPES[c.type].site, g=c.gcal&&c.gcal.id?c.gcal:null, w=gWriteCal();
+  const where=g?(g.calName||"Googleカレンダー"):w?w.name:"CPG";
+  let st, btn="";
+  if(!c.planDate)st='日程を決めると登録できます。';
+  else if(!g||!g.date){st='まだ登録していません（登録先：'+h(where)+'）。';btn='<button class="btn pri" type="button" data-act="greg">Googleカレンダーに登録</button>'}
+  else if(g.date!==c.planDate){st='<b style="color:var(--red)">登録済みの日付（'+mdh(g.date)+'）と予定日が違います。</b>';btn='<button class="btn pri" type="button" data-act="greg">カレンダーの予定を更新</button>'}
+  else st='登録済み：'+h(where)+'（'+mdh(g.date)+'）'+(g.link&&/^https:\/\/www\.google\.com\/calendar\//.test(g.link)?' <a href="'+h(g.link)+'" target="_blank" rel="noopener noreferrer">Googleで開く</a>':'');
+  return '<div class="panel"><h3>Googleカレンダー</h3>'+
+  '<p style="margin:0">'+st+'</p>'+(btn?'<div class="row">'+btn+'</div>':'')+
+  '<dl class="kv"><dt>件名</dt><dd>'+h(gTitle(c))+'</dd>'+
+  '<dt>日付</dt><dd class="num">'+(c.planDate?mdh(c.planDate)+' '+s+'（終日）':'日程を決めると入ります')+'</dd>'+
   '<dt>場所</dt><dd>'+(h(c.addr)||'住所が未入力です')+'</dd>'+
-  '<dt>説明</dt><dd style="white-space:pre-wrap">'+h(desc)+'</dd></dl></div>';
+  '<dt>説明</dt><dd style="white-space:pre-wrap">'+h(gDesc(c))+'</dd></dl>'+
+  '<p class="note" style="margin:0">メモや症状はGoogleには送りません。自動では登録しないので、日程を決めたらボタンを押してください。</p></div>';
 }
 function vDetail(){
   const c=findCase(ui.caseId);
@@ -602,12 +627,178 @@ const mdh=s=>{if(!s)return "—";const n=holidayName(s);return md(s)+"（"+WD[pa
 /* 立会 (and its plan) on a Saturday, Sunday or holiday is shown in a strong color */
 const evCls=e=>"ev "+e.k+(e.c.type==="taikyo"&&(e.k==="plan"||e.k==="site")&&dayKind(e.d)?" off":"");
 const mdw=s=>{const d=parseYmd(s);return (d.getMonth()+1)+"月"+d.getDate()+"日（"+WD[d.getDay()]+"）"};
+
+/* Google連携。PAPA HUBと同じ方式（Google Identity Servicesのトークン、同じ公開クライアントID）。
+   トークンと取得した予定はメモリだけに置き、localStorageには保存しない（案件に付けた予定IDだけ保存する） */
+const GOOGLE_CLIENT_ID="766726293537-1e4kdsqmoit29rbvh559fnmha3q0s6up.apps.googleusercontent.com";
+const GSCOPE="https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events";
+const G={token:"",exp:0,cals:null,pending:null};
+const GNAMES={"h-kuroki@cleanpapa.com":"黒木","toshi.cpg@gmail.com":"社長"};
+const gSignedIn=()=>!!G.token&&Date.now()<G.exp;
+/* Must be called directly from a tap so the Google window is not blocked */
+function gAuthorize(){
+  if(gSignedIn())return Promise.resolve();
+  if(G.pending)return G.pending;
+  if(!(window.google&&google.accounts&&google.accounts.oauth2))return Promise.reject(new Error("gis"));
+  const p=new Promise((res,rej)=>{try{google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:GSCOPE,
+    callback:r=>{if(!r||r.error||!r.access_token){rej(new Error(r&&r.error==="access_denied"?"denied":"auth"));return}
+      G.token=r.access_token;G.exp=Date.now()+Math.max(0,(Number(r.expires_in)||3600)-60)*1000;res()},
+    error_callback:e=>rej(new Error(e&&e.type==="popup_failed_to_open"?"popup":e&&e.type==="popup_closed"?"closed":"auth"))}).requestAccessToken({prompt:""})}catch(e){rej(new Error("auth"))}});
+  G.pending=p;p.then(()=>{G.pending=null},()=>{G.pending=null});return p;
+}
+async function gApi(path,opt){
+  if(!gSignedIn())throw new Error("signin");
+  const o=opt||{}, ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(),20000);
+  try{
+    const r=await fetch("https://www.googleapis.com/calendar/v3/"+path,{method:o.method||"GET",signal:ctl.signal,cache:"no-store",credentials:"omit",
+      headers:Object.assign({Authorization:"Bearer "+G.token},o.body?{"Content-Type":"application/json"}:{}),body:o.body?JSON.stringify(o.body):undefined});
+    if(r.status===401){G.token="";G.exp=0;throw new Error("signin")}
+    if(!r.ok){const e=new Error("http");e.status=r.status;throw e}
+    return r.status===204?null:await r.json();
+  }finally{clearTimeout(tm)}
+}
+const gMsg=err=>{const m=err&&err.message;return m==="gis"?"Googleの読み込みができません。通信を確認してください":m==="denied"?"許可されませんでした":m==="popup"?"Googleの画面を開けませんでした（ポップアップを許可してください）":m==="closed"?"Googleの画面が閉じられました":
+  m==="signin"?"もう一度「Googleとまとめて同期」を押してください":m==="nowrite"?"書き込めるカレンダーがありません":err&&err.name==="AbortError"?"時間切れ":err&&err.status===403?"権限がありません":err&&err.status===404?"見つかりません":"通信できませんでした"};
+const gCalName=c=>c.primary?"自分":GNAMES[c.id]||c.summaryOverride||c.summary||c.id;
+async function gLoadCalendars(){
+  let page="", items=[];
+  do{const v=await gApi("users/me/calendarList?maxResults=250"+(page?"&pageToken="+encodeURIComponent(page):""));items.push(...((v&&v.items)||[]));page=(v&&v.nextPageToken)||""}while(page);
+  G.cals=items.filter(c=>c&&c.id&&!c.deleted).map(c=>({id:c.id,name:gCalName(c),primary:!!c.primary,write:c.accessRole==="owner"||c.accessRole==="writer"}));
+  return G.cals;
+}
+/* Shown calendars: the saved choice, or "CPG", the signed-in person's own calendar and the named people's shared calendars */
+const gShowIds=()=>Array.isArray(DB.settings.gShow)?DB.settings.gShow:(G.cals||[]).filter(c=>c.primary||c.name==="CPG"||GNAMES[c.id]).map(c=>c.id);
+const gWritable=()=>(G.cals||[]).filter(c=>c.write);
+const gWriteCal=()=>{const w=gWritable();return w.find(c=>c.id===DB.settings.gWrite)||w.find(c=>c.name==="CPG")||null};
+const gCalOf=id=>(G.cals||[]).find(c=>c.id===id);
+async function gReadRange(from,to){
+  const ids=gShowIds(), mine=new Set(DB.cases.map(c=>c.id)), events=[], calendars=[];let missing=0;
+  for(const id of ids){
+    const cal=gCalOf(id);if(!cal){missing++;continue}
+    try{
+      let page="";
+      do{
+        const q=new URLSearchParams({timeZone:"Asia/Tokyo",singleEvents:"true",orderBy:"startTime",maxResults:"2500",timeMin:from+"T00:00:00+09:00",timeMax:addDays(to,1)+"T00:00:00+09:00"});
+        if(page)q.set("pageToken",page);
+        const v=await gApi("calendars/"+encodeURIComponent(id)+"/events?"+q);
+        for(const e of (v&&v.items)||[]){
+          if(!e||e.status==="cancelled"||!e.start)continue;
+          /* events this device registered are already shown as HUB events */
+          const hub=e.extendedProperties&&e.extendedProperties.private&&e.extendedProperties.private.cpgHubCase;
+          if(hub&&mine.has(hub))continue;
+          const allDay=!!e.start.date;
+          events.push({calendar:cal.name,title:e.summary||"（件名なし）",location:e.location||"",allDay,start:allDay?e.start.date:e.start.dateTime,end:allDay?(e.end&&e.end.date)||addDays(e.start.date,1):(e.end&&e.end.dateTime)||e.start.dateTime});
+        }
+        page=(v&&v.nextPageToken)||"";
+      }while(page);
+      calendars.push(cal.name);
+    }catch(err){if(err.message==="signin")throw err;missing++}
+  }
+  return {events,calendars,missing};
+}
+const GCAL_TTL=5*60000, GCAL_ERR_TTL=60000, gcalCache={}, gcalColorIdx={};
+function gcalRange(from,to){
+  if(!gSignedIn()||!G.cals)return {state:"off"};
+  const k=gShowIds().join(",")+"|"+from+"|"+to, c=gcalCache[k];
+  if(c&&(c.state==="loading"||Date.now()-c.at<(c.state==="ok"?GCAL_TTL:GCAL_ERR_TTL)))return c;
+  const e=gcalCache[k]={state:"loading",at:Date.now(),data:c&&c.data};
+  e.p=gReadRange(from,to)
+    .then(j=>Object.assign(e,{state:"ok",at:Date.now(),data:j}),err=>Object.assign(e,{state:gSignedIn()?"error":"off",at:Date.now(),msg:gMsg(err)}))
+    .then(()=>{if(ui.view==="cal")render()});
+  return e;
+}
+/* the date range the calendar screen is showing */
+function calRange(){
+  if(ui.calView==="week"){const f=addDays(ui.calDay,-parseYmd(ui.calDay).getDay());return [f,addDays(f,6)]}
+  if(ui.calView==="day")return [ui.calDay,ui.calDay];
+  const [yy,mm]=ui.calMonth.split("-").map(Number), f=ymd(new Date(yy,mm-1,1-new Date(yy,mm-1,1).getDay()));return [f,addDays(f,41)];
+}
+/* 「Googleとまとめて同期」: sign in, read the calendar list, then the events. Each step's result is shown on its own */
+async function gSyncAll(){
+  const rows=[], step=(name,ok,msg)=>rows.push({name,ok,msg});
+  ui.gsync={busy:true,rows};render();
+  try{
+    try{await gAuthorize();step("Googleにログイン",true,"できました")}catch(err){step("Googleにログイン",false,gMsg(err));return}
+    try{const cs=await gLoadCalendars();step("カレンダー一覧",true,cs.length+"件")}catch(err){step("カレンダー一覧",false,gMsg(err));return}
+    for(const x in gcalCache)delete gcalCache[x];
+    const [f,t]=calRange();
+    try{const j=await gReadRange(f,t);gcalCache[gShowIds().join(",")+"|"+f+"|"+t]={state:"ok",at:Date.now(),data:j};
+      step("予定の読み込み",!j.missing,j.events.length+"件（"+(j.calendars.join("・")||"表示するカレンダーなし")+"）"+(j.missing?"。読めないカレンダーが"+j.missing+"つあります":""))}
+    catch(err){step("予定の読み込み",false,gMsg(err))}
+    const moved=DB.cases.filter(c=>c.gcal&&c.gcal.id&&c.gcal.date&&c.planDate&&c.gcal.date!==c.planDate&&!ended(c));
+    if(moved.length)step("日付の変わった案件",false,moved.length+"件がGoogleカレンダーと違います（案件の画面で「カレンダーの予定を更新」を押してください）");
+  }finally{ui.gsync={busy:false,at:Date.now(),rows};render()}
+}
+function gSyncPanel(){
+  const r=ui.gsync;
+  return '<div class="gsync"><button type="button" class="gsyncbtn" data-act="gsync"'+(r&&r.busy?' disabled':'')+'>'+(r&&r.busy?'同期しています…':'Googleとまとめて同期')+'</button>'+
+    (r&&r.rows&&r.rows.length?'<ul class="gres" role="status">'+r.rows.map(x=>'<li class="'+(x.ok?'ok':'ng')+'">'+(x.ok?'✓ ':'× ')+h(x.name)+'：'+h(x.msg)+'</li>').join("")+'</ul>':'')+'</div>';
+}
+/* Register / update the case's planned date on the chosen Google calendar.
+   The event id is saved on the case before it is sent, so a retry updates the same event instead of making a second one. */
+const gRand=()=>{const a="0123456789abcdefghijklmnopqrstuv", b=new Uint8Array(20);crypto.getRandomValues(b);return "cpghub"+Array.from(b,x=>a[x%32]).join("")};
+const gTitle=c=>"【"+TYPES[c.type].label+"】"+c.property+" "+c.room;
+const gDesc=c=>["受付番号："+c.id,"依頼の種類："+TYPES[c.type].label,"依頼元："+c.client+"（"+c.clientKind+"）","担当："+c.tantou,"（CPG HUBから登録）"].join("\n");
+async function gRegister(c){
+  await gAuthorize();
+  if(!G.cals)await gLoadCalendars();
+  const body={summary:gTitle(c),location:c.addr||"",description:gDesc(c),status:"confirmed",start:{date:c.planDate},end:{date:addDays(c.planDate,1)},extendedProperties:{private:{cpgHubCase:c.id}}};
+  if(c.gcal&&c.gcal.id&&c.gcal.cal){
+    const path="calendars/"+encodeURIComponent(c.gcal.cal)+"/events/"+encodeURIComponent(c.gcal.id);
+    try{const r=await gApi(path,{method:"PATCH",body});c.gcal=Object.assign({},c.gcal,{date:c.planDate,link:r&&r.htmlLink||c.gcal.link||""});save();return "updated"}
+    catch(err){
+      if(err.status!==404)throw err;
+      /* never created (a send that failed earlier): create it now with the saved id */
+      const r=await gApi("calendars/"+encodeURIComponent(c.gcal.cal)+"/events",{method:"POST",body:Object.assign({id:c.gcal.id},body)});
+      c.gcal=Object.assign({},c.gcal,{date:c.planDate,link:r&&r.htmlLink||""});save();return "created";
+    }
+  }
+  const cal=gWriteCal();if(!cal)throw new Error("nowrite");
+  c.gcal={cal:cal.id,calName:cal.name,id:gRand(),date:"",link:""};save();
+  try{const r=await gApi("calendars/"+encodeURIComponent(cal.id)+"/events",{method:"POST",body:Object.assign({id:c.gcal.id},body)});c.gcal.date=c.planDate;c.gcal.link=r&&r.htmlLink||"";save();return "created"}
+  catch(err){
+    if(err.status===409){const r=await gApi("calendars/"+encodeURIComponent(cal.id)+"/events/"+encodeURIComponent(c.gcal.id),{method:"PATCH",body});c.gcal.date=c.planDate;c.gcal.link=r&&r.htmlLink||"";save();return "created"}
+    throw err;
+  }
+}
+const gcalColor=name=>"gc"+((name in gcalColorIdx?gcalColorIdx[name]:(gcalColorIdx[name]=Object.keys(gcalColorIdx).length))%4);
+const gcalLabel=name=>String(name||"").split(/[\s　]/)[0].slice(0,4)||"予定";
+const hm=d=>pad(d.getHours())+":"+pad(d.getMinutes());
+/* Spread each event over the days it covers (all-day "end" is the day after the last day) */
+function gcalByDay(j){
+  const by={};
+  for(const e of (j&&j.events)||[]){
+    const allDay=!!e.allDay, st=allDay?parseYmd(e.start):new Date(e.start), en=allDay?parseYmd(e.end):new Date(e.end);
+    if(!st||isNaN(st))continue;
+    const first=ymd(st);
+    let last=allDay?addDays(e.end||first,-1):(en&&!isNaN(en)?ymd(en):first);
+    if(!allDay&&en&&!isNaN(en)&&last>first&&hm(en)==="00:00")last=addDays(last,-1);
+    if(last<first)last=first;
+    for(let d=first,i=0;d<=last&&i<93;d=addDays(d,1),i++){
+      const time=allDay||(d>first&&d<last)?"終日":d===first&&d===last?hm(st)+"〜"+hm(en):d===first?hm(st)+"〜":"〜"+hm(en);
+      (by[d]=by[d]||[]).push({cal:String(e.calendar||""),title:String(e.title||"（件名なし）"),loc:String(e.location||""),time,sort:allDay?"":time});
+    }
+  }
+  for(const d in by)by[d].sort((a,b)=>a.sort.localeCompare(b.sort));
+  return by;
+}
+function gcalStatus(g){
+  if(g.state==="off")return '<p class="gcst">Googleカレンダー未接続（「Googleとまとめて同期」を押すと表示されます）'+(g.msg?'：'+h(g.msg):'')+'</p>';
+  if(g.state==="loading"&&!g.data)return '<p class="gcst">Googleカレンダーを読み込み中…</p>';
+  if(g.state==="error")return '<p class="gcst" style="color:var(--amber)">Googleカレンダーを読めませんでした（'+h(g.msg)+'）。HUBの予定だけを表示しています。</p>';
+  const cals=(g.data&&g.data.calendars)||[];
+  return '<p class="gcst">Googleカレンダー：'+(cals.map(n=>'<span class="ev '+gcalColor(n)+'">'+h(gcalLabel(n))+'</span>').join("")||'表示するカレンダーがありません')+
+    (g.data&&g.data.missing?'<span>（読めないカレンダーが'+Number(g.data.missing)+'つあります）</span>':'')+(g.state==="loading"?'<span>更新中…</span>':'')+'</p>';
+}
 function vCal(){
   const t=todayS(), by={};
   const slot=d=>by[d]=by[d]||{ev:[],td:[]};
   eventsOf().forEach(e=>slot(e.d).ev.push(e));
   genTodos().forEach(x=>{if(x.due)slot(x.due).td.push(x)});
   const day=s=>by[s]||{ev:[],td:[]};
+  const [rFrom,rTo]=calRange();
+  const g=gcalRange(rFrom,rTo), gby=g.data?gcalByDay(g.data):{}, gday=s=>gby[s]||[];
+  const gst=gSyncPanel()+gcalStatus(g);
   const legend='<div class="legend"><span><i style="background:var(--accent-soft)"></i>立会・調査の予定</span><span><i style="background:var(--green-soft)"></i>実施</span><span><i style="background:var(--amber-soft)"></i>見積提出</span><span><i style="background:var(--sunk)"></i>受注</span><span><i style="background:var(--red)"></i>土日祝の立会</span></div>';
   const note='<p class="note" style="margin:0">社内会議・客先会議・営業活動は次の段階で追加します。</p>';
   const views='<div class="seg" role="group" aria-label="表示の切り替え">'+[["month","月"],["week","週"],["day","日"]].map(([k,l])=>'<button type="button" data-cv="'+k+'" aria-pressed="'+(ui.calView===k)+'">'+l+'</button>').join("")+'</div>';
@@ -622,20 +813,23 @@ function vCal(){
       const s=addDays(from,i), d=parseYmd(s), b=day(s), hol=holidayName(s);
       const kind=dayKind(s), cls=["wkd",s===t?"today":"",kind].join(" ");
       const items=b.ev.map(e=>'<button type="button" class="wkev" data-open="'+e.c.id+'"><span class="'+evCls(e)+'">'+h(e.label)+'</span><span class="t">'+h(e.c.property)+' '+h(e.c.room)+'</span></button>').join("")+
+        gday(s).map(x=>'<div class="wkev gcev"><span class="ev '+gcalColor(x.cal)+'">'+h(gcalLabel(x.cal))+'</span><span class="t">'+(x.time==="終日"?"":h(x.time.replace(/〜.*$/,"〜"))+' ')+h(x.title)+'</span></div>').join("")+
         b.td.map(x=>'<div class="wkev td'+(s<t?" over":"")+'"><span class="ev td'+(s<t?" over":"")+'">ToDo</span><span class="t">'+h(x.title)+'</span></div>').join("");
       rows+='<div class="wkrow '+kind+(s===ui.calDay?" sel":"")+'"><button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+mdw(s)+(hol?' '+hol:'')+'を日表示で開く"'+(s===t?' aria-current="date"':'')+'><span class="dn">'+d.getDate()+'</span><span class="dw">'+WD[d.getDay()]+'</span></button>'+
         '<div class="wki">'+(hol?'<span class="hol-name">'+hol+'</span>':'')+(items||'<span class="wknone">予定なし</span>')+'</div></div>';
     }
     return '<section class="sec">'+views+
       nav(7,title,"今週","前の週","次の週")+
-      legend+'<div class="wk">'+rows+'</div>'+note+'</section>';
+      legend+gst+'<div class="wk">'+rows+'</div>'+note+'</section>';
   }
   if(ui.calView==="day"){
     const sel=day(ui.calDay);
+    const gRows=gday(ui.calDay).map(x=>'<div class="card gccard"><div class="row"><span class="ev '+gcalColor(x.cal)+'" style="font-size:12px;padding:1px 6px">'+h(gcalLabel(x.cal))+'</span><span class="note num">'+h(x.time)+'</span></div>'+
+      '<div class="ttl">'+h(x.title)+'</div>'+(x.loc?'<div class="row note"><span style="min-width:0;overflow-wrap:anywhere">'+h(x.loc)+'</span><a class="btn sm" style="display:inline-flex;align-items:center;text-decoration:none" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(x.loc)+'">地図</a></div>':'')+'</div>').join("");
     const evRows=sel.ev.map(e=>'<button type="button" class="card" data-open="'+e.c.id+'"><div class="row"><span class="'+evCls(e)+'" style="font-size:12px;padding:1px 6px">'+h(e.label)+'</span>'+typeChip(e.c)+'<span class="sp"></span>'+stagePill(e.c)+'</div><div class="ttl">'+h(e.c.property)+' '+h(e.c.room)+'</div><div class="row note"><span>'+h(e.c.client)+'</span><span>担当 '+h(e.c.tantou)+'</span></div></button>').join("");
     return '<section class="sec">'+views+
       nav(1,'<span class="dtitle '+dayKind(ui.calDay)+'">'+mdw(ui.calDay)+'</span>'+(holidayName(ui.calDay)?' <span class="hol-name">'+holidayName(ui.calDay)+'</span>':''),"今日","前の日","次の日")+
-      '<div class="list">'+evRows+sel.td.map(todoRow).join("")+((evRows||sel.td.length)?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div>'+note+'</section>';
+      gst+'<div class="list">'+evRows+gRows+sel.td.map(todoRow).join("")+((evRows||gRows||sel.td.length)?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div>'+note+'</section>';
   }
   const [y,m]=ui.calMonth.split("-").map(Number);
   const first=new Date(y,m-1,1), start=new Date(y,m-1,1-first.getDay());
@@ -643,13 +837,14 @@ function vCal(){
   for(let i=0;i<42;i++){
     const dt=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i), s=ymd(dt), b=day(s), hol=holidayName(s);
     const cls=["d",dt.getMonth()!==m-1?"out":"",s===t?"today":"",s===ui.calDay?"sel":"",dayKind(s)].join(" ");
-    const shown=b.ev.map(e=>[evCls(e),e]).sort((a,c)=>c[0].endsWith(" off")-a[0].endsWith(" off")).slice(0,2).map(([cl,e])=>'<span class="'+cl+'">'+h(e.label)+'</span>').join("");
-    const more=b.ev.length>2?'<span class="ev td">ほか'+(b.ev.length-2)+'件</span>':'';
+    const all=b.ev.map(e=>[evCls(e),e.label]).sort((a,c)=>c[0].endsWith(" off")-a[0].endsWith(" off")).concat(gday(s).map(x=>["ev "+gcalColor(x.cal),gcalLabel(x.cal)+" "+x.title]));
+    const shown=all.slice(0,2).map(([cl,l])=>'<span class="'+cl+'">'+h(l)+'</span>').join("");
+    const more=all.length>2?'<span class="ev td">ほか'+(all.length-2)+'件</span>':'';
     const tdl=b.td.length?'<span class="ev td'+(s<t?" over":"")+'">ToDo '+b.td.length+'</span>':'';
     cells+='<button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+(dt.getMonth()+1)+'月'+dt.getDate()+'日'+(hol?' '+hol:'')+'を日表示で開く"><span class="n">'+dt.getDate()+'</span>'+(hol?'<span class="hn">'+hol+'</span>':'')+shown+more+tdl+'</button>';
   }
   return '<section class="sec">'+views+'<div class="calnav"><button class="btn sm" type="button" data-mon="-1" aria-label="前の月">‹</button><h2 class="num">'+y+'年'+m+'月</h2><button class="btn sm" type="button" data-mon="0">今月</button><button class="btn sm" type="button" data-mon="1" aria-label="次の月">›</button></div>'+
-  legend+
+  legend+gst+
   '<div class="cal">'+["日","月","火","水","木","金","土"].map((w,i)=>'<div class="wd'+(i===0?" sun":i===6?" sat":"")+'">'+w+'</div>').join("")+cells+'</div>'+
   '<p class="note" style="margin:0">日付を押すと、その日の予定とToDoを表示します。</p>'+note+'</section>';
 }
@@ -710,7 +905,18 @@ function vStats(){
     '<label class="f">受注 → 仕事番号の記録まで（日）<input type="number" min="0" id="s_jobno" value="'+S.jobno+'"></label></div>'+
     '<div class="row"><button class="btn pri" type="submit">保存する</button><span class="sp"></span><button class="btn sm danger" type="button" data-act="reset">すべて消して架空データに戻す</button></div>'+
     (ui.confirmReset?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><b style="color:var(--red)">入力した案件とToDoがすべて消えます。よろしいですか？</b><div class="row"><button class="btn danger" type="button" data-act="resetdo">消して戻す</button><button class="btn" type="button" data-act="resetcancel">やめる</button></div></div>':'')+
-    '</form></section>';
+    '</form></section>'+
+  gSettings();
+}
+function gSettings(){
+  const head='<section class="sec"><div class="sec-h"><h2>Googleカレンダー連携</h2></div>';
+  if(!G.cals)return head+'<div class="panel">'+gSyncPanel()+'<p class="note" style="margin:0">「Googleとまとめて同期」でログインすると、表示するカレンダーと登録先を選べます。ログインはアプリを開くたびに必要です（PAPA HUBと同じ）。</p></div></section>';
+  const show=new Set(gShowIds()), w=gWriteCal();
+  return head+'<form id="gsetForm" class="panel">'+
+    '<fieldset class="gcals" style="border:0;padding:0;margin:0"><legend class="note">予定画面に表示するカレンダー</legend>'+
+    G.cals.map((c,i)=>'<label><input type="checkbox" name="gshow" value="'+i+'"'+(show.has(c.id)?' checked':'')+'>'+h(c.name)+'</label>').join("")+'</fieldset>'+
+    '<label class="f">案件の日程を登録するカレンダー<select id="g_write">'+(gWritable().map(c=>'<option value="'+h(c.id)+'"'+(w&&w.id===c.id?' selected':'')+'>'+h(c.name)+'</option>').join("")||'<option value="">書き込めるカレンダーがありません</option>')+'</select></label>'+
+    '<div class="row"><button class="btn pri" type="submit">保存する</button></div></form></section>';
 }
 
 const main=document.getElementById("main");
@@ -756,11 +962,14 @@ document.addEventListener("click",e=>{
   if(a==="copycsv"){const ta=document.getElementById("csvOut");const done=()=>toast("コピーしました");
     try{navigator.clipboard.writeText(ta.value).then(done,()=>{ta.select();toast("選択しました。長押しでコピーしてください")})}catch(err){ta.select();toast("選択しました。長押しでコピーしてください")}return}
   if(a==="reset"){ui.confirmReset=true;render();return}
+  if(a==="gsync"){if(!(ui.gsync&&ui.gsync.busy))gSyncAll();return}
   if(a==="resetcancel"){ui.confirmReset=false;render();return}
   if(a==="resetdo"){ui.confirmReset=false;DB=sample();save();for(const k in photos)delete photos[k];toast("架空データに戻しました");go("home");return}
   if(!c)return;
   if(a==="additem"){c.items.push({place:"",state:"",burden:"要確認",amount:""});save();render();
     const f=main.querySelector('[data-item="'+(c.items.length-1)+'"][data-f="place"]');if(f){f.focus();f.scrollIntoView({block:"center"})}return}
+  if(a==="greg"&&c){if(ui.gbusy)return;if(!c.planDate){toast("先に日程を決めてください");return}ui.gbusy=true;
+    gRegister(c).then(r=>{toast(r==="updated"?"Googleカレンダーの予定を更新しました":"Googleカレンダーに登録しました")},err=>{toast("登録できませんでした："+gMsg(err),5000)}).finally(()=>{ui.gbusy=false;render()});return}
   if(a==="plan"){const d=val("d_plan");if(!d){toast("予定日を入れてください");return}c.planDate=d;save();render();toast(mdh(d)+"に"+TYPES[c.type].site+"の予定を入れました");return}
   if(a==="site"){c.siteDate=val("d_site")||todayS();c.stage="site";save();render();toast(TYPES[c.type].site+"を済みにしました");return}
   if(a==="rushwin"){c.orderDate=todayS();c.stage="won";save();render();toast("受注にしました。Accessへ引き渡してください");return}
@@ -804,6 +1013,8 @@ document.addEventListener("submit",e=>{
       items:[],estAmount:null,estSentDate:"",siteDate:"",lossReason:"",lossDate:"",holdDate:"",orderDate:"",jobNo:"",billingTenant:"入居者に直接",handedDate:""});
     save();go("detail",{caseId:id});toast(id+"で受付しました");return}
   if(f.id==="todoForm"){DB.todos.push({id:"T"+Date.now(),title:val("td_title").trim(),due:val("td_due"),tantou:val("td_tantou"),done:false});save();render();toast("ToDoを追加しました");return}
+  if(f.id==="gsetForm"){const picked=[...f.querySelectorAll('input[name="gshow"]:checked')].map(x=>G.cals[Number(x.value)]).filter(Boolean).map(c=>c.id);
+    DB.settings.gShow=picked;DB.settings.gWrite=val("g_write");for(const x in gcalCache)delete gcalCache[x];save();render();toast("Googleカレンダーの設定を保存しました");return}
   if(f.id==="setForm"){for(const k of ["schedule","quote","reply","jobno"]){const v=Number(val("s_"+k));if(!isNaN(v)&&v>=0)DB.settings[k]=v}save();render();toast("期限の日数を保存しました");return}
 });
 setInterval(()=>{document.querySelectorAll("[data-since]").forEach(el=>el.textContent=since(el.dataset.since))},30000);
