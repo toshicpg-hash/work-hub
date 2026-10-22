@@ -21,7 +21,7 @@
 :root{
   --bg:#f3f6f6; --surface:#ffffff; --sunk:#e8eeee; --line:#d3dcdc;
   --fg:#15232b; --muted:#5a6a71; --accent:#0b6b72; --accent-fg:#ffffff; --accent-soft:#dcefef;
-  --red:#b93a26; --red-soft:#fbe6e1; --amber:#9a6412; --amber-soft:#f8ecd6; --green:#2d7449; --green-soft:#e0f0e5;
+  --red:#b93a26; --red-soft:#fbe6e1; --amber:#9a6412; --amber-soft:#f8ecd6; --green:#2d7449; --green-soft:#e0f0e5; --blue:#1d5fb8; --blue-soft:#e3edfb;
   --f-display:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
   --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
   --nav-h:62px;
@@ -29,12 +29,12 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0f1719; --surface:#172225; --sunk:#1e2c30; --line:#2c3d42;
   --fg:#e3ecee; --muted:#93a6ac; --accent:#4fb8bf; --accent-fg:#06272a; --accent-soft:#163a3d;
-  --red:#ef8a76; --red-soft:#3a1d18; --amber:#e3b45f; --amber-soft:#35290f; --green:#7cc896; --green-soft:#16301f;
+  --red:#ef8a76; --red-soft:#3a1d18; --amber:#e3b45f; --amber-soft:#35290f; --green:#7cc896; --green-soft:#16301f; --blue:#86b4f5; --blue-soft:#172a44;
   color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0f1719; --surface:#172225; --sunk:#1e2c30; --line:#2c3d42;
   --fg:#e3ecee; --muted:#93a6ac; --accent:#4fb8bf; --accent-fg:#06272a; --accent-soft:#163a3d;
-  --red:#ef8a76; --red-soft:#3a1d18; --amber:#e3b45f; --amber-soft:#35290f; --green:#7cc896; --green-soft:#16301f;
+  --red:#ef8a76; --red-soft:#3a1d18; --amber:#e3b45f; --amber-soft:#35290f; --green:#7cc896; --green-soft:#16301f; --blue:#86b4f5; --blue-soft:#172a44;
   color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.6}
@@ -150,8 +150,10 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 .cal .wd{font-size:11px;font-weight:700;color:var(--muted);text-align:center}
 .cal .wd.sun,.cal .d.sun .n,.cal .d.hol .n{color:var(--red)}
 .cal .hn{font-size:9.5px;line-height:1.2;color:var(--red);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cal .wd.sat,.cal .d.sat .n{color:var(--accent)}
+.cal .wd.sat,.cal .d.sat .n{color:var(--blue)}
 .cal .d{min-height:70px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:3px;font-size:11px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px;overflow:hidden;min-width:0}
+.cal .d.sat{background:var(--blue-soft)}
+.cal .d.sun,.cal .d.hol{background:var(--red-soft)}
 .cal .d.out{opacity:.45}
 .cal .d.sel{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .cal .n{font-weight:700;font-variant-numeric:tabular-nums}
@@ -161,6 +163,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 .ev.site{background:var(--green-soft);color:var(--green)}
 .ev.quote{background:var(--amber-soft);color:var(--amber)}
 .ev.won{background:var(--sunk);color:var(--fg)}
+.ev.off{background:var(--red);color:var(--surface);font-weight:900}
 .ev.td{color:var(--muted);font-weight:400}
 .ev.td.over{color:var(--red);font-weight:700}
 .wk{display:flex;flex-direction:column;gap:6px}
@@ -171,7 +174,13 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 .wkd .dw{font-size:11.5px;font-weight:700}
 .wkd.sun,.wkd.hol{color:var(--red)}
 .hol-name{font-size:12px;font-weight:700;color:var(--red)}
-.wkd.sat{color:var(--accent)}
+.wkd.sat{color:var(--blue)}
+.wkrow.sat{background:var(--blue-soft)}
+.wkrow.sun,.wkrow.hol{background:var(--red-soft)}
+.wkd.sat,.wkd.sun,.wkd.hol{background:var(--surface)}
+.dtitle{border-radius:8px;padding:2px 8px}
+.dtitle.sat{background:var(--blue-soft);color:var(--blue)}
+.dtitle.sun,.dtitle.hol{background:var(--red-soft);color:var(--red)}
 .wkd.today{background:var(--accent);color:var(--accent-fg)}
 .wki{display:flex;flex-direction:column;gap:3px;min-width:0;justify-content:center}
 .wkev{border:0;background:none;padding:2px 0;text-align:left;cursor:pointer;display:flex;gap:6px;align-items:center;min-width:0;font-size:13px;color:var(--fg)}
@@ -280,12 +289,14 @@ function sample(){
   const t=todayS(), now=new Date();
   const ago=(mins)=>new Date(now.getTime()-mins*60000).toISOString();
   const d=n=>addDays(t,n);
-  const A={"グリーンコート相模台（架空）":"神奈川県相模原市南区（例）","テストマンション（架空）":"神奈川県相模原市緑区（例）","サンプルコーポ（架空）":"神奈川県座間市（例）","テストハイム（架空）":"神奈川県大和市（例）"};
+  const A={"グリーンコート相模台（架空）":"神奈川県相模原市南区（例）","サンプルハイツ（架空）":"神奈川県相模原市中央区（例）","テストマンション（架空）":"神奈川県相模原市緑区（例）","サンプルコーポ（架空）":"神奈川県座間市（例）","テストハイム（架空）":"神奈川県大和市（例）"};
   const C=(o)=>Object.assign(CASE_DEFAULTS(),{addr:A[o.property]||""},o);
+  const nextSat=(6-now.getDay()+7)%7||7;
   return {schemaVersion:SCHEMA_VERSION,seq:16,settings:SETTINGS_DEFAULTS(),todos:[
     {id:"T1",title:"管理会社への定期訪問（例）",due:d(1),tantou:"黒木",done:false}
   ],cases:[
     C({id:"U-0016",type:"kinkyu",stage:"new",clientKind:"管理会社",client:"みどり台ハウジング（架空）",property:"グリーンコート相模台（架空）",room:"203",tantou:"黒木",receivedAt:ago(95),symptom:"水漏れ",note:"天井から水滴。下階の入居者から連絡あり（例）"}),
+    C({id:"U-0015",type:"taikyo",stage:"new",clientKind:"大家さん",client:"大家 佐藤様（架空）",property:"サンプルハイツ（架空）",room:"102",tantou:"黒木",receivedAt:ago(60*26),planDate:d(nextSat),note:"土曜の立会の例（例）"}),
     C({id:"U-0012",type:"taikyo",stage:"site",clientKind:"管理会社",client:"みどり台ハウジング（架空）",property:"グリーンコート相模台（架空）",room:"105",tantou:"黒木",receivedAt:ago(60*24*5),siteDate:d(-1),items:[
       {place:"洋室 壁クロス",state:"タバコのヤニ汚れ",burden:"入居者",amount:38000},
       {place:"洋室 壁クロス",state:"日焼け（経年）",burden:"家主",amount:22000},
@@ -473,7 +484,7 @@ function gcalPreview(c){
   return '<div class="panel"><h3>Googleカレンダーに登録される内容（本番版）</h3>'+
   '<p class="note" style="margin:0">「日程を決める」と、本番版では担当者（'+h(c.tantou)+'）のGoogleカレンダーにこの内容で登録します。試作ではGoogleには登録しません。</p>'+
   '<dl class="kv"><dt>件名</dt><dd>【'+h(TYPES[c.type].label)+'】'+h(c.property)+' '+h(c.room)+'</dd>'+
-  '<dt>日付</dt><dd class="num">'+(c.planDate?md(c.planDate)+'（'+s+'）':'日程を決めると入ります')+'</dd>'+
+  '<dt>日付</dt><dd class="num">'+(c.planDate?mdh(c.planDate)+' '+s:'日程を決めると入ります')+'</dd>'+
   '<dt>場所</dt><dd>'+(h(c.addr)||'住所が未入力です')+'</dd>'+
   '<dt>説明</dt><dd style="white-space:pre-wrap">'+h(desc)+'</dd></dl></div>';
 }
@@ -485,8 +496,8 @@ function vDetail(){
   let act="";
   if(c.stage==="new"){
     act='<div class="panel"><h3>次にやること：'+TYPES[c.type].site+'</h3>'+
-      (c.type==="kinkyu"?'':'<div class="row"><label class="f" style="flex:1">'+TYPES[c.type].site+'の予定日'+(c.planDate?'（'+md(c.planDate)+'に決定済み）':'')+'<input type="date" id="d_plan" value="'+h(c.planDate||addDays(todayS(),2))+'"></label><button class="btn" type="button" data-act="plan" style="align-self:flex-end">日程を決める</button></div>')+
-      '<label class="f">'+TYPES[c.type].site+'を実施した日<input type="date" id="d_site" value="'+todayS()+'"></label>'+
+      (c.type==="kinkyu"?'':'<div class="row"><label class="f" style="flex:1">'+TYPES[c.type].site+'の予定日'+(c.planDate?'（'+mdh(c.planDate)+'に決定済み）':'')+'<input type="date" id="d_plan" value="'+h(c.planDate||addDays(todayS(),2))+'"><span class="note" data-dl="d_plan">'+mdh(c.planDate||addDays(todayS(),2))+'</span></label><button class="btn" type="button" data-act="plan" style="align-self:flex-end">日程を決める</button></div>')+
+      '<label class="f">'+TYPES[c.type].site+'を実施した日<input type="date" id="d_site" value="'+todayS()+'"><span class="note" data-dl="d_site">'+mdh(todayS())+'</span></label>'+
       '<div class="row"><button class="btn pri" type="button" data-act="site">'+TYPES[c.type].site+'を済みにする</button>'+
       (c.type==="kinkyu"?'<button class="btn" type="button" data-act="rushwin">見積を省いて受注へ（緊急）</button>':'')+'</div>'+
       (c.type==="kinkyu"?'<p class="note" style="margin:0">「見積を省いて受注へ」は、緊急で先に施工する場合の仮の操作です。実際の運用に合わせて見直します。</p>':'')+'</div>';
@@ -524,7 +535,7 @@ function vDetail(){
     '<dt>依頼元</dt><dd>'+h(c.client)+'（'+h(c.clientKind)+'）</dd>'+
     '<dt>担当</dt><dd>'+h(c.tantou)+'</dd>'+
     '<dt>受付</dt><dd class="num">'+(c.receivedAt?new Date(c.receivedAt).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"—")+'</dd>'+
-    (c.siteDate?'<dt>'+TYPES[c.type].site+'</dt><dd class="num">'+md(c.siteDate)+'</dd>':'')+
+    (c.siteDate?'<dt>'+TYPES[c.type].site+'</dt><dd class="num">'+mdh(c.siteDate)+'</dd>':'')+
     (estOf(c)!=null&&c.stage!=="new"&&c.stage!=="site"?'<dt>見積</dt><dd class="num">'+yen(estOf(c))+(c.estSentDate?'（'+md(c.estSentDate)+'提出）':'')+'</dd>':'')+
     (c.orderDate?'<dt>受注日</dt><dd class="num">'+md(c.orderDate)+'</dd>':'')+
     (c.holdDate&&c.stage==="hold"?'<dt>再確認日</dt><dd class="num">'+md(c.holdDate)+'</dd>':'')+
@@ -583,6 +594,11 @@ function holidaysOf(y){
   return holCache[y]=H;
 }
 const holidayName=s=>holidaysOf(Number(s.slice(0,4)))[s]||"";
+const dayKind=s=>holidayName(s)?"hol":["sun","","","","","","sat"][parseYmd(s).getDay()];
+/* "11/3（火・文化の日）" — weekday and holiday name after a date, for 立会 / 調査 dates */
+const mdh=s=>{if(!s)return "—";const n=holidayName(s);return md(s)+"（"+WD[parseYmd(s).getDay()]+(n?"・"+n:"")+"）"};
+/* 立会 (and its plan) on a Saturday, Sunday or holiday is shown in a strong color */
+const evCls=e=>"ev "+e.k+(e.c.type==="taikyo"&&(e.k==="plan"||e.k==="site")&&dayKind(e.d)?" off":"");
 const mdw=s=>{const d=parseYmd(s);return (d.getMonth()+1)+"月"+d.getDate()+"日（"+WD[d.getDay()]+"）"};
 function vCal(){
   const t=todayS(), by={};
@@ -590,7 +606,7 @@ function vCal(){
   eventsOf().forEach(e=>slot(e.d).ev.push(e));
   genTodos().forEach(x=>{if(x.due)slot(x.due).td.push(x)});
   const day=s=>by[s]||{ev:[],td:[]};
-  const legend='<div class="legend"><span><i style="background:var(--accent-soft)"></i>立会・調査の予定</span><span><i style="background:var(--green-soft)"></i>実施</span><span><i style="background:var(--amber-soft)"></i>見積提出</span><span><i style="background:var(--sunk)"></i>受注</span></div>';
+  const legend='<div class="legend"><span><i style="background:var(--accent-soft)"></i>立会・調査の予定</span><span><i style="background:var(--green-soft)"></i>実施</span><span><i style="background:var(--amber-soft)"></i>見積提出</span><span><i style="background:var(--sunk)"></i>受注</span><span><i style="background:var(--red)"></i>土日祝の立会</span></div>';
   const note='<p class="note" style="margin:0">社内会議・客先会議・営業活動は次の段階で追加します。</p>';
   const views='<div class="seg" role="group" aria-label="表示の切り替え">'+[["month","月"],["week","週"],["day","日"]].map(([k,l])=>'<button type="button" data-cv="'+k+'" aria-pressed="'+(ui.calView===k)+'">'+l+'</button>').join("")+'</div>';
   const nav=(step,title,todayLabel,prevLabel,nextLabel)=>'<div class="calnav"><button class="btn sm" type="button" data-shift="'+(-step)+'" aria-label="'+prevLabel+'">‹</button><h2 class="num">'+title+'</h2>'+
@@ -602,10 +618,10 @@ function vCal(){
     let rows="";
     for(let i=0;i<7;i++){
       const s=addDays(from,i), d=parseYmd(s), b=day(s), hol=holidayName(s);
-      const cls=["wkd",s===t?"today":"",hol?"hol":d.getDay()===0?"sun":d.getDay()===6?"sat":""].join(" ");
-      const items=b.ev.map(e=>'<button type="button" class="wkev" data-open="'+e.c.id+'"><span class="ev '+e.k+'">'+h(e.label)+'</span><span class="t">'+h(e.c.property)+' '+h(e.c.room)+'</span></button>').join("")+
+      const kind=dayKind(s), cls=["wkd",s===t?"today":"",kind].join(" ");
+      const items=b.ev.map(e=>'<button type="button" class="wkev" data-open="'+e.c.id+'"><span class="'+evCls(e)+'">'+h(e.label)+'</span><span class="t">'+h(e.c.property)+' '+h(e.c.room)+'</span></button>').join("")+
         b.td.map(x=>'<div class="wkev td'+(s<t?" over":"")+'"><span class="ev td'+(s<t?" over":"")+'">ToDo</span><span class="t">'+h(x.title)+'</span></div>').join("");
-      rows+='<div class="wkrow'+(s===ui.calDay?" sel":"")+'"><button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+mdw(s)+(hol?' '+hol:'')+'を日表示で開く"'+(s===t?' aria-current="date"':'')+'><span class="dn">'+d.getDate()+'</span><span class="dw">'+WD[d.getDay()]+'</span></button>'+
+      rows+='<div class="wkrow '+kind+(s===ui.calDay?" sel":"")+'"><button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+mdw(s)+(hol?' '+hol:'')+'を日表示で開く"'+(s===t?' aria-current="date"':'')+'><span class="dn">'+d.getDate()+'</span><span class="dw">'+WD[d.getDay()]+'</span></button>'+
         '<div class="wki">'+(hol?'<span class="hol-name">'+hol+'</span>':'')+(items||'<span class="wknone">予定なし</span>')+'</div></div>';
     }
     return '<section class="sec">'+views+
@@ -614,9 +630,9 @@ function vCal(){
   }
   if(ui.calView==="day"){
     const sel=day(ui.calDay);
-    const evRows=sel.ev.map(e=>'<button type="button" class="card" data-open="'+e.c.id+'"><div class="row"><span class="ev '+e.k+'" style="font-size:12px;padding:1px 6px">'+h(e.label)+'</span>'+typeChip(e.c)+'<span class="sp"></span>'+stagePill(e.c)+'</div><div class="ttl">'+h(e.c.property)+' '+h(e.c.room)+'</div><div class="row note"><span>'+h(e.c.client)+'</span><span>担当 '+h(e.c.tantou)+'</span></div></button>').join("");
+    const evRows=sel.ev.map(e=>'<button type="button" class="card" data-open="'+e.c.id+'"><div class="row"><span class="'+evCls(e)+'" style="font-size:12px;padding:1px 6px">'+h(e.label)+'</span>'+typeChip(e.c)+'<span class="sp"></span>'+stagePill(e.c)+'</div><div class="ttl">'+h(e.c.property)+' '+h(e.c.room)+'</div><div class="row note"><span>'+h(e.c.client)+'</span><span>担当 '+h(e.c.tantou)+'</span></div></button>').join("");
     return '<section class="sec">'+views+
-      nav(1,'<span'+(holidayName(ui.calDay)?' style="color:var(--red)"':'')+'>'+mdw(ui.calDay)+'</span>'+(holidayName(ui.calDay)?' <span class="hol-name">'+holidayName(ui.calDay)+'</span>':''),"今日","前の日","次の日")+
+      nav(1,'<span class="dtitle '+dayKind(ui.calDay)+'">'+mdw(ui.calDay)+'</span>'+(holidayName(ui.calDay)?' <span class="hol-name">'+holidayName(ui.calDay)+'</span>':''),"今日","前の日","次の日")+
       '<div class="list">'+evRows+sel.td.map(todoRow).join("")+((evRows||sel.td.length)?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div>'+note+'</section>';
   }
   const [y,m]=ui.calMonth.split("-").map(Number);
@@ -624,8 +640,8 @@ function vCal(){
   let cells="";
   for(let i=0;i<42;i++){
     const dt=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i), s=ymd(dt), b=day(s), hol=holidayName(s);
-    const cls=["d",dt.getMonth()!==m-1?"out":"",s===t?"today":"",s===ui.calDay?"sel":"",hol?"hol":dt.getDay()===0?"sun":dt.getDay()===6?"sat":""].join(" ");
-    const shown=b.ev.slice(0,2).map(e=>'<span class="ev '+e.k+'">'+h(e.label)+'</span>').join("");
+    const cls=["d",dt.getMonth()!==m-1?"out":"",s===t?"today":"",s===ui.calDay?"sel":"",dayKind(s)].join(" ");
+    const shown=b.ev.map(e=>[evCls(e),e]).sort((a,c)=>c[0].endsWith(" off")-a[0].endsWith(" off")).slice(0,2).map(([cl,e])=>'<span class="'+cl+'">'+h(e.label)+'</span>').join("");
     const more=b.ev.length>2?'<span class="ev td">ほか'+(b.ev.length-2)+'件</span>':'';
     const tdl=b.td.length?'<span class="ev td'+(s<t?" over":"")+'">ToDo '+b.td.length+'</span>':'';
     cells+='<button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+(dt.getMonth()+1)+'月'+dt.getDate()+'日'+(hol?' '+hol:'')+'を日表示で開く"><span class="n">'+dt.getDate()+'</span>'+(hol?'<span class="hn">'+hol+'</span>':'')+shown+more+tdl+'</button>';
@@ -743,7 +759,7 @@ document.addEventListener("click",e=>{
   if(!c)return;
   if(a==="additem"){c.items.push({place:"",state:"",burden:"要確認",amount:""});save();render();
     const f=main.querySelector('[data-item="'+(c.items.length-1)+'"][data-f="place"]');if(f){f.focus();f.scrollIntoView({block:"center"})}return}
-  if(a==="plan"){const d=val("d_plan");if(!d){toast("予定日を入れてください");return}c.planDate=d;save();render();toast(md(d)+"に"+TYPES[c.type].site+"の予定を入れました");return}
+  if(a==="plan"){const d=val("d_plan");if(!d){toast("予定日を入れてください");return}c.planDate=d;save();render();toast(mdh(d)+"に"+TYPES[c.type].site+"の予定を入れました");return}
   if(a==="site"){c.siteDate=val("d_site")||todayS();c.stage="site";save();render();toast(TYPES[c.type].site+"を済みにしました");return}
   if(a==="rushwin"){c.orderDate=todayS();c.stage="won";save();render();toast("受注にしました。Accessへ引き渡してください");return}
   if(a==="quote"){
@@ -760,6 +776,7 @@ document.addEventListener("click",e=>{
 document.addEventListener("input",e=>{
   const t=e.target;
   if(t.id==="q"){ui.q=t.value;const pos=t.selectionStart;render();const q=document.getElementById("q");q.focus();try{q.setSelectionRange(pos,pos)}catch(err){}return}
+  if(t.type==="date"){const dl=main.querySelector('[data-dl="'+t.id+'"]');if(dl)dl.textContent=mdh(t.value)}
   const c=ui.caseId?findCase(ui.caseId):null;
   if(t.dataset.item!=null&&c){const it=c.items[Number(t.dataset.item)];if(it){it[t.dataset.f]=t.dataset.f==="amount"?(t.value===""?"":Number(t.value)):t.value;save();refreshItemTotals(c)}return}
 });
