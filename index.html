@@ -235,7 +235,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><span class="ver">v1.10・10/23更新</span></span><span class="proto">試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><span class="ver">v1.11・10/23更新</span></span><span class="proto">試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -663,7 +663,7 @@ const gCalName=c=>c.primary?"自分":GNAMES[c.id]||c.summaryOverride||c.summary|
 async function gLoadCalendars(){
   let page="", items=[];
   do{const v=await gApi("users/me/calendarList?maxResults=250"+(page?"&pageToken="+encodeURIComponent(page):""));items.push(...((v&&v.items)||[]));page=(v&&v.nextPageToken)||""}while(page);
-  G.cals=items.filter(c=>c&&c.id&&!c.deleted).map(c=>({id:c.id,name:gCalName(c),primary:!!c.primary,write:c.accessRole==="owner"||c.accessRole==="writer"}));
+  G.cals=items.filter(c=>c&&c.id&&!c.deleted).map(c=>({id:c.id,name:gCalName(c),primary:!!c.primary,owner:c.accessRole==="owner",write:c.accessRole==="owner"||c.accessRole==="writer"}));
   return G.cals;
 }
 /* Shown calendars: the saved choice, or "CPG", the signed-in person's own calendar and the named people's shared calendars */
@@ -687,7 +687,9 @@ async function gReadRange(from,to){
           const hub=e.extendedProperties&&e.extendedProperties.private&&e.extendedProperties.private.cpgHubCase;
           if(hub&&mine.has(hub))continue;
           const allDay=!!e.start.date;
-          events.push({calendar:cal.name,title:e.summary||"（件名なし）",location:e.location||"",allDay,start:allDay?e.start.date:e.start.dateTime,end:allDay?(e.end&&e.end.date)||addDays(e.start.date,1):(e.end&&e.end.dateTime)||e.start.dateTime});
+          /* 非公開の予定は、そのカレンダーの持ち主以外には中身を出さず「予定あり」だけにする（Google側で見える権限があっても） */
+          const hide=!e.summary||(!cal.primary&&!cal.owner&&(e.visibility==="private"||e.visibility==="confidential"));
+          events.push({calendar:cal.name,title:hide?"予定あり":e.summary,location:hide?"":e.location||"",allDay,start:allDay?e.start.date:e.start.dateTime,end:allDay?(e.end&&e.end.date)||addDays(e.start.date,1):(e.end&&e.end.dateTime)||e.start.dateTime});
         }
         page=(v&&v.nextPageToken)||"";
       }while(page);
