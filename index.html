@@ -148,7 +148,8 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 .calnav h2{font-size:17px;flex:1}
 .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
 .cal .wd{font-size:11px;font-weight:700;color:var(--muted);text-align:center}
-.cal .wd.sun,.cal .d.sun .n{color:var(--red)}
+.cal .wd.sun,.cal .d.sun .n,.cal .d.hol .n{color:var(--red)}
+.cal .hn{font-size:9.5px;line-height:1.2;color:var(--red);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cal .wd.sat,.cal .d.sat .n{color:var(--accent)}
 .cal .d{min-height:70px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:3px;font-size:11px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px;overflow:hidden;min-width:0}
 .cal .d.out{opacity:.45}
@@ -168,7 +169,8 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 .wkd{border:0;background:var(--sunk);border-radius:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 2px;line-height:1.2;color:var(--fg);min-height:52px}
 .wkd .dn{font-family:var(--f-display);font-size:20px;font-weight:900;font-variant-numeric:tabular-nums}
 .wkd .dw{font-size:11.5px;font-weight:700}
-.wkd.sun{color:var(--red)}
+.wkd.sun,.wkd.hol{color:var(--red)}
+.hol-name{font-size:12px;font-weight:700;color:var(--red)}
 .wkd.sat{color:var(--accent)}
 .wkd.today{background:var(--accent);color:var(--accent-fg)}
 .wki{display:flex;flex-direction:column;gap:3px;min-width:0;justify-content:center}
@@ -565,6 +567,22 @@ function eventsOf(){
   return ev;
 }
 const WD="日月火水木金土";
+/* Japanese public holidays computed from the current holiday law (no network): fixed days, Happy Monday,
+   equinoxes (formula valid 1980-2099), substitute holidays and 国民の休日. Special one-off years (e.g. 2019-2021) are not covered */
+const holCache={};
+function holidaysOf(y){
+  if(holCache[y])return holCache[y];
+  const H={}, k=(m,d)=>y+"-"+pad(m)+"-"+pad(d);
+  const monday=(m,n)=>{const w=new Date(y,m-1,1).getDay();return 1+(8-w)%7+(n-1)*7};
+  const eq=c=>Math.floor(c+0.242194*(y-1980)-Math.floor((y-1980)/4));
+  [[1,1,"元日"],[2,11,"建国記念の日"],[2,23,"天皇誕生日"],[4,29,"昭和の日"],[5,3,"憲法記念日"],[5,4,"みどりの日"],[5,5,"こどもの日"],[8,11,"山の日"],[11,3,"文化の日"],[11,23,"勤労感謝の日"],
+   [1,monday(1,2),"成人の日"],[7,monday(7,3),"海の日"],[9,monday(9,3),"敬老の日"],[10,monday(10,2),"スポーツの日"],[3,eq(20.8431),"春分の日"],[9,eq(23.2488),"秋分の日"]].forEach(([m,d,n])=>H[k(m,d)]=n);
+  const named=Object.keys(H);
+  for(const s of named){const p=addDays(s,1),q=addDays(s,2);if(H[q]&&!H[p]&&parseYmd(p).getDay()!==0)H[p]="国民の休日"}
+  for(const s of named){if(parseYmd(s).getDay()!==0)continue;let n=addDays(s,1);while(H[n])n=addDays(n,1);H[n]="振替休日"}
+  return holCache[y]=H;
+}
+const holidayName=s=>holidaysOf(Number(s.slice(0,4)))[s]||"";
 const mdw=s=>{const d=parseYmd(s);return (d.getMonth()+1)+"月"+d.getDate()+"日（"+WD[d.getDay()]+"）"};
 function vCal(){
   const t=todayS(), by={};
@@ -573,7 +591,7 @@ function vCal(){
   genTodos().forEach(x=>{if(x.due)slot(x.due).td.push(x)});
   const day=s=>by[s]||{ev:[],td:[]};
   const legend='<div class="legend"><span><i style="background:var(--accent-soft)"></i>立会・調査の予定</span><span><i style="background:var(--green-soft)"></i>実施</span><span><i style="background:var(--amber-soft)"></i>見積提出</span><span><i style="background:var(--sunk)"></i>受注</span></div>';
-  const note='<p class="note" style="margin:0">試作では祝日を表示していません。社内会議・客先会議・営業活動は次の段階で追加します。</p>';
+  const note='<p class="note" style="margin:0">社内会議・客先会議・営業活動は次の段階で追加します。</p>';
   const views='<div class="seg" role="group" aria-label="表示の切り替え">'+[["month","月"],["week","週"],["day","日"]].map(([k,l])=>'<button type="button" data-cv="'+k+'" aria-pressed="'+(ui.calView===k)+'">'+l+'</button>').join("")+'</div>';
   const nav=(step,title,todayLabel,prevLabel,nextLabel)=>'<div class="calnav"><button class="btn sm" type="button" data-shift="'+(-step)+'" aria-label="'+prevLabel+'">‹</button><h2 class="num">'+title+'</h2>'+
     '<button class="btn sm" type="button" data-shift="today">'+todayLabel+'</button><button class="btn sm" type="button" data-shift="'+step+'" aria-label="'+nextLabel+'">›</button></div>';
@@ -583,12 +601,12 @@ function vCal(){
     const title=F.getFullYear()+"年"+(F.getMonth()+1)+"月"+F.getDate()+"日〜"+(T.getFullYear()!==F.getFullYear()?T.getFullYear()+"年":"")+(T.getMonth()!==F.getMonth()?(T.getMonth()+1)+"月":"")+T.getDate()+"日";
     let rows="";
     for(let i=0;i<7;i++){
-      const s=addDays(from,i), d=parseYmd(s), b=day(s);
-      const cls=["wkd",s===t?"today":"",d.getDay()===0?"sun":d.getDay()===6?"sat":""].join(" ");
+      const s=addDays(from,i), d=parseYmd(s), b=day(s), hol=holidayName(s);
+      const cls=["wkd",s===t?"today":"",hol?"hol":d.getDay()===0?"sun":d.getDay()===6?"sat":""].join(" ");
       const items=b.ev.map(e=>'<button type="button" class="wkev" data-open="'+e.c.id+'"><span class="ev '+e.k+'">'+h(e.label)+'</span><span class="t">'+h(e.c.property)+' '+h(e.c.room)+'</span></button>').join("")+
         b.td.map(x=>'<div class="wkev td'+(s<t?" over":"")+'"><span class="ev td'+(s<t?" over":"")+'">ToDo</span><span class="t">'+h(x.title)+'</span></div>').join("");
-      rows+='<div class="wkrow'+(s===ui.calDay?" sel":"")+'"><button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+mdw(s)+'を日表示で開く"'+(s===t?' aria-current="date"':'')+'><span class="dn">'+d.getDate()+'</span><span class="dw">'+WD[d.getDay()]+'</span></button>'+
-        '<div class="wki">'+(items||'<span class="wknone">予定なし</span>')+'</div></div>';
+      rows+='<div class="wkrow'+(s===ui.calDay?" sel":"")+'"><button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+mdw(s)+(hol?' '+hol:'')+'を日表示で開く"'+(s===t?' aria-current="date"':'')+'><span class="dn">'+d.getDate()+'</span><span class="dw">'+WD[d.getDay()]+'</span></button>'+
+        '<div class="wki">'+(hol?'<span class="hol-name">'+hol+'</span>':'')+(items||'<span class="wknone">予定なし</span>')+'</div></div>';
     }
     return '<section class="sec">'+views+
       nav(7,title,"今週","前の週","次の週")+
@@ -598,19 +616,19 @@ function vCal(){
     const sel=day(ui.calDay);
     const evRows=sel.ev.map(e=>'<button type="button" class="card" data-open="'+e.c.id+'"><div class="row"><span class="ev '+e.k+'" style="font-size:12px;padding:1px 6px">'+h(e.label)+'</span>'+typeChip(e.c)+'<span class="sp"></span>'+stagePill(e.c)+'</div><div class="ttl">'+h(e.c.property)+' '+h(e.c.room)+'</div><div class="row note"><span>'+h(e.c.client)+'</span><span>担当 '+h(e.c.tantou)+'</span></div></button>').join("");
     return '<section class="sec">'+views+
-      nav(1,mdw(ui.calDay),"今日","前の日","次の日")+
+      nav(1,'<span'+(holidayName(ui.calDay)?' style="color:var(--red)"':'')+'>'+mdw(ui.calDay)+'</span>'+(holidayName(ui.calDay)?' <span class="hol-name">'+holidayName(ui.calDay)+'</span>':''),"今日","前の日","次の日")+
       '<div class="list">'+evRows+sel.td.map(todoRow).join("")+((evRows||sel.td.length)?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div>'+note+'</section>';
   }
   const [y,m]=ui.calMonth.split("-").map(Number);
   const first=new Date(y,m-1,1), start=new Date(y,m-1,1-first.getDay());
   let cells="";
   for(let i=0;i<42;i++){
-    const dt=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i), s=ymd(dt), b=day(s);
-    const cls=["d",dt.getMonth()!==m-1?"out":"",s===t?"today":"",s===ui.calDay?"sel":"",dt.getDay()===0?"sun":dt.getDay()===6?"sat":""].join(" ");
+    const dt=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i), s=ymd(dt), b=day(s), hol=holidayName(s);
+    const cls=["d",dt.getMonth()!==m-1?"out":"",s===t?"today":"",s===ui.calDay?"sel":"",hol?"hol":dt.getDay()===0?"sun":dt.getDay()===6?"sat":""].join(" ");
     const shown=b.ev.slice(0,2).map(e=>'<span class="ev '+e.k+'">'+h(e.label)+'</span>').join("");
     const more=b.ev.length>2?'<span class="ev td">ほか'+(b.ev.length-2)+'件</span>':'';
     const tdl=b.td.length?'<span class="ev td'+(s<t?" over":"")+'">ToDo '+b.td.length+'</span>':'';
-    cells+='<button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+(dt.getMonth()+1)+'月'+dt.getDate()+'日を日表示で開く"><span class="n">'+dt.getDate()+'</span>'+shown+more+tdl+'</button>';
+    cells+='<button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+(dt.getMonth()+1)+'月'+dt.getDate()+'日'+(hol?' '+hol:'')+'を日表示で開く"><span class="n">'+dt.getDate()+'</span>'+(hol?'<span class="hn">'+hol+'</span>':'')+shown+more+tdl+'</button>';
   }
   return '<section class="sec">'+views+'<div class="calnav"><button class="btn sm" type="button" data-mon="-1" aria-label="前の月">‹</button><h2 class="num">'+y+'年'+m+'月</h2><button class="btn sm" type="button" data-mon="0">今月</button><button class="btn sm" type="button" data-mon="1" aria-label="次の月">›</button></div>'+
   legend+
