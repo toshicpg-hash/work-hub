@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a3a40">
+<meta name="referrer" content="no-referrer">
+<title>CPG HUBをインストール</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./work-hub-icon-192.png?v=9f230a65fac4">
+<style>
+:root{color-scheme:light;--bg:#f3f6f6;--surface:#fff;--fg:#15232b;--muted:#5a6a71;--accent:#0a3a40;--line:#d3dcdc}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.7 system-ui,sans-serif;padding:24px max(16px,env(safe-area-inset-left)) max(24px,env(safe-area-inset-bottom))}
+main{max-width:480px;margin:24px auto;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px}
+img{display:block;width:96px;height:96px;border-radius:20px}h1{font-size:24px;line-height:1.4;margin:20px 0 12px}p{margin:12px 0}
+button,a{display:block;width:100%;border-radius:12px;padding:14px 12px;font:inherit;font-weight:700;text-align:center;min-height:52px}
+button{border:0;background:var(--accent);color:#fff;cursor:pointer;margin-top:20px}button:disabled{background:#d9e1e2;color:#526367;cursor:default}
+a{border:1px solid var(--line);color:var(--accent);text-decoration:none;margin-top:12px}:focus-visible{outline:3px solid #0b6b72;outline-offset:3px}
+#installStatus{color:var(--muted);min-height:3.4em;font-size:15px}small{display:block;color:var(--muted);margin-top:20px}
+</style>
+</head>
+<body>
+<main>
+<img src="./work-hub-icon-192.png?v=9f230a65fac4" alt="" width="96" height="96">
+<h1>CPG HUBをインストール</h1>
+<p>ホーム画面の専用アイコンからCPG HUBを開けるようにします。AndroidではChromeでこのページを開いてください。</p>
+<button id="installButton" type="button" disabled>CPG HUBをインストール</button>
+<p id="installStatus" role="status" aria-live="polite">ブラウザがインストールを開始できるか確認しています。</p>
+<a href="./">CPG HUBを開く</a>
+<small>このページでは、保存済みのデータや設定を変更しません。</small>
+</main>
+<script>
+(function () {
+  'use strict';
+  const button = document.getElementById('installButton');
+  const status = document.getElementById('installStatus');
+  const standalone = window.matchMedia('(display-mode: standalone)');
+  let offer = null, pending = false, installed = false;
+  function render(message) {
+    button.disabled = pending || installed || standalone.matches || !offer;
+    status.textContent = standalone.matches ? 'CPG HUBはアプリの画面で開いています。' : message;
+  }
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    if (installed || standalone.matches) return;
+    offer = event;
+    if (!pending) render('ボタンを押すと、Chromeのインストール確認が開きます。');
+  });
+  window.addEventListener('appinstalled', () => {
+    installed = true;
+    offer = null;
+    render('ブラウザからインストール完了の通知が届きました。ホーム画面のCPG HUBを確認してください。');
+  });
+  standalone.addEventListener('change', () => render(offer
+    ? 'ボタンを押すと、Chromeのインストール確認が開きます。'
+    : 'このブラウザからは現在インストールを開始できません。'));
+  button.addEventListener('click', async () => {
+    if (button.disabled || !offer || pending) return;
+    const current = offer;
+    offer = null;
+    pending = true;
+    render('Chromeの確認画面で「インストール」を選んでください。');
+    let message;
+    try {
+      await current.prompt();
+      const choice = await current.userChoice;
+      message = choice && choice.outcome === 'accepted'
+        ? 'インストールを受け付けました。完了通知を待っています。'
+        : 'インストールは見送りました。CPG HUBは引き続き利用できます。';
+    } catch (_) {
+      message = 'インストールを開始できませんでした。CPG HUBは引き続き利用できます。';
+    } finally {
+      pending = false;
+      if (!installed) render(offer
+        ? 'ボタンを押すと、Chromeのインストール確認が開きます。'
+        : message);
+    }
+  });
+  window.setTimeout(() => {
+    if (!offer && !pending && !installed) render('このブラウザからは現在インストールを開始できません。');
+  }, 10000);
+  render(status.textContent);
+}());
+</script>
+</body>
+</html>
