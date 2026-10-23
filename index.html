@@ -275,7 +275,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.23・10/23更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.24・10/23更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -899,15 +899,20 @@ function gWin(from,to){
   const a=parseYmd(from), b=parseYmd(to);
   return [ymd(new Date(a.getFullYear(),a.getMonth()-1,1)),ymd(new Date(b.getFullYear(),b.getMonth()+2,0))];
 }
+/* 最後に読んだGoogleの予定をこの端末に残し、開き直したときは同期するまでそれを表示する（ログイン情報は残さない） */
+const GKEEP="workhub_gcal_last_v1", GKEEP_DAYS=30;
+function gKeepSave(e){const t=todayS();if(!(e.from<=t&&e.to>=t))return;/* 今日を含む範囲だけ残す */try{localStorage.setItem(GKEEP,JSON.stringify({at:e.at,from:e.from,to:e.to,data:e.data}))}catch(err){}}
+function gKeepLoad(){try{const k=JSON.parse(localStorage.getItem(GKEEP)||"null");if(!k||!k.data||Date.now()-k.at>GKEEP_DAYS*864e5)return null;return k}catch(err){return null}}
+const hmd=t=>{const d=new Date(t);return (d.getMonth()+1)+"/"+d.getDate()+" "+pad(d.getHours())+":"+pad(d.getMinutes())};
 function gcalRange(from,to){
-  if(!gSignedIn()||!G.cals)return {state:"off"};
+  if(!gSignedIn()||!G.cals){const k=gKeepLoad();return k&&k.from<=from&&k.to>=to?{state:"kept",data:k.data,at:k.at}:{state:"off"}}
   const ids=gShowIds().join(",");
   for(const k in gcalCache){const c=gcalCache[k];
     if(c.ids===ids&&c.from<=from&&c.to>=to&&(c.state==="loading"||Date.now()-c.at<(c.state==="ok"?GCAL_TTL:GCAL_ERR_TTL)))return c}
   const [wf,wt]=gWin(from,to), k=ids+"|"+wf+"|"+wt, old=gcalCache[k];
   const e=gcalCache[k]={state:"loading",at:Date.now(),data:old&&old.data,ids,from:wf,to:wt};
   e.p=gReadRange(wf,wt)
-    .then(j=>Object.assign(e,{state:"ok",at:Date.now(),data:j}),err=>Object.assign(e,{state:gSignedIn()?"error":"off",at:Date.now(),msg:gMsg(err)}))
+    .then(j=>{Object.assign(e,{state:"ok",at:Date.now(),data:j});gKeepSave(e)},err=>Object.assign(e,{state:gSignedIn()?"error":"off",at:Date.now(),msg:gMsg(err)}))
     .then(()=>{if(ui.view==="cal")render()});
   return e;
 }
@@ -926,7 +931,7 @@ async function gSyncAll(){
     try{const cs=await gLoadCalendars();step("カレンダー一覧",true,cs.length+"件")}catch(err){step("カレンダー一覧",false,gMsg(err));return}
     for(const x in gcalCache)delete gcalCache[x];
     const [f0,t0]=calRange(), [f,t]=gWin(f0,t0), ids=gShowIds().join(",");
-    try{const j=await gReadRange(f,t);gcalCache[ids+"|"+f+"|"+t]={state:"ok",at:Date.now(),data:j,ids,from:f,to:t};
+    try{const j=await gReadRange(f,t);gcalCache[ids+"|"+f+"|"+t]={state:"ok",at:Date.now(),data:j,ids,from:f,to:t};gKeepSave(gcalCache[ids+"|"+f+"|"+t]);
       step("予定の読み込み",!j.missing,j.events.length+"件・前後の月も含む（"+(j.calendars.join("・")||"表示するカレンダーなし")+"）"+(j.missing?"。読めないカレンダーが"+j.missing+"つあります":""))}
     catch(err){step("予定の読み込み",false,gMsg(err))}
     const moved=DB.cases.filter(c=>c.gcal&&c.gcal.id&&c.gcal.date&&c.planDate&&c.gcal.date!==c.planDate&&!ended(c));
@@ -988,6 +993,8 @@ function gcalByDay(j){
   return by;
 }
 function gcalStatus(g){
+  if(g.state==="kept"){const cals=(g.data&&g.data.calendars)||[];
+    return '<p class="gcst">前回の同期（'+hmd(g.at)+'）の予定を表示しています。最新にするには「Googleとまとめて同期」を押してください。'+cals.map(n=>'<span class="ev '+gcalColor(n)+'">'+h(gcalLabel(n))+'</span>').join("")+'</p>'}
   if(g.state==="off")return '<p class="gcst">Googleカレンダー未接続（「Googleとまとめて同期」を押すと表示されます）'+(g.msg?'：'+h(g.msg):'')+'</p>';
   if(g.state==="loading"&&!g.data)return '<p class="gcst">Googleカレンダーを読み込み中…</p>';
   if(g.state==="error")return '<p class="gcst" style="color:var(--amber)">Googleカレンダーを読めませんでした（'+h(g.msg)+'）。HUBの予定だけを表示しています。</p>';
@@ -1123,7 +1130,7 @@ function vStats(){
     ''+
     '</form></section>'+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.23 用）を開く</a></section>';
+  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.24 用）を開く</a></section>';
 }
 function gSettings(){
   const head='<section class="sec"><div class="sec-h"><h2>Googleカレンダー連携</h2></div>';
