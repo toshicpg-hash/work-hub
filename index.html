@@ -591,7 +591,7 @@ function vNew(){
     '<label class="f">部屋<input type="text" id="n_room" placeholder="例：203"></label>'+
     '<label class="f full">住所（Googleカレンダーの「場所」に入ります）<input type="text" id="n_addr" placeholder="例：神奈川県相模原市中央区…"></label>'+
     '<label class="f">担当<select id="n_tantou">'+STAFF.map(s=>'<option>'+s+'</option>').join("")+'</select></label>'+
-    '<label class="f">受付日時<input type="datetime-local" id="n_at"></label>'+
+    '<label class="f">受付日時<input type="datetime-local" id="n_at"><span class="note">実際に依頼を受けた日時を入れてください（後から入力するときは過去の日時に）</span></label>'+
     '<label class="f full">状況・メモ<textarea id="n_note" placeholder="連絡してきた人、入居者の連絡先、詳しい状況など"></textarea></label>'+
     '<div class="full row"><button class="btn pri" type="submit">受付する</button><span class="note">受付すると仮の受付番号が付きます。仕事番号は受注後にAccessで振られます。</span></div>'+
   '</form></section>';
@@ -771,7 +771,10 @@ function vDetail(){
     '<dt>住所</dt><dd>'+(c.addr?h(c.addr)+' <a class="btn sm" style="display:inline-flex;align-items:center;text-decoration:none;margin-left:4px" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(c.addr)+'">地図を開く</a>':'—')+'</dd>'+
     '<dt>依頼元</dt><dd>'+h(c.client)+'（'+h(c.clientKind)+'）</dd>'+
     '<dt>担当</dt><dd>'+h(c.tantou)+'</dd>'+
-    '<dt>受付</dt><dd class="num">'+(c.receivedAt?new Date(c.receivedAt).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"—")+'</dd>'+
+    '<dt>受付</dt><dd class="num">'+(c.receivedAt?new Date(c.receivedAt).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"—")+(ui.rcvEdit?'':' <button class="btn sm" type="button" data-act="rcvedit">直す</button>')+
+      (ui.rcvEdit?'<div class="ro" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"><label class="f">受付日時<input type="datetime-local" id="d_rcv" value="'+h(ui.rcvSuggest?ui.rcvSuggest+"T"+localDT(c.receivedAt).slice(11):localDT(c.receivedAt))+'"></label>'+
+        '<span class="note">実際に依頼を受けた日時にします。緊急の経過時間・ToDoの期限・ガントも、この日時で計算し直します。</span>'+
+        '<div class="row"><button class="btn pri" type="button" data-act="rcvsave">受付日時を保存</button><button class="btn" type="button" data-act="rcvno">やめる</button></div></div>':'')+'</dd>'+
     (c.siteDate?'<dt>'+TYPES[c.type].site+'</dt><dd class="num">'+mdh(c.siteDate)+'</dd>':'')+
     (estOf(c)!=null&&c.stage!=="new"&&c.stage!=="site"?'<dt>見積</dt><dd class="num">'+yen(estOf(c))+(c.estSentDate?'（'+md(c.estSentDate)+'提出）':'')+'</dd>':'')+
     (c.orderDate?'<dt>受注日</dt><dd class="num">'+md(c.orderDate)+'</dd>':'')+
@@ -1931,11 +1934,21 @@ function render(){
     const sync=()=>{sw.hidden=ty.value!=="kinkyu"};ty.addEventListener("change",sync);sync();
   }
 }
-function go(view,extra){if(view!=="rcpt")rClearDl();if(view!=="rform")rFormClear();Object.assign(ui,{view,acct:false,exAsk:false,rcCancel:null,cdel:null,cdelMsg:"",cdelBusy:false,cdelCal:true},extra||{});render();window.scrollTo(0,0)}
+function go(view,extra){if(view!=="rcpt")rClearDl();if(view!=="rform")rFormClear();Object.assign(ui,{view,rcvEdit:false,rcvSuggest:"",acct:false,exAsk:false,rcCancel:null,cdel:null,cdelMsg:"",cdelBusy:false,cdelCal:true},extra||{});render();window.scrollTo(0,0)}
 let toastT;
 function toast(msg,ms){const el=document.getElementById("toast");el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,ms||2600)}
 /* An on-page confirmation can open near the bottom, behind the menu bar; bring it to the middle of the screen */
 function showAlert(){const a=main.querySelector('.ro[role=alert]');if(a)a.scrollIntoView({block:"center"})}
+const localDT=iso=>{const d=iso?new Date(iso):new Date();return ymd(d)+"T"+pad(d.getHours())+":"+pad(d.getMinutes())};
+/* the date each step records; an entry before the 受付日 is asked about first (後から入力した案件の受付日時の直し忘れ) */
+const STEP_DATE={plan:()=>val("d_plan"),site:()=>val("d_site")||todayS(),quote:()=>val("d_sent")||todayS(),win:()=>val("d_order")||todayS(),rushwin:()=>todayS(),hold:()=>val("d_hold"),
+  lose:()=>todayS(),hand:()=>todayS(),built:()=>val("d_built")||todayS(),bill:()=>val("d_bdate"),pay:()=>val("d_paydate")};
+function rcvAsk(el,a,d,r){
+  main.querySelectorAll(".rcvask").forEach(x=>x.remove());
+  const box=document.createElement("div");box.className="ro rcvask";box.setAttribute("role","alert");box.style.cssText="display:flex;flex-direction:column;gap:8px";
+  box.innerHTML='<span>受付日（'+md(r)+'）より前の日付です（'+md(d)+'）。受付日時を直しますか？</span><div class="row"><button class="btn pri" type="button" data-act="rcvfix" data-d="'+h(d)+'">受付日を直す</button><button class="btn" type="button" data-act="rcvkeep" data-for="'+h(a)+'">このまま</button></div>';
+  (el.closest(".row")||el).after(box);box.scrollIntoView({block:"center"});
+}
 const val=id=>{const el=document.getElementById(id);return el?el.value:""};
 
 document.addEventListener("click",e=>{
@@ -2056,6 +2069,15 @@ document.addEventListener("click",e=>{
     corpLoad().then(data=>{ui.corp={data,at:Date.now()};roBuild(data);D().corpAt=new Date(ui.corp.at).toISOString();save()},err=>{ui.corp=Object.assign({},ui.corp,{busy:false,err:"読み込めませんでした："+gMsg(err)})}).then(render);return}
   if(a==="gsync"){if(!(ui.gsync&&ui.gsync.busy))gSyncAll();return}
   if(!c)return;
+  if(a==="rcvedit"){ui.rcvEdit=true;ui.rcvSuggest="";render();const i=document.getElementById("d_rcv");if(i){i.scrollIntoView({block:"center"});i.focus()}return}
+  if(a==="rcvno"){ui.rcvEdit=false;ui.rcvSuggest="";render();return}
+  if(a==="rcvsave"){const v=val("d_rcv");if(!v){toast("受付日時を入れてください");return}
+    c.receivedAt=new Date(v).toISOString();ui.rcvEdit=false;ui.rcvSuggest="";save();render();
+    const first=[c.planDate,c.siteDate,c.estSentDate,c.orderDate,c.lossDate,c.handedDate,c.builtDate,c.billDate].filter(Boolean).sort()[0];
+    toast("受付日時を"+mdh(v.slice(0,10))+" "+v.slice(11)+"にしました"+(first&&first<v.slice(0,10)?"。"+md(first)+"の記録より後になっています":""),4000);return}
+  if(a==="rcvfix"){ui.rcvEdit=true;ui.rcvSuggest=el.dataset.d;render();const i=document.getElementById("d_rcv");if(i){i.scrollIntoView({block:"center"});i.focus()}return}
+  if(a==="rcvkeep"){const f=el.dataset.for,box=el.closest(".rcvask");ui.rcvSkip=f;if(box)box.remove();const b=main.querySelector('[data-act="'+f+'"]');if(b)b.click();ui.rcvSkip=null;return}
+  if(STEP_DATE[a]&&c.receivedAt&&ui.rcvSkip!==a){const d=STEP_DATE[a](),r=ymd(new Date(c.receivedAt));if(d&&d<r){rcvAsk(el,a,d,r);return}}
   if(a==="additem"){c.items.push({place:"",state:"",burden:"要確認",amount:""});save();render();
     const f=main.querySelector('[data-item="'+(c.items.length-1)+'"][data-f="place"]');if(f){f.focus();f.scrollIntoView({block:"center"})}return}
   if(a==="greg"&&c){if(ui.gbusy)return;if(!c.planDate){toast("先に日程を決めてください");return}ui.gbusy=true;
