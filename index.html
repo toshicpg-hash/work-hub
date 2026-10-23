@@ -279,7 +279,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.30・10/24更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.31・10/24更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -331,7 +331,7 @@ const CASE_DEFAULTS=()=>({addr:"",items:[],note:"",symptom:"",planDate:"",estAmo
 const TODO_DEFAULTS=()=>({title:"",due:"",tantou:"",done:false});
 const RECEIPT_DEFAULTS=()=>({date:"",payee:"",item:"",amount:null,company:"CP",method:"立替",cardId:"",cat:"材料費",caseId:"",site:"",jobNo:"",note:"",photos:[],pext:{},status:"未提出",claimNo:"",submitDate:"",settleDate:"",closeNo:"",createdAt:"",everSub:false,returnedFrom:"",edits:[],drive:{}});
 const RSET_DEFAULTS=()=>({name:"",payDays:{CP:2,CPY:4,AT:-1},to:{CP:"桜田",CPY:"桜田",AT:"大須"},useCard:false,cards:[],lastCo:"CP",noSeq:{}});
-const DATA_DEFAULTS=()=>({sheetId:"",sheetName:"",lastSync:"",rFolder:"",rShared:false,admin:false,folder:"",listId:"",staff:[]});
+const DATA_DEFAULTS=()=>({sheetId:"",sheetName:"",lastSync:"",rFolder:"",rShared:false,admin:false,folder:"",listId:"",staff:[],viewListId:"",viewEmail:""});
 const SETTINGS_DEFAULTS=()=>({rcpt:RSET_DEFAULTS(),data:DATA_DEFAULTS(),schedule:2,quote:3,reply:14,jobno:1,billAfter:3,payRule:"m1end",acctWait:3,gShow:null,gWrite:""});
 const withDefaults=(o,defs)=>{for(const k in defs)if(o[k]===undefined)o[k]=defs[k];return o};
 function upgrade(db){
@@ -411,7 +411,7 @@ const findCase=id=>allCases().find(c=>c.id===id);
 const editCase=id=>{const c=findCase(id);return c&&!c.ro?c:null};
 /* 社長の管理端末：「社員の記録を読み込む」で読んだ社員の案件・ToDoを、見るだけの案件として画面にも使う。
    メモリ（ui）だけに持ち、localStorage には残さない（開き直したら読み込み直す） */
-const roOn=()=>!!(D().admin&&ui.corpRO);
+const roOn=()=>!!((D().admin||D().viewListId)&&ui.corpRO);
 const allCases=()=>roOn()?DB.cases.concat(ui.corpRO):DB.cases;
 const roTodos=()=>roOn()?ui.corpTodo:[];
 const roHub=()=>new Set(roOn()?ui.corpRO.map(c=>c.srcId):[]);
@@ -424,14 +424,14 @@ function roCase(r,x){
     orderDate:d("受注日"),jobNo:v("仕事番号"),handedDate:d("引渡日"),builtDate:d("施工完了日"),billDate:d("請求日"),billAmount:num("請求額"),payDue:d("入金予定日"),payments:paid?[{date:d("入金日")||d("請求日"),amount:paid}]:[],paidDate:stage==="paid"?d("入金日"):""});
 }
 function roBuild(data){
-  const ok=data.filter(x=>x.ok);
+  const co=ui.corpCo||"all", ok=data.filter(x=>x.ok&&(co==="all"||coList(x.s).includes(co)));
   ui.corpRO=ok.flatMap(x=>x.cases.filter(r=>r["受付番号"]).map(r=>roCase(r,x)));
   ui.corpTodo=ok.flatMap(x=>(x.todo||[]).filter(r=>r["内容"]).map(r=>{const no=String(r["受付番号"]||"");
     return {ro:true,owner:x.s.name,title:String(r["内容"]),due:String(r["期限"]||"").slice(0,10),tantou:String(r["担当"]||x.s.name),kind:String(r["種類"]||""),property:String(r["物件"]||""),room:String(r["部屋"]||""),caseId:no?no+"・"+x.s.name:""}}));
 }
 /* 見るだけの社員の記録の状態（社長の管理端末だけ） */
 function roNote(){
-  if(!D().admin)return "";
+  if(!D().admin&&!D().viewListId)return "";
   if(roOn())return '<p class="note" style="margin:0">社員の記録（見るだけ）：'+md(ymd(new Date(ui.corp.at)))+' '+hm(new Date(ui.corp.at))+'に読み込み</p>';
   return '<div class="banner" role="status">社員の記録はまだ読み込んでいません。ホームの「会社の動き」で <b>社員の記録を読み込む</b> を押すと、ここにも出ます。'+(D().corpAt?'<div class="note">前回の読み込み：'+md(ymd(new Date(D().corpAt)))+' '+hm(new Date(D().corpAt))+'（開き直すと消えるので、読み込み直してください）</div>':'')+'</div>';
 }
@@ -530,7 +530,7 @@ function vHome(){
   (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html">マニュアル</a>へ。</p></div>')+
   '<section class="sec">'+gSyncPanel()+'</section>'+
   (ord.length?'<button type="button" class="banner" data-nav="todo" style="text-align:left;width:100%;cursor:pointer'+(ordOver?';border-color:var(--red)':'')+'"><b>タスクリクエスト '+ord.length+'件</b>'+(ordOver?'<span style="color:var(--red);font-weight:700">（期限切れ '+ordOver+'件）</span>':'')+'<div class="note">'+ord.slice(0,3).map(x=>h(x.title)).join("・")+'</div></button>':'')+
-  (D().admin?corpView():'')+
+  (D().admin||D().viewListId?corpView():'')+
   /* 社長の管理端末で自分の入力が無いときは、0件ばかりの自分用の欄を出さない（会社の動きだけを見る） */
   (D().admin&&!roOn()&&!DB.cases.length&&!DB.todos.length&&!(DB.receipts||[]).length?'<p class="note" style="margin:0">この端末で入力した案件はありません。社員の記録は上の「会社の動き」で見られます。</p>':
   (rnotes.length?'<div class="banner" role="status"><b>領収書：</b>'+rnotes.map(n=>'<div>'+h(n)+'</div>').join("")+'</div>':'')+
@@ -1198,7 +1198,7 @@ function vStats(){
     ''+
     '</form></section>'+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.30 用）を開く</a></section>';
+  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.31 用）を開く</a></section>';
 }
 function gSettings(){
   const head='<section class="sec"><div class="sec-h"><h2>Googleカレンダー連携</h2></div>';
@@ -1653,7 +1653,7 @@ async function dataConnect(input){
   Object.assign(D(),{sheetId:id,sheetName:(v.properties&&v.properties.title)||""});save();
 }
 /* 社長の端末：社員ごとのシートを作って、その社員に「編集者」で共有する */
-const STAFF_COLS=["氏名","Gmail","シートID","シートのリンク","状態","追加日","最終同期","共有ID"];
+const STAFF_COLS=["氏名","Gmail","シートID","シートのリンク","状態","追加日","最終同期","共有ID","会社","役割","GMの会社"];
 /* a new spreadsheet's first tab is renamed (its default name depends on the account's language), then more tabs are added */
 async function sheetTabs(id,first,more){
   const v=await gReq(SHEETS+"/"+encodeURIComponent(id)+"?fields=sheets.properties");
@@ -1661,7 +1661,7 @@ async function sheetTabs(id,first,more){
 }
 async function adminWriteList(){
   if(!D().listId){const f=await driveCreate({name:"CPG HUB_社員一覧",mimeType:"application/vnd.google-apps.spreadsheet",parents:[D().folder]});await sheetTabs(f.id,"社員",[]);D().listId=f.id;save()}
-  return sheetWrite(D().listId,"社員",[STAFF_COLS,...D().staff.map(s=>[s.name,s.email,s.sheetId,"https://docs.google.com/spreadsheets/d/"+s.sheetId+"/edit",s.removed?"共有を外した":"共有中",s.addedAt,s.lastSync||"",s.permId||""])]);
+  return sheetWrite(D().listId,"社員",[STAFF_COLS,...D().staff.map(s=>[s.name,s.email,s.sheetId,"https://docs.google.com/spreadsheets/d/"+s.sheetId+"/edit",s.removed?"共有を外した":"共有中",s.addedAt,s.lastSync||"",s.permId||"",s.company||"",s.role||"社員",s.gmCo||""])]);
 }
 /* drive.file lets CPG HUB see the files it made, from any of the 社長's devices: a second device finds the folder 「CPG HUB データ」
    and 「CPG HUB_社員一覧」 made on the first one, instead of making new ones. The list sheet is the master copy of the staff list */
@@ -1686,21 +1686,80 @@ async function adminSync(log){
   const rows=objRows((await sheetRead(d.listId,["社員"]))["社員"]).filter(r=>r["シートID"]);
   const local=d.staff.filter(s=>!rows.some(r=>String(r["シートID"])===s.sheetId)); /* added here, but the list sheet was not written yet */
   d.staff=rows.map(r=>{const old=d.staff.find(s=>s.sheetId===String(r["シートID"]))||{};
-    return {name:String(r["氏名"]),email:String(r["Gmail"]),sheetId:String(r["シートID"]),permId:String(r["共有ID"]||old.permId||""),addedAt:String(r["追加日"]),removed:r["状態"]==="共有を外した",lastSync:String(r["最終同期"]||old.lastSync||"")}}).concat(local);
+    return {name:String(r["氏名"]),email:String(r["Gmail"]),sheetId:String(r["シートID"]),permId:String(r["共有ID"]||old.permId||""),addedAt:String(r["追加日"]),removed:r["状態"]==="共有を外した",lastSync:String(r["最終同期"]||old.lastSync||""),
+      company:String(r["会社"]||""),role:ROLES.includes(String(r["役割"]))?String(r["役割"]):"社員",gmCo:COMPANIES.includes(String(r["GMの会社"]))?String(r["GMの会社"]):""}}).concat(local);
   save();found.list=true;found.n=d.staff.length;return found;
 }
 const staffDup=email=>D().staff.find(s=>!s.removed&&s.email.toLowerCase()===email.toLowerCase());
-async function adminAdd(name,email,log){
+/* 見る人（v1.31）：役割「全社」は全員の、「GM」はGMを務める会社の社員のシートを「閲覧者」で見る。
+   見る範囲はGoogleの共有で守る（社長の管理端末で役割を保存したときに、閲覧者の共有を付けたり外したりする） */
+const ROLES=["社員","GM","全社"];
+const coList=s=>String((s&&s.company)||"").split(/[,、，\s]+/).filter(x=>COMPANIES.includes(x));
+const isViewer=s=>!s.removed&&(s.role==="全社"||s.role==="GM"&&!!s.gmCo);
+const canSee=(v,s)=>isViewer(v)&&!s.removed&&v.sheetId!==s.sheetId&&(v.role==="全社"||coList(s).includes(v.gmCo));
+const roleLabel=s=>(s.role==="全社"?"全社":s.role==="GM"?"GM":"社員")+(s.gmCo?(s.role==="GM"?"（"+s.gmCo+"）":"・"+s.gmCo+" GM"):"");
+const gmLine=list=>COMPANIES.map(co=>{const g=list.filter(s=>!s.removed&&s.gmCo===co);return g.length?co+" GM："+g.map(x=>x.name).join("・"):""}).filter(Boolean).join("　");
+const VIEW_COLS=["氏名","Gmail","会社","役割","GMの会社","シートID"];
+const eq=(a,b)=>String(a||"").toLowerCase()===String(b||"").toLowerCase();
+async function permList(id){const r=await gReq(DRIVE+"/"+encodeURIComponent(id)+"/permissions?fields=permissions(id,emailAddress,role)");return (r&&r.permissions)||[]}
+/* make the reader shares of one file match the wanted Gmails; only reader shares of people in the staff list are removed */
+async function readersMatch(id,want,managed){
+  const ps=await permList(id);let add=0,rem=0;
+  for(const e of want)if(!ps.some(p=>eq(p.emailAddress,e))){await driveShare(id,e,"reader","");add++}
+  for(const p of ps)if(p.role==="reader"&&managed.some(m=>eq(m,p.emailAddress))&&!want.some(w=>eq(w,p.emailAddress))){await gReq(DRIVE+"/"+encodeURIComponent(id)+"/permissions/"+encodeURIComponent(p.id),{method:"DELETE"});rem++}
+  return {add,rem};
+}
+async function adminShareSync(log){
+  const d=D(), vs=d.staff.filter(isViewer), managed=d.staff.map(s=>s.email);
+  for(const s of d.staff){
+    const r=await readersMatch(s.sheetId,vs.filter(v=>canSee(v,s)).map(v=>v.email),managed);
+    if(r.add||r.rem)log(s.name+"さんのシート："+[r.add?"閲覧の共有を"+r.add+"人に付けました":"",r.rem?r.rem+"人の閲覧の共有を外しました":""].filter(Boolean).join("・"));
+  }
+  if(!d.viewListId&&!vs.length)return;
+  if(!d.viewListId){const f=await driveCreate({name:"CPG HUB_見る人用一覧",mimeType:"application/vnd.google-apps.spreadsheet",parents:[d.folder]});await sheetTabs(f.id,"一覧",[]);d.viewListId=f.id;save();log("「CPG HUB_見る人用一覧」を作りました")}
+  await sheetWrite(d.viewListId,"一覧",[VIEW_COLS,...d.staff.filter(s=>!s.removed).map(s=>[s.name,s.email,s.company||"",s.role||"社員",s.gmCo||"",s.sheetId])]);
+  const r=await readersMatch(d.viewListId,vs.map(v=>v.email),managed);
+  log("「CPG HUB_見る人用一覧」を更新しました"+(r.add||r.rem?"（"+[r.add?r.add+"人に共有":"",r.rem?r.rem+"人の共有を外す":""].filter(Boolean).join("・")+"）":""));
+}
+/* 役割の保存。swap: 同じ会社のGMを入れ替えるときの前のGM */
+async function adminRoleSave(sheetId,v,swapId,log){
+  await gAuthorize(true);await adminSync(()=>{});
+  const s=D().staff.find(x=>x.sheetId===sheetId);if(!s)throw new Error("nostaff");
+  const prev=swapId&&D().staff.find(x=>x.sheetId===swapId);
+  if(prev){if(prev.role==="GM")prev.role="社員";prev.gmCo="";log(prev.name+"さんを"+v.gmCo+"のGMから外しました")}
+  Object.assign(s,v);save();await adminWriteList();log(s.name+"さんを「"+roleLabel(s)+"」にしました（会社："+(coList(s).join("・")||"なし")+"）");
+  await adminShareSync(log);
+}
+/* 見る人の端末：「CPG HUB_見る人用一覧」を読み、自分が全社かGMかを確かめる */
+async function viewerList(){
+  const rows=objRows((await sheetRead(D().viewListId,["一覧"]))["一覧"]);
+  return rows.filter(r=>r["シートID"]).map(r=>({name:String(r["氏名"]),email:String(r["Gmail"]),company:String(r["会社"]||""),role:String(r["役割"]||"社員"),gmCo:String(r["GMの会社"]||""),sheetId:String(r["シートID"]),removed:false}));
+}
+async function myEmail(){const r=await gReq(DRIVE.replace("/files","/about")+"?fields=user(emailAddress)");return (r&&r.user&&r.user.emailAddress)||""}
+async function viewerConnect(input){
+  const id=sheetIdOf(input);if(!id)throw new Error("badid");
+  await gAuthorize(true);
+  const tabs=await sheetTabNames(id);if(!tabs.includes("一覧"))throw new Error("notview");
+  const old=D().viewListId;D().viewListId=id;
+  try{const list=await viewerList(), me=await myEmail(), m=list.find(s=>eq(s.email,me));
+    if(!m||!isViewer(m))throw Object.assign(new Error("notviewer"),{me});
+    Object.assign(D(),{viewEmail:me});save();ui.viewList=list;return m}
+  catch(err){D().viewListId=old;save();throw err}
+}
+async function adminAdd(name,email,log,rv,swapId){
   await gAuthorize(true);
   await adminSync(log);
   const dup=staffDup(email);if(dup)throw Object.assign(new Error("dup"),{who:dup.name});
   if(!D().folder){const f=await driveCreate({name:"CPG HUB データ",mimeType:"application/vnd.google-apps.folder"});D().folder=f.id;save();log("フォルダ「CPG HUB データ」を作りました")}
   const f=await driveCreate({name:"CPG HUB_"+name,mimeType:"application/vnd.google-apps.spreadsheet",parents:[D().folder]});
-  const s={name,email,sheetId:f.id,permId:"",addedAt:todayS(),removed:false,lastSync:""};D().staff.push(s);save();log("シート「CPG HUB_"+name+"」を作りました");
+  const s=Object.assign({name,email,sheetId:f.id,permId:"",addedAt:todayS(),removed:false,lastSync:"",company:"",role:"社員",gmCo:""},rv||{});D().staff.push(s);save();log("シート「CPG HUB_"+name+"」を作りました");
   await sheetTabs(f.id,"案件",["入金","立替","情報"]);
   await sheetWrite(f.id,"情報",[["項目","値"],["氏名",name],["管理者",ADMIN_ACCOUNT],["作成日",todayS()]]);log("タブ（案件・入金・立替・情報）を用意しました");
   const p=await driveShare(f.id,email,"writer","CPG HUBの記録用です。リンクを開いて、CPG HUBの設定に貼り付けてください");s.permId=p.id;save();log(email+" に編集者で共有しました（Googleから案内メールが届きます）");
+  const prev=swapId&&D().staff.find(x=>x.sheetId===swapId);
+  if(prev){if(prev.role==="GM")prev.role="社員";prev.gmCo="";save();log(prev.name+"さんを"+s.gmCo+"のGMから外しました")}
   await adminWriteList();log("「CPG HUB_社員一覧」を更新しました");
+  if(isViewer(s)||D().staff.some(isViewer)||D().viewListId)await adminShareSync(log);
 }
 async function adminRemove(s){
   await gAuthorize(true);
@@ -1710,12 +1769,15 @@ async function adminRemove(s){
     const p=((r&&r.permissions)||[]).find(x=>String(x.emailAddress||"").toLowerCase()===s.email.toLowerCase());if(p)s.permId=p.id}
   if(s.permId)await gReq(DRIVE+"/"+encodeURIComponent(s.sheetId)+"/permissions/"+encodeURIComponent(s.permId),{method:"DELETE"});
   s.removed=true;save();await adminWriteList();
+  if(D().staff.some(isViewer)||D().viewListId)await adminShareSync(()=>{});
 }
 /* 社長の「会社の動き」: read every shared sheet (read only; nothing is written to the people's sheets) */
 async function corpLoad(){
   await gAuthorize(true);
-  await adminSync(()=>{});
-  const list=D().staff.filter(s=>!s.removed), out=[];
+  const viewer=!D().admin;
+  if(viewer)ui.viewList=await viewerList();else await adminSync(()=>{});
+  const me=viewer&&ui.viewList.find(s=>eq(s.email,D().viewEmail));
+  const list=viewer?ui.viewList.filter(s=>me&&(canSee(me,s)||s.sheetId===me.sheetId)):D().staff.filter(s=>!s.removed), out=[];
   for(const s of list){
     try{/* a sheet synced from before v1.29 has no 「ToDo」 tab, and reading a missing tab fails the whole read */
       const tabs=await sheetTabNames(s.sheetId), hasTodo=tabs.includes("ToDo"), hasOrd=tabs.includes("指示");
@@ -1723,7 +1785,8 @@ async function corpLoad(){
       const info=Object.fromEntries((v["情報"]||[]).slice(1).map(r=>[r[0],r[1]]));
       s.lastSync=String(info["最終同期"]||"");
       out.push({s,ok:true,cases:objRows(v["案件"]),rc:objRows(v["立替"]),todo:hasTodo?objRows(v["ToDo"]):null,orders:hasOrd?objRows(v["指示"]).filter(o=>o["指示ID"]):[]})}
-    catch(err){if(err.message==="signin")throw err;out.push({s,ok:false,msg:dMsg(err)})}
+    catch(err){if(err.message==="signin")throw err;if(viewer&&(err.status===403||err.status===404))continue; /* 見る人：共有されていないシートは黙って飛ばす */
+      out.push({s,ok:false,msg:dMsg(err)})}
   }
   save();return out;
 }
@@ -1746,13 +1809,13 @@ function corpTodos(x,k){
   const oOver=open.filter(o=>dd(o["期限"])&&n(dd(o["期限"]))<0), done7=ords.filter(o=>o["状態"]==="完了"&&dd(o["完了日"])&&n(dd(o["完了日"]))>=-7).sort((a,b)=>dd(b["完了日"]).localeCompare(dd(a["完了日"])));
   const dueTxt=d=>!d?'期限なし':n(d)<0?(-n(d))+'日超過（'+md(d)+'）':n(d)===0?'今日まで':md(d)+'まで';
   const oli=o=>{const d=dd(o["期限"]),red=d&&n(d)<0,key=k+"|"+o["指示ID"];
-    return '<li'+(red?' style="color:var(--red)"':'')+'><div class="row"><span class="num"><b>'+dueTxt(d)+'</b></span><span>'+h(o["内容"])+'</span><span class="sp"></span><button class="btn sm" type="button" data-ocancel="'+h(key)+'">取り消す</button></div>'+
+    return '<li'+(red?' style="color:var(--red)"':'')+'><div class="row"><span class="num"><b>'+dueTxt(d)+'</b></span><span>'+h(o["内容"])+'</span><span class="sp"></span>'+(D().admin?'<button class="btn sm" type="button" data-ocancel="'+h(key)+'">取り消す</button>':'')+'</div>'+
       (ui.oCancel===key?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><span>このリクエストを取り消します。社員の次の同期で、社員のToDoから消えます。</span><div class="row"><button class="btn danger" type="button" data-act="ocanceldo">取り消す</button><button class="btn" type="button" data-act="ocancelno">やめる</button></div></div>':'')+'</li>'};
   const orders='<p class="fk" style="margin:6px 0 0">タスクリクエスト（代表から）</p>'+
     (open.length?'<p class="note" style="margin:2px 0 0">未完了 '+open.length+'件'+(oOver.length?'<b style="color:var(--red)">（期限切れ '+oOver.length+'件）</b>':'')+'</p><ul class="dl">'+open.map(oli).join("")+'</ul>':'<p class="note" style="margin:2px 0 0">未完了のリクエストはありません</p>')+
     (done7.length?'<p class="note" style="margin:6px 0 0">最近7日の完了 '+done7.length+'件</p><ul class="dl">'+done7.map(o=>'<li><span class="num" style="color:var(--green)"><b>✓ '+md(dd(o["完了日"]))+'完了</b></span> '+h(o["内容"])+(o["完了メモ"]?'<div class="note">メモ：'+h(o["完了メモ"])+'</div>':'')+'</li>').join("")+'</ul>':'')+
-    '<div class="form" style="margin-top:6px"><label class="f full">リクエストの内容<input type="text" id="oi_t'+k+'" placeholder="例：〇〇の見積を今週中に出す"></label><label class="f">期限<input type="date" id="oi_d'+k+'"></label>'+
-      '<div class="full"><button class="btn pri" type="button" data-oadd="'+k+'"'+(ui.oBusy?' disabled':'')+'>リクエストする</button></div></div>'+
+    (!D().admin?'':'<div class="form" style="margin-top:6px"><label class="f full">リクエストの内容<input type="text" id="oi_t'+k+'" placeholder="例：〇〇の見積を今週中に出す"></label><label class="f">期限<input type="date" id="oi_d'+k+'"></label>'+
+      '<div class="full"><button class="btn pri" type="button" data-oadd="'+k+'"'+(ui.oBusy?' disabled':'')+'>リクエストする</button></div></div>')+
     (ui.oMsg&&ui.oMsg.k===k?'<ul class="gres" role="status"><li class="'+(ui.oMsg.ok?'ok':'ng')+'">'+(ui.oMsg.ok?'✓ ':'× ')+h(ui.oMsg.text)+'</li></ul>':'');
   let todos, tOver=[];
   if(!x.todo)todos='<p class="note" style="margin:2px 0 0">ToDoはまだ届いていません（社員のHUBを v1.29 以降にして同期すると届きます）</p>';
@@ -1770,7 +1833,8 @@ function corpTodos(x,k){
     orders+'<p class="fk" style="margin:10px 0 0">社員のToDo</p>'+todos+'</details>';
 }
 function corpView(){
-  const c=ui.corp;
+  const c0=ui.corp, co=ui.corpCo||"all";
+  const c=c0&&c0.data?Object.assign({},c0,{data:co==="all"?c0.data:c0.data.filter(x=>coList(x.s).includes(co))}):c0; /* 会社の絞り込み */
   let body="";
   if(c&&c.data){
     const t=todayS(), ok=c.data.filter(x=>x.ok);
@@ -1788,16 +1852,33 @@ function corpView(){
         return '<li>'+h(x.s.name)+'：'+(x.ok?(ls?'最終同期 '+h(ls):'まだ同期していません')+(old?' <b style="color:var(--red)">（3日以上同期していません）</b>':''):'<b style="color:var(--red)">読めませんでした（'+h(x.msg)+'）</b>')+'</li>'}).join("")+'</ul></div>'+
       '<div class="panel"><h3>動いている案件 '+active.length+'件</h3>'+(byStage.length?'<p class="note num" style="margin:0">'+byStage.map(([l,n])=>h(l)+' '+n).join("・")+'</p>':'')+
         byTan.map(([n,rs])=>'<details open><summary><b>'+h(n)+'</b>（'+rs.length+'件）</summary><div class="list" style="margin-top:6px">'+rs.slice().sort((a,b)=>String(b["最終の動き"]).localeCompare(String(a["最終の動き"]))).map(corpCaseCard).join("")+'</div></details>').join("")+'</div>'+
-      '<div class="panel"><h3>ToDo</h3>'+(ok.length?c.data.map((x,k)=>x.ok?corpTodos(x,k):'').join(""):'<p class="note" style="margin:0">読めた社員がいません</p>')+'</div>'+
+      '<div class="panel"><h3>ToDo</h3>'+(ok.length?c.data.map(x=>x.ok?corpTodos(x,c0.data.indexOf(x)):'').join(""):'<p class="note" style="margin:0">読めた社員がいません</p>')+'</div>'+
       '<div class="panel"><h3>未入金</h3>'+(unp.length?'<p class="fk" style="margin:0">担当者別</p>'+tbl("担当",grp("担当").map(trow).join(""))+'<p class="fk" style="margin:0">物件別</p>'+tbl("物件",grp("物件").map(trow).join("")):'<p class="note" style="margin:0">未入金はありません</p>')+'</div>'+
       '<div class="panel"><h3>立替</h3>'+(rcRows.length?'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>社員</th><th>会社</th><th>未提出</th><th>提出済・未精算</th></tr></thead><tbody>'+
         rcRows.map(r=>'<tr><td>'+h(r[0])+'</td><td>'+r[1]+'</td><td class="num">'+yen(r[2])+'</td><td class="num">'+yen(r[3])+'</td></tr>').join("")+'</tbody></table></div>':'<p class="note" style="margin:0">立替はありません</p>')+'</div>';
   }
-  return '<section class="sec"><div class="sec-h"><h2>会社の動き</h2><span class="note">社長用・見るだけ</span></div>'+
-    '<button class="btn" type="button" data-act="corp"'+(c&&c.busy?' disabled':'')+'>'+(c&&c.busy?'読み込んでいます…':'社員の記録を読み込む（'+D().staff.filter(s=>!s.removed).length+'人）')+'</button>'+
-    '<div class="row"><button class="btn sm" type="button" data-act="dreload"'+(ui.dbusy?' disabled':'')+'>一覧を読み直す</button><span class="note">ほかの端末で追加した社員を出します</span></div>'+
+  const staffL=D().admin?D().staff:(ui.viewList||[]), gl=gmLine(staffL);
+  return '<section class="sec"><div class="sec-h"><h2>会社の動き</h2><span class="note">'+(D().admin?'社長用・見るだけ':'見るだけ')+'</span></div>'+
+    (gl?'<p class="note num" style="margin:0">'+h(gl)+'</p>':'')+
+    '<button class="btn" type="button" data-act="corp"'+(c&&c.busy?' disabled':'')+'>'+(c&&c.busy?'読み込んでいます…':'社員の記録を読み込む'+(D().admin?'（'+D().staff.filter(s=>!s.removed).length+'人）':''))+'</button>'+
+    (D().admin?'<div class="row"><button class="btn sm" type="button" data-act="dreload"'+(ui.dbusy?' disabled':'')+'>一覧を読み直す</button><span class="note">ほかの端末で追加した社員を出します</span></div>':'')+
+    (c&&c.data?'<div class="seg" role="group" aria-label="会社">'+[["all","全社"],...COMPANIES.map(x=>[x,x])].map(([k,l])=>'<button type="button" data-cco="'+k+'" aria-pressed="'+((ui.corpCo||"all")===k)+'">'+l+'</button>').join("")+'</div>':'')+
     (ui.dview==="corp"?dMsgList():'')+
     (c&&c.err?'<p class="note" style="margin:0;color:var(--red)">'+h(c.err)+'</p>':'')+(c&&c.at?'<p class="note" style="margin:0">'+md(ymd(new Date(c.at)))+' '+hm(new Date(c.at))+'に読み込み</p>':'')+body+'</section>';
+}
+/* 会社（複数可）・役割・GMの会社の入力欄。p: id の頭 */
+function roleForm(p,s){
+  const cs=coList(s);
+  return '<div class="form"><div class="f full"><span>会社（複数可）</span><div class="row">'+COMPANIES.map(co=>'<label class="row"><input type="checkbox" id="'+p+'_co_'+co+'"'+(cs.includes(co)?' checked':'')+'> '+co+'</label>').join("")+'</div></div>'+
+    '<label class="f">役割<select id="'+p+'_role">'+ROLES.map(r=>'<option'+((s.role||"社員")===r?' selected':'')+'>'+r+'</option>').join("")+'</select></label>'+
+    '<label class="f">GMを務める会社<select id="'+p+'_gm"><option value="">なし</option>'+COMPANIES.map(co=>'<option'+(s.gmCo===co?' selected':'')+'>'+co+'</option>').join("")+'</select></label>'+
+    '<p class="note full" style="margin:0">全社：全員の記録を見る（例：専務）。GM：GMを務める会社の社員の記録を見る。全社の人がある会社のGMを兼ねるときは、役割を「全社」にしてGMの会社を選びます。</p></div>';
+}
+function roleVal(p){
+  const role=val(p+"_role")||"社員", gmCo=role==="社員"?"":val(p+"_gm");
+  const cs=COMPANIES.filter(co=>{const el=document.getElementById(p+"_co_"+co);return el&&el.checked});
+  if(gmCo&&!cs.includes(gmCo))cs.push(gmCo);
+  return {company:COMPANIES.filter(co=>cs.includes(co)).join(","),role,gmCo};
 }
 const dMsgList=()=>{const m=ui.dmsg;return m?'<ul class="gres" role="status">'+m.map(x=>'<li class="'+(x.ok===false?'ng':x.ok==="warn"?'warn':'ok')+'">'+(x.ok===false?'× ':x.ok==="warn"?'！ ':'✓ ')+h(x.text)+'</li>').join("")+'</ul>':''};
 /* 設定：社員の「記録シート」と、社長用の「管理」 */
@@ -1812,14 +1893,25 @@ function dSettings(){
       '<div class="row"><button class="btn pri" type="button" data-act="dlink">つなぐ</button></div>')+'</div>';
   const admin=isAdminDevice()?'<div class="panel"><h3>管理（社長用）</h3>'+
       (!d.admin?'<p class="note" style="margin:0">社員ごとの記録シートを、社長のドライブのフォルダ「CPG HUB データ」に作ります。</p><div class="row"><button class="btn pri" type="button" data-act="dadmin">管理をはじめる</button></div>':
-      (d.staff.length?'<ul class="dl">'+d.staff.map((s,i)=>'<li><div class="row"><b>'+h(s.name)+'</b><span class="note">'+h(s.email)+'</span><span class="sp"></span>'+(s.removed?'<span class="note">共有を外しました</span>':'<button class="btn sm danger" type="button" data-dunshare="'+i+'">共有を外す</button>')+'</div>'+
+      (d.staff.length?'<ul class="dl">'+d.staff.map((s,i)=>'<li><div class="row"><b>'+h(s.name)+'</b><span class="note">'+h(s.email)+'</span><span class="sp"></span>'+(s.removed?'<span class="note">共有を外しました</span>':'<button class="btn sm" type="button" data-drole="'+i+'">会社・役割</button><button class="btn sm danger" type="button" data-dunshare="'+i+'">共有を外す</button>')+'</div>'+
+        '<div class="row note"><span class="chip">'+h(coList(s).join("・")||"会社なし")+'</span><span class="chip'+(isViewer(s)?' ro':'')+'">'+h(roleLabel(s))+'</span></div>'+
         '<div class="note num">シート '+h(s.sheetId.slice(0,10))+'…・追加 '+md(s.addedAt)+(s.lastSync?'・最終同期 '+h(s.lastSync):'')+'</div>'+
+        (ui.dRole===i?roleForm("dr",s)+'<div class="row"><button class="btn pri" type="button" data-act="droledo"'+(ui.dbusy?' disabled':'')+'>保存する</button><button class="btn" type="button" data-act="droleno">やめる</button></div>':'')+
         (ui.dUnshare===i?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><span>'+h(s.name)+'さんの共有を外します。シートは消さずに残ります。</span><div class="row"><button class="btn danger" type="button" data-act="dunsharedo">共有を外す</button><button class="btn" type="button" data-act="dunshareno">やめる</button></div></div>':'')+'</li>').join("")+'</ul>':'<p class="note" style="margin:0">まだ社員はいません。</p>')+
       '<div class="row"><button class="btn sm" type="button" data-act="dreload"'+(ui.dbusy?' disabled':'')+'>一覧を読み直す</button><span class="note">ほかの端末で追加・共有を外した社員を反映します</span></div>'+
+      (ui.dAsk?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><span>'+h(ui.dAsk.text)+'</span><div class="row"><button class="btn danger" type="button" data-act="daskyes">入れ替える</button><button class="btn" type="button" data-act="daskno">やめる</button></div></div>':'')+
       '<div class="form"><label class="f">氏名<input type="text" id="d_name" placeholder="例：山田"></label><label class="f">Gmail<input type="email" id="d_mail" inputmode="email" autocomplete="off" placeholder="例：yamada@gmail.com"></label></div>'+
+      roleForm("da",{company:"",role:"社員",gmCo:""})+
       '<div class="row"><button class="btn pri" type="button" data-act="dadd">社員を追加</button></div>'+
-      '<p class="note" style="margin:0">追加すると、その人のGmailに「編集者」で共有され、Googleから案内メールが届きます。Google Cloud の「対象」で、その人をテストユーザーに追加しておいてください。</p>')+'</div>':'';
-  return '<section class="sec"><div class="sec-h"><h2>記録の送り先（Googleドライブ）</h2></div>'+msg+(d.admin?'':mine)+admin+'</section>';
+      '<p class="note" style="margin:0">追加すると、その人のGmailに「編集者」で共有され、Googleから案内メールが届きます。Google Cloud の「対象」で、その人をテストユーザーに追加しておいてください。</p>'+
+      '<p class="note" style="margin:0">役割が「全社」の人は全員の、「GM」の人はその会社の社員の記録を、見るだけで見られます（閲覧者で共有します）。見る人には、下のリンクを送って、CPG HUB の「会社の動きを見る（管理者用）」に貼り付けてもらってください。</p>'+
+      (d.viewListId?'<label class="f">見る人用のリンク<input type="text" id="d_vlink" readonly value="https://docs.google.com/spreadsheets/d/'+h(d.viewListId)+'/edit"></label><div class="row"><button class="btn sm" type="button" data-act="dvcopy">リンクをコピー</button></div>':''))+'</div>':'';
+  const view=d.admin?'':'<div class="panel"><h3>会社の動きを見る（管理者用）</h3>'+
+    (d.viewListId?'<p style="margin:0">つないでいます（'+h(d.viewEmail||"")+'）。ホームの「会社の動き」で見られます。</p><div class="row"><button class="btn sm" type="button" data-act="dvunlink">つなぐのをやめる</button></div>':
+     '<p class="note" style="margin:0">全社・GMの役割の人だけが使います。社長から届いた「見る人用のリンク」を貼り付けて「つなぐ」を押してください。</p>'+
+     '<label class="f">見る人用のリンク<input type="url" id="d_view" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://docs.google.com/spreadsheets/d/…/edit"></label>'+
+     '<div class="row"><button class="btn pri" type="button" data-act="dvlink">つなぐ</button></div>')+'</div>';
+  return '<section class="sec"><div class="sec-h"><h2>記録の送り先（Googleドライブ）</h2></div>'+msg+(d.admin?'':mine+view)+admin+'</section>';
 }
 
 const main=document.getElementById("main");
@@ -1876,6 +1968,8 @@ document.addEventListener("click",e=>{
   if(el.dataset.tp){ui.tPeriod=el.dataset.tp;render();return}
   if(el.dataset.tt){ui.tTantou=el.dataset.tt;render();return}
   if(el.dataset.gt){ui.gTantou=el.dataset.gt;render();return}
+  if(el.dataset.cco){ui.corpCo=el.dataset.cco;if(ui.corp&&ui.corp.data)roBuild(ui.corp.data);render();return}
+  if(el.dataset.drole!=null){ui.dRole=Number(el.dataset.drole);render();return}
   if(el.dataset.odone){ui.oDone=el.dataset.odone;render();showAlert();const m=document.getElementById("od_memo");if(m)m.focus();return}
   if(el.dataset.ocancel){ui.oCancel=el.dataset.ocancel;render();showAlert();return}
   if(el.dataset.oadd!=null){if(ui.oBusy)return;const k=Number(el.dataset.oadd),x=ui.corp&&ui.corp.data&&ui.corp.data[k];if(!x)return;
@@ -1924,11 +2018,30 @@ document.addEventListener("click",e=>{
   if(a==="dreload"){if(ui.dbusy)return;const log=[];ui.dbusy=true;ui.dview=ui.view==="home"?"corp":"";render();
     gAuthorize(true).then(()=>adminSync((text,ok)=>log.push({ok:ok===false?"warn":true,text}))).then(f=>{log.unshift(f.list?{ok:true,text:"社員一覧を読み直しました（社員"+f.n+"人）"}:{ok:"warn",text:"「CPG HUB_社員一覧」がまだありません"});ui.dmsg=log},
       err=>{ui.dmsg=[{ok:false,text:"読み直せませんでした："+dMsg(err)}]}).finally(()=>{ui.dbusy=false;render()});return}
+  if(a==="daskno"){ui.dAsk=null;render();return}
+  if(a==="daskyes"){const q=ui.dAsk;ui.dAsk=null;if(q)q.run();return}
+  if(a==="droleno"){ui.dRole=null;render();return}
+  if(a==="droledo"){const s=D().staff[ui.dRole];if(!s||ui.dbusy)return;const v=roleVal("dr");
+    if(v.role==="GM"&&!v.gmCo){ui.dview="";ui.dmsg=[{ok:false,text:"GMを務める会社を選んでください"}];render();return}
+    const run=swapId=>{const log=[];ui.dRole=null;ui.dbusy=true;ui.dview="";ui.dmsg=log;render();
+      adminRoleSave(s.sheetId,v,swapId,(text)=>{log.push({ok:true,text});render()}).catch(err=>{log.push({ok:false,text:"途中で止まりました："+dMsg(err)})}).finally(()=>{ui.dbusy=false;render()})};
+    const other=v.gmCo&&D().staff.find(x=>!x.removed&&x.sheetId!==s.sheetId&&x.gmCo===v.gmCo);
+    if(other){ui.dAsk={text:v.gmCo+"のGMはすでに"+other.name+"さんです。入れ替えますか？（"+other.name+"さんはGMから外れ、"+(other.role==="GM"?"役割は「社員」に戻ります":"役割は「全社」のままです")+"）",run:()=>run(other.sheetId)};render();showAlert();return}
+    run("");return}
+  if(a==="dvcopy"){const el=document.getElementById("d_vlink");try{navigator.clipboard.writeText(el.value).then(()=>toast("コピーしました"),()=>{el.select();toast("選択しました。長押しでコピーしてください")})}catch(err){el.select()}return}
+  if(a==="dvlink"){const v=val("d_view");ui.dmsg=[{ok:true,text:"つないでいます…"}];ui.dview="";render();
+    viewerConnect(v).then(m=>{ui.dmsg=[{ok:true,text:"会社の動き（見るだけ）につなぎました（"+roleLabel(m)+"）。ホームの「会社の動き」で「社員の記録を読み込む」を押してください"}]},
+      err=>{ui.dmsg=[{ok:false,text:err.message==="badid"?"リンクの形が違います（https://docs.google.com/spreadsheets/d/…）":err.message==="notview"?"見る人用の一覧ではありません。社長から届いた「見る人用のリンク」か確かめてください":err.message==="notviewer"?(err.me||"このアカウント")+" は、全社・GMの役割になっていません。社長に確かめてください":"つなげませんでした："+dMsg(err)}]}).then(render);return}
+  if(a==="dvunlink"){Object.assign(D(),{viewListId:"",viewEmail:""});ui.corp=null;ui.corpRO=null;ui.viewList=null;ui.dmsg=[{ok:true,text:"会社の動きとのつながりを外しました"}];save();render();return}
   if(a==="dadd"){const name=val("d_name").trim(),mail=val("d_mail").trim();
     if(!name||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)){ui.dmsg=[{ok:false,text:"氏名とGmailを入れてください"}];render();return}
     const dup=staffDup(mail);if(dup){ui.dview="";ui.dmsg=[{ok:false,text:dup.name+"さんはすでに追加されています（"+dup.email+"）"}];render();return}
-    const log=[];ui.dview="";ui.dmsg=log;const add=(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()};
-    adminAdd(name,mail,add).catch(err=>{log.push({ok:false,text:err.message==="dup"?err.who+"さんはすでに追加されています（ほかの端末で追加済み）":"途中で止まりました："+dMsg(err)});render()});return}
+    const rv=roleVal("da");if(rv.role==="GM"&&!rv.gmCo){ui.dview="";ui.dmsg=[{ok:false,text:"GMを務める会社を選んでください"}];render();return}
+    const run=swapId=>{const log=[];ui.dview="";ui.dmsg=log;const add=(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()};
+      adminAdd(name,mail,add,rv,swapId).catch(err=>{log.push({ok:false,text:err.message==="dup"?err.who+"さんはすでに追加されています（ほかの端末で追加済み）":"途中で止まりました："+dMsg(err)});render()})};
+    const other=rv.gmCo&&D().staff.find(x=>!x.removed&&x.gmCo===rv.gmCo);
+    if(other){ui.dAsk={text:rv.gmCo+"のGMはすでに"+other.name+"さんです。入れ替えますか？（"+other.name+"さんはGMから外れ、"+(other.role==="GM"?"役割は「社員」に戻ります":"役割は「全社」のままです")+"）",run:()=>run(other.sheetId)};render();showAlert();return}
+    run("");return}
   if(a==="dunshareno"){ui.dUnshare=null;render();return}
   if(a==="dunsharedo"){const s=D().staff[ui.dUnshare];ui.dUnshare=null;if(!s)return;
     adminRemove(s).then(()=>{ui.dmsg=[{ok:true,text:s.name+"さんの共有を外しました（シートは残っています）"}]},err=>{ui.dmsg=[{ok:false,text:"共有を外せませんでした："+dMsg(err)}]}).then(render);return}
