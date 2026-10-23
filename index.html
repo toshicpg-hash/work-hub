@@ -275,7 +275,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.22・10/23更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.23・10/23更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -862,40 +862,51 @@ const gShowIds=()=>Array.isArray(DB.settings.gShow)?DB.settings.gShow:(G.cals||[
 const gWritable=()=>(G.cals||[]).filter(c=>c.write);
 const gWriteCal=()=>{const w=gWritable();return w.find(c=>c.id===DB.settings.gWrite)||w.find(c=>c.name===GSHARED)||null};
 const gCalOf=id=>(G.cals||[]).find(c=>c.id===id);
+/* カレンダーごとの読み込みは同時に行う（PAPA HUBと同じく並行で、待ち時間を短くする） */
+async function gReadOne(cal,from,to,mine){
+  const out=[];let page="";
+  do{
+    const q=new URLSearchParams({timeZone:"Asia/Tokyo",singleEvents:"true",orderBy:"startTime",maxResults:"2500",timeMin:from+"T00:00:00+09:00",timeMax:addDays(to,1)+"T00:00:00+09:00",
+      fields:"items(id,status,summary,location,visibility,start,end,extendedProperties/private),nextPageToken"});
+    if(page)q.set("pageToken",page);
+    const v=await gApi("calendars/"+encodeURIComponent(cal.id)+"/events?"+q);
+    for(const e of (v&&v.items)||[]){
+      if(!e||e.status==="cancelled"||!e.start)continue;
+      /* events this device registered are already shown as HUB events */
+      const hub=e.extendedProperties&&e.extendedProperties.private&&e.extendedProperties.private.cpgHubCase;
+      if(hub&&mine.has(hub))continue;
+      const allDay=!!e.start.date;
+      /* 非公開の予定は、そのカレンダーの持ち主以外には中身を出さず「予定あり」だけにする（Google側で見える権限があっても） */
+      const hide=!e.summary||(!cal.primary&&!cal.owner&&(e.visibility==="private"||e.visibility==="confidential"));
+      out.push({calendar:cal.name,title:hide?"予定あり":e.summary,location:hide?"":e.location||"",allDay,start:allDay?e.start.date:e.start.dateTime,end:allDay?(e.end&&e.end.date)||addDays(e.start.date,1):(e.end&&e.end.dateTime)||e.start.dateTime});
+    }
+    page=(v&&v.nextPageToken)||"";
+  }while(page);
+  return out;
+}
 async function gReadRange(from,to){
-  const ids=gShowIds(), mine=new Set(DB.cases.map(c=>c.id)), events=[], calendars=[];let missing=0;
-  for(const id of ids){
-    const cal=gCalOf(id);if(!cal){missing++;continue}
-    try{
-      let page="";
-      do{
-        const q=new URLSearchParams({timeZone:"Asia/Tokyo",singleEvents:"true",orderBy:"startTime",maxResults:"2500",timeMin:from+"T00:00:00+09:00",timeMax:addDays(to,1)+"T00:00:00+09:00"});
-        if(page)q.set("pageToken",page);
-        const v=await gApi("calendars/"+encodeURIComponent(id)+"/events?"+q);
-        for(const e of (v&&v.items)||[]){
-          if(!e||e.status==="cancelled"||!e.start)continue;
-          /* events this device registered are already shown as HUB events */
-          const hub=e.extendedProperties&&e.extendedProperties.private&&e.extendedProperties.private.cpgHubCase;
-          if(hub&&mine.has(hub))continue;
-          const allDay=!!e.start.date;
-          /* 非公開の予定は、そのカレンダーの持ち主以外には中身を出さず「予定あり」だけにする（Google側で見える権限があっても） */
-          const hide=!e.summary||(!cal.primary&&!cal.owner&&(e.visibility==="private"||e.visibility==="confidential"));
-          events.push({calendar:cal.name,title:hide?"予定あり":e.summary,location:hide?"":e.location||"",allDay,start:allDay?e.start.date:e.start.dateTime,end:allDay?(e.end&&e.end.date)||addDays(e.start.date,1):(e.end&&e.end.dateTime)||e.start.dateTime});
-        }
-        page=(v&&v.nextPageToken)||"";
-      }while(page);
-      calendars.push(cal.name);
-    }catch(err){if(err.message==="signin")throw err;missing++}
-  }
+  const ids=gShowIds(), mine=new Set(DB.cases.map(c=>c.id));
+  const cals=ids.map(gCalOf);
+  const res=await Promise.allSettled(cals.map(cal=>cal?gReadOne(cal,from,to,mine):Promise.reject(new Error("nocal"))));
+  if(res.some(r=>r.status==="rejected"&&r.reason&&r.reason.message==="signin"))throw new Error("signin");
+  const events=[], calendars=[];let missing=0;
+  res.forEach((r,i)=>{if(r.status==="fulfilled"){events.push(...r.value);calendars.push(cals[i].name)}else missing++});
   return {events,calendars,missing};
 }
 const GCAL_TTL=5*60000, GCAL_ERR_TTL=60000, gcalCache={}, gcalColorIdx={};
+/* 前の月の初めから次の月の終わりまでを一度に読み、日・週・月の移動やスワイプでは読み直さない */
+function gWin(from,to){
+  const a=parseYmd(from), b=parseYmd(to);
+  return [ymd(new Date(a.getFullYear(),a.getMonth()-1,1)),ymd(new Date(b.getFullYear(),b.getMonth()+2,0))];
+}
 function gcalRange(from,to){
   if(!gSignedIn()||!G.cals)return {state:"off"};
-  const k=gShowIds().join(",")+"|"+from+"|"+to, c=gcalCache[k];
-  if(c&&(c.state==="loading"||Date.now()-c.at<(c.state==="ok"?GCAL_TTL:GCAL_ERR_TTL)))return c;
-  const e=gcalCache[k]={state:"loading",at:Date.now(),data:c&&c.data};
-  e.p=gReadRange(from,to)
+  const ids=gShowIds().join(",");
+  for(const k in gcalCache){const c=gcalCache[k];
+    if(c.ids===ids&&c.from<=from&&c.to>=to&&(c.state==="loading"||Date.now()-c.at<(c.state==="ok"?GCAL_TTL:GCAL_ERR_TTL)))return c}
+  const [wf,wt]=gWin(from,to), k=ids+"|"+wf+"|"+wt, old=gcalCache[k];
+  const e=gcalCache[k]={state:"loading",at:Date.now(),data:old&&old.data,ids,from:wf,to:wt};
+  e.p=gReadRange(wf,wt)
     .then(j=>Object.assign(e,{state:"ok",at:Date.now(),data:j}),err=>Object.assign(e,{state:gSignedIn()?"error":"off",at:Date.now(),msg:gMsg(err)}))
     .then(()=>{if(ui.view==="cal")render()});
   return e;
@@ -914,9 +925,9 @@ async function gSyncAll(){
     try{await gAuthorize(dataOn());step("Googleにログイン",true,"できました")}catch(err){step("Googleにログイン",false,gMsg(err));return}
     try{const cs=await gLoadCalendars();step("カレンダー一覧",true,cs.length+"件")}catch(err){step("カレンダー一覧",false,gMsg(err));return}
     for(const x in gcalCache)delete gcalCache[x];
-    const [f,t]=calRange();
-    try{const j=await gReadRange(f,t);gcalCache[gShowIds().join(",")+"|"+f+"|"+t]={state:"ok",at:Date.now(),data:j};
-      step("予定の読み込み",!j.missing,j.events.length+"件（"+(j.calendars.join("・")||"表示するカレンダーなし")+"）"+(j.missing?"。読めないカレンダーが"+j.missing+"つあります":""))}
+    const [f0,t0]=calRange(), [f,t]=gWin(f0,t0), ids=gShowIds().join(",");
+    try{const j=await gReadRange(f,t);gcalCache[ids+"|"+f+"|"+t]={state:"ok",at:Date.now(),data:j,ids,from:f,to:t};
+      step("予定の読み込み",!j.missing,j.events.length+"件・前後の月も含む（"+(j.calendars.join("・")||"表示するカレンダーなし")+"）"+(j.missing?"。読めないカレンダーが"+j.missing+"つあります":""))}
     catch(err){step("予定の読み込み",false,gMsg(err))}
     const moved=DB.cases.filter(c=>c.gcal&&c.gcal.id&&c.gcal.date&&c.planDate&&c.gcal.date!==c.planDate&&!ended(c));
     if(moved.length)step("日付の変わった案件",false,moved.length+"件がGoogleカレンダーと違います（案件の画面で「カレンダーの予定を更新」を押してください）");
@@ -1112,7 +1123,7 @@ function vStats(){
     ''+
     '</form></section>'+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.22 用）を開く</a></section>';
+  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.23 用）を開く</a></section>';
 }
 function gSettings(){
   const head='<section class="sec"><div class="sec-h"><h2>Googleカレンダー連携</h2></div>';
