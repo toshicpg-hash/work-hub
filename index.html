@@ -10,7 +10,26 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="./work-hub-icon-192.png?v=9f230a65fac4">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=179722669fe6">
-<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}/* 予定画面を大きく見やすく（v1.20） */
+.seg.cv{flex-wrap:nowrap;gap:8px}
+.seg.cv button{flex:1;min-height:50px;font-size:18px;border-radius:12px;padding:8px}
+.calnav h2{font-size:20px}
+.calnav .btn{min-height:44px;min-width:44px;font-size:15px}
+.cal{gap:4px}
+.cal .wd{font-size:13px}
+.cal .d{min-height:86px;font-size:12px;padding:4px}
+.cal .n{font-size:15px}
+.cal .hn{font-size:10.5px}
+.ev{font-size:11.5px;padding:1px 4px}
+.wkd{min-height:62px}
+.wkd .dn{font-size:24px}
+.wkd .dw{font-size:13px}
+.hol-name{font-size:13px}
+.wkev{font-size:15px}
+.wkev .ev{font-size:12.5px}
+.wknone{font-size:14px}
+.gcst{font-size:13px}
+</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap">
@@ -256,7 +275,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.19・10/23更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.20・10/23更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -976,7 +995,7 @@ function vCal(){
   const gst=gSyncPanel()+gcalStatus(g);
   const legend='<div class="legend"><span><i style="background:var(--accent-soft)"></i>立会・調査の予定</span><span><i style="background:var(--green-soft)"></i>実施</span><span><i style="background:var(--amber-soft)"></i>見積提出</span><span><i style="background:var(--sunk)"></i>受注</span><span><i style="background:var(--red)"></i>土日祝の立会</span></div>';
   const note='<p class="note" style="margin:0">社内会議・客先会議・営業活動は次の段階で追加します。</p>';
-  const views='<div class="seg" role="group" aria-label="表示の切り替え">'+[["month","月"],["week","週"],["day","日"]].map(([k,l])=>'<button type="button" data-cv="'+k+'" aria-pressed="'+(ui.calView===k)+'">'+l+'</button>').join("")+'</div>';
+  const views='<div class="seg cv" role="group" aria-label="表示の切り替え">'+[["month","月"],["week","週"],["day","日"]].map(([k,l])=>'<button type="button" data-cv="'+k+'" aria-pressed="'+(ui.calView===k)+'">'+l+'</button>').join("")+'</div>';
   const nav=(step,title,todayLabel,prevLabel,nextLabel)=>'<div class="calnav"><button class="btn sm" type="button" data-shift="'+(-step)+'" aria-label="'+prevLabel+'">‹</button><h2 class="num">'+title+'</h2>'+
     '<button class="btn sm" type="button" data-shift="today">'+todayLabel+'</button><button class="btn sm" type="button" data-shift="'+step+'" aria-label="'+nextLabel+'">›</button></div>';
   if(ui.calView==="week"){
@@ -1093,7 +1112,7 @@ function vStats(){
     ''+
     '</form></section>'+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.19 用）を開く</a></section>';
+  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.20 用）を開く</a></section>';
 }
 function gSettings(){
   const head='<section class="sec"><div class="sec-h"><h2>Googleカレンダー連携</h2></div>';
