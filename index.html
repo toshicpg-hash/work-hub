@@ -235,7 +235,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><span class="ver">v1.12・10/23更新</span></span><span class="proto">試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><span class="ver">v1.13・10/23更新</span></span><span class="proto">試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -501,7 +501,7 @@ function refreshItemTotals(c){
 }
 function gcalPreview(c){
   const s=TYPES[c.type].site, g=c.gcal&&c.gcal.id?c.gcal:null, w=gWriteCal();
-  const where=g?(g.calName||"Googleカレンダー"):w?w.name:"CPG";
+  const where=g?(g.calName||"Googleカレンダー"):w?w.name:GSHARED;
   let st, btn="";
   if(!c.planDate)st='日程を決めると登録できます。';
   else if(!g||!g.date){st='まだ登録していません（登録先：'+h(where)+'）。';btn='<button class="btn pri" type="button" data-act="greg">Googleカレンダーに登録</button>'}
@@ -666,10 +666,12 @@ async function gLoadCalendars(){
   G.cals=items.filter(c=>c&&c.id&&!c.deleted).map(c=>({id:c.id,name:gCalName(c),primary:!!c.primary,owner:c.accessRole==="owner",write:c.accessRole==="owner"||c.accessRole==="writer"}));
   return G.cals;
 }
-/* Shown calendars: the saved choice, or "CPG", the signed-in person's own calendar and the named people's shared calendars */
-const gShowIds=()=>Array.isArray(DB.settings.gShow)?DB.settings.gShow:(G.cals||[]).filter(c=>c.primary||c.name==="CPG"||GNAMES[c.id]).map(c=>c.id);
+/* 会社みんなで使う共有カレンダーの名前。社長個人の仕事カレンダー「CPG」とは別にする */
+const GSHARED="CPG HUB";
+/* Shown calendars: the saved choice, or the shared calendar, "CPG", the signed-in person's own calendar and the named people's calendars */
+const gShowIds=()=>Array.isArray(DB.settings.gShow)?DB.settings.gShow:(G.cals||[]).filter(c=>c.primary||c.name===GSHARED||c.name==="CPG"||GNAMES[c.id]).map(c=>c.id);
 const gWritable=()=>(G.cals||[]).filter(c=>c.write);
-const gWriteCal=()=>{const w=gWritable();return w.find(c=>c.id===DB.settings.gWrite)||w.find(c=>c.name==="CPG")||null};
+const gWriteCal=()=>{const w=gWritable();return w.find(c=>c.id===DB.settings.gWrite)||w.find(c=>c.name===GSHARED)||null};
 const gCalOf=id=>(G.cals||[]).find(c=>c.id===id);
 async function gReadRange(from,to){
   const ids=gShowIds(), mine=new Set(DB.cases.map(c=>c.id)), events=[], calendars=[];let missing=0;
@@ -764,7 +766,7 @@ async function gRegister(c){
   }
 }
 const gcalColor=name=>"gc"+((name in gcalColorIdx?gcalColorIdx[name]:(gcalColorIdx[name]=Object.keys(gcalColorIdx).length))%4);
-const gcalLabel=name=>String(name||"").split(/[\s　]/)[0].slice(0,4)||"予定";
+const gcalLabel=name=>name===GSHARED?"共有":String(name||"").split(/[\s　]/)[0].slice(0,4)||"予定";
 const hm=d=>pad(d.getHours())+":"+pad(d.getMinutes());
 /* Spread each event over the days it covers (all-day "end" is the day after the last day) */
 function gcalByDay(j){
