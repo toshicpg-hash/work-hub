@@ -10,7 +10,8 @@ Google の入り口（Google Cloud のクライアント）は PAPA HUB と同�
    （クライアントID が `766726293537-…` のプロジェクトです）
 2. 左のメニュー「APIとサービス」→「OAuth 同意画面」（新しい画面では「Google Auth Platform」→「対象」）を開く
 3. 公開ステータスが「テスト中」なら、「テストユーザー」の「＋ ユーザーを追加」で
-   `h-kuroki@cleanpapa.com` を追加して保存
+   `only.1.mybrand@gmail.com`（専務のGmail）を追加して保存
+   （会社のメール h-kuroki@cleanpapa.com はGoogleアカウントではないので使えません）
    （「本番環境」になっている場合は、この作業はいりません）
 4. 「認証情報」（または「クライアント」）で `766726293537-…` を開き、
    「承認済みの JavaScript 生成元」に `https://toshicpg-hash.github.io` があることを確認
@@ -21,10 +22,10 @@ Google の入り口（Google Cloud のクライアント）は PAPA HUB と同�
 1. https://calendar.google.com を開く
 2. 左の「マイカレンダー」の「CPG」→「︙」→「設定と共有」
 3. 「特定のユーザーまたはグループと共有する」→「ユーザーやグループを追加」
-4. `h-kuroki@cleanpapa.com`、権限は「予定の変更」を選んで「送信」
+4. `only.1.mybrand@gmail.com`（専務のGmail）、権限は「予定の変更」を選んで「送信」
 
 ※ 専務の予定を社長の HUB に出すには、専務から社長へカレンダーを共有してもらいます（専務にはメールで依頼済み）。
-共有されると、社長のカレンダー一覧に `h-kuroki@cleanpapa.com` が出てきます。HUB では「黒木」と表示します。
+共有されると、社長のカレンダー一覧に `only.1.mybrand@gmail.com` が出てきます。HUB では「黒木」と表示します。
 
 ## 3. 社長の HUB で確かめる
 
@@ -38,7 +39,7 @@ Google の入り口（Google Cloud のクライアント）は PAPA HUB と同�
 ## 4. 専務の HUB で確かめる
 
 専務に「設定が終わった」と連絡し、専務のスマホで同じように「Googleとまとめて同期」を押してもらいます。
-`h-kuroki@cleanpapa.com` を選んで許可すれば、専務自身のカレンダーと CPG カレンダーが出ます。
+`only.1.mybrand@gmail.com` を選んで許可すれば、専務自身のカレンダーと CPG カレンダーが出ます。
 
 ## うまくいかないとき
 
@@ -47,7 +48,6 @@ Google の入り口（Google Cloud のクライアント）は PAPA HUB と同�
 | 「このアプリはGoogleで確認されていません」 | 社内用なので問題ありません。「詳細」→「移動」で進む |
 | 「アクセスをブロック」「403 access_denied」 | 1-3 のテストユーザーに、その人のアドレスが入っていない |
 | 「redirect_uri_mismatch」「origin」 などのエラー | 1-4 の JavaScript 生成元が入っていない |
-| 専務だけログインできない（会社のGoogleの管理者による制限と出る） | cleanpapa.com の Google Workspace 管理者が外部アプリを止めている。管理コンソールの「APIの制御」で、このクライアントIDを「信頼できる」にする |
 | 「Googleの画面を開けませんでした」 | ブラウザのポップアップを許可する |
 | 予定の読み込みで「読めないカレンダーがあります」 | そのカレンダーの共有がまだ、または権限が足りない |
 

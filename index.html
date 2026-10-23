@@ -235,7 +235,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><span class="ver">v1.11・10/23更新</span></span><span class="proto">試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><span class="ver">v1.12・10/23更新</span></span><span class="proto">試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -633,7 +633,7 @@ const mdw=s=>{const d=parseYmd(s);return (d.getMonth()+1)+"月"+d.getDate()+"日
 const GOOGLE_CLIENT_ID="766726293537-1e4kdsqmoit29rbvh559fnmha3q0s6up.apps.googleusercontent.com";
 const GSCOPE="https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events";
 const G={token:"",exp:0,cals:null,pending:null};
-const GNAMES={"h-kuroki@cleanpapa.com":"黒木","toshi.cpg@gmail.com":"社長"};
+const GNAMES={"only.1.mybrand@gmail.com":"黒木","h-kuroki@cleanpapa.com":"黒木","toshi.cpg@gmail.com":"社長"};
 const gSignedIn=()=>!!G.token&&Date.now()<G.exp;
 /* Must be called directly from a tap so the Google window is not blocked */
 function gAuthorize(){
