@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a3a40">
+<meta name="referrer" content="no-referrer">
+<title>CPG HUB 使い方マニュアル</title>
+<link rel="icon" type="image/png" sizes="192x192" href="./work-hub-icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap">
+<style>
+:root{
+  --bg:#f3f6f6; --surface:#ffffff; --sunk:#e8eeee; --line:#d3dcdc;
+  --fg:#15232b; --muted:#5a6a71; --accent:#0b6b72; --accent-fg:#ffffff; --accent-soft:#dcefef;
+  --red:#b93a26; --red-soft:#fbe6e1; --amber:#9a6412; --amber-soft:#f8ecd6; --green:#2d7449; --green-soft:#e0f0e5; --blue:#1d5fb8;
+  --f-display:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1719; --surface:#172225; --sunk:#1e2c30; --line:#2c3d42;
+  --fg:#e3ecee; --muted:#93a6ac; --accent:#4fb8bf; --accent-fg:#06272a; --accent-soft:#163a3d;
+  --red:#ef8a76; --red-soft:#3a1d18; --amber:#e3b45f; --amber-soft:#35290f; --green:#7cc896; --green-soft:#16301f; --blue:#86b4f5;
+  color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15.5px;line-height:1.75}
+header{position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:1px solid var(--line)}
+.top{max-width:720px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:10px 16px}
+.brand{font-family:var(--f-display);font-weight:900;font-size:18px}
+.top .sp{flex:1}
+.back{color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap}
+main{max-width:720px;margin:0 auto;padding:16px 16px 60px;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.4;margin:0;text-wrap:balance}
+h1{font-size:22px}
+h2{font-size:19px;padding-top:6px;border-top:3px solid var(--accent)}
+h3{font-size:16px;margin-top:6px}
+p{margin:0}
+section{display:flex;flex-direction:column;gap:10px;scroll-margin-top:60px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.meta{font-size:13.5px;color:var(--muted)}
+.ver{display:inline-block;background:var(--accent-soft);color:var(--accent);font-weight:700;border-radius:99px;padding:1px 10px;font-size:13px}
+ol,ul{margin:0;padding-left:1.5em;display:flex;flex-direction:column;gap:4px}
+li{overflow-wrap:anywhere}
+.btn{display:inline-block;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:0 6px;font-weight:700;font-size:.92em;white-space:nowrap}
+.blue{display:inline-block;background:#2563eb;color:#fff;border-radius:8px;padding:0 8px;font-weight:700;font-size:.92em}
+.note{background:var(--amber-soft);border-radius:12px;padding:10px 14px;font-size:14.5px}
+.note b{color:var(--amber)}
+.warn{background:var(--red-soft);border-radius:12px;padding:10px 14px;font-size:14.5px}
+.warn b{color:var(--red)}
+.flow{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:13.5px;font-weight:700}
+.flow span{background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:2px 8px}
+.flow span.end{background:var(--green-soft);color:var(--green)}
+.toc{columns:2;column-gap:16px;padding-left:1.4em}
+.toc li{break-inside:avoid}
+a{color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:6px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+th{color:var(--muted);font-size:13px}
+.hist td:first-child{white-space:nowrap;font-weight:700}
+@media (max-width:420px){.toc{columns:1}}
+</style>
+</head>
+<body>
+<header><div class="top"><span class="brand">CPG HUB</span><span class="sp"></span><a class="back" href="./">‹ アプリに戻る</a></div></header>
+<main>
+
+<section>
+  <h1>CPG HUB 使い方マニュアル</h1>
+  <p class="meta"><span class="ver">このマニュアルは v1.18 用</span>　最終改訂日：2026年10月23日</p>
+  <p class="meta">アプリの左上（CPG HUB の下）に出ている「v1.18・10/23更新」の版と同じか確かめてください。アプリを直すたびに、このマニュアルも改訂します。</p>
+  <div class="card"><b>もくじ</b>
+    <ol class="toc">
+      <li><a href="#history">改訂履歴</a></li>
+      <li><a href="#intro">はじめに</a></li>
+      <li><a href="#setup">最初の設定</a></li>
+      <li><a href="#daily">毎日の使い方</a></li>
+      <li><a href="#cases">案件</a></li>
+      <li><a href="#calendar">予定とカレンダー</a></li>
+      <li><a href="#payment">入金</a></li>
+      <li><a href="#receipts">領収書</a></li>
+      <li><a href="#sheet">記録シートにつなぐ</a></li>
+      <li><a href="#trouble">困ったとき</a></li>
+      <li><a href="#boss">社長用</a></li>
+    </ol>
+  </div>
+</section>
+
+<section id="history">
+  <h2>改訂履歴</h2>
+  <div class="card"><table class="hist">
+    <tr><th>版</th><th>できるようになったこと</th></tr>
+    <tr><td>v1.18<br><span class="meta">10/23</span></td><td>間違えて登録した案件を削除できるようになりました。Googleカレンダーの予定も一緒に消せます。本番に向けて、練習用の例（架空）を消せるようにし、新しいスマホは空から始まるようにしました。「すべて消して架空データに戻す」はなくしました。このマニュアルを作りました。</td></tr>
+    <tr><td>v1.17<br><span class="meta">10/23</span></td><td>自分の記録（案件・入金・立替の要点と領収書の写真）を、社長のGoogleドライブの「記録シート」に送れるようになりました。</td></tr>
+    <tr><td>v1.16<br><span class="meta">10/23</span></td><td>領収書（立替・法人カード）を登録して、精算書（Excel）と写真を経理に送れるようになりました。差戻しにも対応しました。</td></tr>
+    <tr><td>v1.15<br><span class="meta">10/23</span></td><td>引渡のあと、完工・請求・入金まで追えるようになりました。未入金が見え、経理に入金確認を依頼できます。</td></tr>
+    <tr><td>v1.14<br><span class="meta">10/23</span></td><td>社長個人の「CPG」カレンダーを、予定画面の最初の表示から外しました。</td></tr>
+    <tr><td>v1.13<br><span class="meta">10/23</span></td><td>会社で使う共有カレンダーを「CPG HUB」にしました。</td></tr>
+    <tr><td>v1.12<br><span class="meta">10/23</span></td><td>専務のGoogleアカウントの予定を、名前で表示するようにしました。</td></tr>
+    <tr><td>v1.11<br><span class="meta">10/23</span></td><td>ほかの人の「非公開」の予定は、中身を出さずに「予定あり」とだけ表示するようにしました。</td></tr>
+    <tr><td>v1.10<br><span class="meta">10/23</span></td><td>Googleカレンダーとつながりました。「Googleとまとめて同期」で予定が見られ、案件の日程をカレンダーに登録できます。</td></tr>
+  </table></div>
+</section>
+
+<section id="intro">
+  <h2>はじめに</h2>
+  <p>CPG HUB は、退去立会・リノベーション・定期清掃・緊急対応の仕事を、<b>受付から入金まで</b>見るためのアプリです。</p>
+  <div class="card"><b>仕事の流れ</b>
+    <div class="flow"><span>受付</span>→<span>立会・現地調査</span>→<span>見積</span>→<span>受注</span>→<span>引渡（Access）</span>→<span>完工</span>→<span>請求</span>→<span class="end">入金</span></div>
+    <p>現場が終わっても、仕事は終わりではありません。<b>入金されて、はじめて「完了」</b>です。</p>
+  </div>
+  <p class="note"><b>大事：</b>入力した内容は、<b>その端末（スマホ）の中にだけ</b>残ります。ほかの人のスマホには出ません。前から使っているスマホに「（架空）」と付いた案件があれば、それは練習用の例です（下の「3. 練習用の例を消す」）。</p>
+</section>
+
+<section id="setup">
+  <h2>最初の設定</h2>
+  <h3>1. 新しい版にする（開き直す）</h3>
+  <ol>
+    <li>CPG HUB を開く</li>
+    <li>画面を下に引っぱって離す（または、いったん閉じて開き直す）</li>
+    <li>左上の <b>CPG HUB</b> の下に出ている版（例：<b>v1.18・10/23更新</b>）を見る。このマニュアルと同じ版になっていればOK</li>
+  </ol>
+  <p class="meta">版の文字を押すと、このマニュアルが開きます。</p>
+  <h3>2. Googleとつなぐ</h3>
+  <ol>
+    <li>ホームの青いボタン <span class="blue">Googleとまとめて同期</span> を押す</li>
+    <li>自分のGoogleアカウントを選ぶ</li>
+    <li>「このアプリは Google で確認されていません」と出たら、<b>「詳細」</b>→<b>「CPG HUB（安全ではないページ）に移動」</b>の順に押す（会社で用意したアプリなので、この表示が出るのは普通です）</li>
+    <li>カレンダーなどの使用を<b>許可</b>する</li>
+    <li>ボタンの下に <b>✓ が3つ</b>（Googleにログイン・カレンダー一覧・予定の読み込み）出れば完了です</li>
+  </ol>
+  <p class="note"><b>ログインは、アプリを開くたびに必要です。</b>スマホには保存しません。</p>
+  <h3>3. 練習用の例を消す（前から使っているスマホだけ）</h3>
+  <p>新しく使い始めるスマホは、何も入っていない状態から始まります。ホームに「まだ案件がありません」と出たら、右上の <span class="btn">＋ 受付</span> から始めてください。</p>
+  <p>前から使っているスマホで、「（架空）」と付いた案件や、左上に「試作・架空データ」の表示があるときは、本番の入力を始める前に消してください。</p>
+  <ol>
+    <li>下のメニューの <b>数字</b> を開く</li>
+    <li>「練習用の例（架空）」の <span class="btn">練習用の例（架空）を消す</span> を押す</li>
+    <li>「（架空）と付いた案件・ToDo・領収書を消します。自分で入力した内容は消えません」と出たら <span class="btn">消す</span></li>
+    <li>例がなくなると、ボタンと「試作・架空データ」の表示は出なくなります</li>
+  </ol>
+  <p class="meta">例をGoogleカレンダーに登録していた場合、カレンダーの予定は残ります。必要ならGoogleカレンダーで消してください。</p>
+</section>
+
+<section id="daily">
+  <h2>毎日の使い方</h2>
+  <ol>
+    <li>アプリを開いたら、まず <span class="blue">Googleとまとめて同期</span> を押す</li>
+    <li>ホームのタイルを見る
+      <ul>
+        <li><b>期限切れのToDo</b>（赤）：今すぐやること</li>
+        <li><b>今日までのToDo</b>：今日中にやること</li>
+        <li><b>対応中の緊急</b>：受付からの時間が出ます</li>
+        <li><b>未入金</b>：請求したのに入金がまだのもの。遅れがあると赤</li>
+        <li><b>立替 未提出</b>：まだ経理に出していない領収書</li>
+      </ul>
+    </li>
+    <li>下のメニューの <b>ToDo</b> を開き、上から順に片付ける。ToDoは案件の段階に合わせて<b>自動で出ます</b>。案件を進めると消えます</li>
+  </ol>
+</section>
+
+<section id="cases">
+  <h2>案件</h2>
+  <h3>受付</h3>
+  <ol>
+    <li>右上の <span class="btn">＋ 受付</span> を押す</li>
+    <li>種類・依頼元・物件・部屋・住所・担当を入れて <span class="btn">受付する</span></li>
+    <li>受付番号（例：U-0017）が付きます</li>
+  </ol>
+  <h3>立会・現地調査</h3>
+  <ol>
+    <li>案件を開き、予定日を入れて <span class="btn">日程を決める</span></li>
+    <li>Googleカレンダーにも入れるときは <span class="btn">Googleカレンダーに登録</span>（自動では入りません）</li>
+    <li>行ったら、実施した日を入れて <span class="btn">立会を済みにする</span>（種類によって「現地調査」などの名前です）</li>
+    <li>退去立会では、箇所ごとに「家主・入居者・要確認」を選び、金額を入れます</li>
+  </ol>
+  <h3>見積・受注</h3>
+  <ol>
+    <li>見積書はExcelで作り、金額と提出日を入れて <span class="btn">見積を提出済みにする</span></li>
+    <li>返事が来たら <span class="btn">受注にする</span>／<span class="btn">失注にする</span>（理由を選ぶ）／<span class="btn">保留にする</span>（次に確認する日を入れる）</li>
+    <li>緊急で先に工事するときは <span class="btn">見積を省いて受注へ（緊急）</span></li>
+  </ol>
+  <h3>引渡・完工・請求・入金</h3>
+  <ol>
+    <li>Accessで現場管理表を作り、仕事番号を入れて <span class="btn">引渡済にする</span></li>
+    <li>工事が終わったら <span class="btn">施工完了にする</span>（3日後に「請求書を出す」ToDoが出ます）</li>
+    <li>請求したら、請求日・金額・請求先・入金予定日を入れて <span class="btn">請求済みにする</span></li>
+    <li>入金があったら <span class="btn">入金を記録</span>。全額になると「入金済み（完了）」</li>
+  </ol>
+  <h3>「失注」と「削除」の使い分け</h3>
+  <table>
+    <tr><th>こんなとき</th><th>使うもの</th></tr>
+    <tr><td>依頼が無くなった・他社に決まった</td><td><b>失注</b>にする（記録が残り、数字に入ります）</td></tr>
+    <tr><td>間違えて登録した・同じ案件を2つ作った</td><td>案件の一番下の <span class="btn">この案件を削除</span>（元に戻せません）</td></tr>
+  </table>
+  <ul>
+    <li>Googleカレンダーに登録した案件は、「Googleカレンダーの予定も削除する」にチェックが入っています。ログインしていないときは、先に <span class="blue">Googleとまとめて同期</span> を押してください</li>
+    <li>領収書が紐づいた案件は削除できません。先に領収書の「案件」を「選ばない」にしてください</li>
+    <li>消した受付番号は、二度と使いません</li>
+  </ul>
+</section>
+
+<section id="calendar">
+  <h2>予定とカレンダー</h2>
+  <ul>
+    <li>下のメニューの <b>予定</b> で、<b>月・週・日</b>を切り替えられます。日付を押すと、その日の予定が出ます</li>
+    <li>土曜は青、日曜と祝日は赤です。<b>土日祝の立会は赤いラベル</b>で目立たせています</li>
+    <li>Googleの予定は、カレンダーごとに色と小さなラベル（「CPG HUB」「黒木」など）が付きます</li>
+  </ul>
+  <div class="note"><b>決まり：案件の予定は HUB から、それ以外の予定は Googleカレンダーから入れる。</b><br>同じ予定を両方に入れないでください（二重になります）。</div>
+  <ol>
+    <li>HUBで予定日を変えたら、案件の画面で <span class="btn">カレンダーの予定を更新</span> を押す（自動では変わりません）</li>
+    <li>ほかの人の「非公開」の予定は、中身が出ずに「予定あり」とだけ出ます</li>
+  </ol>
+</section>
+
+<section id="payment">
+  <h2>入金</h2>
+  <ul>
+    <li>ホームの <b>未入金</b> を押すと、入金待ちだけが<b>遅れの長い順</b>に出ます</li>
+    <li>入金予定日を過ぎると、毎日「入金を確認する（○日遅れ）」のToDoが赤で出ます</li>
+  </ul>
+  <h3>経理に確認を頼む</h3>
+  <ol>
+    <li>入金待ちの一覧（または「数字」画面）で <span class="btn">経理に入金確認を依頼</span></li>
+    <li>文面を見て <span class="btn">LINE・メールで送る</span>（送れないときは「コピー」して貼り、<span class="btn">送ったので記録する</span>）</li>
+    <li>3日たっても返事が記録されないと、「経理の返事を確認する」ToDoが出ます</li>
+  </ol>
+  <h3>経理から連絡が来たら</h3>
+  <ol>
+    <li>案件を開き、入金日・入金額を入れる</li>
+    <li>「だれからの情報か」で <b>経理連絡</b> を選んで <span class="btn">入金を記録</span></li>
+    <li>まだ入金が無いという返事なら <span class="btn">経理から返事あり（まだ入金なし）</span></li>
+  </ol>
+</section>
+
+<section id="receipts">
+  <h2>領収書</h2>
+  <h3>立替の登録</h3>
+  <ol>
+    <li>下のメニューの <b>領収書</b> → <span class="btn">＋ 領収書を登録</span></li>
+    <li><span class="btn">写真を撮る・選ぶ</span> で領収書を撮る（何枚でも）</li>
+    <li>日付・金額・支払先・内容・会社（CP／CPY／AT）・区分を入れる。案件を選ぶと、現場と仕事番号が自動で入ります</li>
+    <li><span class="btn">保存する</span></li>
+  </ol>
+  <h3>精算書を作って送る</h3>
+  <ol>
+    <li>「立替」の画面で、会社ごとに <span class="btn">全部で精算書を作る</span>（または、選んで <span class="btn">選んだ分で精算書を作る</span>）</li>
+    <li>「精算書」の画面で <span class="btn">Excelと写真を送る</span> → LINEやメールで経理（CP・CPYは桜田さん、ATは大須さん）に送る</li>
+    <li>経理から精算されたら <span class="btn">精算済にする</span></li>
+  </ol>
+  <div class="warn"><b>領収書の原本は、今までどおり経理に渡してください。</b>写真はスマホの中にだけあるので、たまったら早めに精算書を出してください。</div>
+  <ul>
+    <li><b>精算日のお知らせ：</b>CP（本社）は火曜、CPY（横浜）は木曜が精算日です。前の日に未提出があると、ホームとToDoでお知らせします（「領収書」→「設定」で変えられます）</li>
+    <li><b>差戻し：</b>経理から差し戻されたら、「精算書」の内訳で <span class="btn">差戻し</span> を押す → 直して保存 → もう一度精算書を作る（新しい番号になります）。直した内容は履歴に残ります</li>
+    <li>「領収書」→「設定」で<b>氏名</b>を入れておいてください。精算書に入ります</li>
+    <li><b>法人カード</b>は、「設定」で「法人カードを使う」をONにした人だけに出ます</li>
+  </ul>
+</section>
+
+<section id="sheet">
+  <h2>記録シートにつなぐ（社員用）</h2>
+  <p>社長から「CPG HUBの記録用です。…」という共有メールが届いたら、一度だけ次をしてください。</p>
+  <ol>
+    <li>メールの中のシートのリンクを<b>コピー</b>する</li>
+    <li>CPG HUB の <b>数字</b> → いちばん下の「記録シート（社員用）」に貼り付ける</li>
+    <li><span class="btn">つなぐ</span> を押し、Googleの画面で<b>許可</b>する</li>
+    <li>あとは <span class="blue">Googleとまとめて同期</span> のたびに、案件・入金・立替の要点と領収書の写真の控えが送られます（メモや住所の細かいところは送りません）</li>
+  </ol>
+</section>
+
+<section id="trouble">
+  <h2>困ったとき</h2>
+  <div class="card"><table>
+    <tr><th>こんなとき</th><th>こうする</th></tr>
+    <tr><td>版が古いまま</td><td>画面を下に引っぱって離す。だめならアプリを閉じて開き直す</td></tr>
+    <tr><td>Googleの予定が出ない・「カレンダー未接続」と出る</td><td><span class="blue">Googleとまとめて同期</span> を押す。× が出た行の理由を見る</td></tr>
+    <tr><td>「このアプリは確認されていません」</td><td>「詳細」→「移動」で進む。進めないときは社長に連絡（登録が必要です）</td></tr>
+    <tr><td>「ポップアップを許可してください」</td><td>ブラウザの設定でポップアップを許可して、もう一度押す</td></tr>
+    <tr><td>案件の日付を変えたのにカレンダーが古い</td><td>案件の画面で <span class="btn">カレンダーの予定を更新</span></td></tr>
+    <tr><td>案件を削除できない</td><td>領収書が紐づいていないか確かめる。依頼が無くなっただけなら「失注」</td></tr>
+    <tr><td>「保存できませんでした」</td><td>スマホの空き容量を増やす。たまった領収書は精算書にして送る</td></tr>
+    <tr><td>精算書を送れない</td><td>「コピー」やファイルの保存を使い、自分でLINEやメールに付けて送る</td></tr>
+    <tr><td>記録シートに「権限がありません」</td><td>自分あてに届いたメールのリンクか確かめる</td></tr>
+    <tr><td>入力した内容が消えた</td><td>別のスマホやブラウザで開いていないか確かめる（内容はその端末にだけ残ります）</td></tr>
+    <tr><td>「（架空）」の案件や「試作・架空データ」の表示が残っている</td><td><b>数字</b> の <span class="btn">練習用の例（架空）を消す</span>（自分で入れた内容は消えません）</td></tr>
+  </table></div>
+</section>
+
+<section id="boss">
+  <h2>社長用（管理）</h2>
+  <p class="meta">社長のアカウントでログインしたときだけ使えます。詳しい手順は <a href="./docs/data-setup.md">記録を集める設定（data-setup.md）</a> にあります。</p>
+  <h3>社員を追加する</h3>
+  <ol>
+    <li>先に、Google Cloud の「対象」で、その社員をテストユーザーに追加する</li>
+    <li>CPG HUB の <b>数字</b> → 「管理（社長用）」で、氏名とGmailを入れて <span class="btn">社員を追加</span></li>
+    <li>その人に共有メールが届きます。「記録シートにつなぐ」をしてもらう</li>
+    <li>ホームの「会社の動き」で <span class="btn">社員の記録を読み込む</span> を押すと、みんなの様子が見られます（3日以上同期していない人には注意が出ます）</li>
+  </ol>
+  <h3>共有を外す（退職のときなど）</h3>
+  <ol>
+    <li>「管理（社長用）」の一覧で、その人の <span class="btn">共有を外す</span> → 確認で <span class="btn">共有を外す</span></li>
+    <li>シートは消えずに、社長のドライブに残ります</li>
+  </ol>
+</section>
+
+<p class="meta"><a href="./">‹ CPG HUB に戻る</a></p>
+</main>
+</body>
+</html>

@@ -47,7 +47,7 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background
 .top-in{max-width:720px;margin:0 auto;display:flex;align-items:center;gap:10px;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .brand{font-family:var(--f-display);font-weight:900;font-size:19px;letter-spacing:.02em}
 .brandbox{display:flex;flex-direction:column;line-height:1.1}
-.ver{font-size:10px;color:var(--muted);letter-spacing:.02em;margin-top:2px}
+.ver{font-size:10px;color:var(--muted);letter-spacing:.02em;margin-top:2px;text-decoration:underline dotted;text-underline-offset:2px}
 .proto{font-size:11px;font-weight:700;letter-spacing:.08em;background:var(--amber-soft);color:var(--amber);padding:2px 8px;border-radius:99px}
 .top-in .sp{flex:1}
 .btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:700;min-height:42px}
@@ -256,7 +256,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><span class="ver">v1.17・10/23更新</span></span><span class="proto">試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.18・10/23更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -345,46 +345,38 @@ function upgrade(db){
   return db;
 }
 
-function sample(){
-  const t=todayS(), now=new Date();
-  const ago=(mins)=>new Date(now.getTime()-mins*60000).toISOString();
-  const d=n=>addDays(t,n);
-  const A={"グリーンコート相模台（架空）":"神奈川県相模原市南区（例）","サンプルハイツ（架空）":"神奈川県相模原市中央区（例）","テストマンション（架空）":"神奈川県相模原市緑区（例）","サンプルコーポ（架空）":"神奈川県座間市（例）","テストハイム（架空）":"神奈川県大和市（例）"};
-  const C=(o)=>Object.assign(CASE_DEFAULTS(),{addr:A[o.property]||""},o);
-  const nextSat=(6-now.getDay()+7)%7||7;
-  const R=(o)=>Object.assign(RECEIPT_DEFAULTS(),{createdAt:now.toISOString()},o);
-  const settings=SETTINGS_DEFAULTS();settings.rcpt.cards=[{id:"K1",company:"CP",name:"CP 法人カード（架空）",closeDay:0}];
-  return {schemaVersion:SCHEMA_VERSION,seq:16,settings,rseq:6,receipts:[
-    R({id:"R-0001",date:d(-12),payee:"ホームセンター（架空）",item:"コーキング材・養生テープ（例）",amount:3280,company:"CP",cat:"材料費",caseId:"U-0011",site:"サンプルハイツ（架空） 共用部",jobNo:"（例）26-0420",note:"共用部の補修用（例）"}),
-    R({id:"R-0002",date:d(-5),payee:"コインパーキング（架空）",item:"現地調査の駐車（例）",amount:600,company:"CP",cat:"駐車場代"}),
-    R({id:"R-0003",date:d(-2),payee:"金物店（架空）",item:"ビス・アンカー（例）",amount:1540,company:"CP",cat:"消耗品"}),
-    R({id:"R-0004",date:d(-8),payee:"ホームセンター（架空）",item:"クロス補修材（例）",amount:2970,company:"CPY",cat:"材料費"}),
-    R({id:"R-0005",date:d(-1),payee:"コインパーキング（架空）",item:"立会時の駐車（例）",amount:800,company:"CPY",cat:"駐車場代"}),
-    R({id:"R-0006",date:d(-6),payee:"建材店（架空）",item:"床材（例）",amount:18700,company:"CP",method:"法人カード",cardId:"K1",cat:"材料費"})
-  ],todos:[
-    {id:"T1",title:"管理会社への定期訪問（例）",due:d(1),tantou:"黒木",done:false}
-  ],cases:[
-    C({id:"U-0016",type:"kinkyu",stage:"new",clientKind:"管理会社",client:"みどり台ハウジング（架空）",property:"グリーンコート相模台（架空）",room:"203",tantou:"黒木",receivedAt:ago(95),symptom:"水漏れ",note:"天井から水滴。下階の入居者から連絡あり（例）"}),
-    C({id:"U-0015",type:"taikyo",stage:"new",clientKind:"大家さん",client:"大家 佐藤様（架空）",property:"サンプルハイツ（架空）",room:"102",tantou:"黒木",receivedAt:ago(60*26),planDate:d(nextSat),note:"土曜の立会の例（例）"}),
-    C({id:"U-0012",type:"taikyo",stage:"site",clientKind:"管理会社",client:"みどり台ハウジング（架空）",property:"グリーンコート相模台（架空）",room:"105",tantou:"黒木",receivedAt:ago(60*24*5),siteDate:d(-1),items:[
-      {place:"洋室 壁クロス",state:"タバコのヤニ汚れ",burden:"入居者",amount:38000},
-      {place:"洋室 壁クロス",state:"日焼け（経年）",burden:"家主",amount:22000},
-      {place:"フローリング",state:"引きずり傷 30cm",burden:"要確認",amount:15000},
-      {place:"室内全体",state:"退去クリーニング",burden:"入居者",amount:35000}]}),
-    C({id:"U-0010",type:"reno",stage:"quoted",clientKind:"大家さん",client:"大家 中村様（架空）",property:"サンプルコーポ（架空）",room:"201",tantou:"トシ",receivedAt:ago(60*24*12),siteDate:d(-9),estSentDate:d(-5),estAmount:1280000,note:"水回り一式の改修（例）"}),
-    C({id:"U-0008",type:"reno",stage:"hold",clientKind:"大家さん",client:"大家 田中様（架空）",property:"テストハイム（架空）",room:"102",tantou:"トシ",receivedAt:ago(60*24*30),siteDate:d(-27),estSentDate:d(-24),estAmount:860000,holdDate:d(-1),note:"来期の予算で検討とのこと（例）"}),
-    C({id:"U-0007",type:"teiki",stage:"won",clientKind:"管理会社",client:"みどり台ハウジング（架空）",property:"グリーンコート相模台（架空）",room:"共用部",tantou:"黒木",receivedAt:ago(60*24*14),siteDate:d(-12),estSentDate:d(-10),estAmount:18000,orderDate:d(-1)}),
-    C({id:"U-0011",type:"teiki",stage:"billed",clientKind:"管理会社",client:"相模ベイ管理（架空）",property:"サンプルハイツ（架空）",room:"共用部",tantou:"黒木",receivedAt:ago(60*24*60),siteDate:d(-56),estSentDate:d(-54),estAmount:24000,orderDate:d(-50),jobNo:"（例）26-0420",handedDate:d(-49),builtDate:d(-20),billDate:d(-18),billAmount:24000,billTo:"相模ベイ管理（架空）",payDue:payDueOf(d(-18),"m1end"),note:"請求済みで入金待ちの例（例）"}),
-    C({id:"U-0009",type:"reno",stage:"billed",clientKind:"大家さん",client:"大家 田中様（架空）",property:"テストハイム（架空）",room:"201",tantou:"トシ",receivedAt:ago(60*24*120),siteDate:d(-115),estSentDate:d(-110),estAmount:420000,orderDate:d(-100),jobNo:"（例）26-0377",handedDate:d(-99),builtDate:d(-78),billDate:d(-75),billAmount:420000,billTo:"大家 田中様（架空）",payDue:d(-12),payLog:[{kind:"req",at:d(-5)}],note:"入金予定日を過ぎた例（例）"}),
-    C({id:"U-0006",type:"kinkyu",stage:"billed",clientKind:"管理会社",client:"みどり台ハウジング（架空）",property:"グリーンコート相模台（架空）",room:"201",tantou:"黒木",receivedAt:ago(60*24*40),symptom:"水漏れ",siteDate:d(-40),estSentDate:d(-39),estAmount:45000,orderDate:d(-39),jobNo:"（例）26-0412",handedDate:d(-38),builtDate:d(-35),billDate:d(-30),billAmount:45000,billTo:"みどり台ハウジング（架空）",payDue:d(5),payments:[{date:d(-3),amount:20000,by:"経理連絡",at:d(-2)}],payLog:[{kind:"req",at:d(-4)}],note:"一部入金の例（例）"}),
-    C({id:"U-0004",type:"reno",stage:"lost",clientKind:"大家さん",client:"大家 高橋様（架空）",property:"テストマンション（架空）",room:"105",tantou:"トシ",receivedAt:ago(60*24*25),siteDate:d(-22),estSentDate:d(-20),estAmount:640000,lossReason:"価格",lossDate:d(-6)})
-  ]};
+function exSection(){
+  const m=ui.exDone?'<p class="note" role="status" style="margin:0">'+h(ui.exDone)+'</p>':'';
+  if(!hasExamples())return m?'<section class="sec">'+m+'</section>':'';
+  return '<section class="sec"><div class="sec-h"><h2>練習用の例（架空）</h2></div><div class="panel">'+m+
+    '<p class="note" style="margin:0">本番の入力を始める前に、練習用の例を消してください。</p>'+
+    (ui.exAsk?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><b>（架空）と付いた案件・ToDo・領収書を消します。自分で入力した内容は消えません。</b><div class="row"><button class="btn danger" type="button" data-act="exdo">消す</button><button class="btn" type="button" data-act="exno">やめる</button></div></div>'
+      :'<div class="row"><button class="btn danger" type="button" data-act="exask">練習用の例（架空）を消す</button></div>')+'</div></section>';
+}
+/* A new device starts empty (the practice examples were removed before real use began) */
+const emptyDB=()=>({schemaVersion:SCHEMA_VERSION,seq:0,rseq:0,settings:SETTINGS_DEFAULTS(),todos:[],cases:[],receipts:[]});
+/* 練習用の例: earlier sample data, recognised by its ID range AND its （架空）/（例） mark, so nothing a person entered is touched */
+const numOf=id=>Number(String(id).replace(/\D/g,""))||0;
+const fakeMark=x=>String(x||"").includes("（架空）"), exMark=x=>/（例）|\(例\)/.test(String(x||""));
+const exCase=c=>/^U-/.test(c.id)&&numOf(c.id)<=16&&fakeMark(c.client)&&fakeMark(c.property);
+const exTodo=t=>(t.id==="T1"||t.id==="T2")&&exMark(t.title);
+const exReceipt=r=>/^R-/.test(r.id)&&numOf(r.id)<=6&&fakeMark(r.payee);
+const exCard=k=>fakeMark(k.name);
+const hasExamples=()=>DB.cases.some(exCase)||DB.todos.some(exTodo)||DB.receipts.some(exReceipt)||RS().cards.some(exCard);
+function removeExamples(){
+  const cs=DB.cases.filter(exCase), rs=DB.receipts.filter(exReceipt), cal=cs.filter(c=>c.gcal&&c.gcal.id).length;
+  rs.forEach(r=>r.photos.forEach(k=>photoDel(k).catch(()=>{})));
+  cs.forEach(c=>delete photos[c.id]);
+  DB.cases=DB.cases.filter(c=>!exCase(c));DB.todos=DB.todos.filter(t=>!exTodo(t));DB.receipts=DB.receipts.filter(r=>!exReceipt(r));
+  RS().cards=RS().cards.filter(k=>!exCard(k)||DB.receipts.some(r=>r.cardId===k.id));
+  save();
+  return {cases:cs.length,receipts:rs.length,cal};
 }
 
 let DB;
 try{const raw=localStorage.getItem(KEY);DB=raw?JSON.parse(raw):null}catch(e){DB=null}
 let upgraded=false;
-if(!DB||!Array.isArray(DB.cases))DB=sample();
+if(!DB||!Array.isArray(DB.cases))DB=emptyDB();
 else{upgraded=DB.schemaVersion!==SCHEMA_VERSION;upgrade(DB)}
 /* The failure toast is deferred so it replaces the success toast the same handler shows after save() */
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(DB));return true}catch(e){setTimeout(()=>toast("保存できませんでした。端末の空き容量やブラウザの設定を確認してください",6000),0);return false}};
@@ -473,7 +465,8 @@ function vHome(){
   const active=DB.cases.filter(c=>!ended(c));
   const rp=rPending(), rsub=rSubmitted(), rnotes=rcptNotices();
   const un=DB.cases.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
-  return '<div class="banner"><b>試作です。</b>（架空）と付いた案件は練習用の例です。入力した内容はこの端末のブラウザにだけ残ります。</div>'+
+  return (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）と付いた案件は練習用の例です。入力した内容はこの端末のブラウザにだけ残ります。</div>':'')+
+  (DB.cases.length?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html">マニュアル</a>へ。</p></div>')+
   '<section class="sec">'+gSyncPanel()+'</section>'+
   (D().admin?corpView():'')+
   (rnotes.length?'<div class="banner" role="status"><b>領収書：</b>'+rnotes.map(n=>'<div>'+h(n)+'</div>').join("")+'</div>':'')+
@@ -726,7 +719,24 @@ function vDetail(){
   '<div class="panel"><h3>写真</h3>'+
     (ph.length?'<div class="photos">'+ph.map(src=>'<img alt="現地写真" src="'+src+'">').join("")+'</div>':'<p class="note" style="margin:0">まだ写真がありません。</p>')+
     (ro?'':'<label class="btn sm" style="align-self:flex-start;display:inline-flex;align-items:center">写真を追加<input type="file" id="d_photo" accept="image/*" multiple hidden></label>')+
-    '<p class="note" style="margin:0">試作では写真は保存されず、画面を閉じると消えます。</p></div>';
+    '<p class="note" style="margin:0">試作では写真は保存されず、画面を閉じると消えます。</p></div>'+
+  '<div class="row"><span class="sp"></span><button class="btn sm danger" type="button" data-act="cdel">この案件を削除</button></div>'+
+  (ui.cdel===c.id?caseDeletePanel(c):'');
+}
+/* Deleting a case: only for cases registered by mistake (a cancelled request is 失注). Its 受付番号 is never reused (seq stays) */
+function caseDeletePanel(c){
+  const linked=DB.receipts.filter(r=>r.caseId===c.id).length, cal=!!(c.gcal&&c.gcal.id);
+  const box=x=>'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px">'+x+'</div>';
+  if(linked)return box('<b style="color:var(--red)">この案件に紐づいた領収書が'+linked+'件あります。先に領収書の案件の紐づけを外してください。</b><div class="row"><button class="btn" type="button" data-act="cdelno">閉じる</button></div>');
+  return box('<b style="color:var(--red)">'+h(c.id)+'（'+h(c.property)+' '+h(c.room)+'）を削除します。元に戻せません。</b><span>間違えて登録した案件のときだけ使ってください。依頼が無くなった場合は「失注」にしてください。</span>'+
+    (cal?'<label class="row"><input type="checkbox" id="cdel_gcal"'+(ui.cdelCal!==false?' checked':'')+'> Googleカレンダーの予定も削除する</label>'+
+      (ui.cdelCal!==false&&!gSignedIn()?'<span class="note" style="color:var(--amber)">Googleにログインしていません。カレンダーの予定も消すときは、「Googleとまとめて同期」でログインしてから削除してください。チェックを外すと、カレンダーの予定を残して案件だけ削除します。</span>':''):'')+
+    (ui.cdelMsg?'<span style="color:var(--red)">'+h(ui.cdelMsg)+'</span>':'')+
+    '<div class="row"><button class="btn danger" type="button" data-act="cdeldo"'+(ui.cdelBusy?' disabled':'')+'>'+(ui.cdelBusy?'削除しています…':'削除する')+'</button><button class="btn" type="button" data-act="cdelno">やめる</button></div>');
+}
+function caseDelete(c){
+  DB.cases=DB.cases.filter(x=>x!==c);delete photos[c.id];
+  save();go("cases");toast(c.id+"を削除しました");
 }
 
 function vTodo(){
@@ -1060,7 +1070,7 @@ function vStats(){
     (un.length?'<div class="panel"><h3>担当者別</h3>'+tbl("担当",group(c=>c.tantou||"未設定").map(row).join(""))+'</div>'+acctPanel()+
       '<div class="panel"><h3>物件別</h3>'+tbl("物件",group(c=>c.property||"（物件名なし）").map(row).join(""))+'<p class="note" style="margin:0">遅れの長い順です。案件一覧の「入金待ちだけ」でも確認できます。</p></div>'
       :'<div class="empty">未入金の案件はありません</div>')+'</section>';
-  return '<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>'+unpaidSec+
+  return (hasExamples()?'<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>':'')+unpaidSec+
   '<section class="sec"><div class="sec-h"><h2>'+(now.getMonth()+1)+'月の見積と受注</h2></div>'+
   '<div class="panel"><div class="row" style="align-items:flex-end;gap:18px"><div><div class="note">見積決定率（受注 ÷ 結論が出た件数）</div><div class="big">'+(rate==null?"—":rate+"%")+'</div></div>'+
   '<div class="note num">受注 '+won.length+'件 ／ 失注 '+lost.length+'件</div></div>'+
@@ -1079,10 +1089,11 @@ function vStats(){
     '<label class="f">施工完了 → 請求書を出すまで（日）<input type="number" min="0" id="s_billAfter" value="'+S.billAfter+'"></label>'+
     '<label class="f">経理に依頼 → 返事の確認まで（日）<input type="number" min="0" id="s_acctWait" value="'+S.acctWait+'"></label>'+
     '<label class="f">入金予定日の初期値<select id="s_payRule">'+Object.entries(PAY_RULES).map(([k,l])=>'<option value="'+k+'"'+(S.payRule===k?' selected':'')+'>'+l+'</option>').join("")+'</select></label></div>'+
-    '<div class="row"><button class="btn pri" type="submit">保存する</button><span class="sp"></span><button class="btn sm danger" type="button" data-act="reset">すべて消して架空データに戻す</button></div>'+
-    (ui.confirmReset?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><b style="color:var(--red)">入力した案件とToDoがすべて消えます。よろしいですか？</b><div class="row"><button class="btn danger" type="button" data-act="resetdo">消して戻す</button><button class="btn" type="button" data-act="resetcancel">やめる</button></div></div>':'')+
+    '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
+    ''+
     '</form></section>'+
-  gSettings()+dSettings();
+  exSection()+gSettings()+dSettings()+
+  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.18 用）を開く</a></section>';
 }
 function gSettings(){
   const head='<section class="sec"><div class="sec-h"><h2>Googleカレンダー連携</h2></div>';
@@ -1564,6 +1575,7 @@ const main=document.getElementById("main");
 function render(){
   const v={home:vHome,cases:vCases,new:vNew,detail:vDetail,todo:vTodo,cal:vCal,gantt:vGantt,stats:vStats,rcpt:vRcpt,rform:vRform}[ui.view]||vHome;
   main.innerHTML=v();
+  document.querySelector(".proto").hidden=!hasExamples();
   const navKey=ui.view==="new"||ui.view==="detail"?"cases":ui.view==="rform"?"rcpt":ui.view;
   if(ui.view==="rcpt"||ui.view==="rform")fillPhotos();
   document.querySelectorAll("[data-nav]").forEach(b=>{if(b.closest("nav"))b.setAttribute("aria-current",b.dataset.nav===navKey?"page":"false")});
@@ -1576,7 +1588,7 @@ function render(){
     const sync=()=>{sw.hidden=ty.value!=="kinkyu"};ty.addEventListener("change",sync);sync();
   }
 }
-function go(view,extra){if(view!=="rcpt")rClearDl();if(view!=="rform")rFormClear();Object.assign(ui,{view,acct:false,confirmReset:false,rcCancel:null},extra||{});render();window.scrollTo(0,0)}
+function go(view,extra){if(view!=="rcpt")rClearDl();if(view!=="rform")rFormClear();Object.assign(ui,{view,acct:false,exAsk:false,rcCancel:null,cdel:null,cdelMsg:"",cdelBusy:false,cdelCal:true},extra||{});render();window.scrollTo(0,0)}
 let toastT;
 function toast(msg,ms){const el=document.getElementById("toast");el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,ms||2600)}
 const val=id=>{const el=document.getElementById(id);return el?el.value:""};
@@ -1627,7 +1639,9 @@ document.addEventListener("click",e=>{
   if(a==="csvclose"){ui.csv=false;render();return}
   if(a==="copycsv"){const ta=document.getElementById("csvOut");const done=()=>toast("コピーしました");
     try{navigator.clipboard.writeText(ta.value).then(done,()=>{ta.select();toast("選択しました。長押しでコピーしてください")})}catch(err){ta.select();toast("選択しました。長押しでコピーしてください")}return}
-  if(a==="reset"){ui.confirmReset=true;render();return}
+  if(a==="exask"){ui.exAsk=true;ui.exDone="";render();return}
+  if(a==="exno"){ui.exAsk=false;render();return}
+  if(a==="exdo"){const r=removeExamples();ui.exAsk=false;ui.exDone="練習用の例を消しました（案件 "+r.cases+"件・領収書 "+r.receipts+"件）。"+(r.cal?"カレンダーに登録済みの例が"+r.cal+"件あります。必要ならGoogleカレンダーで消してください。":"");render();toast("練習用の例を消しました");return}
   if(a==="acct"){ui.acct=true;render();return}
   if(a==="acctclose"){ui.acct=false;render();return}
   if(a==="acctmark"){acctMark();return}
@@ -1653,8 +1667,6 @@ document.addEventListener("click",e=>{
   if(a==="corp"){ui.corp=Object.assign({},ui.corp,{busy:true,err:""});render();
     corpLoad().then(data=>{ui.corp={data,at:Date.now()}},err=>{ui.corp=Object.assign({},ui.corp,{busy:false,err:"読み込めませんでした："+gMsg(err)})}).then(render);return}
   if(a==="gsync"){if(!(ui.gsync&&ui.gsync.busy))gSyncAll();return}
-  if(a==="resetcancel"){ui.confirmReset=false;render();return}
-  if(a==="resetdo"){ui.confirmReset=false;DB=sample();save();for(const k in photos)delete photos[k];toast("架空データに戻しました");go("home");return}
   if(!c)return;
   if(a==="additem"){c.items.push({place:"",state:"",burden:"要確認",amount:""});save();render();
     const f=main.querySelector('[data-item="'+(c.items.length-1)+'"][data-f="place"]');if(f){f.focus();f.scrollIntoView({block:"center"})}return}
@@ -1684,6 +1696,19 @@ document.addEventListener("click",e=>{
     return}
   if(a==="acctnopay"){c.payLog.push({kind:"noPay",at:todayS()});save();render();toast("経理からの返事（まだ入金なし）を記録しました");return}
   if(a==="payundo"){if(!c.payments.length)return;c.payments.pop();if(c.stage==="paid"&&remainOf(c)>0){c.stage="billed";c.paidDate=""}save();render();toast("最後の入金記録を取り消しました");return}
+  if(a==="cdel"){Object.assign(ui,{cdel:c.id,cdelMsg:"",cdelBusy:false,cdelCal:true});render();return}
+  if(a==="cdelno"){ui.cdel=null;render();return}
+  if(a==="cdeldo"){if(ui.cdelBusy)return;
+    if(DB.receipts.some(r=>r.caseId===c.id))return render();
+    const g=c.gcal&&c.gcal.id&&c.gcal.cal?c.gcal:null, withCal=!!g&&ui.cdelCal!==false;
+    if(withCal&&!gSignedIn()){ui.cdelMsg="Googleにログインしていないため、カレンダーの予定を消せません。「Googleとまとめて同期」でログインしてからもう一度押すか、チェックを外して案件だけ削除してください";render();return}
+    if(!withCal)return caseDelete(c);
+    ui.cdelBusy=true;ui.cdelMsg="";render();
+    gApi("calendars/"+encodeURIComponent(g.cal)+"/events/"+encodeURIComponent(g.id),{method:"DELETE"})
+      .catch(err=>{if(err.status!==404&&err.status!==410)throw err}) /* already gone counts as deleted */
+      .then(()=>{caseDelete(c);toast(c.id+"とGoogleカレンダーの予定を削除しました")},
+        err=>{ui.cdelBusy=false;ui.cdelMsg="Googleカレンダーの予定を削除できなかったため、案件は削除していません（"+gMsg(err)+"）";render()});
+    return}
   if(a==="reopen"){c.stage="quoted";c.lossReason="";c.lossDate="";save();render();return}
   if(a==="hand"){const j=val("d_job").trim();if(!j){toast("Accessで振られた仕事番号を入力してください");return}c.jobNo=j;c.handedDate=todayS();c.stage="handed";save();render();toast("引渡済にしました");return}
   if(a==="csvone"){go("cases",{csv:true});return}
@@ -1699,6 +1724,7 @@ document.addEventListener("input",e=>{
 document.addEventListener("change",e=>{
   const t=e.target, c=ui.caseId?findCase(ui.caseId):null;
   if(t.id==="showEnded"){ui.showEnded=t.checked;render();return}
+  if(t.id==="cdel_gcal"){ui.cdelCal=t.checked;ui.cdelMsg="";render();return}
   if(t.id==="r_photo"){const files=[...t.files];t.value="";files.forEach(f=>(ui.rNew=ui.rNew||[]).push({blob:f,url:URL.createObjectURL(f)}));rPhotoPreview();return}
   if(t.id==="r_case"){const cc=findCase(t.value);if(cc){document.getElementById("r_site").value=(cc.property+" "+cc.room).trim();document.getElementById("r_job").value=cc.jobNo||""}return}
   if(t.id==="r_method"||t.id==="r_co"){const card=val("r_method")==="法人カード",w=document.getElementById("r_cardWrap"),sel=document.getElementById("r_card");if(w)w.hidden=!card;
