@@ -235,7 +235,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><span class="ver">v1.13・10/23更新</span></span><span class="proto">試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><span class="ver">v1.14・10/23更新</span></span><span class="proto">試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -668,8 +668,9 @@ async function gLoadCalendars(){
 }
 /* 会社みんなで使う共有カレンダーの名前。社長個人の仕事カレンダー「CPG」とは別にする */
 const GSHARED="CPG HUB";
-/* Shown calendars: the saved choice, or the shared calendar, "CPG", the signed-in person's own calendar and the named people's calendars */
-const gShowIds=()=>Array.isArray(DB.settings.gShow)?DB.settings.gShow:(G.cals||[]).filter(c=>c.primary||c.name===GSHARED||c.name==="CPG"||GNAMES[c.id]).map(c=>c.id);
+/* Shown calendars: the saved choice, or the shared calendar, the signed-in person's own calendar and the named people's calendars.
+   社長個人の「CPG」はPAPA HUB側で見るので、初期表示には入れない */
+const gShowIds=()=>Array.isArray(DB.settings.gShow)?DB.settings.gShow:(G.cals||[]).filter(c=>c.primary||c.name===GSHARED||GNAMES[c.id]).map(c=>c.id);
 const gWritable=()=>(G.cals||[]).filter(c=>c.write);
 const gWriteCal=()=>{const w=gWritable();return w.find(c=>c.id===DB.settings.gWrite)||w.find(c=>c.name===GSHARED)||null};
 const gCalOf=id=>(G.cals||[]).find(c=>c.id===id);
