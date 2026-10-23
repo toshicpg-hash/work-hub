@@ -276,7 +276,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.26・10/24更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.27・10/24更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -489,6 +489,8 @@ function vHome(){
   (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html">マニュアル</a>へ。</p></div>')+
   '<section class="sec">'+gSyncPanel()+'</section>'+
   (D().admin?corpView():'')+
+  /* 社長の管理端末で自分の入力が無いときは、0件ばかりの自分用の欄を出さない（会社の動きだけを見る） */
+  (D().admin&&!DB.cases.length&&!DB.todos.length&&!(DB.receipts||[]).length?'<p class="note" style="margin:0">この端末で入力した案件はありません。社員の記録は上の「会社の動き」で見られます。</p>':
   (rnotes.length?'<div class="banner" role="status"><b>領収書：</b>'+rnotes.map(n=>'<div>'+h(n)+'</div>').join("")+'</div>':'')+
   '<section class="sec"><div class="tiles">'+
     '<button type="button" class="tile'+(over.length?" alert":"")+'" data-nav="todo"><span class="k">期限切れのToDo</span><span class="v">'+over.length+'</span></button>'+
@@ -503,7 +505,7 @@ function vHome(){
   '<section class="sec"><div class="sec-h"><h2>期限切れ・今日のToDo</h2><span class="sp"></span><button class="btn sm" type="button" data-nav="todo">すべて見る</button></div><div class="list">'+
     ([...over,...todayT].slice(0,6).map(todoRow).join("")||'<div class="empty">期限切れと今日までのToDoはありません</div>')+'</div></section>'+
   '<section class="sec"><div class="sec-h"><h2>Accessへの引渡待ち</h2><span class="note">受注済み・仕事番号の記録待ち</span></div><div class="list">'+
-    (waiting.map(caseCard).join("")||'<div class="empty">引渡待ちの案件はありません</div>')+'</div></section>';
+    (waiting.map(caseCard).join("")||'<div class="empty">引渡待ちの案件はありません</div>')+'</div></section>');
 }
 
 function vCases(){
@@ -1131,7 +1133,7 @@ function vStats(){
     ''+
     '</form></section>'+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.26 用）を開く</a></section>';
+  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.27 用）を開く</a></section>';
 }
 function gSettings(){
   const head='<section class="sec"><div class="sec-h"><h2>Googleカレンダー連携</h2></div>';
