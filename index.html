@@ -58,8 +58,8 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background
 .btn:disabled{opacity:.45;cursor:not-allowed}
 main{max-width:720px;margin:0 auto;padding-block:16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
 nav.bottom{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
-.nav-in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);height:var(--nav-h)}
-.nav-in button{border:0;background:none;cursor:pointer;font-weight:700;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative}
+.nav-in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));height:var(--nav-h)}
+.nav-in button{border:0;background:none;cursor:pointer;font-weight:700;font-size:11.5px;white-space:nowrap;padding:0;min-width:0;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative}
 .nav-in button[aria-current="page"]{color:var(--accent)}
 .nav-in button[aria-current="page"]::before{content:"";position:absolute;top:0;left:22%;right:22%;height:3px;border-radius:0 0 3px 3px;background:var(--accent)}
 .nav-in .ic{font-size:18px;line-height:1}
@@ -83,6 +83,15 @@ nav.bottom{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--sur
 .tile.alert .s b{color:var(--red)}
 .payline{font-size:12.5px;display:flex;gap:8px;flex-wrap:wrap}
 .payline .late{color:var(--red);font-weight:700}
+.rlist{display:flex;flex-direction:column;gap:6px}
+.rrow{display:flex;gap:8px;align-items:center;min-width:0}
+.rrow input[type=checkbox]{width:22px;height:22px;flex:none}
+.rbody{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 10px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.rbody:hover{border-color:var(--accent)}
+.cper{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:10px}
+ul.dl{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;overflow-wrap:anywhere}
+.ph{position:relative;display:inline-block}
+.phx{position:absolute;top:-6px;right:-6px;width:26px;height:26px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--red);font-weight:700;cursor:pointer;line-height:1}
 ol.hist{margin:4px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:2px}
 ol.hist li{overflow-wrap:anywhere}
 .list{display:flex;flex-direction:column;gap:8px}
@@ -247,7 +256,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><span class="ver">v1.15・10/23更新</span></span><span class="proto">試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><span class="ver">v1.16・10/23更新</span></span><span class="proto">試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -261,6 +270,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
   <button type="button" data-nav="cal"><span class="ic">▦</span>予定</button>
   <button type="button" data-nav="gantt"><span class="ic">≡</span>ガント</button>
   <button type="button" data-nav="stats"><span class="ic">▤</span>数字</button>
+  <button type="button" data-nav="rcpt"><span class="ic">¥</span>領収書</button>
 </div></nav>
 <div class="toast" id="toast" hidden></div>
 
@@ -296,7 +306,9 @@ const diffDays=(a,b)=>Math.round((parseYmd(a)-parseYmd(b))/864e5);
 const SCHEMA_VERSION=2;
 const CASE_DEFAULTS=()=>({addr:"",items:[],note:"",symptom:"",planDate:"",estAmount:null,estSentDate:"",siteDate:"",lossReason:"",lossDate:"",holdDate:"",orderDate:"",jobNo:"",billingTenant:"入居者に直接",handedDate:"",gcal:null,builtDate:"",billDate:"",billAmount:null,billTo:"",payDue:"",payments:[],paidDate:"",payLog:[]});
 const TODO_DEFAULTS=()=>({title:"",due:"",tantou:"",done:false});
-const SETTINGS_DEFAULTS=()=>({schedule:2,quote:3,reply:14,jobno:1,billAfter:3,payRule:"m1end",acctWait:3,gShow:null,gWrite:""});
+const RECEIPT_DEFAULTS=()=>({date:"",payee:"",item:"",amount:null,company:"CP",method:"立替",cardId:"",cat:"材料費",caseId:"",site:"",jobNo:"",note:"",photos:[],pext:{},status:"未提出",claimNo:"",submitDate:"",settleDate:"",closeNo:"",createdAt:"",everSub:false,returnedFrom:"",edits:[]});
+const RSET_DEFAULTS=()=>({name:"",payDays:{CP:2,CPY:4,AT:-1},to:{CP:"桜田",CPY:"桜田",AT:"大須"},useCard:false,cards:[],lastCo:"CP",noSeq:{}});
+const SETTINGS_DEFAULTS=()=>({rcpt:RSET_DEFAULTS(),schedule:2,quote:3,reply:14,jobno:1,billAfter:3,payRule:"m1end",acctWait:3,gShow:null,gWrite:""});
 const withDefaults=(o,defs)=>{for(const k in defs)if(o[k]===undefined)o[k]=defs[k];return o};
 function upgrade(db){
   const obj=x=>x&&typeof x==="object"&&!Array.isArray(x);
@@ -306,6 +318,16 @@ function upgrade(db){
   db.todos.forEach((t,i)=>{withDefaults(t,TODO_DEFAULTS());if(t.id==null)t.id="T-old"+(i+1)});
   if(!obj(db.settings))db.settings={};
   withDefaults(db.settings,SETTINGS_DEFAULTS());
+  /* 領収書 (v1.16): receipts list, receipt numbering and per-person settings, filled in the same way */
+  db.receipts=(Array.isArray(db.receipts)?db.receipts:[]).filter(obj);
+  db.receipts.forEach(r=>{withDefaults(r,RECEIPT_DEFAULTS());if(!Array.isArray(r.photos))r.photos=[];if(!Array.isArray(r.edits))r.edits=[];if(!obj(r.pext))r.pext={}});
+  if(typeof db.rseq!=="number")db.rseq=db.receipts.reduce((m,r)=>Math.max(m,Number(String(r.id).replace(/\D/g,""))||0),0);
+  if(!obj(db.settings.rcpt))db.settings.rcpt={};
+  const RD=RSET_DEFAULTS();withDefaults(db.settings.rcpt,RD);
+  if(!obj(db.settings.rcpt.payDays))db.settings.rcpt.payDays=RD.payDays;else withDefaults(db.settings.rcpt.payDays,RD.payDays);
+  if(!obj(db.settings.rcpt.to))db.settings.rcpt.to=RD.to;else withDefaults(db.settings.rcpt.to,RD.to);
+  if(!Array.isArray(db.settings.rcpt.cards))db.settings.rcpt.cards=[];
+  if(!obj(db.settings.rcpt.noSeq))db.settings.rcpt.noSeq={};
   if(typeof db.seq!=="number")db.seq=db.cases.reduce((m,c)=>Math.max(m,Number(String(c.id).replace(/\D/g,""))||0),0);
   /* v2: the sample set was cut to 6 cases; drop the removed samples, but only ones still marked （架空） / （例） so entered data is never touched */
   if(!(db.schemaVersion>=2)){
@@ -324,7 +346,16 @@ function sample(){
   const A={"グリーンコート相模台（架空）":"神奈川県相模原市南区（例）","サンプルハイツ（架空）":"神奈川県相模原市中央区（例）","テストマンション（架空）":"神奈川県相模原市緑区（例）","サンプルコーポ（架空）":"神奈川県座間市（例）","テストハイム（架空）":"神奈川県大和市（例）"};
   const C=(o)=>Object.assign(CASE_DEFAULTS(),{addr:A[o.property]||""},o);
   const nextSat=(6-now.getDay()+7)%7||7;
-  return {schemaVersion:SCHEMA_VERSION,seq:16,settings:SETTINGS_DEFAULTS(),todos:[
+  const R=(o)=>Object.assign(RECEIPT_DEFAULTS(),{createdAt:now.toISOString()},o);
+  const settings=SETTINGS_DEFAULTS();settings.rcpt.cards=[{id:"K1",company:"CP",name:"CP 法人カード（架空）",closeDay:0}];
+  return {schemaVersion:SCHEMA_VERSION,seq:16,settings,rseq:6,receipts:[
+    R({id:"R-0001",date:d(-12),payee:"ホームセンター（架空）",item:"コーキング材・養生テープ（例）",amount:3280,company:"CP",cat:"材料費",caseId:"U-0011",site:"サンプルハイツ（架空） 共用部",jobNo:"（例）26-0420",note:"共用部の補修用（例）"}),
+    R({id:"R-0002",date:d(-5),payee:"コインパーキング（架空）",item:"現地調査の駐車（例）",amount:600,company:"CP",cat:"駐車場代"}),
+    R({id:"R-0003",date:d(-2),payee:"金物店（架空）",item:"ビス・アンカー（例）",amount:1540,company:"CP",cat:"消耗品"}),
+    R({id:"R-0004",date:d(-8),payee:"ホームセンター（架空）",item:"クロス補修材（例）",amount:2970,company:"CPY",cat:"材料費"}),
+    R({id:"R-0005",date:d(-1),payee:"コインパーキング（架空）",item:"立会時の駐車（例）",amount:800,company:"CPY",cat:"駐車場代"}),
+    R({id:"R-0006",date:d(-6),payee:"建材店（架空）",item:"床材（例）",amount:18700,company:"CP",method:"法人カード",cardId:"K1",cat:"材料費"})
+  ],todos:[
     {id:"T1",title:"管理会社への定期訪問（例）",due:d(1),tantou:"黒木",done:false}
   ],cases:[
     C({id:"U-0016",type:"kinkyu",stage:"new",clientKind:"管理会社",client:"みどり台ハウジング（架空）",property:"グリーンコート相模台（架空）",room:"203",tantou:"黒木",receivedAt:ago(95),symptom:"水漏れ",note:"天井から水滴。下階の入居者から連絡あり（例）"}),
@@ -392,6 +423,7 @@ function genTodos(){
     if(lateDays(c))out.push(Object.assign({},base,{title:"入金を確認する（"+lateDays(c)+"日遅れ・残 "+yen(remainOf(c))+"）",due:c.payDue}));
   }
   for(const t of DB.todos)if(!t.done)out.push(Object.assign({manual:true},t));
+  rcptNotices().forEach((title,i)=>out.push({id:"rc"+i,title,due:todayS(),tantou:RS().name||"自分",nav:"rcpt"}));
   return out.sort((a,b)=>(a.due||"9").localeCompare(b.due||"9"));
 }
 function dueLabel(due){
@@ -423,8 +455,8 @@ function todoRow(t){
   const c=t.caseId?findCase(t.caseId):null;
   return '<div class="card" style="cursor:default">'+
     '<div class="row"><span class="ttl">'+h(t.title)+'</span><span class="sp"></span>'+dueLabel(t.due)+'</div>'+
-    '<div class="row note">'+(c?typeChip(c)+'<span>'+h(c.property)+' '+h(c.room)+'</span>':'<span class="chip">手入力</span>')+'<span>担当 '+h(t.tantou)+'</span><span class="sp"></span>'+
-    (c?'<button class="btn sm" type="button" data-open="'+c.id+'">案件を開く</button>':'<button class="btn sm" type="button" data-done="'+h(t.id)+'">完了</button>')+'</div></div>';
+    '<div class="row note">'+(c?typeChip(c)+'<span>'+h(c.property)+' '+h(c.room)+'</span>':'<span class="chip">'+(t.nav?'領収書':'手入力')+'</span>')+'<span>担当 '+h(t.tantou)+'</span><span class="sp"></span>'+
+    (c?'<button class="btn sm" type="button" data-open="'+c.id+'">案件を開く</button>':t.nav?'<button class="btn sm" type="button" data-nav="'+t.nav+'">領収書を開く</button>':'<button class="btn sm" type="button" data-done="'+h(t.id)+'">完了</button>')+'</div></div>';
 }
 
 function vHome(){
@@ -433,14 +465,18 @@ function vHome(){
   const urgent=DB.cases.filter(c=>c.type==="kinkyu"&&(c.stage==="new"||c.stage==="site"));
   const waiting=DB.cases.filter(c=>c.stage==="won");
   const active=DB.cases.filter(c=>!ended(c));
+  const rp=rPending(), rsub=rSubmitted(), rnotes=rcptNotices();
   const un=DB.cases.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   return '<div class="banner"><b>試作です。</b>（架空）と付いた案件は練習用の例です。入力した内容はこの端末のブラウザにだけ残ります。</div>'+
   '<section class="sec">'+gSyncPanel()+'</section>'+
+  (rnotes.length?'<div class="banner" role="status"><b>領収書：</b>'+rnotes.map(n=>'<div>'+h(n)+'</div>').join("")+'</div>':'')+
   '<section class="sec"><div class="tiles">'+
     '<button type="button" class="tile'+(over.length?" alert":"")+'" data-nav="todo"><span class="k">期限切れのToDo</span><span class="v">'+over.length+'</span></button>'+
     '<button type="button" class="tile" data-nav="todo"><span class="k">今日までのToDo</span><span class="v">'+todayT.length+'</span></button>'+
     '<button type="button" class="tile'+(urgent.length?" alert":"")+'" data-nav="cases" data-type="kinkyu"><span class="k">対応中の緊急</span><span class="v">'+urgent.length+'</span></button>'+
     '<button type="button" class="tile" data-nav="cases"><span class="k">動いている案件</span><span class="v">'+active.length+'</span></button>'+
+    '<button type="button" class="tile'+(rnotes.length?" alert":"")+'" data-nav="rcpt"><span class="k">立替 未提出</span><span class="v num">'+rp.length+'件</span><span class="s num">'+yen(rSum(rp))+'</span></button>'+
+    '<button type="button" class="tile" data-nav="rcpt" data-rtab2="claims"><span class="k">提出済・未精算</span><span class="v num">'+rsub.length+'件</span><span class="s num">'+yen(rSum(rsub))+'</span></button>'+
     '<button type="button" class="tile wide'+(unLate?" alert":"")+'" data-nav="cases" data-pay="1"><span class="k">未入金（請求済みで入金待ち）</span><span class="v num">'+un.length+'件 '+yen(unSum)+'</span><span class="s">'+(unLate?'<b>入金予定日を過ぎたもの '+unLate+'件</b>':'遅れはありません')+'</span></button>'+
   '</div></section>'+
   (urgent.length?'<section class="sec"><div class="sec-h"><h2>緊急対応</h2><span class="note">受付からの経過時間</span></div><div class="list">'+urgent.map(caseCard).join("")+'</div></section>':'')+
@@ -1046,11 +1082,283 @@ function gSettings(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div></form></section>';
 }
 
+
+/* ===== 領収書（立替・法人カード）step 1: entry, photos kept in IndexedDB on this device, 精算書 / カードの締め as .xlsx, sharing.
+   Receipt data is in DB.receipts (same localStorage key); photos never go into localStorage */
+const COMPANIES=["CP","CPY","AT"], CO_LABEL={CP:"本社",CPY:"横浜",AT:"アートテック"};
+const RCAT=["材料費","駐車場代","交通費","消耗品","その他"];
+const RS=()=>DB.settings.rcpt;
+const rFind=id=>DB.receipts.find(r=>r.id===id);
+const rSum=list=>list.reduce((s,r)=>s+(Number(r.amount)||0),0);
+const rPending=co=>DB.receipts.filter(r=>r.method==="立替"&&(r.status==="未提出"||r.status==="差戻し")&&(!co||r.company===co));
+const rSubmitted=()=>DB.receipts.filter(r=>r.method==="立替"&&r.status==="提出済");
+const cardOf=id=>RS().cards.find(k=>k.id===id);
+const slash=s=>s?s.replace(/-/g,"/"):"";
+const rEditable=r=>r.method==="立替"?r.status==="未提出"||r.status==="差戻し":!r.closeNo;
+const fileSafe=x=>String(x||"").replace(/[\\/:*?"<>|\s]+/g,"").slice(0,40);
+const payDayLabel=co=>{const d=Number(RS().payDays[co]);return d>=0?WD[d]+"曜精算":"精算日は決まっていません"};
+
+/* Photos: IndexedDB "workhub_receipt_photos", key = <receipt id>-<n>, value = JPEG Blob */
+let idbP=null;
+function idb(){return idbP||(idbP=new Promise((res,rej)=>{const r=indexedDB.open("workhub_receipt_photos",1);r.onupgradeneeded=()=>r.result.createObjectStore("photos");r.onsuccess=()=>res(r.result);r.onerror=()=>{idbP=null;rej(r.error)}}))}
+function idbDo(mode,fn){return idb().then(db=>new Promise((res,rej)=>{const tx=db.transaction("photos",mode),q=fn(tx.objectStore("photos"));tx.oncomplete=()=>res(q&&q.result);tx.onerror=()=>rej(tx.error);tx.onabort=()=>rej(tx.error)}))}
+const photoPut=(k,b)=>idbDo("readwrite",st=>st.put(b,k));
+const photoGet=k=>idbDo("readonly",st=>st.get(k));
+const photoDel=k=>idbDo("readwrite",st=>st.delete(k));
+const photoURL={};
+function fillPhotos(){
+  main.querySelectorAll("img[data-pkey]").forEach(img=>{const k=img.dataset.pkey;
+    if(photoURL[k]){img.src=photoURL[k];return}
+    photoGet(k).then(b=>{if(b){photoURL[k]=URL.createObjectURL(b);img.src=photoURL[k]}else img.alt="写真が見つかりません"}).catch(()=>{img.alt="写真を読み込めません"})});
+}
+/* Photos are stored exactly as taken (no resizing or re-compression), for a later move to electronic storage of receipts */
+
+/* Minimal .xlsx without a library: one sheet of inline strings, stored (uncompressed) in a ZIP with CRC32 */
+const XLSX_MIME="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC_T[(c^b[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+function zipStore(files,type){
+  const enc=new TextEncoder(),parts=[],cd=[],d=new Date();let off=0;
+  const dt=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate(), tm=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1);
+  for(const f of files){
+    const name=enc.encode(f.name),data=enc.encode(f.data),crc=crc32(data);
+    const lh=new DataView(new ArrayBuffer(30));
+    lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0x0800,true);lh.setUint16(10,tm,true);lh.setUint16(12,dt,true);
+    lh.setUint32(14,crc,true);lh.setUint32(18,data.length,true);lh.setUint32(22,data.length,true);lh.setUint16(26,name.length,true);
+    parts.push(new Uint8Array(lh.buffer),name,data);
+    const ch=new DataView(new ArrayBuffer(46));
+    ch.setUint32(0,0x02014b50,true);ch.setUint16(4,20,true);ch.setUint16(6,20,true);ch.setUint16(8,0x0800,true);ch.setUint16(12,tm,true);ch.setUint16(14,dt,true);
+    ch.setUint32(16,crc,true);ch.setUint32(20,data.length,true);ch.setUint32(24,data.length,true);ch.setUint16(28,name.length,true);ch.setUint32(42,off,true);
+    cd.push(new Uint8Array(ch.buffer),name);off+=30+name.length+data.length;
+  }
+  const cdSize=cd.reduce((s,a)=>s+a.length,0),end=new DataView(new ArrayBuffer(22));
+  end.setUint32(0,0x06054b50,true);end.setUint16(8,files.length,true);end.setUint16(10,files.length,true);end.setUint32(12,cdSize,true);end.setUint32(16,off,true);
+  return new Blob([...parts,...cd,new Uint8Array(end.buffer)],{type});
+}
+const xe=s=>String(s??"").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+/* sheets: [{name, rows, widths}]; a cell is a string, a number, or {v, s, f} (s: 1 bold, 2 #,##0, 3 bold #,##0; f: formula with cached value v) */
+function xlsxBlob(sheets){
+  const NS='xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"', X='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  const sheetXml=sh=>X+'<worksheet '+NS+'><cols>'+sh.widths.map((w,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>').join("")+'</cols><sheetData>'+
+    sh.rows.map((row,ri)=>'<row r="'+(ri+1)+'">'+row.map((cell,ci)=>{
+      if(cell==null||cell==="")return "";
+      const c=typeof cell==="object"?cell:{v:cell},ref=String.fromCharCode(65+ci)+(ri+1),st=c.s?' s="'+c.s+'"':"";
+      if(c.f)return '<c r="'+ref+'"'+st+'><f>'+xe(c.f)+'</f><v>'+(Number(c.v)||0)+'</v></c>';
+      if(typeof c.v==="number")return '<c r="'+ref+'"'+st+'><v>'+c.v+'</v></c>';
+      return '<c r="'+ref+'" t="inlineStr"'+st+'><is><t xml:space="preserve">'+xe(c.v)+'</t></is></c>';
+    }).join("")+'</row>').join("")+'</sheetData></worksheet>';
+  const nm=x=>String(x).replace(/[\[\]:*?\/\\]/g,"").slice(0,31)||"Sheet";
+  return zipStore([
+    {name:"[Content_Types].xml",data:X+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+
+      sheets.map((_,i)=>'<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join("")+'<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'},
+    {name:"_rels/.rels",data:X+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+    {name:"xl/workbook.xml",data:X+'<workbook '+NS+' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+sheets.map((sh,i)=>'<sheet name="'+xe(nm(sh.name))+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join("")+'</sheets></workbook>'},
+    {name:"xl/_rels/workbook.xml.rels",data:X+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+sheets.map((_,i)=>'<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join("")+'<Relationship Id="rId'+(sheets.length+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'},
+    {name:"xl/styles.xml",data:X+'<styleSheet '+NS+'><fonts count="2"><font><sz val="11"/><name val="Yu Gothic"/></font><font><b/><sz val="11"/><name val="Yu Gothic"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="3" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="3" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'},
+    ...sheets.map((sh,i)=>({name:"xl/worksheets/sheet"+(i+1)+".xml",data:sheetXml(sh)}))
+  ],XLSX_MIME);
+}
+/* Sheet 1 is for people (with blank columns 経理 fills in); sheet "data" is the same rows with English keys for a future accounting screen */
+const RCOLS=["No","日付","計上月","支払先","内容","区分","金額","現場（物件・部屋）","仕事番号","受付番号","メモ","写真ファイル名","経理確認（○／差戻し）","確認日","備考"];
+const RWIDTHS=[5,11,9,18,22,9,11,24,12,10,20,26,14,10,20];
+const DATA_KEYS=["receiptId","no","date","payee","item","category","amount","company","site","jobNo","caseId","memo","photo","month","settlementNo","submitter","submittedAt"];
+const ACCT_STEPS=["経理の方へ：","1. 領収書の写真（原本）と、金額・内容が合っているか確認し、「経理確認」に ○ か 差戻し を記入してください。","2. 差戻しのときは、理由を「備考」に書いて本人に返してください。","3. サーバーの「会社／年月」フォルダに、このファイルと写真を保存してください。"];
+const extOf=t=>({"image/jpeg":"jpg","image/png":"png","image/heic":"heic","image/heif":"heif","image/webp":"webp"})[t]||"jpg";
+const photoNames=(no,n,r)=>r.photos.map((k,i)=>no+"-"+n+(i?"-"+(i+1):"")+"."+((r.pext||{})[k]||"jpg"));
+function rBook(title,head,no,list,company,steps){
+  const S=RS(), rows=[[{v:title,s:1}],head,[],RCOLS.map(v=>({v,s:1}))];
+  list.forEach((r,i)=>rows.push([i+1,slash(r.date),slash(r.date.slice(0,7)),r.payee,r.item,r.cat,{v:Number(r.amount)||0,s:2},r.site,r.jobNo,r.caseId,r.note,photoNames(no,i+1,r).join(" "),"","",""]));
+  rows.push([{v:"合計",s:1},"","","","","",{f:"SUM(G5:G"+(4+list.length)+")",v:rSum(list),s:3}]);
+  if(steps){rows.push([]);ACCT_STEPS.forEach((x,i)=>rows.push([i?x:{v:x,s:1}]))}
+  const data=[DATA_KEYS].concat(list.map((r,i)=>[r.id,i+1,r.date,r.payee,r.item,r.cat,Number(r.amount)||0,r.company,r.site,r.jobNo,r.caseId,r.note,photoNames(no,i+1,r).join(" "),r.date.slice(0,7),no,S.name||"",r.submitDate||todayS()]));
+  return [{name:company,rows,widths:RWIDTHS},{name:"data",rows:data,widths:DATA_KEYS.map(()=>14)}];
+}
+const rClaimSort=list=>list.slice().sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
+function rClaims(){
+  const m=new Map();
+  for(const r of DB.receipts)if(r.method==="立替"&&r.claimNo){const g=m.get(r.claimNo)||{no:r.claimNo,company:r.company,date:r.submitDate,list:[]};g.list.push(r);m.set(r.claimNo,g)}
+  return [...m.values()].map(g=>Object.assign(g,{list:rClaimSort(g.list),settled:g.list.every(r=>r.status==="精算済")})).sort((a,b)=>b.no.localeCompare(a.no));
+}
+/* 精算書番号 CP-20261023-01; the counter is kept so a cancelled number is never reused */
+function rMakeClaim(co,ids){
+  const list=DB.receipts.filter(r=>ids.includes(r.id)&&r.company===co&&r.method==="立替"&&(r.status==="未提出"||r.status==="差戻し"));
+  if(!list.length)return "";
+  const t=todayS(),pre=co+"-"+t.replace(/-/g,"")+"-",seq=RS().noSeq,n=(seq[pre]||0)+1;seq[pre]=n;
+  const no=pre+pad(n);
+  list.forEach(r=>{if(r.status==="差戻し")r.edits.push({at:t0(),field:"status",label:"状態",from:"差戻し（"+r.returnedFrom+"）",to:"再提出（"+no+"）"});Object.assign(r,{status:"提出済",claimNo:no,submitDate:t,everSub:true})});
+  save();return no;
+}
+/* Card closing: the closing date on or after a receipt date (締め日 1–31, 0 = 末日), and the period it closes */
+const monthClose=(y,m,day)=>{const last=new Date(y,m+1,0).getDate();return new Date(y,m,day?Math.min(day,last):last)};
+function closeDateOf(date,day){const d=parseYmd(date),c=monthClose(d.getFullYear(),d.getMonth(),day);return ymd(d>c?monthClose(d.getFullYear(),d.getMonth()+1,day):c)}
+function periodFrom(close,day){const c=parseYmd(close),p=monthClose(c.getFullYear(),c.getMonth()-1,day);return addDays(ymd(p),1)}
+function cardPeriods(k){
+  const m=new Map();
+  for(const r of DB.receipts)if(r.method==="法人カード"&&r.cardId===k.id&&r.date){const close=closeDateOf(r.date,k.closeDay);(m.get(close)||m.set(close,[]).get(close)).push(r)}
+  return [...m.entries()].sort((a,b)=>b[0].localeCompare(a[0])).map(([close,list])=>({close,from:periodFrom(close,k.closeDay),list:rClaimSort(list),no:k.company+"-C"+close.replace(/-/g,"")+"-"+k.id,closed:list.every(r=>r.closeNo)}));
+}
+/* Share the .xlsx with the photos (named <番号>-<No>.jpg); without file sharing, offer downloads instead */
+async function rSend(title,text,fileName,no,sheets,list){
+  const files=[new File([xlsxBlob(sheets)],fileName,{type:XLSX_MIME})];
+  for(let i=0;i<list.length;i++){const names=photoNames(no,i+1,list[i]);
+    for(let j=0;j<list[i].photos.length;j++){const b=await photoGet(list[i].photos[j]).catch(()=>null);if(b)files.push(new File([b],names[j],{type:b.type||"image/jpeg"}))}}
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files})){
+    try{await navigator.share({files,title,text});toast("共有しました");return}
+    catch(e){if(e&&e.name==="AbortError")return}
+  }
+  rClearDl();
+  ui.dl={title,text,items:files.map(f=>({name:f.name,url:URL.createObjectURL(f)}))};
+  render();
+  const a=main.querySelector("a[data-dlfirst]");if(a)a.click();
+  toast("この端末では一緒に送れないため、Excelを保存しました。写真は下から1枚ずつ保存できます",5000);
+}
+function rClearDl(){if(ui.dl)ui.dl.items.forEach(x=>URL.revokeObjectURL(x.url));ui.dl=null}
+const claimFile=(co,no)=>"立替精算書_"+co+"_"+no+"_"+(fileSafe(RS().name)||"未設定")+".xlsx";
+function rSendClaim(no){const g=rClaims().find(x=>x.no===no);if(!g)return;const S=RS(),to=S.to[g.company]||"";
+  const text=(to?to+"さん　":"")+"立替精算書（"+no+"）を送ります。"+g.list.length+"件・"+yen(rSum(g.list));
+  return rSend("立替精算書 "+no,text,claimFile(g.company,no),no,rBook("立替精算書",["氏名",S.name||"（未設定）","","会社",g.company,"","提出先",to,"","精算書番号",no,"","作成日",slash(todayS())],no,g.list,g.company,true),g.list)}
+function rSendCard(id,close){const k=cardOf(id);if(!k)return;const p=cardPeriods(k).find(x=>x.close===close);if(!p)return;const S=RS(),to=S.to[k.company]||"";
+  const text=(to?to+"さん　":"")+"法人カードの締めの表（"+p.no+"）を送ります。"+p.list.length+"件・"+yen(rSum(p.list));
+  return rSend("法人カード 締めの表 "+p.no,text,"法人カード締め_"+k.company+"_"+p.no+"_"+(fileSafe(S.name)||"未設定")+".xlsx",p.no,rBook("法人カード 締めの表",["氏名",S.name||"（未設定）","","会社",k.company,"","カード",k.name,"","締め期間",slash(p.from)+"〜"+slash(p.close),"","作成日",slash(todayS())],p.no,p.list,k.company,false),p.list)}
+
+/* Reminders for home and ToDo: the day before a company's 精算日, the run-up to the 8月末 決算, and 90+ day old receipts */
+function rcptNotices(){
+  const t=todayS(),out=[],tom=(parseYmd(t).getDay()+1)%7,all=rPending();
+  for(const co of COMPANIES){const pd=Number(RS().payDays[co]),p=rPending(co);if(pd>=0&&pd===tom&&p.length)out.push("明日は"+CO_LABEL[co]+"の精算日です。"+co+" 未提出 "+p.length+"件・"+yen(rSum(p)))}
+  const mmdd=t.slice(5);
+  if(all.length&&mmdd>="07-15"&&mmdd<="08-31")out.push("決算（8月末）前に立替を出してください。未提出 "+all.length+"件・"+yen(rSum(all)));
+  const old=all.filter(r=>r.date&&diffDays(t,r.date)>=90);
+  if(old.length)out.push("90日以上前の立替が未提出です（"+old.length+"件・"+yen(rSum(old))+"）");
+  return out;
+}
+
+function rRow(r,check,ret){
+  return '<div class="rrow">'+(check?'<input type="checkbox" name="rsel_'+r.company+'" value="'+r.id+'" aria-label="'+h(r.id)+'を選ぶ">':'')+
+    '<button type="button" class="rbody" data-ropen="'+r.id+'"><span class="row"><span class="num">'+md(r.date)+'</span><b class="ttl">'+h(r.payee)+'</b><span class="sp"></span><b class="num">'+yen(r.amount)+'</b></span>'+
+    '<span class="row note"><span>'+h(r.item)+'</span><span class="chip">'+h(r.cat)+'</span>'+(r.site?'<span>'+h(r.site)+'</span>':'')+(r.photos.length?'<span>写真'+r.photos.length+'</span>':'<span style="color:var(--amber)">写真なし</span>')+(r.status==="差戻し"?'<span class="chip" style="background:var(--red-soft);color:var(--red)">差戻し（'+h(r.returnedFrom)+'）</span>':'')+'</span></button>'+
+    (ret&&r.status==="提出済"?'<button class="btn sm danger" type="button" data-rreturn="'+r.id+'">差戻し</button>':'')+'</div>';
+}
+function vRcpt(){
+  const S=RS(),tab=ui.rTab==="card"&&!S.useCard?"list":ui.rTab||"list", notes=rcptNotices();
+  const tabs=[["list","立替"],["claims","精算書"],...(S.useCard?[["card","法人カード"]]:[]),["set","設定"]];
+  let body="";
+  if(tab==="list"){
+    const cos=COMPANIES.filter(co=>rPending(co).length);
+    body=(cos.length?cos.map(co=>{const p=rClaimSort(rPending(co));return '<div class="panel"><h3>'+co+'（'+CO_LABEL[co]+'・'+payDayLabel(co)+'・提出先 '+h(S.to[co]||"—")+'） 未提出 '+p.length+'件・'+yen(rSum(p))+'</h3>'+
+      '<div class="rlist">'+p.map(r=>rRow(r,true)).join("")+'</div>'+
+      '<div class="row"><button class="btn pri sm" type="button" data-rclaim="'+co+'" data-rall="1">全部で精算書を作る</button><button class="btn sm" type="button" data-rclaim="'+co+'">選んだ分で精算書を作る</button></div></div>'}).join("")
+      :'<div class="empty">未提出の立替はありません</div>')+
+      '<p class="note" style="margin:0">精算書を作ると「提出済」になり、二重には出ません。出した精算書は「精算書」から送れます。</p>';
+  }else if(tab==="claims"){
+    const cl=rClaims();
+    body=(ui.dl?'<div class="panel" role="status"><h3>保存するファイル（'+h(ui.dl.title)+'）</h3><ul class="dl">'+ui.dl.items.map((x,i)=>'<li><a href="'+x.url+'" download="'+h(x.name)+'"'+(i?'':' data-dlfirst="1"')+'>'+h(x.name)+'</a></li>').join("")+'</ul><p class="note" style="margin:0">送るときの文面：'+h(ui.dl.text)+'</p><button class="btn sm" type="button" data-act="rdlclose">閉じる</button></div>':'')+
+      (cl.length?cl.map(g=>'<div class="panel"><div class="row"><h3 class="num">'+h(g.no)+'</h3><span class="sp"></span><span class="pill '+(g.settled?'s-paid':'s-billed')+'">'+(g.settled?'精算済':'提出済・未精算')+'</span></div>'+
+        '<p class="note num" style="margin:0">'+g.company+'・提出先 '+h(S.to[g.company]||"—")+'・提出 '+md(g.date)+'・'+g.list.length+'件・<b>'+yen(rSum(g.list))+'</b></p>'+
+        '<details><summary class="note">内訳'+(g.settled?'':'（経理から差し戻された領収書は、ここで「差戻し」にします）')+'</summary><div class="rlist">'+g.list.map(r=>rRow(r,false,true)).join("")+'</div></details>'+
+        '<div class="row"><button class="btn pri sm" type="button" data-rshare="'+h(g.no)+'">Excelと写真を送る</button>'+
+        (g.settled?'':'<button class="btn sm" type="button" data-rsettle="'+h(g.no)+'">精算済にする</button><button class="btn sm danger" type="button" data-rcancel="'+h(g.no)+'">取り消す</button>')+'</div>'+
+        (ui.rcCancel===g.no?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><span>この精算書を取り消して、'+g.list.length+'件を「未提出」に戻します。経理にまだ渡していないときだけ使ってください。</span><div class="row"><button class="btn danger" type="button" data-act="rcanceldo">取り消す</button><button class="btn" type="button" data-act="rcancelno">やめる</button></div></div>':'')+'</div>').join("")
+      :'<div class="empty">まだ精算書はありません</div>');
+  }else if(tab==="card"){
+    body=(ui.dl?'<div class="panel" role="status"><h3>保存するファイル（'+h(ui.dl.title)+'）</h3><ul class="dl">'+ui.dl.items.map((x,i)=>'<li><a href="'+x.url+'" download="'+h(x.name)+'"'+(i?'':' data-dlfirst="1"')+'>'+h(x.name)+'</a></li>').join("")+'</ul><button class="btn sm" type="button" data-act="rdlclose">閉じる</button></div>':'')+
+      (S.cards.length?S.cards.map(k=>{const ps=cardPeriods(k);return '<div class="panel"><h3>'+h(k.name)+'（'+k.company+'・'+(k.closeDay?'毎月'+k.closeDay+'日締め':'末日締め')+'）</h3>'+
+        (ps.length?ps.map(p=>'<div class="cper"><div class="row"><b class="num">'+md(p.from)+'〜'+md(p.close)+'</b><span class="note num">'+p.list.length+'件・'+yen(rSum(p.list))+'</span><span class="sp"></span><span class="pill '+(p.closed?'s-paid':'s-new')+'">'+(p.closed?'締め済み':'締め前')+'</span></div>'+
+          '<div class="rlist">'+p.list.map(r=>rRow(r,false)).join("")+'</div>'+
+          '<div class="row"><button class="btn pri sm" type="button" data-cshare="'+h(k.id)+'|'+p.close+'">締めの表を作って送る</button>'+(p.closed?'<button class="btn sm" type="button" data-cunclose="'+h(k.id)+'|'+p.close+'">締めを取り消す</button>':'<button class="btn sm" type="button" data-cclose="'+h(k.id)+'|'+p.close+'">締め済みにする</button>')+'</div></div>').join("")
+          :'<p class="note" style="margin:0">このカードの領収書はまだありません。</p>')+'</div>'}).join("")
+      :'<div class="empty">カードが登録されていません。「設定」で登録してください。</div>');
+  }else{
+    const opt=co=>'<select id="rs_pd_'+co+'">'+[[-1,"決まった日なし"],...WD.split("").map((w,i)=>[i,w+"曜日"])].map(([v,l])=>'<option value="'+v+'"'+(Number(S.payDays[co])===v?' selected':'')+'>'+l+'</option>').join("")+'</select>';
+    body='<form id="rsetForm" class="panel"><h3>領収書の設定</h3>'+
+      '<label class="f">氏名（精算書に入ります）<input type="text" id="rs_name" value="'+h(S.name)+'" placeholder="例：山田 太郎"></label>'+
+      '<div class="form">'+COMPANIES.map(co=>'<label class="f">'+co+'（'+CO_LABEL[co]+'）の精算日'+opt(co)+'</label><label class="f">'+co+'の提出先（経理担当）<input type="text" id="rs_to_'+co+'" value="'+h(S.to[co])+'"></label>').join("")+'</div>'+
+      '<p class="note" style="margin:0">精算日の前日に、その会社の未提出があればホームとToDoでお知らせします。</p>'+
+      '<label class="row"><input type="checkbox" id="rs_card"'+(S.useCard?' checked':'')+'> 法人カードを使う（使う人だけONにしてください）</label>'+
+      '<div class="row"><button class="btn pri" type="submit">保存する</button></div></form>'+
+      (S.useCard?'<div class="panel"><h3>法人カード</h3>'+
+        (S.cards.length?'<ul class="dl">'+S.cards.map(k=>'<li class="row"><span>'+h(k.name)+'（'+k.company+'・'+(k.closeDay?'毎月'+k.closeDay+'日締め':'末日締め')+'）</span><span class="sp"></span><button class="btn sm danger" type="button" data-carddel="'+h(k.id)+'">削除</button></li>').join("")+'</ul>':'<p class="note" style="margin:0">まだ登録されていません。</p>')+
+        '<div class="form"><label class="f">会社<select id="rc_co">'+COMPANIES.map(co=>'<option>'+co+'</option>').join("")+'</select></label>'+
+        '<label class="f">締め日<select id="rc_day"><option value="0">末日</option>'+Array.from({length:31},(_,i)=>'<option value="'+(i+1)+'">毎月'+(i+1)+'日</option>').join("")+'</select></label>'+
+        '<label class="f full">カード名<input type="text" id="rc_name" placeholder="例：CP 法人カード"></label></div>'+
+        '<div class="row"><button class="btn sm" type="button" data-act="cardadd">カードを登録</button></div></div>':'');
+  }
+  return '<section class="sec"><button class="btn pri" type="button" data-act="rnew" style="width:100%;min-height:52px;font-size:16px">＋ 領収書を登録</button>'+
+    (notes.length?'<div class="banner" role="status">'+notes.map(n=>'<div>'+h(n)+'</div>').join("")+'</div>':'')+
+    '<div class="seg" role="group" aria-label="領収書の表示">'+tabs.map(([k,l])=>'<button type="button" data-rtab="'+k+'" aria-pressed="'+(tab===k)+'">'+l+'</button>').join("")+'</div>'+
+    body+'</section>';
+}
+/* Changes made after a receipt was once submitted are kept (from → to, when), never removed */
+const R_FIELDS=[["date","日付"],["payee","支払先"],["item","内容"],["amount","金額"],["company","会社"],["method","支払い方法"],["cardId","カード"],["cat","区分"],["caseId","受付番号"],["site","現場"],["jobNo","仕事番号"],["note","メモ"],["photos","写真"]];
+function rHistory(r){
+  if(!r||!r.edits.length)return "";
+  return '<details class="note"><summary>変更の履歴（'+r.edits.length+'件）</summary><ol class="hist">'+r.edits.map(e=>'<li><span class="num">'+h(slash(ymd(new Date(e.at)))+" "+hm(new Date(e.at)))+'</span> '+h(e.label)+'：'+h(e.from===""?"（空）":e.from)+' → '+h(e.to===""?"（空）":e.to)+'</li>').join("")+'</ol></details>';
+}
+/* Entry / edit form. New photos stay in memory (ui.rNew) until 保存 */
+function vRform(){
+  const r=ui.rId?rFind(ui.rId):null, S=RS(), edit=!r||rEditable(r), t=todayS();
+  const v=Object.assign(RECEIPT_DEFAULTS(),{date:t,company:S.lastCo||"CP"},r||{});
+  const cases=DB.cases.filter(c=>c.stage!=="lost").slice().sort((a,b)=>b.id.localeCompare(a.id));
+  const thumbs='<div class="photos" id="r_photos">'+v.photos.filter(k=>!(ui.rDel||[]).includes(k)).map(k=>'<span class="ph"><img data-pkey="'+h(k)+'" alt="領収書の写真">'+(edit?'<button type="button" class="phx" data-rdelph="'+h(k)+'" aria-label="この写真を外す">×</button>':'')+'</span>').join("")+
+    (ui.rNew||[]).map((x,i)=>'<span class="ph"><img src="'+x.url+'" alt="追加する写真"><button type="button" class="phx" data-rnewx="'+i+'" aria-label="この写真を外す">×</button></span>').join("")+'</div>';
+  if(!edit)return '<button class="back" type="button" data-nav="rcpt">‹ 領収書へ戻る</button><section class="panel"><h2 style="font-size:18px">'+h(r.id)+' '+h(r.payee)+'</h2>'+
+    '<p class="note" style="margin:0">'+(r.method==="立替"?r.status+(r.claimNo?'（'+h(r.claimNo)+'）':''):'締め済み（'+h(r.closeNo)+'）')+'のため、変更できません。</p>'+thumbs+
+    rHistory(r)+'<dl class="kv"><dt>日付</dt><dd>'+mdh(r.date)+'</dd><dt>支払先</dt><dd>'+h(r.payee)+'</dd><dt>内容</dt><dd>'+h(r.item)+'</dd><dt>金額</dt><dd class="num">'+yen(r.amount)+'</dd><dt>会社</dt><dd>'+r.company+'</dd><dt>支払い</dt><dd>'+h(r.method)+(r.cardId&&cardOf(r.cardId)?'（'+h(cardOf(r.cardId).name)+'）':'')+'</dd><dt>区分</dt><dd>'+h(r.cat)+'</dd><dt>現場</dt><dd>'+(h(r.site)||'—')+'</dd><dt>仕事番号</dt><dd>'+(h(r.jobNo)||'—')+'</dd><dt>受付番号</dt><dd>'+(h(r.caseId)||'—')+'</dd><dt>メモ</dt><dd>'+(h(r.note)||'—')+'</dd></dl></section>';
+  const cardOpts=co=>S.cards.filter(k=>k.company===co).map(k=>'<option value="'+h(k.id)+'"'+(v.cardId===k.id?' selected':'')+'>'+h(k.name)+'</option>').join("");
+  return '<button class="back" type="button" data-nav="rcpt">‹ 領収書へ戻る</button>'+
+  '<section class="panel"><h2 style="font-size:18px">'+(r?h(r.id)+' を直す':'領収書を登録')+'</h2>'+
+  '<form id="rForm" class="form">'+
+    '<div class="f full"><span class="fk">写真（複数枚できます）</span>'+thumbs+'<label class="btn" style="align-self:flex-start;display:inline-flex;align-items:center">写真を撮る・選ぶ<input type="file" id="r_photo" accept="image/*" capture="environment" multiple hidden></label></div>'+
+    '<label class="f">日付<input type="date" id="r_date" required value="'+h(v.date)+'"></label>'+
+    '<label class="f">金額（税込・円）<input type="number" inputmode="numeric" min="1" id="r_amount" required value="'+h(v.amount??"")+'"></label>'+
+    '<label class="f full">支払先（店名）<input type="text" id="r_payee" required value="'+h(v.payee)+'" placeholder="例：○○ホームセンター"></label>'+
+    '<label class="f full">内容（品目）<input type="text" id="r_item" value="'+h(v.item)+'" placeholder="例：コーキング材・養生テープ"></label>'+
+    '<label class="f">会社<select id="r_co">'+COMPANIES.map(co=>'<option'+(v.company===co?' selected':'')+'>'+co+'</option>').join("")+'</select></label>'+
+    '<label class="f">区分<select id="r_cat">'+RCAT.map(x=>'<option'+(v.cat===x?' selected':'')+'>'+x+'</option>').join("")+'</select></label>'+
+    '<label class="f">支払い方法<select id="r_method"><option'+(v.method==="立替"?' selected':'')+'>立替</option>'+(S.useCard||v.method==="法人カード"?'<option'+(v.method==="法人カード"?' selected':'')+'>法人カード</option>':'')+'</select></label>'+
+    '<label class="f" id="r_cardWrap"'+(v.method==="法人カード"?'':' hidden')+'>カード<select id="r_card">'+(cardOpts(v.company)||'<option value="">この会社のカードがありません</option>')+'</select></label>'+
+    '<label class="f full">案件（任意。選ぶと現場と仕事番号が入ります）<select id="r_case"><option value="">選ばない</option>'+cases.map(c=>'<option value="'+c.id+'"'+(v.caseId===c.id?' selected':'')+'>'+h(c.id+' '+c.property+' '+c.room)+'</option>').join("")+'</select></label>'+
+    '<label class="f">現場（物件・部屋）<input type="text" id="r_site" value="'+h(v.site)+'"></label>'+
+    '<label class="f">仕事番号<input type="text" id="r_job" value="'+h(v.jobNo)+'"></label>'+
+    '<label class="f full">メモ<textarea id="r_note" placeholder="何に使ったか など">'+h(v.note)+'</textarea></label>'+
+    '<div class="full row"><button class="btn pri" type="submit">保存する</button>'+(r?'<span class="sp"></span><button class="btn sm danger" type="button" data-act="rdel">この領収書を削除</button>':'')+'</div>'+
+    (r&&ui.rDelAsk?'<div class="full ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><span>この領収書と写真を削除します。</span><div class="row"><button class="btn danger" type="button" data-act="rdeldo">削除する</button><button class="btn" type="button" data-act="rdelno">やめる</button></div></div>':'')+
+  '</form>'+(r&&r.status==="差戻し"?'<p style="margin:0;color:var(--red)" class="note">経理から差し戻されました（元の精算書 '+h(r.returnedFrom)+'）。直して保存し、もう一度精算書を作ってください。新しい精算書番号になります。</p>':'')+rHistory(r)+'<p class="note" style="margin:0">写真は撮ったままの画質で、この端末の中（IndexedDB）にだけ保存されます。精算書を送るときに一緒に送れます。</p></section>';
+}
+function rPhotoPreview(){
+  const box=document.getElementById("r_photos");if(!box)return;
+  const r=ui.rId?rFind(ui.rId):null;
+  box.innerHTML=(r?r.photos.filter(k=>!(ui.rDel||[]).includes(k)).map(k=>'<span class="ph"><img data-pkey="'+h(k)+'" alt="領収書の写真"><button type="button" class="phx" data-rdelph="'+h(k)+'" aria-label="この写真を外す">×</button></span>').join(""):"")+
+    (ui.rNew||[]).map((x,i)=>'<span class="ph"><img src="'+x.url+'" alt="追加する写真"><button type="button" class="phx" data-rnewx="'+i+'" aria-label="この写真を外す">×</button></span>').join("");
+  fillPhotos();
+}
+function rFormClear(){(ui.rNew||[]).forEach(x=>URL.revokeObjectURL(x.url));ui.rNew=[];ui.rDel=[];ui.rDelAsk=false}
+async function rSaveForm(){
+  const r=ui.rId?rFind(ui.rId):null, amt=Number(val("r_amount")), date=val("r_date"), payee=val("r_payee").trim(), method=val("r_method");
+  if(!date||!payee||!(amt>0)){toast("日付・支払先・金額を入れてください");return}
+  if(method==="法人カード"&&!val("r_card")){toast("カードを選んでください（「設定」で登録できます）");return}
+  const id=r?r.id:"R-"+String((DB.rseq||0)+1).padStart(4,"0");
+  const keys=r?r.photos.filter(k=>!(ui.rDel||[]).includes(k)):[], pext=Object.assign({},r?r.pext:{});
+  let n=(r?r.photos:[]).reduce((m,k)=>Math.max(m,Number(k.split("-").pop())||0),0);
+  try{for(const x of ui.rNew||[]){const k=id+"-"+(++n);await photoPut(k,x.blob);keys.push(k);pext[k]=extOf(x.blob.type)}}
+  catch(e){toast("写真を保存できませんでした。端末の空き容量を確認してください",6000);return}
+  for(const k of ui.rDel||[]){photoDel(k).catch(()=>{});delete pext[k];if(photoURL[k]){URL.revokeObjectURL(photoURL[k]);delete photoURL[k]}}
+  const next={date,payee,item:val("r_item").trim(),amount:amt,company:val("r_co"),method,cardId:method==="法人カード"?val("r_card"):"",cat:val("r_cat"),caseId:val("r_case"),site:val("r_site").trim(),jobNo:val("r_job").trim(),note:val("r_note").trim(),photos:keys};
+  if(r&&r.everSub){const at=t0();for(const [f,label] of R_FIELDS){const a=f==="photos"?r.photos.length+"枚":String(r[f]??""),b=f==="photos"?keys.length+"枚":String(next[f]??"");
+    if(f==="photos"?JSON.stringify(r.photos)!==JSON.stringify(keys):a!==b)r.edits.push({at,field:f,label,from:f==="photos"?a+"（"+r.photos.join(",")+"）":a,to:f==="photos"?b+"（"+keys.join(",")+"）":b})}}
+  const rec=r||Object.assign(RECEIPT_DEFAULTS(),{id,createdAt:t0()});
+  Object.assign(rec,next,{pext});
+  if(!r){DB.rseq=(DB.rseq||0)+1;DB.receipts.push(rec)}
+  RS().lastCo=rec.company;
+  rFormClear();save();go("rcpt",{rTab:method==="法人カード"?"card":"list"});toast(id+"を保存しました"+(keys.length?"":"（写真なし）"));
+}
+const t0=()=>new Date().toISOString();
+
 const main=document.getElementById("main");
 function render(){
-  const v={home:vHome,cases:vCases,new:vNew,detail:vDetail,todo:vTodo,cal:vCal,gantt:vGantt,stats:vStats}[ui.view]||vHome;
+  const v={home:vHome,cases:vCases,new:vNew,detail:vDetail,todo:vTodo,cal:vCal,gantt:vGantt,stats:vStats,rcpt:vRcpt,rform:vRform}[ui.view]||vHome;
   main.innerHTML=v();
-  const navKey=ui.view==="new"||ui.view==="detail"?"cases":ui.view;
+  const navKey=ui.view==="new"||ui.view==="detail"?"cases":ui.view==="rform"?"rcpt":ui.view;
+  if(ui.view==="rcpt"||ui.view==="rform")fillPhotos();
   document.querySelectorAll("[data-nav]").forEach(b=>{if(b.closest("nav"))b.setAttribute("aria-current",b.dataset.nav===navKey?"page":"false")});
   const t=todayS(), n=genTodos().filter(x=>x.due&&x.due<t).length;
   const bd=document.getElementById("todoBadge"); bd.hidden=!n; bd.textContent=n;
@@ -1061,7 +1369,7 @@ function render(){
     const sync=()=>{sw.hidden=ty.value!=="kinkyu"};ty.addEventListener("change",sync);sync();
   }
 }
-function go(view,extra){Object.assign(ui,{view,acct:false,confirmReset:false},extra||{});render();window.scrollTo(0,0)}
+function go(view,extra){if(view!=="rcpt")rClearDl();if(view!=="rform")rFormClear();Object.assign(ui,{view,acct:false,confirmReset:false,rcCancel:null},extra||{});render();window.scrollTo(0,0)}
 let toastT;
 function toast(msg,ms){const el=document.getElementById("toast");el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,ms||2600)}
 const val=id=>{const el=document.getElementById(id);return el?el.value:""};
@@ -1071,7 +1379,22 @@ document.addEventListener("click",e=>{
   if(!el)return;
   const c=ui.caseId?findCase(ui.caseId):null;
   if(el.dataset.open){go("detail",{caseId:el.dataset.open});return}
-  if(el.dataset.nav){const ex={csv:false};if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";if(el.dataset.nav==="cases")ex.payOnly=!!el.dataset.pay;go(el.dataset.nav,ex);return}
+  if(el.dataset.nav){const ex={csv:false};if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";if(el.dataset.nav==="cases")ex.payOnly=!!el.dataset.pay;if(el.dataset.nav==="rcpt"&&el.closest(".tile"))ex.rTab=el.dataset.rtab2||"list";go(el.dataset.nav,ex);return}
+  if(el.dataset.rtab){ui.rTab=el.dataset.rtab;rClearDl();ui.rcCancel=null;render();return}
+  if(el.dataset.ropen){rFormClear();go("rform",{rId:el.dataset.ropen});return}
+  if(el.dataset.rclaim){const co=el.dataset.rclaim,ids=el.dataset.rall?rPending(co).map(r=>r.id):[...main.querySelectorAll('input[name="rsel_'+co+'"]:checked')].map(x=>x.value);
+    if(!ids.length){toast("精算書に入れる領収書を選んでください");return}
+    const no=rMakeClaim(co,ids);if(no){ui.rTab="claims";render();toast("精算書 "+no+" を作りました（"+ids.length+"件）。「Excelと写真を送る」で経理に送れます",5000)}return}
+  if(el.dataset.rshare){rSendClaim(el.dataset.rshare);return}
+  if(el.dataset.rsettle){const t=todayS();DB.receipts.filter(r=>r.claimNo===el.dataset.rsettle).forEach(r=>Object.assign(r,{status:"精算済",settleDate:t}));save();render();toast("精算済にしました");return}
+  if(el.dataset.rcancel){ui.rcCancel=el.dataset.rcancel;render();return}
+  if(el.dataset.rreturn){const r=rFind(el.dataset.rreturn);if(r&&r.status==="提出済"){r.edits.push({at:t0(),field:"status",label:"状態",from:"提出済（"+r.claimNo+"）",to:"差戻し"});Object.assign(r,{status:"差戻し",returnedFrom:r.claimNo,claimNo:"",submitDate:""});save();render();toast(r.id+"を差戻しにしました。直して、もう一度精算書を作ってください",5000)}return}
+  if(el.dataset.cshare){const [id,close]=el.dataset.cshare.split("|");rSendCard(id,close);return}
+  if(el.dataset.cclose||el.dataset.cunclose){const [id,close]=(el.dataset.cclose||el.dataset.cunclose).split("|"),k=cardOf(id),pp=k&&cardPeriods(k).find(x=>x.close===close);
+    if(pp){pp.list.forEach(r=>r.closeNo=el.dataset.cclose?pp.no:"");save();render();toast(el.dataset.cclose?"締め済みにしました":"締めを取り消しました")}return}
+  if(el.dataset.carddel){const id=el.dataset.carddel;if(DB.receipts.some(r=>r.cardId===id)){toast("このカードの領収書があるため削除できません");return}RS().cards=RS().cards.filter(k=>k.id!==id);save();render();return}
+  if(el.dataset.rdelph){(ui.rDel=ui.rDel||[]).push(el.dataset.rdelph);rPhotoPreview();return}
+  if(el.dataset.rnewx!=null){const x=ui.rNew.splice(Number(el.dataset.rnewx),1)[0];if(x)URL.revokeObjectURL(x.url);rPhotoPreview();return}
   if(el.dataset.type&&ui.view==="cases"){ui.type=el.dataset.type;render();return}
   if(el.dataset.day){ui.calDay=el.dataset.day;ui.calMonth=ui.calDay.slice(0,7);ui.calView="day";render();return}
   if(el.dataset.cv){ui.calView=el.dataset.cv;render();return}
@@ -1083,6 +1406,14 @@ document.addEventListener("click",e=>{
   if(el.dataset.burden!=null&&c){const it=c.items[Number(el.dataset.burden)];if(it){it.burden=el.dataset.b;save();render()}return}
   if(el.dataset.delitem&&c){c.items.splice(Number(el.dataset.delitem),1);save();render();return}
   const a=el.dataset.act;if(!a)return;
+  if(a==="rnew"){rFormClear();go("rform",{rId:null});return}
+  if(a==="rdlclose"){rClearDl();render();return}
+  if(a==="rcancelno"){ui.rcCancel=null;render();return}
+  if(a==="rcanceldo"){const no=ui.rcCancel;DB.receipts.filter(r=>r.claimNo===no&&r.status==="提出済").forEach(r=>Object.assign(r,{status:"未提出",claimNo:"",submitDate:""}));ui.rcCancel=null;save();ui.rTab="list";render();toast("精算書 "+no+" を取り消しました");return}
+  if(a==="rdel"){ui.rDelAsk=true;const keep=[...main.querySelectorAll("#rForm input,#rForm select,#rForm textarea")].map(x=>[x.id,x.value]);render();keep.forEach(([id,v])=>{const x=document.getElementById(id);if(x&&x.type!=="file")x.value=v});return}
+  if(a==="rdelno"){ui.rDelAsk=false;render();return}
+  if(a==="rdeldo"){const r=rFind(ui.rId);if(r&&rEditable(r)){r.photos.forEach(k=>photoDel(k).catch(()=>{}));DB.receipts=DB.receipts.filter(x=>x!==r);save();go("rcpt");toast(r.id+"を削除しました")}return}
+  if(a==="cardadd"){const name=val("rc_name").trim();if(!name){toast("カード名を入れてください");return}RS().cards.push({id:"K"+Date.now().toString(36),company:val("rc_co"),name,closeDay:Number(val("rc_day"))||0});save();render();toast("カードを登録しました");return}
   if(a==="new")return go("new");
   if(a==="csv"){ui.csv=true;render();return}
   if(a==="csvclose"){ui.csv=false;render();return}
@@ -1145,6 +1476,10 @@ document.addEventListener("input",e=>{
 document.addEventListener("change",e=>{
   const t=e.target, c=ui.caseId?findCase(ui.caseId):null;
   if(t.id==="showEnded"){ui.showEnded=t.checked;render();return}
+  if(t.id==="r_photo"){const files=[...t.files];t.value="";files.forEach(f=>(ui.rNew=ui.rNew||[]).push({blob:f,url:URL.createObjectURL(f)}));rPhotoPreview();return}
+  if(t.id==="r_case"){const cc=findCase(t.value);if(cc){document.getElementById("r_site").value=(cc.property+" "+cc.room).trim();document.getElementById("r_job").value=cc.jobNo||""}return}
+  if(t.id==="r_method"||t.id==="r_co"){const card=val("r_method")==="法人カード",w=document.getElementById("r_cardWrap"),sel=document.getElementById("r_card");if(w)w.hidden=!card;
+    if(sel){const ks=RS().cards.filter(k=>k.company===val("r_co"));sel.innerHTML=ks.map(k=>'<option value="'+h(k.id)+'">'+h(k.name)+'</option>').join("")||'<option value="">この会社のカードがありません</option>'}return}
   if(t.id==="payOnly"){ui.payOnly=t.checked;render();return}
   if(t.dataset.item!=null&&c){const it=c.items[Number(t.dataset.item)];if(it){it[t.dataset.f]=t.dataset.f==="amount"?(t.value===""?"":Number(t.value)):t.value;save();refreshItemTotals(c)}return}
   if(t.id==="d_billing"&&c){c.billingTenant=t.value;save();return}
@@ -1164,6 +1499,8 @@ document.addEventListener("submit",e=>{
       receivedAt:at?new Date(at).toISOString():new Date().toISOString(),symptom:type==="kinkyu"?val("n_sym"):"",note:val("n_note").trim(),
       items:[],estAmount:null,estSentDate:"",siteDate:"",lossReason:"",lossDate:"",holdDate:"",orderDate:"",jobNo:"",billingTenant:"入居者に直接",handedDate:""});
     save();go("detail",{caseId:id});toast(id+"で受付しました");return}
+  if(f.id==="rForm"){rSaveForm();return}
+  if(f.id==="rsetForm"){const S=RS();S.name=val("rs_name").trim();COMPANIES.forEach(co=>{S.payDays[co]=Number(val("rs_pd_"+co));S.to[co]=val("rs_to_"+co).trim()});S.useCard=document.getElementById("rs_card").checked;save();render();toast("領収書の設定を保存しました");return}
   if(f.id==="todoForm"){DB.todos.push({id:"T"+Date.now(),title:val("td_title").trim(),due:val("td_due"),tantou:val("td_tantou"),done:false});save();render();toast("ToDoを追加しました");return}
   if(f.id==="gsetForm"){const picked=[...f.querySelectorAll('input[name="gshow"]:checked')].map(x=>G.cals[Number(x.value)]).filter(Boolean).map(c=>c.id);
     DB.settings.gShow=picked;DB.settings.gWrite=val("g_write");for(const x in gcalCache)delete gcalCache[x];save();render();toast("Googleカレンダーの設定を保存しました");return}
