@@ -245,6 +245,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 .gres{margin:0;padding:0;list-style:none;font-size:12.5px;display:flex;flex-direction:column;gap:2px}
 .gres .ng{color:var(--red)}
 .gres .ok{color:var(--green)}
+.gres .warn{color:var(--amber);font-weight:700}
 .gcals{display:flex;flex-direction:column;gap:6px}
 .gcals label{display:flex;gap:8px;align-items:center;font-size:14px}
 .gcals input{width:20px;height:20px}
@@ -275,7 +276,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.24・10/23更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.25・10/24更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -1130,7 +1131,7 @@ function vStats(){
     ''+
     '</form></section>'+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.24 用）を開く</a></section>';
+  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.25 用）を開く</a></section>';
 }
 function gSettings(){
   const head='<section class="sec"><div class="sec-h"><h2>Googleカレンダー連携</h2></div>';
@@ -1521,7 +1522,7 @@ async function dataConnect(input){
   Object.assign(D(),{sheetId:id,sheetName:(v.properties&&v.properties.title)||""});save();
 }
 /* 社長の端末：社員ごとのシートを作って、その社員に「編集者」で共有する */
-const STAFF_COLS=["氏名","Gmail","シートID","シートのリンク","状態","追加日","最終同期"];
+const STAFF_COLS=["氏名","Gmail","シートID","シートのリンク","状態","追加日","最終同期","共有ID"];
 /* a new spreadsheet's first tab is renamed (its default name depends on the account's language), then more tabs are added */
 async function sheetTabs(id,first,more){
   const v=await gReq(SHEETS+"/"+encodeURIComponent(id)+"?fields=sheets.properties");
@@ -1529,10 +1530,39 @@ async function sheetTabs(id,first,more){
 }
 async function adminWriteList(){
   if(!D().listId){const f=await driveCreate({name:"CPG HUB_社員一覧",mimeType:"application/vnd.google-apps.spreadsheet",parents:[D().folder]});await sheetTabs(f.id,"社員",[]);D().listId=f.id;save()}
-  return sheetWrite(D().listId,"社員",[STAFF_COLS,...D().staff.map(s=>[s.name,s.email,s.sheetId,"https://docs.google.com/spreadsheets/d/"+s.sheetId+"/edit",s.removed?"共有を外した":"共有中",s.addedAt,s.lastSync||""])]);
+  return sheetWrite(D().listId,"社員",[STAFF_COLS,...D().staff.map(s=>[s.name,s.email,s.sheetId,"https://docs.google.com/spreadsheets/d/"+s.sheetId+"/edit",s.removed?"共有を外した":"共有中",s.addedAt,s.lastSync||"",s.permId||""])]);
 }
+/* drive.file lets CPG HUB see the files it made, from any of the 社長's devices: a second device finds the folder 「CPG HUB データ」
+   and 「CPG HUB_社員一覧」 made on the first one, instead of making new ones. The list sheet is the master copy of the staff list */
+const dq=x=>"'"+String(x).replace(/\\/g,"\\\\").replace(/'/g,"\\'")+"'";
+async function driveFind(q){
+  const r=await gReq(DRIVE+"?"+new URLSearchParams({q:q+" and trashed=false",fields:"files(id,name,createdTime)",orderBy:"createdTime",pageSize:"100",spaces:"drive"}));
+  return ((r&&r.files)||[]).sort((a,b)=>String(a.createdTime).localeCompare(String(b.createdTime)));
+}
+async function adminSync(log){
+  const d=D(), found={};
+  if(!d.folder){
+    const fs=await driveFind("name='CPG HUB データ' and mimeType='application/vnd.google-apps.folder'");
+    if(!fs.length)return found;
+    d.folder=fs[0].id;d.listId="";save();found.folder=true;
+    if(fs.length>1)log("同じ名前のフォルダ「CPG HUB データ」が"+fs.length+"つあります。一番古いもの（"+md(ymd(new Date(fs[0].createdTime)))+"作成）を使います",false);
+  }
+  if(!d.listId){
+    const ls=await driveFind("name='CPG HUB_社員一覧' and mimeType='application/vnd.google-apps.spreadsheet' and "+dq(d.folder)+" in parents");
+    if(!ls.length)return found;
+    d.listId=ls[0].id;save();
+  }
+  const rows=objRows((await sheetRead(d.listId,["社員"]))["社員"]).filter(r=>r["シートID"]);
+  const local=d.staff.filter(s=>!rows.some(r=>String(r["シートID"])===s.sheetId)); /* added here, but the list sheet was not written yet */
+  d.staff=rows.map(r=>{const old=d.staff.find(s=>s.sheetId===String(r["シートID"]))||{};
+    return {name:String(r["氏名"]),email:String(r["Gmail"]),sheetId:String(r["シートID"]),permId:String(r["共有ID"]||old.permId||""),addedAt:String(r["追加日"]),removed:r["状態"]==="共有を外した",lastSync:String(r["最終同期"]||old.lastSync||"")}}).concat(local);
+  save();found.list=true;found.n=d.staff.length;return found;
+}
+const staffDup=email=>D().staff.find(s=>!s.removed&&s.email.toLowerCase()===email.toLowerCase());
 async function adminAdd(name,email,log){
   await gAuthorize(true);
+  await adminSync(log);
+  const dup=staffDup(email);if(dup)throw Object.assign(new Error("dup"),{who:dup.name});
   if(!D().folder){const f=await driveCreate({name:"CPG HUB データ",mimeType:"application/vnd.google-apps.folder"});D().folder=f.id;save();log("フォルダ「CPG HUB データ」を作りました")}
   const f=await driveCreate({name:"CPG HUB_"+name,mimeType:"application/vnd.google-apps.spreadsheet",parents:[D().folder]});
   const s={name,email,sheetId:f.id,permId:"",addedAt:todayS(),removed:false,lastSync:""};D().staff.push(s);save();log("シート「CPG HUB_"+name+"」を作りました");
@@ -1543,12 +1573,17 @@ async function adminAdd(name,email,log){
 }
 async function adminRemove(s){
   await gAuthorize(true);
+  await adminSync(()=>{});
+  s=D().staff.find(x=>x.sheetId===s.sheetId)||s;
+  if(!s.permId){const r=await gReq(DRIVE+"/"+encodeURIComponent(s.sheetId)+"/permissions?fields=permissions(id,emailAddress)");
+    const p=((r&&r.permissions)||[]).find(x=>String(x.emailAddress||"").toLowerCase()===s.email.toLowerCase());if(p)s.permId=p.id}
   if(s.permId)await gReq(DRIVE+"/"+encodeURIComponent(s.sheetId)+"/permissions/"+encodeURIComponent(s.permId),{method:"DELETE"});
   s.removed=true;save();await adminWriteList();
 }
 /* 社長の「会社の動き」: read every shared sheet (read only; nothing is written to the people's sheets) */
 async function corpLoad(){
   await gAuthorize(true);
+  await adminSync(()=>{});
   const list=D().staff.filter(s=>!s.removed), out=[];
   for(const s of list){
     try{const v=await sheetRead(s.sheetId,["案件","入金","立替","情報"]);
@@ -1584,12 +1619,14 @@ function corpView(){
   }
   return '<section class="sec"><div class="sec-h"><h2>会社の動き</h2><span class="note">社長用・見るだけ</span></div>'+
     '<button class="btn" type="button" data-act="corp"'+(c&&c.busy?' disabled':'')+'>'+(c&&c.busy?'読み込んでいます…':'社員の記録を読み込む（'+D().staff.filter(s=>!s.removed).length+'人）')+'</button>'+
+    '<div class="row"><button class="btn sm" type="button" data-act="dreload"'+(ui.dbusy?' disabled':'')+'>一覧を読み直す</button><span class="note">ほかの端末で追加した社員を出します</span></div>'+
+    (ui.dview==="corp"?dMsgList():'')+
     (c&&c.err?'<p class="note" style="margin:0;color:var(--red)">'+h(c.err)+'</p>':'')+(c&&c.at?'<p class="note" style="margin:0">'+md(ymd(new Date(c.at)))+' '+hm(new Date(c.at))+'に読み込み</p>':'')+body+'</section>';
 }
+const dMsgList=()=>{const m=ui.dmsg;return m?'<ul class="gres" role="status">'+m.map(x=>'<li class="'+(x.ok===false?'ng':x.ok==="warn"?'warn':'ok')+'">'+(x.ok===false?'× ':x.ok==="warn"?'！ ':'✓ ')+h(x.text)+'</li>').join("")+'</ul>':''};
 /* 設定：社員の「記録シート」と、社長用の「管理」 */
 function dSettings(){
-  const d=D(), m=ui.dmsg;
-  const msg=m?'<ul class="gres" role="status">'+m.map(x=>'<li class="'+(x.ok?'ok':'ng')+'">'+(x.ok?'✓ ':'× ')+h(x.text)+'</li>').join("")+'</ul>':'';
+  const d=D(), msg=ui.dview==="corp"?'':dMsgList();
   const mine='<div class="panel"><h3>記録シート（社員用）</h3>'+
     (d.sheetId?'<p style="margin:0">つないでいるシート：<b>'+h(d.sheetName||d.sheetId)+'</b>'+(d.lastSync?'（最終同期 '+md(ymd(new Date(d.lastSync)))+' '+hm(new Date(d.lastSync))+'）':'（まだ同期していません）')+'</p>'+
       '<p class="note" style="margin:0">「Googleとまとめて同期」のたびに、案件・入金・立替の要点と領収書の写真の控えを送ります。メモ・症状・住所の詳細と（架空）の例は送りません。</p>'+
@@ -1602,6 +1639,7 @@ function dSettings(){
       (d.staff.length?'<ul class="dl">'+d.staff.map((s,i)=>'<li><div class="row"><b>'+h(s.name)+'</b><span class="note">'+h(s.email)+'</span><span class="sp"></span>'+(s.removed?'<span class="note">共有を外しました</span>':'<button class="btn sm danger" type="button" data-dunshare="'+i+'">共有を外す</button>')+'</div>'+
         '<div class="note num">シート '+h(s.sheetId.slice(0,10))+'…・追加 '+md(s.addedAt)+(s.lastSync?'・最終同期 '+h(s.lastSync):'')+'</div>'+
         (ui.dUnshare===i?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><span>'+h(s.name)+'さんの共有を外します。シートは消さずに残ります。</span><div class="row"><button class="btn danger" type="button" data-act="dunsharedo">共有を外す</button><button class="btn" type="button" data-act="dunshareno">やめる</button></div></div>':'')+'</li>').join("")+'</ul>':'<p class="note" style="margin:0">まだ社員はいません。</p>')+
+      '<div class="row"><button class="btn sm" type="button" data-act="dreload"'+(ui.dbusy?' disabled':'')+'>一覧を読み直す</button><span class="note">ほかの端末で追加・共有を外した社員を反映します</span></div>'+
       '<div class="form"><label class="f">氏名<input type="text" id="d_name" placeholder="例：山田"></label><label class="f">Gmail<input type="email" id="d_mail" inputmode="email" autocomplete="off" placeholder="例：yamada@gmail.com"></label></div>'+
       '<div class="row"><button class="btn pri" type="button" data-act="dadd">社員を追加</button></div>'+
       '<p class="note" style="margin:0">追加すると、その人のGmailに「編集者」で共有され、Googleから案内メールが届きます。Google Cloud の「対象」で、その人をテストユーザーに追加しておいてください。</p>')+'</div>':'';
@@ -1694,12 +1732,18 @@ document.addEventListener("click",e=>{
     dataConnect(v).then(()=>{ui.dmsg=[{ok:true,text:"記録シート「"+(D().sheetName||D().sheetId)+"」につなぎました。次の「Googleとまとめて同期」から送ります"}]},
       err=>{ui.dmsg=[{ok:false,text:err.message==="badid"?"リンクの形が違います（https://docs.google.com/spreadsheets/d/…）":err.message==="tabs"?"このシートには「"+err.miss.join("・")+"」のタブがありません。社長から届いたシートか確かめてください":"つなげませんでした："+dMsg(err)}]}).then(render);return}
   if(a==="dunlink"){Object.assign(D(),{sheetId:"",sheetName:"",lastSync:""});ui.dmsg=[{ok:true,text:"記録シートとのつながりを外しました（シートは残っています）"}];save();render();return}
-  if(a==="dadmin"){gAuthorize(true).then(()=>{D().admin=true;save();ui.dmsg=[{ok:true,text:"管理をはじめました"}]},err=>{ui.dmsg=[{ok:false,text:gMsg(err)}]}).then(render);return}
+  if(a==="dadmin"){const log=[];ui.dview="";
+    gAuthorize(true).then(()=>adminSync((text,ok)=>log.push({ok:ok===false?"warn":true,text}))).then(f=>{D().admin=true;save();
+      log.unshift({ok:true,text:f.list?"既存の管理データを読み込みました（社員"+f.n+"人）":f.folder?"既存のフォルダ「CPG HUB データ」を使います（社員一覧はまだありません）":"管理をはじめました"});ui.dmsg=log},
+      err=>{ui.dmsg=[{ok:false,text:err.message==="http"?"管理データを探せませんでした："+dMsg(err):gMsg(err)}]}).then(render);return}
+  if(a==="dreload"){if(ui.dbusy)return;const log=[];ui.dbusy=true;ui.dview=ui.view==="home"?"corp":"";render();
+    gAuthorize(true).then(()=>adminSync((text,ok)=>log.push({ok:ok===false?"warn":true,text}))).then(f=>{log.unshift(f.list?{ok:true,text:"社員一覧を読み直しました（社員"+f.n+"人）"}:{ok:"warn",text:"「CPG HUB_社員一覧」がまだありません"});ui.dmsg=log},
+      err=>{ui.dmsg=[{ok:false,text:"読み直せませんでした："+dMsg(err)}]}).finally(()=>{ui.dbusy=false;render()});return}
   if(a==="dadd"){const name=val("d_name").trim(),mail=val("d_mail").trim();
     if(!name||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)){ui.dmsg=[{ok:false,text:"氏名とGmailを入れてください"}];render();return}
-    if(D().staff.some(s=>!s.removed&&s.email.toLowerCase()===mail.toLowerCase())){ui.dmsg=[{ok:false,text:mail+" はもう追加されています"}];render();return}
-    const log=[];ui.dmsg=log;const add=text=>{log.push({ok:true,text});render()};
-    adminAdd(name,mail,add).catch(err=>{log.push({ok:false,text:"途中で止まりました："+dMsg(err)});render()});return}
+    const dup=staffDup(mail);if(dup){ui.dview="";ui.dmsg=[{ok:false,text:dup.name+"さんはすでに追加されています（"+dup.email+"）"}];render();return}
+    const log=[];ui.dview="";ui.dmsg=log;const add=(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()};
+    adminAdd(name,mail,add).catch(err=>{log.push({ok:false,text:err.message==="dup"?err.who+"さんはすでに追加されています（ほかの端末で追加済み）":"途中で止まりました："+dMsg(err)});render()});return}
   if(a==="dunshareno"){ui.dUnshare=null;render();return}
   if(a==="dunsharedo"){const s=D().staff[ui.dUnshare];ui.dUnshare=null;if(!s)return;
     adminRemove(s).then(()=>{ui.dmsg=[{ok:true,text:s.name+"さんの共有を外しました（シートは残っています）"}]},err=>{ui.dmsg=[{ok:false,text:"共有を外せませんでした："+dMsg(err)}]}).then(render);return}
