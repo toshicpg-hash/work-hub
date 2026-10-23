@@ -78,6 +78,13 @@ nav.bottom{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--sur
 .tile .k{font-size:12px;color:var(--muted);font-weight:700}
 .tile .v{font-family:var(--f-display);font-size:28px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.2}
 .tile.alert .v{color:var(--red)}
+.tile.wide{grid-column:1/-1}
+.tile .s{font-size:12.5px;color:var(--muted);font-weight:700}
+.tile.alert .s b{color:var(--red)}
+.payline{font-size:12.5px;display:flex;gap:8px;flex-wrap:wrap}
+.payline .late{color:var(--red);font-weight:700}
+ol.hist{margin:4px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:2px}
+ol.hist li{overflow-wrap:anywhere}
 .list{display:flex;flex-direction:column;gap:8px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;cursor:pointer;text-align:left;width:100%}
 .card:hover{border-color:var(--accent)}
@@ -92,7 +99,11 @@ nav.bottom{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--sur
 .chip.t-teiki{background:var(--green-soft);color:var(--green)}
 .pill{font-size:12px;font-weight:700;padding:2px 10px;border-radius:6px;border:1px solid var(--line);white-space:nowrap}
 .pill.s-won{border-color:var(--green);color:var(--green)}
-.pill.s-handed{background:var(--sunk);color:var(--muted)}
+.pill.s-handed{border-color:var(--accent);color:var(--accent)}
+.pill.s-built{border-color:var(--amber);color:var(--amber)}
+.pill.s-billed{border-color:var(--amber);color:var(--amber);background:var(--amber-soft)}
+.pill.s-billed.late{border-color:var(--red);color:var(--red);background:var(--red-soft)}
+.pill.s-paid{background:var(--green-soft);color:var(--green);border-color:var(--green)}
 .pill.s-lost{background:var(--sunk);color:var(--muted);text-decoration:line-through}
 .pill.s-hold{border-color:var(--amber);color:var(--amber)}
 .pill.s-new{border-color:var(--accent);color:var(--accent)}
@@ -111,8 +122,9 @@ label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:70
 @media (max-width:480px){.form{grid-template-columns:1fr}}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
 .panel h3{font-size:15px}
-.steps{display:flex;gap:4px;overflow-x:auto;padding-bottom:2px}
-.steps span{flex:1;min-width:64px;text-align:center;font-size:11.5px;font-weight:700;padding:6px 4px;border-radius:6px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.steps{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px}
+@media (max-width:520px){.steps{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.steps span{flex:1;min-width:0;text-align:center;font-size:11.5px;font-weight:700;padding:6px 4px;border-radius:6px;background:var(--sunk);color:var(--muted);white-space:nowrap}
 .steps span.done{background:var(--accent-soft);color:var(--accent)}
 .steps span.cur{background:var(--accent);color:var(--accent-fg)}
 .steps span.end{background:var(--sunk);color:var(--muted);text-decoration:line-through}
@@ -235,7 +247,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><span class="ver">v1.14・10/23更新</span></span><span class="proto">試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><span class="ver">v1.15・10/23更新</span></span><span class="proto">試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -263,7 +275,7 @@ const TYPES={
   reno:{label:"リノベーション",site:"現地調査"},
   teiki:{label:"定期清掃",site:"現地確認"}
 };
-const STAGES={new:"受付",site:"現地確認済",quoted:"見積提出済",hold:"保留",won:"受注・引渡待ち",handed:"Access引渡済",lost:"失注"};
+const STAGES={new:"受付",site:"現地確認済",quoted:"見積提出済",hold:"保留",won:"受注・引渡待ち",handed:"引渡済・施工中",built:"完工・請求待ち",billed:"請求済・入金待ち",paid:"入金済（完了）",lost:"失注"};
 const SYMPTOMS=["水漏れ","給湯器凍結","その他"];
 const LOSS=["価格","他社に決定","時期が合わない","連絡なし","その他"];
 const CLIENT_KINDS=["管理会社","大家さん","その他"];
@@ -282,14 +294,14 @@ const diffDays=(a,b)=>Math.round((parseYmd(a)-parseYmd(b))/864e5);
 
 /* Stored-data defaults: when a field is added, give it a default here. withDefaults only fills keys that are missing */
 const SCHEMA_VERSION=2;
-const CASE_DEFAULTS=()=>({addr:"",items:[],note:"",symptom:"",planDate:"",estAmount:null,estSentDate:"",siteDate:"",lossReason:"",lossDate:"",holdDate:"",orderDate:"",jobNo:"",billingTenant:"入居者に直接",handedDate:"",gcal:null});
+const CASE_DEFAULTS=()=>({addr:"",items:[],note:"",symptom:"",planDate:"",estAmount:null,estSentDate:"",siteDate:"",lossReason:"",lossDate:"",holdDate:"",orderDate:"",jobNo:"",billingTenant:"入居者に直接",handedDate:"",gcal:null,builtDate:"",billDate:"",billAmount:null,billTo:"",payDue:"",payments:[],paidDate:"",payLog:[]});
 const TODO_DEFAULTS=()=>({title:"",due:"",tantou:"",done:false});
-const SETTINGS_DEFAULTS=()=>({schedule:2,quote:3,reply:14,jobno:1,gShow:null,gWrite:""});
+const SETTINGS_DEFAULTS=()=>({schedule:2,quote:3,reply:14,jobno:1,billAfter:3,payRule:"m1end",acctWait:3,gShow:null,gWrite:""});
 const withDefaults=(o,defs)=>{for(const k in defs)if(o[k]===undefined)o[k]=defs[k];return o};
 function upgrade(db){
   const obj=x=>x&&typeof x==="object"&&!Array.isArray(x);
   db.cases=db.cases.filter(obj);
-  db.cases.forEach(c=>{withDefaults(c,CASE_DEFAULTS());if(!Array.isArray(c.items))c.items=[]});
+  db.cases.forEach(c=>{withDefaults(c,CASE_DEFAULTS());if(!Array.isArray(c.items))c.items=[];if(!Array.isArray(c.payments))c.payments=[];if(!Array.isArray(c.payLog))c.payLog=[]});
   db.todos=(Array.isArray(db.todos)?db.todos:[]).filter(obj);
   db.todos.forEach((t,i)=>{withDefaults(t,TODO_DEFAULTS());if(t.id==null)t.id="T-old"+(i+1)});
   if(!obj(db.settings))db.settings={};
@@ -325,6 +337,9 @@ function sample(){
     C({id:"U-0010",type:"reno",stage:"quoted",clientKind:"大家さん",client:"大家 中村様（架空）",property:"サンプルコーポ（架空）",room:"201",tantou:"トシ",receivedAt:ago(60*24*12),siteDate:d(-9),estSentDate:d(-5),estAmount:1280000,note:"水回り一式の改修（例）"}),
     C({id:"U-0008",type:"reno",stage:"hold",clientKind:"大家さん",client:"大家 田中様（架空）",property:"テストハイム（架空）",room:"102",tantou:"トシ",receivedAt:ago(60*24*30),siteDate:d(-27),estSentDate:d(-24),estAmount:860000,holdDate:d(-1),note:"来期の予算で検討とのこと（例）"}),
     C({id:"U-0007",type:"teiki",stage:"won",clientKind:"管理会社",client:"みどり台ハウジング（架空）",property:"グリーンコート相模台（架空）",room:"共用部",tantou:"黒木",receivedAt:ago(60*24*14),siteDate:d(-12),estSentDate:d(-10),estAmount:18000,orderDate:d(-1)}),
+    C({id:"U-0011",type:"teiki",stage:"billed",clientKind:"管理会社",client:"相模ベイ管理（架空）",property:"サンプルハイツ（架空）",room:"共用部",tantou:"黒木",receivedAt:ago(60*24*60),siteDate:d(-56),estSentDate:d(-54),estAmount:24000,orderDate:d(-50),jobNo:"（例）26-0420",handedDate:d(-49),builtDate:d(-20),billDate:d(-18),billAmount:24000,billTo:"相模ベイ管理（架空）",payDue:payDueOf(d(-18),"m1end"),note:"請求済みで入金待ちの例（例）"}),
+    C({id:"U-0009",type:"reno",stage:"billed",clientKind:"大家さん",client:"大家 田中様（架空）",property:"テストハイム（架空）",room:"201",tantou:"トシ",receivedAt:ago(60*24*120),siteDate:d(-115),estSentDate:d(-110),estAmount:420000,orderDate:d(-100),jobNo:"（例）26-0377",handedDate:d(-99),builtDate:d(-78),billDate:d(-75),billAmount:420000,billTo:"大家 田中様（架空）",payDue:d(-12),payLog:[{kind:"req",at:d(-5)}],note:"入金予定日を過ぎた例（例）"}),
+    C({id:"U-0006",type:"kinkyu",stage:"billed",clientKind:"管理会社",client:"みどり台ハウジング（架空）",property:"グリーンコート相模台（架空）",room:"201",tantou:"黒木",receivedAt:ago(60*24*40),symptom:"水漏れ",siteDate:d(-40),estSentDate:d(-39),estAmount:45000,orderDate:d(-39),jobNo:"（例）26-0412",handedDate:d(-38),builtDate:d(-35),billDate:d(-30),billAmount:45000,billTo:"みどり台ハウジング（架空）",payDue:d(5),payments:[{date:d(-3),amount:20000,by:"経理連絡",at:d(-2)}],payLog:[{kind:"req",at:d(-4)}],note:"一部入金の例（例）"}),
     C({id:"U-0004",type:"reno",stage:"lost",clientKind:"大家さん",client:"大家 高橋様（架空）",property:"テストマンション（架空）",room:"105",tantou:"トシ",receivedAt:ago(60*24*25),siteDate:d(-22),estSentDate:d(-20),estAmount:640000,lossReason:"価格",lossDate:d(-6)})
   ]};
 }
@@ -344,7 +359,23 @@ const findCase=id=>DB.cases.find(c=>c.id===id);
 const isTaikyo=c=>c.type==="taikyo";
 const itemsSum=(c,b)=>c.items.filter(i=>!b||i.burden===b).reduce((s,i)=>s+(Number(i.amount)||0),0);
 const estOf=c=>isTaikyo(c)&&c.items.length?itemsSum(c):c.estAmount;
-const ended=c=>c.stage==="lost"||c.stage==="handed";
+/* A case stays active through 引渡・施工完了・請求 until it is fully paid; only 失注 and 入金済 end it */
+const ended=c=>c.stage==="lost"||c.stage==="paid";
+const paidSum=c=>(c.payments||[]).reduce((s,x)=>s+(Number(x.amount)||0),0);
+const remainOf=c=>(Number(c.billAmount)||0)-paidSum(c);
+const unpaid=c=>c.stage==="billed"&&remainOf(c)>0;
+/* Accounting exchange: a request to 経理 is answered by a 経理連絡 payment record or a "まだ入金なし" reply made on or after it */
+const lastReq=c=>(c.payLog||[]).filter(x=>x.kind==="req").map(x=>x.at).sort().pop()||"";
+const acctReplied=c=>{const r=lastReq(c);return !r||(c.payLog||[]).some(x=>x.kind==="noPay"&&x.at>=r)||(c.payments||[]).some(x=>x.by==="経理連絡"&&(x.at||x.date)>=r)};
+const lateDays=c=>unpaid(c)&&c.payDue&&c.payDue<todayS()?diffDays(todayS(),c.payDue):0;
+/* 入金予定日 from 請求日: 翌月末 / 翌々月末 / 30日後 (setting) */
+const PAY_RULES={m1end:"請求日の翌月末",m2end:"請求日の翌々月末",d30:"請求日の30日後"};
+function payDueOf(bill,rule){const d=parseYmd(bill);if(!d)return "";if(rule==="d30")return addDays(bill,30);return ymd(new Date(d.getFullYear(),d.getMonth()+(rule==="m2end"?3:2),0))}
+/* 請求先 default: the client; for 退去立会 with the tenant share billed directly, both payers are named */
+function billToDefault(c){
+  if(isTaikyo(c)&&c.billingTenant==="入居者に直接"&&itemsSum(c,"入居者")>0)return c.client+"（家主負担 "+yen(itemsSum(c,"家主"))+"）／入居者に直接（入居者負担 "+yen(itemsSum(c,"入居者"))+"）";
+  return c.client;
+}
 
 function genTodos(){
   const S=DB.settings, out=[];
@@ -356,6 +387,9 @@ function genTodos(){
     if(c.stage==="quoted")out.push(Object.assign({},base,{title:"受注か失注かを依頼元に確認",due:addDays(c.estSentDate,S.reply)}));
     if(c.stage==="hold")out.push(Object.assign({},base,{title:"保留中の案件を再確認",due:c.holdDate}));
     if(c.stage==="won")out.push(Object.assign({},base,{title:"Accessで現場管理表を作成し、仕事番号を記録",due:addDays(c.orderDate,S.jobno)}));
+    if(c.stage==="built")out.push(Object.assign({},base,{title:"請求書を出す",due:addDays(c.builtDate||todayS(),S.billAfter)}));
+    if(unpaid(c)&&lastReq(c)&&!acctReplied(c)&&addDays(lastReq(c),S.acctWait)<=todayS())out.push(Object.assign({},base,{title:"経理の返事を確認する（"+md(lastReq(c))+"に入金確認を依頼）",due:addDays(lastReq(c),S.acctWait)}));
+    if(lateDays(c))out.push(Object.assign({},base,{title:"入金を確認する（"+lateDays(c)+"日遅れ・残 "+yen(remainOf(c))+"）",due:c.payDue}));
   }
   for(const t of DB.todos)if(!t.done)out.push(Object.assign({manual:true},t));
   return out.sort((a,b)=>(a.due||"9").localeCompare(b.due||"9"));
@@ -373,14 +407,15 @@ function since(iso){
   return "受付から"+(d?d+"日":"")+(d||hh?hh+"時間":"")+mm+"分";
 }
 const typeChip=c=>'<span class="chip t-'+c.type+'">'+TYPES[c.type].label+'</span>';
-const stagePill=c=>'<span class="pill s-'+c.stage+'">'+STAGES[c.stage]+'</span>';
+const stagePill=c=>'<span class="pill s-'+c.stage+(lateDays(c)?" late":"")+'">'+(c.stage==="billed"&&paidSum(c)>0?"一部入金・残あり":STAGES[c.stage])+'</span>';
 
 function caseCard(c){
-  const urgent=c.type==="kinkyu"&&!ended(c)&&c.stage!=="won";
+  const urgent=c.type==="kinkyu"&&(c.stage==="new"||c.stage==="site"), late=lateDays(c);
   return '<button type="button" class="card'+(urgent?" urgent":"")+'" data-open="'+c.id+'">'+
     '<div class="row">'+typeChip(c)+'<span class="note num">'+h(c.id)+'</span><span class="sp"></span>'+stagePill(c)+'</div>'+
     '<div class="ttl">'+h(c.property)+' '+h(c.room)+(c.symptom?' ・ '+h(c.symptom):'')+'</div>'+
     '<div class="row note"><span>'+h(c.client)+'</span><span>担当 '+h(c.tantou)+'</span>'+(estOf(c)!=null?'<span class="num">見積 '+yen(estOf(c))+'</span>':'')+'</div>'+
+    (c.stage==="billed"?'<div class="payline num"><span>請求 '+yen(c.billAmount)+'</span><span>残 '+yen(remainOf(c))+'</span><span>入金予定 '+md(c.payDue)+'</span>'+(late?'<span class="late">'+late+'日遅れ</span>':'')+(lastReq(c)?'<span>経理に確認依頼 '+md(lastReq(c))+'</span>':'')+'</div>':'')+
     (urgent?'<div class="since" data-since="'+h(c.receivedAt)+'">'+since(c.receivedAt)+'</div>':'')+
   '</button>';
 }
@@ -398,6 +433,7 @@ function vHome(){
   const urgent=DB.cases.filter(c=>c.type==="kinkyu"&&(c.stage==="new"||c.stage==="site"));
   const waiting=DB.cases.filter(c=>c.stage==="won");
   const active=DB.cases.filter(c=>!ended(c));
+  const un=DB.cases.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   return '<div class="banner"><b>試作です。</b>（架空）と付いた案件は練習用の例です。入力した内容はこの端末のブラウザにだけ残ります。</div>'+
   '<section class="sec">'+gSyncPanel()+'</section>'+
   '<section class="sec"><div class="tiles">'+
@@ -405,6 +441,7 @@ function vHome(){
     '<button type="button" class="tile" data-nav="todo"><span class="k">今日までのToDo</span><span class="v">'+todayT.length+'</span></button>'+
     '<button type="button" class="tile'+(urgent.length?" alert":"")+'" data-nav="cases" data-type="kinkyu"><span class="k">対応中の緊急</span><span class="v">'+urgent.length+'</span></button>'+
     '<button type="button" class="tile" data-nav="cases"><span class="k">動いている案件</span><span class="v">'+active.length+'</span></button>'+
+    '<button type="button" class="tile wide'+(unLate?" alert":"")+'" data-nav="cases" data-pay="1"><span class="k">未入金（請求済みで入金待ち）</span><span class="v num">'+un.length+'件 '+yen(unSum)+'</span><span class="s">'+(unLate?'<b>入金予定日を過ぎたもの '+unLate+'件</b>':'遅れはありません')+'</span></button>'+
   '</div></section>'+
   (urgent.length?'<section class="sec"><div class="sec-h"><h2>緊急対応</h2><span class="note">受付からの経過時間</span></div><div class="list">'+urgent.map(caseCard).join("")+'</div></section>':'')+
   '<section class="sec"><div class="sec-h"><h2>期限切れ・今日のToDo</h2><span class="sp"></span><button class="btn sm" type="button" data-nav="todo">すべて見る</button></div><div class="list">'+
@@ -415,17 +452,18 @@ function vHome(){
 
 function vCases(){
   const q=ui.q.trim();
-  let list=DB.cases.filter(c=>(ui.showEnded||!ended(c))&&(ui.type==="all"||c.type===ui.type));
+  let list=DB.cases.filter(c=>(ui.showEnded||!ended(c))&&(ui.type==="all"||c.type===ui.type)&&(!ui.payOnly||unpaid(c)));
   if(q)list=list.filter(c=>[c.id,c.client,c.property,c.room,c.addr,c.note,c.jobNo,c.symptom].join(" ").includes(q));
-  const order={new:0,site:1,quoted:2,hold:3,won:4,handed:5,lost:6};
-  list.sort((a,b)=>(b.type==="kinkyu")-(a.type==="kinkyu")||order[a.stage]-order[b.stage]||b.id.localeCompare(a.id));
+  const order={new:0,site:1,quoted:2,hold:3,won:4,handed:5,built:6,billed:7,paid:8,lost:9};
+  list.sort((a,b)=>ui.payOnly?lateDays(b)-lateDays(a)||(a.payDue||"").localeCompare(b.payDue||""):(b.type==="kinkyu"&&!ended(b)&&order[b.stage]<2)-(a.type==="kinkyu"&&!ended(a)&&order[a.stage]<2)||order[a.stage]-order[b.stage]||b.id.localeCompare(a.id));
   const won=DB.cases.filter(c=>c.stage==="won");
   return '<section class="sec"><div class="sec-h"><h2>案件</h2><span class="note num">'+list.length+'件</span><span class="sp"></span>'+
     '<button class="btn sm" type="button" data-act="csv"'+(won.length?'':' disabled')+'>引渡待ちをAccess用に書き出す（'+won.length+'）</button></div>'+
     (ui.csv?csvPanel(won):'')+
     '<input type="search" id="q" placeholder="物件・依頼元・番号で探す" value="'+h(ui.q)+'">'+
     '<div class="seg" role="group" aria-label="依頼の種類">'+[["all","すべて"],...Object.entries(TYPES).map(([k,v])=>[k,v.label])].map(([k,l])=>'<button type="button" data-type="'+k+'" aria-pressed="'+(ui.type===k)+'">'+l+'</button>').join("")+'</div>'+
-    '<label class="row note"><input type="checkbox" id="showEnded"'+(ui.showEnded?" checked":"")+'> 失注・引渡済の案件も表示する</label>'+
+    '<div class="row note"><label class="row"><input type="checkbox" id="payOnly"'+(ui.payOnly?" checked":"")+'> 入金待ちだけ</label><label class="row"><input type="checkbox" id="showEnded"'+(ui.showEnded?" checked":"")+'> 失注・入金済も表示</label></div>'+
+    (ui.payOnly?acctPanel():'')+
     '<div class="list">'+(list.map(caseCard).join("")||'<div class="empty">該当する案件はありません</div>')+'</div></section>';
 }
 const CSV_COLS=["受付番号","依頼種類","依頼元区分","依頼元","物件","部屋","住所","担当","受付日","症状","見積金額","家主負担","入居者負担","入居者負担の請求先","受注日","メモ"];
@@ -459,8 +497,8 @@ function vNew(){
 }
 
 function stepBar(c){
-  const keys=["new","site","quoted","decide","handed"], labels=["受付",TYPES[c.type].site,"見積","受注","引渡"];
-  const pos={new:0,site:1,quoted:2,hold:2,won:3,lost:3,handed:4}[c.stage];
+  const keys=["new","site","quoted","decide","handed","built","billed","paid"], labels=["受付",TYPES[c.type].site,"見積","受注","引渡","完工","請求","入金"];
+  const pos={new:0,site:1,quoted:2,hold:2,won:3,lost:3,handed:4,built:5,billed:6,paid:8}[c.stage];
   return '<div class="steps" aria-label="進み具合">'+keys.map((k,i)=>{
     let cls=i<pos?"done":i===pos?"cur":"";
     if(c.stage==="lost"&&i===3)cls="end";
@@ -515,10 +553,80 @@ function gcalPreview(c){
   '<dt>説明</dt><dd style="white-space:pre-wrap">'+h(gDesc(c))+'</dd></dl>'+
   '<p class="note" style="margin:0">メモや症状はGoogleには送りません。自動では登録しないので、日程を決めたらボタンを押してください。</p></div>';
 }
+/* 「経理に入金確認を依頼」: a message listing unpaid cases (ID, property, room, 請求先, amounts, dates only — never memo or symptom) to send by LINE or mail */
+const acctList=()=>DB.cases.filter(unpaid).sort((a,b)=>lateDays(b)-lateDays(a)||(a.payDue||"").localeCompare(b.payDue||""));
+function acctText(list){
+  return ['入金確認のお願い（'+md(todayS())+' CPG HUB）','請求済みで、入金がまだ確認できていない案件です。入金があれば、受付番号と入金日・入金額を教えてください。',
+    ...list.map((c,i)=>{const paid=paidSum(c),late=lateDays(c);return [
+      '',(i+1)+'. '+c.id+' '+c.property+' '+c.room,
+      '　請求先：'+c.billTo,
+      '　請求額：'+yen(c.billAmount)+(paid?'（入金済 '+yen(paid)+'・残 '+yen(remainOf(c))+'）':'')+'　請求日：'+md(c.billDate),
+      '　入金予定日：'+md(c.payDue)+(late?'（'+late+'日遅れ）':'')].join("\n")})].join("\n");
+}
+function acctPanel(){
+  const list=acctList();
+  if(!list.length)return '';
+  if(!ui.acct)return '<button class="btn" type="button" data-act="acct">経理に入金確認を依頼（'+list.length+'件）</button>';
+  return '<div class="panel"><h3>経理への入金確認の依頼（'+list.length+'件）</h3>'+
+    '<textarea id="acctOut" readonly rows="8" style="font-size:12.5px">'+h(acctText(list))+'</textarea>'+
+    '<div class="row"><button class="btn pri" type="button" data-act="acctshare">LINE・メールで送る</button><button class="btn" type="button" data-act="acctcopy">コピー</button><button class="btn sm" type="button" data-act="acctclose">閉じる</button></div>'+
+    '<p class="note" style="margin:0">送ると、各案件に「経理に確認依頼：'+md(todayS())+'」と記録します。コピーして自分で貼ったときは、送ったあとに<button class="btn sm" type="button" data-act="acctmark" style="margin-left:4px">送ったので記録する</button></p>'+
+    '<p class="note" style="margin:0">文面には受付番号・物件・請求先・金額・日付だけを入れ、メモや症状は入れません。経理から'+DB.settings.acctWait+'日たっても返事が記録されないと「経理の返事を確認する」ToDoが出ます。</p></div>';
+}
+function acctMark(){
+  const list=acctList(), t=todayS();
+  for(const c of list)if(!c.payLog.some(x=>x.kind==="req"&&x.at===t))c.payLog.push({kind:"req",at:t});
+  ui.acct=false;save();render();toast("経理への確認依頼を記録しました（"+list.length+"件・"+md(t)+"）");
+}
+/* Payment-related history of a case, oldest first */
+function payHistory(c){
+  const ev=[];
+  if(c.billDate)ev.push([c.billDate,0,"請求 "+yen(c.billAmount)+"（"+c.billTo+"）"]);
+  for(const x of c.payLog||[])ev.push([x.at,1,x.kind==="req"?"経理に入金確認を依頼":"経理から返事：まだ入金なし"]);
+  for(const x of c.payments||[])ev.push([x.date,2,"入金 "+yen(x.amount)+"（"+(x.by||"区分なし")+(x.at?"・"+md(x.at)+"記録":"")+"）"]);
+  if(!ev.length)return "";
+  ev.sort((a,b)=>a[0].localeCompare(b[0])||a[1]-b[1]);
+  return '<details class="note"'+(ev.length<=6?' open':'')+'><summary>入金についてのやり取り（'+ev.length+'件）</summary><ol class="hist">'+ev.map(e=>'<li><span class="num">'+md(e[0])+'</span> '+h(e[2])+'</li>').join("")+'</ol></details>';
+}
+/* 施工完了 → 請求 → 入金 (partial payments allowed; 入金済 only when the total reaches the billed amount) */
+function payPanel(c){
+  const S=DB.settings, t=todayS();
+  if(c.stage==="handed")return '<div class="panel"><h3>次にやること：施工完了の記録</h3>'+
+    '<label class="f">施工完了日<input type="date" id="d_built" value="'+t+'"><span class="note" data-dl="d_built">'+mdh(t)+'</span></label>'+
+    '<div class="row"><button class="btn pri" type="button" data-act="built">施工完了にする</button></div>'+
+    '<p class="note" style="margin:0">施工完了から'+S.billAfter+'日で「請求書を出す」のToDoが期限になります。現場が終わっても、入金までが仕事です。</p></div>';
+  if(c.stage==="built"){
+    const amt=c.billAmount!=null&&c.billAmount!==""?c.billAmount:estOf(c);
+    return '<div class="panel"><h3>次にやること：請求</h3>'+
+    '<div class="form">'+
+    '<label class="f">請求日<input type="date" id="d_bdate" value="'+t+'"></label>'+
+    '<label class="f">請求額（税込・円）<input type="number" inputmode="numeric" min="0" id="d_bamt" value="'+h(amt??"")+'"></label>'+
+    '<label class="f full">請求先<input type="text" id="d_bto" value="'+h(c.billTo||billToDefault(c))+'"></label>'+
+    '<label class="f">入金予定日<input type="date" id="d_pdue" value="'+payDueOf(t,S.payRule)+'"><span class="note" data-dl="d_pdue">'+mdh(payDueOf(t,S.payRule))+'（'+PAY_RULES[S.payRule]+'）</span></label></div>'+
+    '<div class="row"><button class="btn pri" type="button" data-act="bill">請求済みにする</button></div>'+
+    '<p class="note" style="margin:0">請求額の初期値は'+(isTaikyo(c)&&c.items.length?'立会の箇所の合計':'見積額')+'です。請求書は今までどおり作り、ここには請求した事実を記録します。</p></div>';
+  }
+  const paid=paidSum(c), rem=remainOf(c), late=lateDays(c);
+  const list=(c.payments||[]).map(x=>'<li class="num">'+md(x.date)+'　'+yen(x.amount)+'</li>').join("");
+  const sum='<div class="sum"><div><div class="k">請求額</div><div class="v">'+yen(c.billAmount)+'</div></div><div><div class="k">入金済</div><div class="v">'+yen(paid)+'</div></div><div><div class="k">残額</div><div class="v"'+(rem>0&&late?' style="color:var(--red)"':'')+'>'+yen(Math.max(0,rem))+'</div></div></div>';
+  if(c.stage==="paid")return '<div class="panel"><h3>入金済み（完了）</h3>'+sum+payHistory(c)+
+    (rem<0?'<p class="note" style="margin:0;color:var(--amber)">請求額より '+yen(-rem)+' 多く入金されています。</p>':'')+
+    '<div class="row"><button class="btn sm" type="button" data-act="payundo">最後の入金記録を取り消す</button></div></div>';
+  return '<div class="panel"><h3>次にやること：入金の確認</h3>'+
+    '<p style="margin:0" class="num">入金予定日 '+mdh(c.payDue)+(late?' <b style="color:var(--red)">'+late+'日遅れ</b>':'')+'　請求先 '+h(c.billTo)+'</p>'+
+    (lastReq(c)?'<p style="margin:0" class="num">経理に確認依頼：'+md(lastReq(c))+(acctReplied(c)?'（返事あり）':'<b style="color:var(--amber)">（返事待ち）</b>')+'</p>':'')+sum+payHistory(c)+
+    '<div class="form">'+
+    '<label class="f">入金日<input type="date" id="d_paydate" value="'+t+'"></label>'+
+    '<label class="f">入金額（円）<input type="number" inputmode="numeric" min="1" id="d_payamt" value="'+(rem>0?rem:"")+'"></label>'+
+    '<label class="f full">だれからの情報か<select id="d_payby">'+["経理連絡","担当確認"].map(x=>'<option'+((lastReq(c)&&!acctReplied(c)?"経理連絡":"担当確認")===x?' selected':'')+'>'+x+'</option>').join("")+'</select></label></div>'+
+    '<div class="row"><button class="btn pri" type="button" data-act="pay">入金を記録</button>'+(list?'<button class="btn sm" type="button" data-act="payundo">最後の入金記録を取り消す</button>':'')+'</div>'+
+    (lastReq(c)&&!acctReplied(c)?'<div class="row"><button class="btn sm" type="button" data-act="acctnopay">経理から返事あり（まだ入金なし）</button></div>':'')+
+    '<p class="note" style="margin:0">一部だけの入金も記録できます。合計が請求額に届くと「入金済み（完了）」になります。</p></div>';
+}
 function vDetail(){
   const c=findCase(ui.caseId);
   if(!c)return '<div class="empty">案件が見つかりません</div>';
-  const ro=c.stage==="handed";
+  const ro=["handed","built","billed","paid"].includes(c.stage); // 受付内容・立会の記録 are read only after 引渡; the money steps stay editable
   const lockEst=c.stage!=="site";
   let act="";
   if(c.stage==="new"){
@@ -542,13 +650,13 @@ function vDetail(){
       '<div class="row"><label class="f" style="flex:1">次に確認する日（必須）<input type="date" id="d_hold" value="'+h(c.holdDate||addDays(todayS(),7))+'"></label><button class="btn" type="button" data-act="hold" style="align-self:flex-end">保留にする</button></div></div>';
   }else if(c.stage==="won"){
     act='<div class="panel"><h3>次にやること：Accessへ引渡</h3>'+
-      '<p class="note" style="margin:0">Accessで現場管理表を作成し、振られた仕事番号を入力してください。引渡後、この案件はCPG HUBでは読み取り専用になり、以降の進捗・売上・入金消込はAccessで管理します。</p>'+
+      '<p class="note" style="margin:0">Accessで現場管理表を作成し、振られた仕事番号を入力してください。引渡後も、施工完了・請求・入金済みになるまで「動いている案件」に残ります。</p>'+
       '<label class="f">仕事番号（Accessで振られた番号）<input type="text" id="d_job" placeholder="Accessの仕事番号"></label>'+
       '<div class="row"><button class="btn pri" type="button" data-act="hand">引渡済にする</button><button class="btn sm" type="button" data-act="csvone">この案件をAccess用に書き出す</button></div></div>';
   }else if(c.stage==="lost"){
     act='<div class="ro">失注（'+h(c.lossReason)+'・'+md(c.lossDate)+'）。毎日の一覧には出ません。<button class="btn sm" type="button" data-act="reopen">見積提出済に戻す</button></div>';
   }else if(ro){
-    act='<div class="ro"><b>Access引渡済</b>　仕事番号 <b class="num">'+h(c.jobNo)+'</b>（'+md(c.handedDate)+'）<br>この後の進捗・売上・入金消込はAccessの現場管理表で管理します。CPG HUBでは編集できません。</div>';
+    act='<div class="ro"><b>Access引渡済</b>　仕事番号 <b class="num">'+h(c.jobNo)+'</b>（'+md(c.handedDate)+'）<br>受付内容と立会の記録は読み取り専用です。施工完了・請求・入金はここで記録します。</div>'+payPanel(c);
   }
   const ph=photos[c.id]||[];
   return '<button class="back" type="button" data-nav="cases">‹ 案件へ戻る</button>'+
@@ -566,6 +674,9 @@ function vDetail(){
     (estOf(c)!=null&&c.stage!=="new"&&c.stage!=="site"?'<dt>見積</dt><dd class="num">'+yen(estOf(c))+(c.estSentDate?'（'+md(c.estSentDate)+'提出）':'')+'</dd>':'')+
     (c.orderDate?'<dt>受注日</dt><dd class="num">'+md(c.orderDate)+'</dd>':'')+
     (c.holdDate&&c.stage==="hold"?'<dt>再確認日</dt><dd class="num">'+md(c.holdDate)+'</dd>':'')+
+    (c.builtDate?'<dt>施工完了</dt><dd class="num">'+mdh(c.builtDate)+'</dd>':'')+
+    (c.billDate?'<dt>請求</dt><dd class="num">'+md(c.billDate)+'・'+yen(c.billAmount)+'</dd><dt>請求先</dt><dd>'+h(c.billTo)+'</dd><dt>入金予定</dt><dd class="num">'+mdh(c.payDue)+'</dd>':'')+
+    (c.paidDate?'<dt>入金済</dt><dd class="num">'+md(c.paidDate)+'</dd>':'')+
     '<dt>メモ</dt><dd>'+(h(c.note)||"—")+'</dd></dl></div>'+
   (c.stage==="new"&&c.type!=="kinkyu"?gcalPreview(c):'')+
   (isTaikyo(c)?itemsPanel(c,ro||lockEst&&c.stage!=="new"):'')+
@@ -857,7 +968,7 @@ function vGantt(){
   const DAYS=29, W=26, from=addDays(todayS(),-14), t=todayS();
   const x=s=>Math.max(0,Math.min(DAYS,diffDays(s,from)));
   const todos=genTodos();
-  const order={new:0,site:1,quoted:2,hold:3,won:4};
+  const order={new:0,site:1,quoted:2,hold:3,won:4,handed:5,built:6,billed:7};
   const list=DB.cases.filter(c=>!ended(c)).sort((a,b)=>(b.type==="kinkyu")-(a.type==="kinkyu")||order[a.stage]-order[b.stage]||a.id.localeCompare(b.id));
   const seg=(a,b,cls)=>{if(!a)return "";const L=x(a),R=b===t?x(b)+1:x(b);if(R<=0||L>=DAYS)return "";return '<span class="gseg '+cls+'" style="left:'+(L*W)+'px;width:'+Math.max(4,(R-L)*W)+'px"></span>'};
   let head="";
@@ -892,7 +1003,15 @@ function vStats(){
   const maxR=Math.max(1,...reasons.map(r=>r[1]));
   const byType=Object.entries(TYPES).map(([k,v])=>{const w=won.filter(c=>c.type===k).length,l=lost.filter(c=>c.type===k).length;return [v.label,w,l]});
   const S=DB.settings;
-  return '<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>'+
+  const un=DB.cases.filter(unpaid);
+  const group=key=>{const m=new Map();for(const c of un){const k=key(c);const g=m.get(k)||{n:0,sum:0,late:0};g.n++;g.sum+=remainOf(c);g.late=Math.max(g.late,lateDays(c));m.set(k,g)}return [...m.entries()].sort((a,b)=>b[1].late-a[1].late||b[1].sum-a[1].sum)};
+  const row=([k,g])=>'<tr><td>'+h(k)+'</td><td class="num">'+g.n+'件</td><td class="num">'+yen(g.sum)+'</td><td class="num"'+(g.late?' style="color:var(--red);font-weight:700"':'')+'>'+(g.late?g.late+'日':'—')+'</td></tr>';
+  const tbl=(head,rows)=>'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>'+head+'</th><th>件数</th><th>未入金</th><th>最長の遅れ</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  const unpaidSec='<section class="sec"><div class="sec-h"><h2>未入金</h2><span class="note num">'+un.length+'件 '+yen(un.reduce((s,c)=>s+remainOf(c),0))+'</span></div>'+
+    (un.length?'<div class="panel"><h3>担当者別</h3>'+tbl("担当",group(c=>c.tantou||"未設定").map(row).join(""))+'</div>'+acctPanel()+
+      '<div class="panel"><h3>物件別</h3>'+tbl("物件",group(c=>c.property||"（物件名なし）").map(row).join(""))+'<p class="note" style="margin:0">遅れの長い順です。案件一覧の「入金待ちだけ」でも確認できます。</p></div>'
+      :'<div class="empty">未入金の案件はありません</div>')+'</section>';
+  return '<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>'+unpaidSec+
   '<section class="sec"><div class="sec-h"><h2>'+(now.getMonth()+1)+'月の見積と受注</h2></div>'+
   '<div class="panel"><div class="row" style="align-items:flex-end;gap:18px"><div><div class="note">見積決定率（受注 ÷ 結論が出た件数）</div><div class="big">'+(rate==null?"—":rate+"%")+'</div></div>'+
   '<div class="note num">受注 '+won.length+'件 ／ 失注 '+lost.length+'件</div></div>'+
@@ -907,7 +1026,10 @@ function vStats(){
     '<label class="f">受付 → 日程調整まで（日）<input type="number" min="0" id="s_schedule" value="'+S.schedule+'"></label>'+
     '<label class="f">現地確認 → 見積提出まで（日）<input type="number" min="0" id="s_quote" value="'+S.quote+'"></label>'+
     '<label class="f">見積提出 → 結論の確認まで（日）<input type="number" min="1" id="s_reply" value="'+S.reply+'"></label>'+
-    '<label class="f">受注 → 仕事番号の記録まで（日）<input type="number" min="0" id="s_jobno" value="'+S.jobno+'"></label></div>'+
+    '<label class="f">受注 → 仕事番号の記録まで（日）<input type="number" min="0" id="s_jobno" value="'+S.jobno+'"></label>'+
+    '<label class="f">施工完了 → 請求書を出すまで（日）<input type="number" min="0" id="s_billAfter" value="'+S.billAfter+'"></label>'+
+    '<label class="f">経理に依頼 → 返事の確認まで（日）<input type="number" min="0" id="s_acctWait" value="'+S.acctWait+'"></label>'+
+    '<label class="f">入金予定日の初期値<select id="s_payRule">'+Object.entries(PAY_RULES).map(([k,l])=>'<option value="'+k+'"'+(S.payRule===k?' selected':'')+'>'+l+'</option>').join("")+'</select></label></div>'+
     '<div class="row"><button class="btn pri" type="submit">保存する</button><span class="sp"></span><button class="btn sm danger" type="button" data-act="reset">すべて消して架空データに戻す</button></div>'+
     (ui.confirmReset?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><b style="color:var(--red)">入力した案件とToDoがすべて消えます。よろしいですか？</b><div class="row"><button class="btn danger" type="button" data-act="resetdo">消して戻す</button><button class="btn" type="button" data-act="resetcancel">やめる</button></div></div>':'')+
     '</form></section>'+
@@ -939,7 +1061,7 @@ function render(){
     const sync=()=>{sw.hidden=ty.value!=="kinkyu"};ty.addEventListener("change",sync);sync();
   }
 }
-function go(view,extra){Object.assign(ui,{view,confirmReset:false},extra||{});render();window.scrollTo(0,0)}
+function go(view,extra){Object.assign(ui,{view,acct:false,confirmReset:false},extra||{});render();window.scrollTo(0,0)}
 let toastT;
 function toast(msg,ms){const el=document.getElementById("toast");el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,ms||2600)}
 const val=id=>{const el=document.getElementById(id);return el?el.value:""};
@@ -949,7 +1071,7 @@ document.addEventListener("click",e=>{
   if(!el)return;
   const c=ui.caseId?findCase(ui.caseId):null;
   if(el.dataset.open){go("detail",{caseId:el.dataset.open});return}
-  if(el.dataset.nav){const ex={csv:false};if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";go(el.dataset.nav,ex);return}
+  if(el.dataset.nav){const ex={csv:false};if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";if(el.dataset.nav==="cases")ex.payOnly=!!el.dataset.pay;go(el.dataset.nav,ex);return}
   if(el.dataset.type&&ui.view==="cases"){ui.type=el.dataset.type;render();return}
   if(el.dataset.day){ui.calDay=el.dataset.day;ui.calMonth=ui.calDay.slice(0,7);ui.calView="day";render();return}
   if(el.dataset.cv){ui.calView=el.dataset.cv;render();return}
@@ -967,6 +1089,15 @@ document.addEventListener("click",e=>{
   if(a==="copycsv"){const ta=document.getElementById("csvOut");const done=()=>toast("コピーしました");
     try{navigator.clipboard.writeText(ta.value).then(done,()=>{ta.select();toast("選択しました。長押しでコピーしてください")})}catch(err){ta.select();toast("選択しました。長押しでコピーしてください")}return}
   if(a==="reset"){ui.confirmReset=true;render();return}
+  if(a==="acct"){ui.acct=true;render();return}
+  if(a==="acctclose"){ui.acct=false;render();return}
+  if(a==="acctmark"){acctMark();return}
+  if(a==="acctcopy"){const ta=document.getElementById("acctOut");
+    try{navigator.clipboard.writeText(ta.value).then(()=>toast("コピーしました。送ったら「送ったので記録する」を押してください"),()=>{ta.select();toast("選択しました。長押しでコピーしてください")})}catch(err){ta.select();toast("選択しました。長押しでコピーしてください")}return}
+  if(a==="acctshare"){const text=document.getElementById("acctOut").value;
+    if(navigator.share)navigator.share({title:"入金確認のお願い",text}).then(acctMark,err=>{if(!err||err.name!=="AbortError")toast("共有できませんでした。「コピー」を使ってください")});
+    else toast("この端末では共有できません。「コピー」を使ってください");
+    return}
   if(a==="gsync"){if(!(ui.gsync&&ui.gsync.busy))gSyncAll();return}
   if(a==="resetcancel"){ui.confirmReset=false;render();return}
   if(a==="resetdo"){ui.confirmReset=false;DB=sample();save();for(const k in photos)delete photos[k];toast("架空データに戻しました");go("home");return}
@@ -985,6 +1116,20 @@ document.addEventListener("click",e=>{
   if(a==="win"){c.orderDate=val("d_order")||todayS();c.stage="won";c.holdDate="";save();render();toast("受注にしました。Accessへ引き渡してください");return}
   if(a==="lose"){c.lossReason=val("d_loss");c.lossDate=todayS();c.stage="lost";c.holdDate="";save();render();toast("失注にしました。毎日の一覧から外れます");return}
   if(a==="hold"){const d=val("d_hold");if(!d){toast("次に確認する日を入れてください");return}c.holdDate=d;c.stage="hold";save();render();toast(md(d)+"に再確認のToDoを出します");return}
+  if(a==="built"){c.builtDate=val("d_built")||todayS();c.stage="built";save();render();toast("施工完了にしました。次は請求です");return}
+  if(a==="bill"){const amt=Number(val("d_bamt")),bd=val("d_bdate"),due=val("d_pdue");
+    if(!bd||!due){toast("請求日と入金予定日を入れてください");return}
+    if(!(amt>0)){toast("請求額を入れてください");return}
+    Object.assign(c,{billDate:bd,billAmount:amt,billTo:val("d_bto").trim()||c.client,payDue:due,stage:"billed"});save();render();toast("請求済みにしました。入金予定は"+mdh(due)+"です");return}
+  if(a==="pay"){const amt=Number(val("d_payamt")),pd=val("d_paydate");
+    if(!pd){toast("入金日を入れてください");return}
+    if(!(amt>0)){toast("入金額を入れてください");return}
+    c.payments.push({date:pd,amount:amt,by:val("d_payby")||"担当確認",at:todayS()});
+    if(remainOf(c)<=0){c.stage="paid";c.paidDate=pd;save();render();toast("入金済みにしました。この案件は完了です")}
+    else{save();render();toast("入金を記録しました。残り "+yen(remainOf(c))+" です")}
+    return}
+  if(a==="acctnopay"){c.payLog.push({kind:"noPay",at:todayS()});save();render();toast("経理からの返事（まだ入金なし）を記録しました");return}
+  if(a==="payundo"){if(!c.payments.length)return;c.payments.pop();if(c.stage==="paid"&&remainOf(c)>0){c.stage="billed";c.paidDate=""}save();render();toast("最後の入金記録を取り消しました");return}
   if(a==="reopen"){c.stage="quoted";c.lossReason="";c.lossDate="";save();render();return}
   if(a==="hand"){const j=val("d_job").trim();if(!j){toast("Accessで振られた仕事番号を入力してください");return}c.jobNo=j;c.handedDate=todayS();c.stage="handed";save();render();toast("引渡済にしました");return}
   if(a==="csvone"){go("cases",{csv:true});return}
@@ -992,6 +1137,7 @@ document.addEventListener("click",e=>{
 document.addEventListener("input",e=>{
   const t=e.target;
   if(t.id==="q"){ui.q=t.value;const pos=t.selectionStart;render();const q=document.getElementById("q");q.focus();try{q.setSelectionRange(pos,pos)}catch(err){}return}
+  if(t.id==="d_bdate"){const pd=document.getElementById("d_pdue");if(pd&&t.value){pd.value=payDueOf(t.value,DB.settings.payRule);const dl=main.querySelector('[data-dl="d_pdue"]');if(dl)dl.textContent=mdh(pd.value)+"（"+PAY_RULES[DB.settings.payRule]+"）"}}
   if(t.type==="date"){const dl=main.querySelector('[data-dl="'+t.id+'"]');if(dl)dl.textContent=mdh(t.value)}
   const c=ui.caseId?findCase(ui.caseId):null;
   if(t.dataset.item!=null&&c){const it=c.items[Number(t.dataset.item)];if(it){it[t.dataset.f]=t.dataset.f==="amount"?(t.value===""?"":Number(t.value)):t.value;save();refreshItemTotals(c)}return}
@@ -999,6 +1145,7 @@ document.addEventListener("input",e=>{
 document.addEventListener("change",e=>{
   const t=e.target, c=ui.caseId?findCase(ui.caseId):null;
   if(t.id==="showEnded"){ui.showEnded=t.checked;render();return}
+  if(t.id==="payOnly"){ui.payOnly=t.checked;render();return}
   if(t.dataset.item!=null&&c){const it=c.items[Number(t.dataset.item)];if(it){it[t.dataset.f]=t.dataset.f==="amount"?(t.value===""?"":Number(t.value)):t.value;save();refreshItemTotals(c)}return}
   if(t.id==="d_billing"&&c){c.billingTenant=t.value;save();return}
   if(t.id==="d_photo"&&c){
@@ -1020,7 +1167,7 @@ document.addEventListener("submit",e=>{
   if(f.id==="todoForm"){DB.todos.push({id:"T"+Date.now(),title:val("td_title").trim(),due:val("td_due"),tantou:val("td_tantou"),done:false});save();render();toast("ToDoを追加しました");return}
   if(f.id==="gsetForm"){const picked=[...f.querySelectorAll('input[name="gshow"]:checked')].map(x=>G.cals[Number(x.value)]).filter(Boolean).map(c=>c.id);
     DB.settings.gShow=picked;DB.settings.gWrite=val("g_write");for(const x in gcalCache)delete gcalCache[x];save();render();toast("Googleカレンダーの設定を保存しました");return}
-  if(f.id==="setForm"){for(const k of ["schedule","quote","reply","jobno"]){const v=Number(val("s_"+k));if(!isNaN(v)&&v>=0)DB.settings[k]=v}save();render();toast("期限の日数を保存しました");return}
+  if(f.id==="setForm"){for(const k of ["schedule","quote","reply","jobno","billAfter","acctWait"]){const v=Number(val("s_"+k));if(!isNaN(v)&&v>=0)DB.settings[k]=v}if(PAY_RULES[val("s_payRule")])DB.settings.payRule=val("s_payRule");save();render();toast("期限の日数を保存しました");return}
 });
 setInterval(()=>{document.querySelectorAll("[data-since]").forEach(el=>el.textContent=since(el.dataset.since))},30000);
 render();
