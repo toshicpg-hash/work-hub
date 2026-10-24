@@ -123,6 +123,7 @@ ol.hist li{overflow-wrap:anywhere}
 .chip{font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:99px;background:var(--sunk);color:var(--muted);white-space:nowrap}
 .chip.boss{background:var(--amber-soft);color:var(--amber)}
 .card.boss{border-left:4px solid var(--amber)}
+.chip.ro{background:var(--blue-soft);color:var(--blue)}
 .chip.t-kinkyu{background:var(--red-soft);color:var(--red)}
 .chip.t-taikyo{background:var(--accent-soft);color:var(--accent)}
 .chip.t-reno{background:var(--amber-soft);color:var(--amber)}
@@ -278,7 +279,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.29・10/24更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.30・10/24更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -406,7 +407,35 @@ if(upgraded)save();
 const photos={};
 const ui={view:"home",caseId:null,q:"",type:"all",showEnded:false,tTantou:"all",tPeriod:"week",csv:false,calMonth:todayS().slice(0,7),calDay:todayS(),calView:"month"};
 
-const findCase=id=>DB.cases.find(c=>c.id===id);
+const findCase=id=>allCases().find(c=>c.id===id);
+const editCase=id=>{const c=findCase(id);return c&&!c.ro?c:null};
+/* 社長の管理端末：「社員の記録を読み込む」で読んだ社員の案件・ToDoを、見るだけの案件として画面にも使う。
+   メモリ（ui）だけに持ち、localStorage には残さない（開き直したら読み込み直す） */
+const roOn=()=>!!(D().admin&&ui.corpRO);
+const allCases=()=>roOn()?DB.cases.concat(ui.corpRO):DB.cases;
+const roTodos=()=>roOn()?ui.corpTodo:[];
+const roHub=()=>new Set(roOn()?ui.corpRO.map(c=>c.srcId):[]);
+const typeKeyOf=l=>Object.keys(TYPES).find(k=>TYPES[k].label===l)||"reno";
+function roCase(r,x){
+  const v=k=>String(r[k]==null?"":r[k]), d=k=>v(k).slice(0,10), num=k=>v(k)===""?null:Number(v(k));
+  const stage=STAGES[v("段階キー")]?v("段階キー"):Object.keys(STAGES).find(k=>STAGES[k]===v("段階"))||"new", paid=Number(v("入金済額"))||0;
+  return Object.assign(CASE_DEFAULTS(),{ro:true,owner:x.s.name,srcId:v("受付番号"),id:v("受付番号")+"・"+x.s.name,type:typeKeyOf(v("種類")),stage,clientKind:"",client:v("依頼元"),property:v("物件"),room:v("部屋"),tantou:v("担当")||x.s.name,
+    receivedAt:v("受付日時")||(d("受付日")?new Date(d("受付日")+"T00:00:00").toISOString():""),planDate:d("予定日"),siteDate:d("実施日"),estAmount:num("見積額"),estSentDate:d("見積提出日"),holdDate:d("保留日"),lossDate:d("失注日"),
+    orderDate:d("受注日"),jobNo:v("仕事番号"),handedDate:d("引渡日"),builtDate:d("施工完了日"),billDate:d("請求日"),billAmount:num("請求額"),payDue:d("入金予定日"),payments:paid?[{date:d("入金日")||d("請求日"),amount:paid}]:[],paidDate:stage==="paid"?d("入金日"):""});
+}
+function roBuild(data){
+  const ok=data.filter(x=>x.ok);
+  ui.corpRO=ok.flatMap(x=>x.cases.filter(r=>r["受付番号"]).map(r=>roCase(r,x)));
+  ui.corpTodo=ok.flatMap(x=>(x.todo||[]).filter(r=>r["内容"]).map(r=>{const no=String(r["受付番号"]||"");
+    return {ro:true,owner:x.s.name,title:String(r["内容"]),due:String(r["期限"]||"").slice(0,10),tantou:String(r["担当"]||x.s.name),kind:String(r["種類"]||""),property:String(r["物件"]||""),room:String(r["部屋"]||""),caseId:no?no+"・"+x.s.name:""}}));
+}
+/* 見るだけの社員の記録の状態（社長の管理端末だけ） */
+function roNote(){
+  if(!D().admin)return "";
+  if(roOn())return '<p class="note" style="margin:0">社員の記録（見るだけ）：'+md(ymd(new Date(ui.corp.at)))+' '+hm(new Date(ui.corp.at))+'に読み込み</p>';
+  return '<div class="banner" role="status">社員の記録はまだ読み込んでいません。ホームの「会社の動き」で <b>社員の記録を読み込む</b> を押すと、ここにも出ます。'+(D().corpAt?'<div class="note">前回の読み込み：'+md(ymd(new Date(D().corpAt)))+' '+hm(new Date(D().corpAt))+'（開き直すと消えるので、読み込み直してください）</div>':'')+'</div>';
+}
+const roChip=c=>'<span class="chip ro">社員の記録・見るだけ</span>';
 const isTaikyo=c=>c.type==="taikyo";
 const itemsSum=(c,b)=>c.items.filter(i=>!b||i.burden===b).reduce((s,i)=>s+(Number(i.amount)||0),0);
 const estOf=c=>isTaikyo(c)&&c.items.length?itemsSum(c):c.estAmount;
@@ -463,8 +492,9 @@ const stagePill=c=>'<span class="pill s-'+c.stage+(lateDays(c)?" late":"")+'">'+
 
 function caseCard(c){
   const urgent=c.type==="kinkyu"&&(c.stage==="new"||c.stage==="site"), late=lateDays(c);
-  return '<button type="button" class="card'+(urgent?" urgent":"")+'" data-open="'+c.id+'">'+
+  return '<button type="button" class="card'+(urgent?" urgent":"")+'" data-open="'+h(c.id)+'">'+
     '<div class="row">'+typeChip(c)+'<span class="note num">'+h(c.id)+'</span><span class="sp"></span>'+stagePill(c)+'</div>'+
+    (c.ro?'<div class="row">'+roChip(c)+'</div>':'')+
     '<div class="ttl">'+h(c.property)+' '+h(c.room)+(c.symptom?' ・ '+h(c.symptom):'')+'</div>'+
     '<div class="row note"><span>'+h(c.client)+'</span><span>担当 '+h(c.tantou)+'</span>'+(estOf(c)!=null?'<span class="num">見積 '+yen(estOf(c))+'</span>':'')+'</div>'+
     (c.stage==="billed"?'<div class="payline num"><span>請求 '+yen(c.billAmount)+'</span><span>残 '+yen(remainOf(c))+'</span><span>入金予定 '+md(c.payDue)+'</span>'+(late?'<span class="late">'+late+'日遅れ</span>':'')+(lastReq(c)?'<span>経理に確認依頼 '+md(lastReq(c))+'</span>':'')+'</div>':'')+
@@ -473,35 +503,38 @@ function caseCard(c){
 }
 function todoRow(t){
   const c=t.caseId?findCase(t.caseId):null;
+  if(t.ro)return '<div class="card" style="cursor:default">'+
+    '<div class="row">'+(isReqKind(t.kind)?'<span class="chip boss">リクエスト</span>':'')+'<span class="ttl">'+h(t.title)+'</span><span class="sp"></span>'+dueLabel(t.due)+'</div>'+
+    '<div class="row note">'+roChip()+(t.property?'<span>'+h(t.property)+' '+h(t.room)+'</span>':'')+'<span>担当 '+h(t.tantou)+'</span><span class="sp"></span>'+(c?'<button class="btn sm" type="button" data-open="'+h(c.id)+'">案件を開く</button>':'')+'</div></div>';
   if(t.order)return '<div class="card boss" style="cursor:default">'+
-    '<div class="row"><span class="chip boss">社長から</span><span class="ttl">'+h(t.title)+'</span><span class="sp"></span>'+dueLabel(t.due)+'</div>'+
-    '<div class="row note">'+(t.orderedAt?'<span>指示 '+h(md(t.orderedAt))+'</span>':'')+'<span class="sp"></span><button class="btn sm" type="button" data-odone="'+h(t.id)+'">完了</button></div>'+
+    '<div class="row"><span class="chip boss">リクエスト</span><span class="ttl">'+h(t.title)+'</span><span class="sp"></span>'+dueLabel(t.due)+'</div>'+
+    '<div class="row note">'+(t.orderedAt?'<span>リクエスト '+h(md(t.orderedAt))+'</span>':'')+'<span class="sp"></span><button class="btn sm" type="button" data-odone="'+h(t.id)+'">完了</button></div>'+
     (ui.oDone===t.id?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><label class="f">完了メモ（なくてもよい）<input type="text" id="od_memo" placeholder="例：管理会社に連絡済み"></label>'+
       '<div class="row"><button class="btn pri" type="button" data-act="odonedo">完了にする</button><button class="btn" type="button" data-act="odoneno">やめる</button></div><span class="note">次の「Googleとまとめて同期」で社長に届きます</span></div>':'')+'</div>';
   return '<div class="card" style="cursor:default">'+
     '<div class="row"><span class="ttl">'+h(t.title)+'</span><span class="sp"></span>'+dueLabel(t.due)+'</div>'+
     '<div class="row note">'+(c?typeChip(c)+'<span>'+h(c.property)+' '+h(c.room)+'</span>':'<span class="chip">'+(t.nav?'領収書':'手入力')+'</span>')+'<span>担当 '+h(t.tantou)+'</span><span class="sp"></span>'+
-    (c?'<button class="btn sm" type="button" data-open="'+c.id+'">案件を開く</button>':t.nav?'<button class="btn sm" type="button" data-nav="'+t.nav+'">領収書を開く</button>':'<button class="btn sm" type="button" data-done="'+h(t.id)+'">完了</button>')+'</div></div>';
+    (c?'<button class="btn sm" type="button" data-open="'+h(c.id)+'">案件を開く</button>':t.nav?'<button class="btn sm" type="button" data-nav="'+t.nav+'">領収書を開く</button>':'<button class="btn sm" type="button" data-done="'+h(t.id)+'">完了</button>')+'</div></div>';
 }
 
 function vHome(){
-  const todos=genTodos(), t=todayS();
-  const over=todos.filter(x=>x.due&&x.due<t), todayT=todos.filter(x=>x.due===t);
-  const urgent=DB.cases.filter(c=>c.type==="kinkyu"&&(c.stage==="new"||c.stage==="site"));
-  const waiting=DB.cases.filter(c=>c.stage==="won");
-  const active=DB.cases.filter(c=>!ended(c));
+  const todos=genTodos(), t=todayS(), all=allCases(), tdAll=todos.concat(roTodos()); /* 社長の管理端末では、読み込んだ社員の分も含めた会社全体の数字 */
+  const over=tdAll.filter(x=>x.due&&x.due<t), todayT=tdAll.filter(x=>x.due===t);
+  const urgent=all.filter(c=>c.type==="kinkyu"&&(c.stage==="new"||c.stage==="site"));
+  const waiting=all.filter(c=>c.stage==="won");
+  const active=all.filter(c=>!ended(c));
   const rp=rPending(), rsub=rSubmitted(), rnotes=rcptNotices();
-  const un=DB.cases.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
+  const un=all.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   const ord=todos.filter(x=>x.order), ordOver=ord.filter(x=>x.due&&x.due<t).length;
   return (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）と付いた案件は練習用の例です。入力した内容はこの端末のブラウザにだけ残ります。</div>':'')+
   (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html">マニュアル</a>へ。</p></div>')+
   '<section class="sec">'+gSyncPanel()+'</section>'+
-  (ord.length?'<button type="button" class="banner" data-nav="todo" style="text-align:left;width:100%;cursor:pointer'+(ordOver?';border-color:var(--red)':'')+'"><b>社長からの指示 '+ord.length+'件</b>'+(ordOver?'<span style="color:var(--red);font-weight:700">（期限切れ '+ordOver+'件）</span>':'')+'<div class="note">'+ord.slice(0,3).map(x=>h(x.title)).join("・")+'</div></button>':'')+
+  (ord.length?'<button type="button" class="banner" data-nav="todo" style="text-align:left;width:100%;cursor:pointer'+(ordOver?';border-color:var(--red)':'')+'"><b>タスクリクエスト '+ord.length+'件</b>'+(ordOver?'<span style="color:var(--red);font-weight:700">（期限切れ '+ordOver+'件）</span>':'')+'<div class="note">'+ord.slice(0,3).map(x=>h(x.title)).join("・")+'</div></button>':'')+
   (D().admin?corpView():'')+
   /* 社長の管理端末で自分の入力が無いときは、0件ばかりの自分用の欄を出さない（会社の動きだけを見る） */
-  (D().admin&&!DB.cases.length&&!DB.todos.length&&!(DB.receipts||[]).length?'<p class="note" style="margin:0">この端末で入力した案件はありません。社員の記録は上の「会社の動き」で見られます。</p>':
+  (D().admin&&!roOn()&&!DB.cases.length&&!DB.todos.length&&!(DB.receipts||[]).length?'<p class="note" style="margin:0">この端末で入力した案件はありません。社員の記録は上の「会社の動き」で見られます。</p>':
   (rnotes.length?'<div class="banner" role="status"><b>領収書：</b>'+rnotes.map(n=>'<div>'+h(n)+'</div>').join("")+'</div>':'')+
-  '<section class="sec"><div class="tiles">'+
+  '<section class="sec">'+(roOn()?'<p class="note" style="margin:0">下の数字は、社員の記録（'+md(ymd(new Date(ui.corp.at)))+' '+hm(new Date(ui.corp.at))+'に読み込み）を含めた会社全体です。</p>':'')+'<div class="tiles">'+
     '<button type="button" class="tile'+(over.length?" alert":"")+'" data-nav="todo"><span class="k">期限切れのToDo</span><span class="v">'+over.length+'</span></button>'+
     '<button type="button" class="tile" data-nav="todo"><span class="k">今日までのToDo</span><span class="v">'+todayT.length+'</span></button>'+
     '<button type="button" class="tile'+(urgent.length?" alert":"")+'" data-nav="cases" data-type="kinkyu"><span class="k">対応中の緊急</span><span class="v">'+urgent.length+'</span></button>'+
@@ -519,7 +552,7 @@ function vHome(){
 
 function vCases(){
   const q=ui.q.trim();
-  let list=DB.cases.filter(c=>(ui.showEnded||!ended(c))&&(ui.type==="all"||c.type===ui.type)&&(!ui.payOnly||unpaid(c)));
+  let list=allCases().filter(c=>(ui.showEnded||!ended(c))&&(ui.type==="all"||c.type===ui.type)&&(!ui.payOnly||unpaid(c)));
   if(q)list=list.filter(c=>[c.id,c.client,c.property,c.room,c.addr,c.note,c.jobNo,c.symptom].join(" ").includes(q));
   const order={new:0,site:1,quoted:2,hold:3,won:4,handed:5,built:6,billed:7,paid:8,lost:9};
   list.sort((a,b)=>ui.payOnly?lateDays(b)-lateDays(a)||(a.payDue||"").localeCompare(b.payDue||""):(b.type==="kinkyu"&&!ended(b)&&order[b.stage]<2)-(a.type==="kinkyu"&&!ended(a)&&order[a.stage]<2)||order[a.stage]-order[b.stage]||b.id.localeCompare(a.id));
@@ -527,6 +560,7 @@ function vCases(){
   return '<section class="sec"><div class="sec-h"><h2>案件</h2><span class="note num">'+list.length+'件</span><span class="sp"></span>'+
     '<button class="btn sm" type="button" data-act="csv"'+(won.length?'':' disabled')+'>引渡待ちをAccess用に書き出す（'+won.length+'）</button></div>'+
     (ui.csv?csvPanel(won):'')+
+    roNote()+
     '<input type="search" id="q" placeholder="物件・依頼元・番号で探す" value="'+h(ui.q)+'">'+
     '<div class="seg" role="group" aria-label="依頼の種類">'+[["all","すべて"],...Object.entries(TYPES).map(([k,v])=>[k,v.label])].map(([k,l])=>'<button type="button" data-type="'+k+'" aria-pressed="'+(ui.type===k)+'">'+l+'</button>').join("")+'</div>'+
     '<div class="row note"><label class="row"><input type="checkbox" id="payOnly"'+(ui.payOnly?" checked":"")+'> 入金待ちだけ</label><label class="row"><input type="checkbox" id="showEnded"'+(ui.showEnded?" checked":"")+'> 失注・入金済も表示</label></div>'+
@@ -557,7 +591,7 @@ function vNew(){
     '<label class="f">部屋<input type="text" id="n_room" placeholder="例：203"></label>'+
     '<label class="f full">住所（Googleカレンダーの「場所」に入ります）<input type="text" id="n_addr" placeholder="例：神奈川県相模原市中央区…"></label>'+
     '<label class="f">担当<select id="n_tantou">'+STAFF.map(s=>'<option>'+s+'</option>').join("")+'</select></label>'+
-    '<label class="f">受付日時<input type="datetime-local" id="n_at"></label>'+
+    '<label class="f">受付日時<input type="datetime-local" id="n_at"><span class="note">実際に依頼を受けた日時を入れてください（後から入力するときは過去の日時に）</span></label>'+
     '<label class="f full">状況・メモ<textarea id="n_note" placeholder="連絡してきた人、入居者の連絡先、詳しい状況など"></textarea></label>'+
     '<div class="full row"><button class="btn pri" type="submit">受付する</button><span class="note">受付すると仮の受付番号が付きます。仕事番号は受注後にAccessで振られます。</span></div>'+
   '</form></section>';
@@ -692,7 +726,8 @@ function payPanel(c){
 }
 function vDetail(){
   const c=findCase(ui.caseId);
-  if(!c)return '<div class="empty">案件が見つかりません</div>';
+  if(!c)return '<div class="empty">案件が見つかりません</div>'+roNote();
+  if(c.ro)return roDetail(c);
   const ro=["handed","built","billed","paid"].includes(c.stage); // 受付内容・立会の記録 are read only after 引渡; the money steps stay editable
   const lockEst=c.stage!=="site";
   let act="";
@@ -736,7 +771,10 @@ function vDetail(){
     '<dt>住所</dt><dd>'+(c.addr?h(c.addr)+' <a class="btn sm" style="display:inline-flex;align-items:center;text-decoration:none;margin-left:4px" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(c.addr)+'">地図を開く</a>':'—')+'</dd>'+
     '<dt>依頼元</dt><dd>'+h(c.client)+'（'+h(c.clientKind)+'）</dd>'+
     '<dt>担当</dt><dd>'+h(c.tantou)+'</dd>'+
-    '<dt>受付</dt><dd class="num">'+(c.receivedAt?new Date(c.receivedAt).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"—")+'</dd>'+
+    '<dt>受付</dt><dd class="num">'+(c.receivedAt?new Date(c.receivedAt).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"—")+(ui.rcvEdit?'':' <button class="btn sm" type="button" data-act="rcvedit">直す</button>')+
+      (ui.rcvEdit?'<div class="ro" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"><label class="f">受付日時<input type="datetime-local" id="d_rcv" value="'+h(ui.rcvSuggest?ui.rcvSuggest+"T"+localDT(c.receivedAt).slice(11):localDT(c.receivedAt))+'"></label>'+
+        '<span class="note">実際に依頼を受けた日時にします。緊急の経過時間・ToDoの期限・ガントも、この日時で計算し直します。</span>'+
+        '<div class="row"><button class="btn pri" type="button" data-act="rcvsave">受付日時を保存</button><button class="btn" type="button" data-act="rcvno">やめる</button></div></div>':'')+'</dd>'+
     (c.siteDate?'<dt>'+TYPES[c.type].site+'</dt><dd class="num">'+mdh(c.siteDate)+'</dd>':'')+
     (estOf(c)!=null&&c.stage!=="new"&&c.stage!=="site"?'<dt>見積</dt><dd class="num">'+yen(estOf(c))+(c.estSentDate?'（'+md(c.estSentDate)+'提出）':'')+'</dd>':'')+
     (c.orderDate?'<dt>受注日</dt><dd class="num">'+md(c.orderDate)+'</dd>':'')+
@@ -772,13 +810,14 @@ function caseDelete(c){
 
 function vTodo(){
   const t=todayS(), wk=addDays(t,7);
-  let list=genTodos().filter(x=>x.order||ui.tTantou==="all"||x.tantou===ui.tTantou); /* 社長からの指示 is always shown */
+  const ro=roTodos(), tans=[...new Set(STAFF.concat(ro.map(x=>x.tantou)))];
+  let list=genTodos().concat(ro).filter(x=>x.order||ui.tTantou==="all"||x.tantou===ui.tTantou); /* タスクリクエスト is always shown */
   if(ui.tPeriod==="today")list=list.filter(x=>x.order||x.due&&x.due<=t);
   if(ui.tPeriod==="week")list=list.filter(x=>x.order||x.due&&x.due<=wk);
   const seg=(id,cur,opts)=>'<div class="seg" role="group">'+opts.map(([k,l])=>'<button type="button" data-'+id+'="'+k+'" aria-pressed="'+(cur===k)+'">'+l+'</button>').join("")+'</div>';
   return '<section class="sec"><div class="sec-h"><h2>ToDo</h2><span class="note num">'+list.length+'件</span></div>'+
   seg("tp",ui.tPeriod,[["today","今日まで"],["week","1週間以内"],["all","すべて"]])+
-  seg("tt",ui.tTantou,[["all","全員"],...STAFF.map(s=>[s,s])])+
+  seg("tt",ui.tTantou,[["all","全員"],...tans.map(s=>[s,s])])+roNote()+
   '<p class="note" style="margin:0">案件のToDoは段階に合わせて自動で出ます。案件を進めると消えます。</p>'+
   '<div class="list">'+(list.map(todoRow).join("")||'<div class="empty">この条件のToDoはありません</div>')+'</div></section>'+
   '<section class="panel"><h3>ToDoを手で追加</h3><form id="todoForm" class="form">'+
@@ -788,9 +827,24 @@ function vTodo(){
     '<div class="full"><button class="btn pri" type="submit">追加する</button></div></form></section>';
 }
 
+/* 社員の案件の詳細（見るだけ。編集・削除・登録のボタンは出さない） */
+function roDetail(c){
+  const dt=x=>x?mdh(x):"";
+  const rows=[["依頼元",c.client],["担当",c.tantou],["受付",c.receivedAt?dt(ymd(new Date(c.receivedAt))):""],[TYPES[c.type].site+"の予定",dt(c.planDate)],[TYPES[c.type].site+"の実施",dt(c.siteDate)],
+    ["見積",estOf(c)!=null?yen(estOf(c)):""],["見積提出",dt(c.estSentDate)],["保留（次の確認）",c.stage==="hold"?dt(c.holdDate):""],["失注",dt(c.lossDate)],["受注",dt(c.orderDate)],["仕事番号",c.jobNo],["引渡",dt(c.handedDate)],["施工完了",dt(c.builtDate)],
+    ["請求",c.billAmount!=null?yen(c.billAmount)+(c.billDate?"（"+dt(c.billDate)+"）":""):""],["入金予定",dt(c.payDue)],["入金済",paidSum(c)?yen(paidSum(c)):""],["残額",c.stage==="billed"?yen(remainOf(c))+(lateDays(c)?"・"+lateDays(c)+"日遅れ":""):""]].filter(x=>x[1]);
+  const td=roTodos().filter(t=>t.caseId===c.id);
+  return '<button class="back" type="button" data-nav="cases">‹ 案件へ戻る</button>'+
+  '<section class="sec"><div class="row">'+typeChip(c)+'<span class="note num">'+h(c.srcId)+'</span><span class="sp"></span>'+stagePill(c)+'</div>'+
+  '<div class="row">'+roChip(c)+'<span class="note">'+h(c.owner)+'さんの端末で入力</span></div>'+
+  '<h2 style="font-size:20px">'+h(c.property)+' '+h(c.room)+'</h2>'+
+  '<div class="panel"><dl class="kv">'+rows.map(([k,x])=>'<dt>'+h(k)+'</dt><dd class="num">'+h(x)+'</dd>').join("")+'</dl></div>'+
+  (td.length?'<div class="panel"><h3>この案件のToDo</h3><div class="list">'+td.map(todoRow).join("")+'</div></div>':'')+
+  '<p class="note" style="margin:0">社員の記録は見るだけです。直すときは、担当の社員の端末で直してもらってください。メモ・症状・住所の細かいところは届きません。</p>'+roNote()+'</section>';
+}
 function eventsOf(){
   const ev=[];
-  for(const c of DB.cases){
+  for(const c of allCases()){
     const s=TYPES[c.type].site;
     if(c.planDate&&c.stage==="new")ev.push({d:c.planDate,k:"plan",label:s+"予定",c});
     if(c.siteDate)ev.push({d:c.siteDate,k:"site",label:s,c});
@@ -890,7 +944,7 @@ async function gReadOne(cal,from,to,mine){
       const allDay=!!e.start.date;
       /* 非公開の予定は、そのカレンダーの持ち主以外には中身を出さず「予定あり」だけにする（Google側で見える権限があっても） */
       const hide=!e.summary||(!cal.primary&&!cal.owner&&(e.visibility==="private"||e.visibility==="confidential"));
-      out.push({calendar:cal.name,title:hide?"予定あり":e.summary,location:hide?"":e.location||"",allDay,start:allDay?e.start.date:e.start.dateTime,end:allDay?(e.end&&e.end.date)||addDays(e.start.date,1):(e.end&&e.end.dateTime)||e.start.dateTime});
+      out.push({hub:hub||"",calendar:cal.name,title:hide?"予定あり":e.summary,location:hide?"":e.location||"",allDay,start:allDay?e.start.date:e.start.dateTime,end:allDay?(e.end&&e.end.date)||addDays(e.start.date,1):(e.end&&e.end.dateTime)||e.start.dateTime});
     }
     page=(v&&v.nextPageToken)||"";
   }while(page);
@@ -989,7 +1043,9 @@ const hm=d=>pad(d.getHours())+":"+pad(d.getMinutes());
 /* Spread each event over the days it covers (all-day "end" is the day after the last day) */
 function gcalByDay(j){
   const by={};
+  const roh=roHub(); /* 社員がHUBから登録した予定は、社員の案件の予定として出すので二重にしない */
   for(const e of (j&&j.events)||[]){
+    if(e.hub&&roh.has(e.hub))continue;
     const allDay=!!e.allDay, st=allDay?parseYmd(e.start):new Date(e.start), en=allDay?parseYmd(e.end):new Date(e.end);
     if(!st||isNaN(st))continue;
     const first=ymd(st);
@@ -1018,11 +1074,11 @@ function vCal(){
   const t=todayS(), by={};
   const slot=d=>by[d]=by[d]||{ev:[],td:[]};
   eventsOf().forEach(e=>slot(e.d).ev.push(e));
-  genTodos().forEach(x=>{if(x.due)slot(x.due).td.push(x)});
+  genTodos().concat(roTodos()).forEach(x=>{if(x.due)slot(x.due).td.push(x)});
   const day=s=>by[s]||{ev:[],td:[]};
   const [rFrom,rTo]=calRange();
   const g=gcalRange(rFrom,rTo), gby=g.data?gcalByDay(g.data):{}, gday=s=>gby[s]||[];
-  const gst=gSyncPanel()+gcalStatus(g);
+  const gst=gSyncPanel()+gcalStatus(g)+roNote();
   const legend='<div class="legend"><span><i style="background:var(--accent-soft)"></i>立会・調査の予定</span><span><i style="background:var(--green-soft)"></i>実施</span><span><i style="background:var(--amber-soft)"></i>見積提出</span><span><i style="background:var(--sunk)"></i>受注</span><span><i style="background:var(--red)"></i>土日祝の立会</span></div>';
   const note='<p class="note" style="margin:0">社内会議・客先会議・営業活動は次の段階で追加します。</p>';
   const views='<div class="seg cv" role="group" aria-label="表示の切り替え">'+[["month","月"],["week","週"],["day","日"]].map(([k,l])=>'<button type="button" data-cv="'+k+'" aria-pressed="'+(ui.calView===k)+'">'+l+'</button>').join("")+'</div>';
@@ -1036,7 +1092,7 @@ function vCal(){
     for(let i=0;i<7;i++){
       const s=addDays(from,i), d=parseYmd(s), b=day(s), hol=holidayName(s);
       const kind=dayKind(s), cls=["wkd",s===t?"today":"",kind].join(" ");
-      const items=b.ev.map(e=>'<button type="button" class="wkev" data-open="'+e.c.id+'"><span class="'+evCls(e)+'">'+h(e.label)+'</span><span class="t">'+h(e.c.property)+' '+h(e.c.room)+'</span></button>').join("")+
+      const items=b.ev.map(e=>'<button type="button" class="wkev" data-open="'+h(e.c.id)+'"><span class="'+evCls(e)+'">'+h(e.label)+'</span><span class="t">'+h(e.c.property)+' '+h(e.c.room)+'</span></button>').join("")+
         gday(s).map(x=>'<div class="wkev gcev"><span class="ev '+gcalColor(x.cal)+'">'+h(gcalLabel(x.cal))+'</span><span class="t">'+(x.time==="終日"?"":h(x.time.replace(/〜.*$/,"〜"))+' ')+h(x.title)+'</span></div>').join("")+
         b.td.map(x=>'<div class="wkev td'+(s<t?" over":"")+'"><span class="ev td'+(s<t?" over":"")+'">ToDo</span><span class="t">'+h(x.title)+'</span></div>').join("");
       rows+='<div class="wkrow '+kind+(s===ui.calDay?" sel":"")+'"><button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+mdw(s)+(hol?' '+hol:'')+'を日表示で開く"'+(s===t?' aria-current="date"':'')+'><span class="dn">'+d.getDate()+'</span><span class="dw">'+WD[d.getDay()]+'</span></button>'+
@@ -1050,7 +1106,7 @@ function vCal(){
     const sel=day(ui.calDay);
     const gRows=gday(ui.calDay).map(x=>'<div class="card gccard"><div class="row"><span class="ev '+gcalColor(x.cal)+'" style="font-size:12px;padding:1px 6px">'+h(gcalLabel(x.cal))+'</span><span class="note num">'+h(x.time)+'</span></div>'+
       '<div class="ttl">'+h(x.title)+'</div>'+(x.loc?'<div class="row note"><span style="min-width:0;overflow-wrap:anywhere">'+h(x.loc)+'</span><a class="btn sm" style="display:inline-flex;align-items:center;text-decoration:none" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(x.loc)+'">地図</a></div>':'')+'</div>').join("");
-    const evRows=sel.ev.map(e=>'<button type="button" class="card" data-open="'+e.c.id+'"><div class="row"><span class="'+evCls(e)+'" style="font-size:12px;padding:1px 6px">'+h(e.label)+'</span>'+typeChip(e.c)+'<span class="sp"></span>'+stagePill(e.c)+'</div><div class="ttl">'+h(e.c.property)+' '+h(e.c.room)+'</div><div class="row note"><span>'+h(e.c.client)+'</span><span>担当 '+h(e.c.tantou)+'</span></div></button>').join("");
+    const evRows=sel.ev.map(e=>'<button type="button" class="card" data-open="'+h(e.c.id)+'"><div class="row"><span class="'+evCls(e)+'" style="font-size:12px;padding:1px 6px">'+h(e.label)+'</span>'+typeChip(e.c)+'<span class="sp"></span>'+stagePill(e.c)+'</div><div class="ttl">'+h(e.c.property)+' '+h(e.c.room)+'</div><div class="row note"><span>'+h(e.c.client)+'</span><span>担当 '+h(e.c.tantou)+'</span></div></button>').join("");
     return '<section class="sec">'+gst+views+
       nav(1,'<span class="dtitle '+dayKind(ui.calDay)+'">'+mdw(ui.calDay)+'</span>'+(holidayName(ui.calDay)?' <span class="hol-name">'+holidayName(ui.calDay)+'</span>':''),"今日","前の日","次の日")+
       '<div class="list">'+evRows+gRows+sel.td.map(todoRow).join("")+((evRows||gRows||sel.td.length)?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div>'+note+'</section>';
@@ -1075,9 +1131,11 @@ function vCal(){
 function vGantt(){
   const DAYS=29, W=26, from=addDays(todayS(),-14), t=todayS();
   const x=s=>Math.max(0,Math.min(DAYS,diffDays(s,from)));
-  const todos=genTodos();
+  const todos=genTodos().concat(roTodos());
   const order={new:0,site:1,quoted:2,hold:3,won:4,handed:5,built:6,billed:7};
-  const list=DB.cases.filter(c=>!ended(c)).sort((a,b)=>(b.type==="kinkyu")-(a.type==="kinkyu")||order[a.stage]-order[b.stage]||a.id.localeCompare(b.id));
+  const act=allCases().filter(c=>!ended(c)), tans=[...new Set(act.map(c=>c.tantou||"未設定"))];
+  if(ui.gTantou&&ui.gTantou!=="all"&&!tans.includes(ui.gTantou))ui.gTantou="all";
+  const list=act.filter(c=>!ui.gTantou||ui.gTantou==="all"||(c.tantou||"未設定")===ui.gTantou).sort((a,b)=>(b.type==="kinkyu")-(a.type==="kinkyu")||order[a.stage]-order[b.stage]||a.id.localeCompare(b.id));
   const seg=(a,b,cls)=>{if(!a)return "";const L=x(a),R=b===t?x(b)+1:x(b);if(R<=0||L>=DAYS)return "";return '<span class="gseg '+cls+'" style="left:'+(L*W)+'px;width:'+Math.max(4,(R-L)*W)+'px"></span>'};
   let head="";
   for(let i=0;i<DAYS;i++){const d=parseYmd(addDays(from,i));head+='<span class="gday'+(d.getDay()===0?" sun":"")+'" style="left:'+(i*W)+'px">'+(d.getDate()===1||i===0?(d.getMonth()+1)+'/':'&nbsp;')+'<br>'+d.getDate()+'</span>'}
@@ -1091,9 +1149,10 @@ function vGantt(){
     if(c.planDate&&c.stage==="new"&&diffDays(c.planDate,from)>=0&&diffDays(c.planDate,from)<DAYS)bars+='<span class="gplan" style="left:'+(x(c.planDate)*W+W/2)+'px" title="'+TYPES[c.type].site+'予定 '+md(c.planDate)+'"></span>';
     const td=todos.find(z=>z.caseId===c.id);
     if(td&&td.due){const dd=diffDays(td.due,from);if(dd>=0&&dd<DAYS)bars+='<span class="gmark'+(td.due<t?" over":"")+'" style="left:'+(x(td.due)*W+W/2)+'px" title="'+h(td.title)+' '+md(td.due)+'"></span>'}
-    return '<div class="grow"><button type="button" class="glab" data-open="'+c.id+'"><b>'+h(c.property)+' '+h(c.room)+'</b><span class="chip t-'+c.type+'" style="font-size:10px">'+TYPES[c.type].label+'</span></button><div class="gtrack">'+todayLine+bars+'</div></div>';
+    return '<div class="grow"><button type="button" class="glab" data-open="'+h(c.id)+'"><b>'+h(c.property)+' '+h(c.room)+'</b><span class="chip t-'+c.type+'" style="font-size:10px">'+TYPES[c.type].label+'</span>'+(c.ro?'<span class="note" style="font-size:10px">'+h(c.tantou)+'・見るだけ</span>':'')+'</button><div class="gtrack">'+todayLine+bars+'</div></div>';
   }).join("");
   return '<section class="sec"><div class="sec-h"><h2>ガント</h2><span class="note num">動いている案件 '+list.length+'件 ・ 2週間前〜2週間後</span></div>'+
+  roNote()+(tans.length>1?'<div class="seg" role="group" aria-label="担当">'+[["all","全員"],...tans.map(n=>[n,n])].map(([k,l])=>'<button type="button" data-gt="'+h(k)+'" aria-pressed="'+((ui.gTantou||"all")===k)+'">'+h(l)+'</button>').join("")+'</div>':'')+
   '<div class="legend"><span><i style="background:var(--accent)"></i>受付〜現地確認</span><span><i style="background:var(--amber)"></i>見積作成</span><span><i style="background:var(--muted);opacity:.45"></i>返事待ち</span><span><i style="background:var(--amber-soft);border:1px dashed var(--amber)"></i>保留</span><span><i style="background:var(--green)"></i>受注・引渡待ち</span><span>◆ 次のToDoの期限（赤は超過）</span><span>｜ 立会・調査の予定日</span></div>'+
   (list.length?'<div class="gwrap" style="--w:'+W+'px;--tw:'+(DAYS*W)+'px"><div class="grow ghead"><div class="glab">案件</div><div class="gtrack">'+head+'</div></div>'+rows+'</div>':'<div class="empty">動いている案件はありません</div>')+
   '<p class="note" style="margin:0">横にスクロールできます。案件名を押すと詳細を開きます。2週間より前に受付した案件は左端から表示します。</p></section>';
@@ -1142,7 +1201,7 @@ function vStats(){
     ''+
     '</form></section>'+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.29 用）を開く</a></section>';
+  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.30 用）を開く</a></section>';
 }
 function gSettings(){
   const head='<section class="sec"><div class="sec-h"><h2>Googleカレンダー連携</h2></div>';
@@ -1475,7 +1534,7 @@ const sheetIdOf=x=>{const m=String(x||"").match(/\/spreadsheets\/d\/([A-Za-z0-9_
 const fake=x=>String(x||"").includes("（架空）");
 
 /* What a person sends: the main points only — no memo, symptom or detailed address */
-const CASE_COLS=["受付番号","種類","段階","物件","部屋","依頼元","担当","受付日","予定日","実施日","見積額","受注日","仕事番号","施工完了日","請求日","請求額","入金予定日","入金済額","残額","遅れ日数","最終の動き"];
+const CASE_COLS=["受付番号","種類","段階","物件","部屋","依頼元","担当","受付日","予定日","実施日","見積額","受注日","仕事番号","施工完了日","請求日","請求額","入金予定日","入金済額","残額","遅れ日数","最終の動き","見積提出日","保留日","失注日","引渡日","入金日","段階キー","受付日時"];
 const PAY_COLS=["受付番号","物件","部屋","担当","日付","種類","金額","区分"];
 const TODO_COLS=["内容","期限","担当","受付番号","物件","部屋","種類","状態"];
 const todoState=due=>{if(!due)return "期限なし";const n=diffDays(due,todayS());return n<0?"期限切れ":n===0?"今日":"今後"};
@@ -1483,7 +1542,8 @@ const RC_COLS=["受付ID","日付","支払先","内容","区分","金額","会�
 function lastMove(c){return [c.receivedAt?ymd(new Date(c.receivedAt)):"",c.planDate,c.siteDate,c.estSentDate,c.orderDate,c.lossDate,c.handedDate,c.builtDate,c.billDate,c.paidDate,...(c.payments||[]).map(x=>x.date),...(c.payLog||[]).map(x=>x.at)].filter(Boolean).sort().pop()||""}
 function dataRows(){
   const real=DB.cases.filter(c=>!fake(c.client)&&!fake(c.property));
-  const cases=[CASE_COLS,...real.map(c=>[c.id,TYPES[c.type].label,STAGES[c.stage],c.property,c.room,c.client,c.tantou,c.receivedAt?ymd(new Date(c.receivedAt)):"",c.planDate,c.siteDate,estOf(c)??"",c.orderDate,c.jobNo,c.builtDate,c.billDate,c.billAmount??"",c.payDue,c.billDate?paidSum(c):"",c.billDate?Math.max(0,remainOf(c)):"",lateDays(c)||"",lastMove(c)])];
+  const cases=[CASE_COLS,...real.map(c=>[c.id,TYPES[c.type].label,STAGES[c.stage],c.property,c.room,c.client,c.tantou,c.receivedAt?ymd(new Date(c.receivedAt)):"",c.planDate,c.siteDate,estOf(c)??"",c.orderDate,c.jobNo,c.builtDate,c.billDate,c.billAmount??"",c.payDue,c.billDate?paidSum(c):"",c.billDate?Math.max(0,remainOf(c)):"",lateDays(c)||"",lastMove(c),
+    c.estSentDate,c.holdDate,c.lossDate,c.handedDate,(c.payments||[]).map(x=>x.date).filter(Boolean).sort().pop()||"",c.stage,c.receivedAt||""])];
   const pay=[PAY_COLS];
   for(const c of real){
     const base=[c.id,c.property,c.room,c.tantou];
@@ -1497,7 +1557,7 @@ function dataRows(){
   const todo=[TODO_COLS,...genTodos().filter(t=>t.auto||t.manual).flatMap(t=>{
     const c=t.caseId&&DB.cases.find(x=>x.id===t.caseId);
     if(c&&(fake(c.client)||fake(c.property))||t.manual&&exTodo(t))return [];
-    return [[t.title,t.due||"",t.tantou||"",c?c.id:"",c?c.property:"",c?c.room:"",t.order?"社長から":t.auto?"自動":"手入力",todoState(t.due)]]})];
+    return [[t.title,t.due||"",t.tantou||"",c?c.id:"",c?c.property:"",c?c.room:"",t.order?"リクエスト":t.auto?"自動":"手入力",todoState(t.due)]]})];
   return {cases,pay,rc,todo};
 }
 /* Receipt photos go to the person's own Drive folder 「CPG HUB 領収書」, shared read-only with the 社長 once */
@@ -1527,8 +1587,8 @@ async function dataSync(step){
     if(!tabs.includes("ToDo"))await gReq(SHEETS+"/"+encodeURIComponent(id)+":batchUpdate",{method:"POST",body:{requests:[{addSheet:{properties:{title:"ToDo"}}}]}})}
   catch(err){if(err.message==="signin")throw err}
   if(tabs.includes("指示")){
-    try{const r=await ordersSync(id);step("社長からの指示",true,"未完了 "+r.open+"件"+(r.reported?"・完了の報告 "+r.reported+"件":"")+(r.removed?"・取り消し "+r.removed+"件":""));d.todo=dataRows().todo}
-    catch(err){if(err.message==="signin")throw err;step("社長からの指示",false,dMsg(err))}
+    try{const r=await ordersSync(id);step("タスクリクエスト",true,"未完了 "+r.open+"件"+(r.reported?"・完了の報告 "+r.reported+"件":"")+(r.removed?"・取り消し "+r.removed+"件":""));d.todo=dataRows().todo}
+    catch(err){if(err.message==="signin")throw err;step("タスクリクエスト",false,dMsg(err))}
   }
   for(const [tab,rows] of [["案件",d.cases],["入金",d.pay],["立替",d.rc],["ToDo",d.todo]]){
     try{await sheetWrite(id,tab,rows);step("記録シート「"+tab+"」",true,(rows.length-1)+"行")}catch(err){step("記録シート「"+tab+"」",false,dMsg(err))}
@@ -1538,8 +1598,10 @@ async function dataSync(step){
   catch(err){step("記録シート「情報」",false,dMsg(err))}
 }
 const sheetTabNames=async id=>{const v=await gReq(SHEETS+"/"+encodeURIComponent(id)+"?fields=sheets.properties.title");return ((v&&v.sheets)||[]).map(x=>x.properties&&x.properties.title)};
-/* 社長からの指示: the 「指示」 tab of the person's sheet. The 社長 only appends rows and sets 状態＝取り消し on them;
+/* タスクリクエスト（代表から）: the 「指示」 tab (the tab and column names stay as they are) of the person's sheet. The 社長 only appends rows and sets 状態＝取り消し on them;
    the person's device only fills 状態＝完了・完了日・完了メモ (columns E:G) of the row. Rows are never deleted or moved */
+/* the ToDo tab's 種類 was 「社長から」 in v1.29 */
+const isReqKind=k=>k==="リクエスト"||k==="社長から";
 const ORDER_COLS=["指示ID","内容","期限","指示日","状態","完了日","完了メモ"];
 const cellDate=v=>String(v==null?"":v).slice(0,10);
 async function ordersSync(id){
@@ -1680,7 +1742,7 @@ function corpCaseCard(r){
     '<dl class="kv">'+rows.map(([k,x])=>'<dt>'+k+'</dt><dd>'+h(x)+'</dd>').join("")+'</dl>'+
     (v("最終の動き")?'<div class="note">最終の動き '+h(dt("最終の動き"))+'</div>':'')+'</div>';
 }
-/* 会社の動き：社員ごとに「社長からの指示」と「社員のToDo」。ToDoは期限切れ→今日→今後7日を一覧、それより先と期限なしは件数だけ */
+/* 会社の動き：社員ごとに「タスクリクエスト」と「社員のToDo」。ToDoは期限切れ→今日→今後7日を一覧、それより先と期限なしは件数だけ */
 function corpTodos(x,k){
   const t=todayS(), dd=v=>cellDate(v), n=d=>diffDays(d,t);
   const ords=(x.orders||[]), open=ords.filter(o=>o["状態"]==="未完了").sort((a,b)=>(dd(a["期限"])||"9").localeCompare(dd(b["期限"])||"9"));
@@ -1688,17 +1750,17 @@ function corpTodos(x,k){
   const dueTxt=d=>!d?'期限なし':n(d)<0?(-n(d))+'日超過（'+md(d)+'）':n(d)===0?'今日まで':md(d)+'まで';
   const oli=o=>{const d=dd(o["期限"]),red=d&&n(d)<0,key=k+"|"+o["指示ID"];
     return '<li'+(red?' style="color:var(--red)"':'')+'><div class="row"><span class="num"><b>'+dueTxt(d)+'</b></span><span>'+h(o["内容"])+'</span><span class="sp"></span><button class="btn sm" type="button" data-ocancel="'+h(key)+'">取り消す</button></div>'+
-      (ui.oCancel===key?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><span>この指示を取り消します。社員の次の同期で、社員のToDoから消えます。</span><div class="row"><button class="btn danger" type="button" data-act="ocanceldo">取り消す</button><button class="btn" type="button" data-act="ocancelno">やめる</button></div></div>':'')+'</li>'};
-  const orders='<p class="fk" style="margin:6px 0 0">社長からの指示</p>'+
-    (open.length?'<p class="note" style="margin:2px 0 0">未完了 '+open.length+'件'+(oOver.length?'<b style="color:var(--red)">（期限切れ '+oOver.length+'件）</b>':'')+'</p><ul class="dl">'+open.map(oli).join("")+'</ul>':'<p class="note" style="margin:2px 0 0">未完了の指示はありません</p>')+
+      (ui.oCancel===key?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><span>このリクエストを取り消します。社員の次の同期で、社員のToDoから消えます。</span><div class="row"><button class="btn danger" type="button" data-act="ocanceldo">取り消す</button><button class="btn" type="button" data-act="ocancelno">やめる</button></div></div>':'')+'</li>'};
+  const orders='<p class="fk" style="margin:6px 0 0">タスクリクエスト（代表から）</p>'+
+    (open.length?'<p class="note" style="margin:2px 0 0">未完了 '+open.length+'件'+(oOver.length?'<b style="color:var(--red)">（期限切れ '+oOver.length+'件）</b>':'')+'</p><ul class="dl">'+open.map(oli).join("")+'</ul>':'<p class="note" style="margin:2px 0 0">未完了のリクエストはありません</p>')+
     (done7.length?'<p class="note" style="margin:6px 0 0">最近7日の完了 '+done7.length+'件</p><ul class="dl">'+done7.map(o=>'<li><span class="num" style="color:var(--green)"><b>✓ '+md(dd(o["完了日"]))+'完了</b></span> '+h(o["内容"])+(o["完了メモ"]?'<div class="note">メモ：'+h(o["完了メモ"])+'</div>':'')+'</li>').join("")+'</ul>':'')+
-    '<div class="form" style="margin-top:6px"><label class="f full">指示の内容<input type="text" id="oi_t'+k+'" placeholder="例：〇〇の見積を今週中に出す"></label><label class="f">期限<input type="date" id="oi_d'+k+'"></label>'+
-      '<div class="full"><button class="btn pri" type="button" data-oadd="'+k+'"'+(ui.oBusy?' disabled':'')+'>指示を出す</button></div></div>'+
+    '<div class="form" style="margin-top:6px"><label class="f full">リクエストの内容<input type="text" id="oi_t'+k+'" placeholder="例：〇〇の見積を今週中に出す"></label><label class="f">期限<input type="date" id="oi_d'+k+'"></label>'+
+      '<div class="full"><button class="btn pri" type="button" data-oadd="'+k+'"'+(ui.oBusy?' disabled':'')+'>リクエストする</button></div></div>'+
     (ui.oMsg&&ui.oMsg.k===k?'<ul class="gres" role="status"><li class="'+(ui.oMsg.ok?'ok':'ng')+'">'+(ui.oMsg.ok?'✓ ':'× ')+h(ui.oMsg.text)+'</li></ul>':'');
   let todos, tOver=[];
   if(!x.todo)todos='<p class="note" style="margin:2px 0 0">ToDoはまだ届いていません（社員のHUBを v1.29 以降にして同期すると届きます）</p>';
   else{
-    const rs=x.todo.filter(r=>r["内容"]&&r["種類"]!=="社長から").map(r=>Object.assign({_d:dd(r["期限"])},r)).sort((a,b)=>(a._d||"9").localeCompare(b._d||"9"));
+    const rs=x.todo.filter(r=>r["内容"]&&!isReqKind(r["種類"])).map(r=>Object.assign({_d:dd(r["期限"])},r)).sort((a,b)=>(a._d||"9").localeCompare(b._d||"9"));
     tOver=rs.filter(r=>r._d&&n(r._d)<0);const today=rs.filter(r=>r._d&&n(r._d)===0), soon=rs.filter(r=>r._d&&n(r._d)>0&&n(r._d)<=7), later=rs.filter(r=>r._d&&n(r._d)>7), none=rs.filter(r=>!r._d);
     const li=(r,red)=>'<li class="num"'+(red?' style="color:var(--red)"':'')+'><b>'+(red?(-n(r._d))+'日超過（'+md(r._d)+'）':n(r._d)===0?'今日':md(r._d))+'</b> '+h(r["内容"])+(r["物件"]?'<span class="note">・'+h(r["物件"])+' '+h(r["部屋"])+'</span>':'')+'</li>';
     const grp=(label,list,red)=>list.length?'<p class="note" style="margin:6px 0 0'+(red?';color:var(--red);font-weight:700':'')+'">'+label+' '+list.length+'件</p><ul class="dl">'+list.map(r=>li(r,red)).join("")+'</ul>':'';
@@ -1707,7 +1769,7 @@ function corpTodos(x,k){
     todos='<p class="note num" style="margin:2px 0 0">期限切れ '+tOver.length+'・今日 '+today.length+'・今後7日 '+soon.length+'</p>'+todos;
   }
   const red=oOver.length||tOver.length;
-  return '<details open><summary'+(red?' style="color:var(--red)"':'')+'><b>'+h(x.s.name)+'</b>（指示 未完了 '+open.length+(oOver.length?'・期限切れ '+oOver.length:'')+(x.todo?'／ToDo 期限切れ '+tOver.length:'')+'）</summary>'+
+  return '<details open><summary'+(red?' style="color:var(--red)"':'')+'><b>'+h(x.s.name)+'</b>（リクエスト 未完了 '+open.length+(oOver.length?'・期限切れ '+oOver.length:'')+(x.todo?'／ToDo 期限切れ '+tOver.length:'')+'）</summary>'+
     orders+'<p class="fk" style="margin:10px 0 0">社員のToDo</p>'+todos+'</details>';
 }
 function corpView(){
@@ -1780,17 +1842,27 @@ function render(){
     const sync=()=>{sw.hidden=ty.value!=="kinkyu"};ty.addEventListener("change",sync);sync();
   }
 }
-function go(view,extra){if(view!=="rcpt")rClearDl();if(view!=="rform")rFormClear();Object.assign(ui,{view,acct:false,exAsk:false,rcCancel:null,cdel:null,cdelMsg:"",cdelBusy:false,cdelCal:true},extra||{});render();window.scrollTo(0,0)}
+function go(view,extra){if(view!=="rcpt")rClearDl();if(view!=="rform")rFormClear();Object.assign(ui,{view,rcvEdit:false,rcvSuggest:"",acct:false,exAsk:false,rcCancel:null,cdel:null,cdelMsg:"",cdelBusy:false,cdelCal:true},extra||{});render();window.scrollTo(0,0)}
 let toastT;
 function toast(msg,ms){const el=document.getElementById("toast");el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,ms||2600)}
 /* An on-page confirmation can open near the bottom, behind the menu bar; bring it to the middle of the screen */
 function showAlert(){const a=main.querySelector('.ro[role=alert]');if(a)a.scrollIntoView({block:"center"})}
+const localDT=iso=>{const d=iso?new Date(iso):new Date();return ymd(d)+"T"+pad(d.getHours())+":"+pad(d.getMinutes())};
+/* the date each step records; an entry before the 受付日 is asked about first (後から入力した案件の受付日時の直し忘れ) */
+const STEP_DATE={plan:()=>val("d_plan"),site:()=>val("d_site")||todayS(),quote:()=>val("d_sent")||todayS(),win:()=>val("d_order")||todayS(),rushwin:()=>todayS(),hold:()=>val("d_hold"),
+  lose:()=>todayS(),hand:()=>todayS(),built:()=>val("d_built")||todayS(),bill:()=>val("d_bdate"),pay:()=>val("d_paydate")};
+function rcvAsk(el,a,d,r){
+  main.querySelectorAll(".rcvask").forEach(x=>x.remove());
+  const box=document.createElement("div");box.className="ro rcvask";box.setAttribute("role","alert");box.style.cssText="display:flex;flex-direction:column;gap:8px";
+  box.innerHTML='<span>受付日（'+md(r)+'）より前の日付です（'+md(d)+'）。受付日時を直しますか？</span><div class="row"><button class="btn pri" type="button" data-act="rcvfix" data-d="'+h(d)+'">受付日を直す</button><button class="btn" type="button" data-act="rcvkeep" data-for="'+h(a)+'">このまま</button></div>';
+  (el.closest(".row")||el).after(box);box.scrollIntoView({block:"center"});
+}
 const val=id=>{const el=document.getElementById(id);return el?el.value:""};
 
 document.addEventListener("click",e=>{
   const el=e.target.closest("button,[data-open]");
   if(!el)return;
-  const c=ui.caseId?findCase(ui.caseId):null;
+  const c=ui.caseId?editCase(ui.caseId):null;
   if(el.dataset.open){go("detail",{caseId:el.dataset.open});return}
   if(el.dataset.nav){const ex={csv:false};if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";if(el.dataset.nav==="cases")ex.payOnly=!!el.dataset.pay;if(el.dataset.nav==="rcpt"&&el.closest(".tile"))ex.rTab=el.dataset.rtab2||"list";go(el.dataset.nav,ex);return}
   if(el.dataset.rtab){ui.rTab=el.dataset.rtab;rClearDl();ui.rcCancel=null;render();return}
@@ -1816,14 +1888,15 @@ document.addEventListener("click",e=>{
   if(el.dataset.mon!=null){const n=Number(el.dataset.mon);if(n===0){ui.calMonth=todayS().slice(0,7);ui.calDay=todayS()}else{const [y,m]=ui.calMonth.split("-").map(Number);const d=new Date(y,m-1+n,1);ui.calMonth=d.getFullYear()+"-"+pad(d.getMonth()+1);ui.calDay=ymd(d)}render();return}
   if(el.dataset.tp){ui.tPeriod=el.dataset.tp;render();return}
   if(el.dataset.tt){ui.tTantou=el.dataset.tt;render();return}
+  if(el.dataset.gt){ui.gTantou=el.dataset.gt;render();return}
   if(el.dataset.odone){ui.oDone=el.dataset.odone;render();showAlert();const m=document.getElementById("od_memo");if(m)m.focus();return}
   if(el.dataset.ocancel){ui.oCancel=el.dataset.ocancel;render();showAlert();return}
   if(el.dataset.oadd!=null){if(ui.oBusy)return;const k=Number(el.dataset.oadd),x=ui.corp&&ui.corp.data&&ui.corp.data[k];if(!x)return;
     const title=val("oi_t"+k).trim(),due=val("oi_d"+k);
-    if(!title){ui.oMsg={k,ok:false,text:"指示の内容を入れてください"};render();return}
+    if(!title){ui.oMsg={k,ok:false,text:"リクエストの内容を入れてください"};render();return}
     ui.oBusy=true;ui.oMsg={k,ok:true,text:"送っています…"};render();
-    adminOrderAdd(x,title,due).then(()=>{ui.oMsg={k,ok:true,text:"指示を出しました。"+x.s.name+"さんが同期すると届きます。急ぎならLINEでも伝えてください"}},
-      err=>{ui.oMsg={k,ok:false,text:"指示を出せませんでした："+dMsg(err)}}).finally(()=>{ui.oBusy=false;render()});return}
+    adminOrderAdd(x,title,due).then(()=>{ui.oMsg={k,ok:true,text:"リクエストしました。"+x.s.name+"さんが同期すると届きます。急ぎならLINEでも伝えてください"}},
+      err=>{ui.oMsg={k,ok:false,text:"リクエストできませんでした："+dMsg(err)}}).finally(()=>{ui.oBusy=false;render()});return}
   if(el.dataset.done){const t=DB.todos.find(x=>x.id===el.dataset.done);if(t){t.done=true;save();render();toast("ToDoを完了にしました")}return}
   if(el.dataset.burden!=null&&c){const it=c.items[Number(el.dataset.burden)];if(it){it.burden=el.dataset.b;save();render()}return}
   if(el.dataset.delitem&&c){c.items.splice(Number(el.dataset.delitem),1);save();render();return}
@@ -1878,11 +1951,20 @@ document.addEventListener("click",e=>{
   if(a==="ocancelno"){ui.oCancel=null;render();return}
   if(a==="ocanceldo"){const [k,oid]=String(ui.oCancel).split("|"),x=ui.corp&&ui.corp.data&&ui.corp.data[Number(k)];ui.oCancel=null;if(!x)return render();
     adminOrderCancel(x,oid).then(()=>{ui.oMsg={k:Number(k),ok:true,text:"取り消しました。"+x.s.name+"さんが同期すると、ToDoから消えます"}},
-      err=>{ui.oMsg={k:Number(k),ok:false,text:err.message==="orderstate"?"この指示はもう「"+err.st+"」になっています。「社員の記録を読み込む」で最新にしてください":"取り消せませんでした："+dMsg(err)}}).then(render);return}
+      err=>{ui.oMsg={k:Number(k),ok:false,text:err.message==="orderstate"?"このリクエストはもう「"+err.st+"」になっています。「社員の記録を読み込む」で最新にしてください":"取り消せませんでした："+dMsg(err)}}).then(render);return}
   if(a==="corp"){ui.corp=Object.assign({},ui.corp,{busy:true,err:""});render();
-    corpLoad().then(data=>{ui.corp={data,at:Date.now()}},err=>{ui.corp=Object.assign({},ui.corp,{busy:false,err:"読み込めませんでした："+gMsg(err)})}).then(render);return}
+    corpLoad().then(data=>{ui.corp={data,at:Date.now()};roBuild(data);D().corpAt=new Date(ui.corp.at).toISOString();save()},err=>{ui.corp=Object.assign({},ui.corp,{busy:false,err:"読み込めませんでした："+gMsg(err)})}).then(render);return}
   if(a==="gsync"){if(!(ui.gsync&&ui.gsync.busy))gSyncAll();return}
   if(!c)return;
+  if(a==="rcvedit"){ui.rcvEdit=true;ui.rcvSuggest="";render();const i=document.getElementById("d_rcv");if(i){i.scrollIntoView({block:"center"});i.focus()}return}
+  if(a==="rcvno"){ui.rcvEdit=false;ui.rcvSuggest="";render();return}
+  if(a==="rcvsave"){const v=val("d_rcv");if(!v){toast("受付日時を入れてください");return}
+    c.receivedAt=new Date(v).toISOString();ui.rcvEdit=false;ui.rcvSuggest="";save();render();
+    const first=[c.planDate,c.siteDate,c.estSentDate,c.orderDate,c.lossDate,c.handedDate,c.builtDate,c.billDate].filter(Boolean).sort()[0];
+    toast("受付日時を"+mdh(v.slice(0,10))+" "+v.slice(11)+"にしました"+(first&&first<v.slice(0,10)?"。"+md(first)+"の記録より後になっています":""),4000);return}
+  if(a==="rcvfix"){ui.rcvEdit=true;ui.rcvSuggest=el.dataset.d;render();const i=document.getElementById("d_rcv");if(i){i.scrollIntoView({block:"center"});i.focus()}return}
+  if(a==="rcvkeep"){const f=el.dataset.for,box=el.closest(".rcvask");ui.rcvSkip=f;if(box)box.remove();const b=main.querySelector('[data-act="'+f+'"]');if(b)b.click();ui.rcvSkip=null;return}
+  if(STEP_DATE[a]&&c.receivedAt&&ui.rcvSkip!==a){const d=STEP_DATE[a](),r=ymd(new Date(c.receivedAt));if(d&&d<r){rcvAsk(el,a,d,r);return}}
   if(a==="additem"){c.items.push({place:"",state:"",burden:"要確認",amount:""});save();render();
     const f=main.querySelector('[data-item="'+(c.items.length-1)+'"][data-f="place"]');if(f){f.focus();f.scrollIntoView({block:"center"})}return}
   if(a==="greg"&&c){if(ui.gbusy)return;if(!c.planDate){toast("先に日程を決めてください");return}ui.gbusy=true;
@@ -1933,11 +2015,11 @@ document.addEventListener("input",e=>{
   if(t.id==="q"){ui.q=t.value;const pos=t.selectionStart;render();const q=document.getElementById("q");q.focus();try{q.setSelectionRange(pos,pos)}catch(err){}return}
   if(t.id==="d_bdate"){const pd=document.getElementById("d_pdue");if(pd&&t.value){pd.value=payDueOf(t.value,DB.settings.payRule);const dl=main.querySelector('[data-dl="d_pdue"]');if(dl)dl.textContent=mdh(pd.value)+"（"+PAY_RULES[DB.settings.payRule]+"）"}}
   if(t.type==="date"){const dl=main.querySelector('[data-dl="'+t.id+'"]');if(dl)dl.textContent=mdh(t.value)}
-  const c=ui.caseId?findCase(ui.caseId):null;
+  const c=ui.caseId?editCase(ui.caseId):null;
   if(t.dataset.item!=null&&c){const it=c.items[Number(t.dataset.item)];if(it){it[t.dataset.f]=t.dataset.f==="amount"?(t.value===""?"":Number(t.value)):t.value;save();refreshItemTotals(c)}return}
 });
 document.addEventListener("change",e=>{
-  const t=e.target, c=ui.caseId?findCase(ui.caseId):null;
+  const t=e.target, c=ui.caseId?editCase(ui.caseId):null;
   if(t.id==="showEnded"){ui.showEnded=t.checked;render();return}
   if(t.id==="cdel_gcal"){ui.cdelCal=t.checked;ui.cdelMsg="";render();return}
   if(t.id==="r_photo"){const files=[...t.files];t.value="";files.forEach(f=>(ui.rNew=ui.rNew||[]).push({blob:f,url:URL.createObjectURL(f)}));rPhotoPreview();return}
