@@ -130,6 +130,8 @@ ol.hist li{overflow-wrap:anywhere}
 .pb3{color:var(--gc0);background:var(--gc0-soft)}.pb4{color:var(--amber);background:var(--amber-soft)}.pb5{color:var(--gc2);background:var(--gc2-soft)}
 .pbx{color:var(--fg);background:var(--sunk)}
 .pbadge.sm{font-size:10.5px;padding:0 6px}
+/* 領収書の切り替え：予定の 月/週/日 と同じ大きさ。4つ（法人カードあり）でも400px幅に収める */
+.seg.cv.rtabs button{flex:1 1 auto;min-width:0;padding:8px 4px;white-space:nowrap;font-size:clamp(13px,4vw,18px)}
 .chip.t-kinkyu{background:var(--red-soft);color:var(--red)}
 .chip.t-taikyo{background:var(--accent-soft);color:var(--accent)}
 .chip.t-reno{background:var(--amber-soft);color:var(--amber)}
@@ -464,8 +466,10 @@ function roNote(){
   return '<div class="banner" role="status">社員の記録はまだ読み込んでいません。<b>Googleとまとめて同期</b>（またはホームの「会社の動き」の <b>社員の記録を読み込む</b>）を押すと、ここにも出ます。'+(D().corpAt?'<div class="note">前回の読み込み：'+md(ymd(new Date(D().corpAt)))+' '+hm(new Date(D().corpAt))+'（30日を過ぎたので、読み込み直してください）</div>':'')+'</div>';
 }
 const roChip=c=>'<span class="chip ro">社員の記録・見るだけ</span>';
-/* 姓だけ（社員一覧の氏名の最初の語。全角・半角スペース区切り） */
-const surname=n=>String(n||"").trim().split(/[\s　]+/)[0]||"";
+/* 担当の名前をそろえる（表示と絞り込みだけ。保存データは書き換えない）：
+   HUBの担当（STAFF）で始まる名前はその姓（「黒木　秀一」「黒木秀一」→「黒木」）、それ以外は空白より前（姓） */
+const surname=n=>{const t=String(n||"").trim();if(!t)return "";const flat=t.replace(/[\s　]+/g,"");
+  const st=STAFF.find(x=>flat.startsWith(x));return st||t.split(/[\s　]+/)[0]};
 const staffOrder=()=>D().admin?D().staff:(ui.viewList||[]);
 function personBadge(name,small){
   const sn=surname(name);if(!sn)return "";
@@ -1457,7 +1461,7 @@ function vRcpt(){
   }
   return '<section class="sec"><button class="btn pri" type="button" data-act="rnew" style="width:100%;min-height:52px;font-size:16px">＋ 領収書を登録</button>'+
     (notes.length?'<div class="banner" role="status">'+notes.map(n=>'<div>'+h(n)+'</div>').join("")+'</div>':'')+
-    '<div class="seg" role="group" aria-label="領収書の表示">'+tabs.map(([k,l])=>'<button type="button" data-rtab="'+k+'" aria-pressed="'+(tab===k)+'">'+l+'</button>').join("")+'</div>'+
+    '<div class="seg cv rtabs" role="group" aria-label="領収書の表示">'+tabs.map(([k,l])=>'<button type="button" data-rtab="'+k+'" aria-pressed="'+(tab===k)+'">'+l+'</button>').join("")+'</div>'+
     body+'</section>';
 }
 /* Changes made after a receipt was once submitted are kept (from → to, when), never removed */
