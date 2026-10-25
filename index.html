@@ -136,11 +136,11 @@ ol.hist li{overflow-wrap:anywhere}
 .seg.cv.rtabs button{flex:1 1 auto;min-width:0;padding:8px 4px;white-space:nowrap;font-size:clamp(13px,4vw,18px)}
 .chip.t-kinkyu{background:var(--red-soft);color:var(--red)}
 .chip.t-taikyo{background:var(--accent-soft);color:var(--accent)}
-.chip.t-reno{background:var(--amber-soft);color:var(--amber)}
-.chip.t-teiki{background:var(--green-soft);color:var(--green)}
+.chip.t-vacant,.chip.t-reno{background:var(--amber-soft);color:var(--amber)}
+.chip.t-eizen,.chip.t-teiki{background:var(--green-soft);color:var(--green)}
 .pill{font-size:12px;font-weight:700;padding:2px 10px;border-radius:6px;border:1px solid var(--line);white-space:nowrap}
 .pill.s-won{border-color:var(--green);color:var(--green)}
-.pill.s-handed{border-color:var(--accent);color:var(--accent)}
+.pill.s-working,.pill.s-handed{border-color:var(--accent);color:var(--accent)}
 .pill.s-built{border-color:var(--amber);color:var(--amber)}
 .pill.s-billed{border-color:var(--amber);color:var(--amber);background:var(--amber-soft)}
 .pill.s-billed.late{border-color:var(--red);color:var(--red);background:var(--red-soft)}
@@ -289,7 +289,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.33・10/24更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.34・10/26更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -316,11 +316,14 @@ const TYPES={
   kinkyu:{label:"緊急対応",site:"現地対応"},
   taikyo:{label:"退去立会",site:"立会"},
   reno:{label:"リノベーション",site:"現地調査"},
-  teiki:{label:"定期清掃",site:"現地確認"}
+  teiki:{label:"定期清掃",site:"現地確認"},
+  vacant:{label:"空室見積",site:"現地調査"},
+  eizen:{label:"営繕",site:"現地確認"}
 };
-const STAGES={new:"受付",site:"現地確認済",quoted:"見積提出済",hold:"保留",won:"受注・引渡待ち",handed:"引渡済・施工中",built:"完工・請求待ち",billed:"請求済・入金待ち",paid:"入金済（完了）",lost:"失注"};
+const STAGES={new:"受付",site:"現地確認済",quoted:"見積提出済",hold:"保留",won:"受注・引渡待ち",handed:"引渡済・施工中",working:"施工中",built:"完工・請求待ち",billed:"請求済・入金待ち",paid:"入金済（完了）",lost:"失注"};
 const SYMPTOMS=["水漏れ","給湯器凍結","その他"];
 const LOSS=["価格","他社に決定","時期が合わない","連絡なし","その他"];
+const CLIENT_NAMES=["アレップス","オリバー","ハウスコムコミュニケーションズ立川","ハウスコムコミュニケーションズ大和","ミニミニ城西","ミニミニ神奈川","ミニテック立川","その他"];
 const CLIENT_KINDS=["管理会社","大家さん","その他"];
 const STAFF=["黒木","トシ"];
 const BURDEN=["家主","入居者","要確認"];
@@ -490,6 +493,7 @@ function personBadge(name,small){
   const i=staffOrder().findIndex(s=>surname(s.name)===sn);
   return '<span class="pbadge '+(i<0?"pbx":"pb"+(i%6))+(small?' sm':'')+'">'+h(sn)+'</span>';
 }
+const isEizen=c=>c.type==="eizen";
 const isTaikyo=c=>c.type==="taikyo";
 const itemsSum=(c,b)=>c.items.filter(i=>!b||i.burden===b).reduce((s,i)=>s+(Number(i.amount)||0),0);
 const estOf=c=>isTaikyo(c)&&c.items.length?itemsSum(c):c.estAmount;
@@ -516,7 +520,8 @@ function genTodos(){
   for(const c of DB.cases){
     const base={caseId:c.id,tantou:c.tantou,auto:true};
     const rd=c.receivedAt?ymd(new Date(c.receivedAt)):todayS();
-    if(c.stage==="new")out.push(Object.assign({},base,c.type==="kinkyu"?{title:"緊急：担当を手配して現地へ向かう",due:rd}:c.planDate?{title:TYPES[c.type].site+"を実施",due:c.planDate}:{title:TYPES[c.type].site+"の日程を調整",due:addDays(rd,S.schedule)}));
+    if(c.stage==="new"&&isEizen(c))out.push(Object.assign({},base,{title:"見積書をExcelで作成して提出",due:addDays(rd,S.quote)}));
+    else if(c.stage==="new")out.push(Object.assign({},base,c.type==="kinkyu"?{title:"緊急：担当を手配して現地へ向かう",due:rd}:c.planDate?{title:TYPES[c.type].site+"を実施",due:c.planDate}:{title:TYPES[c.type].site+"の日程を調整",due:addDays(rd,S.schedule)}));
     if(c.stage==="site")out.push(Object.assign({},base,{title:"見積書をExcelで作成して提出",due:addDays(c.siteDate||rd,S.quote)}));
     if(c.stage==="quoted")out.push(Object.assign({},base,{title:"受注か失注かを依頼元に確認",due:addDays(c.estSentDate,S.reply)}));
     if(c.stage==="hold")out.push(Object.assign({},base,{title:"保留中の案件を再確認",due:c.holdDate}));
@@ -610,7 +615,7 @@ function vCases(){
   let list=allCases().filter(c=>(ui.showEnded||!ended(c))&&(ui.type==="all"||c.type===ui.type)&&(!ui.payOnly||unpaid(c))&&(cf==="all"||(cf==="none"?!COMPANIES.includes(c.company):c.company===cf)));
   const noCo=DB.cases.filter(c=>!ended(c)&&!exCase(c)&&!COMPANIES.includes(c.company)).length;
   if(q)list=list.filter(c=>[c.id,c.client,c.property,c.room,c.addr,c.note,c.jobNo,c.symptom].join(" ").includes(q));
-  const order={new:0,site:1,quoted:2,hold:3,won:4,handed:5,built:6,billed:7,paid:8,lost:9};
+  const order={new:0,site:1,quoted:2,hold:3,won:4,handed:5,working:5,built:6,billed:7,paid:8,lost:9};
   list.sort((a,b)=>ui.payOnly?lateDays(b)-lateDays(a)||(a.payDue||"").localeCompare(b.payDue||""):(b.type==="kinkyu"&&!ended(b)&&order[b.stage]<2)-(a.type==="kinkyu"&&!ended(a)&&order[a.stage]<2)||order[a.stage]-order[b.stage]||b.id.localeCompare(a.id));
   const won=DB.cases.filter(c=>c.stage==="won");
   return '<section class="sec"><div class="sec-h"><h2>案件</h2><span class="note num">'+list.length+'件</span><span class="sp"></span>'+
@@ -645,7 +650,7 @@ function vNew(){
     '<label class="f full">依頼の種類<select id="n_type" required>'+Object.entries(TYPES).map(([k,v])=>'<option value="'+k+'">'+v.label+'</option>').join("")+'</select></label>'+
     '<label class="f full" id="n_symWrap">症状<select id="n_sym">'+SYMPTOMS.map(s=>'<option>'+s+'</option>').join("")+'</select></label>'+
     '<label class="f">依頼元の区分<select id="n_kind">'+CLIENT_KINDS.map(s=>'<option>'+s+'</option>').join("")+'</select></label>'+
-    '<label class="f">依頼元の名前<input type="text" id="n_client" required placeholder="例：○○管理"></label>'+
+    '<label class="f">依頼元の名前<input type="text" id="n_client" list="client_names" required placeholder="候補から選択・自由入力"><datalist id="client_names">'+CLIENT_NAMES.map(x=>'<option value="'+h(x)+'"></option>').join("")+'</datalist><span class="note">候補以外の名前も入力できます</span></label>'+
     '<label class="f">物件<input type="text" id="n_prop" required placeholder="物件名"></label>'+
     '<label class="f">部屋<input type="text" id="n_room" placeholder="例：203"></label>'+
     '<label class="f full">住所（Googleカレンダーの「場所」に入ります）<input type="text" id="n_addr" placeholder="例：神奈川県相模原市中央区…"></label>'+
@@ -657,6 +662,10 @@ function vNew(){
 }
 
 function stepBar(c){
+  if(isEizen(c)){
+    const pos={new:0,site:1,quoted:1,hold:1,won:2,handed:2,working:2,built:3,billed:3,paid:4,lost:1}[c.stage];
+    return '<div class="steps" aria-label="進み具合">'+["受付","見積","施工","請求"].map((l,i)=>'<span class="'+(c.stage==="lost"&&i===1?"end":i<pos?"done":i===pos?"cur":"")+'">'+(i===1&&c.stage==="lost"?"失注":i===1&&c.stage==="hold"?"保留":l)+'</span>').join("")+'</div>';
+  }
   const keys=["new","site","quoted","decide","handed","built","billed","paid"], labels=["受付",TYPES[c.type].site,"見積","受注","引渡","完工","請求","入金"];
   const pos={new:0,site:1,quoted:2,hold:2,won:3,lost:3,handed:4,built:5,billed:6,paid:8}[c.stage];
   return '<div class="steps" aria-label="進み具合">'+keys.map((k,i)=>{
@@ -751,7 +760,7 @@ function payHistory(c){
 /* 施工完了 → 請求 → 入金 (partial payments allowed; 入金済 only when the total reaches the billed amount) */
 function payPanel(c){
   const S=DB.settings, t=todayS();
-  if(c.stage==="handed")return '<div class="panel"><h3>次にやること：施工完了の記録</h3>'+
+  if(c.stage==="handed"||c.stage==="working")return '<div class="panel"><h3>次にやること：施工完了の記録</h3>'+
     '<label class="f">施工完了日<input type="date" id="d_built" value="'+t+'"><span class="note" data-dl="d_built">'+mdh(t)+'</span></label>'+
     '<div class="row"><button class="btn pri" type="button" data-act="built">施工完了にする</button></div>'+
     '<p class="note" style="margin:0">施工完了から'+S.billAfter+'日で「請求書を出す」のToDoが期限になります。現場が終わっても、入金までが仕事です。</p></div>';
@@ -787,17 +796,17 @@ function vDetail(){
   const c=findCase(ui.caseId);
   if(!c)return '<div class="empty">案件が見つかりません</div>'+roNote();
   if(c.ro)return roDetail(c);
-  const ro=["handed","built","billed","paid"].includes(c.stage); // 受付内容・立会の記録 are read only after 引渡; the money steps stay editable
+  const ro=["handed","working","built","billed","paid"].includes(c.stage); // 受付内容・立会の記録 are read only after 引渡; the money steps stay editable
   const lockEst=c.stage!=="site";
   let act="";
-  if(c.stage==="new"){
+  if(c.stage==="new"&&!isEizen(c)){
     act='<div class="panel"><h3>次にやること：'+TYPES[c.type].site+'</h3>'+
       (c.type==="kinkyu"?'':'<div class="row"><label class="f" style="flex:1">'+TYPES[c.type].site+'の予定日'+(c.planDate?'（'+mdh(c.planDate)+'に決定済み）':'')+'<input type="date" id="d_plan" value="'+h(c.planDate||addDays(todayS(),2))+'"><span class="note" data-dl="d_plan">'+mdh(c.planDate||addDays(todayS(),2))+'</span></label><button class="btn" type="button" data-act="plan" style="align-self:flex-end">日程を決める</button></div>')+
       '<label class="f">'+TYPES[c.type].site+'を実施した日<input type="date" id="d_site" value="'+todayS()+'"><span class="note" data-dl="d_site">'+mdh(todayS())+'</span></label>'+
       '<div class="row"><button class="btn pri" type="button" data-act="site">'+TYPES[c.type].site+'を済みにする</button>'+
       (c.type==="kinkyu"?'<button class="btn" type="button" data-act="rushwin">見積を省いて受注へ（緊急）</button>':'')+'</div>'+
       (c.type==="kinkyu"?'<p class="note" style="margin:0">「見積を省いて受注へ」は、緊急で先に施工する場合の仮の操作です。実際の運用に合わせて見直します。</p>':'')+'</div>';
-  }else if(c.stage==="site"){
+  }else if(c.stage==="site"||(isEizen(c)&&c.stage==="new")){
     act='<div class="panel"><h3>次にやること：見積の提出</h3>'+
       (isTaikyo(c)&&c.items.length?'<div class="ro">見積額は立会の箇所の合計 <b class="num" id="d_itemsTotal">'+yen(itemsSum(c))+'</b> です。</div>':'<label class="f">見積額（税込・円）<input type="number" inputmode="numeric" id="d_est" value="'+h(c.estAmount??"")+'"></label>')+
       '<label class="f">提出日<input type="date" id="d_sent" value="'+todayS()+'"></label>'+
@@ -806,9 +815,11 @@ function vDetail(){
   }else if(c.stage==="quoted"||c.stage==="hold"){
     act='<div class="panel"><h3>次にやること：結論を付ける</h3>'+
       '<p class="note" style="margin:0">提出から'+DB.settings.reply+'日で「受注か失注かを確認」のToDoが期限になります。結論を付けると毎日の一覧から外れます。</p>'+
-      '<div class="row"><label class="f" style="flex:1">受注日<input type="date" id="d_order" value="'+todayS()+'"></label><button class="btn pri" type="button" data-act="win" style="align-self:flex-end">受注にする</button></div>'+
+      '<div class="row"><label class="f" style="flex:1">受注日<input type="date" id="d_order" value="'+todayS()+'"></label><button class="btn pri" type="button" data-act="win" style="align-self:flex-end">'+(isEizen(c)?"受注して施工へ":"受注にする")+'</button></div>'+
       '<div class="row"><label class="f" style="flex:1">失注の理由<select id="d_loss">'+LOSS.map(s=>'<option>'+s+'</option>').join("")+'</select></label><button class="btn danger" type="button" data-act="lose" style="align-self:flex-end">失注にする</button></div>'+
       '<div class="row"><label class="f" style="flex:1">次に確認する日（必須）<input type="date" id="d_hold" value="'+h(c.holdDate||addDays(todayS(),7))+'"></label><button class="btn" type="button" data-act="hold" style="align-self:flex-end">保留にする</button></div></div>';
+  }else if(isEizen(c)&&c.stage==="won"){
+    act='<div class="panel"><h3>次にやること：施工</h3><button class="btn pri" type="button" data-act="eizenwork">施工へ進む</button></div>';
   }else if(c.stage==="won"){
     act='<div class="panel"><h3>次にやること：Accessへ引渡</h3>'+
       '<p class="note" style="margin:0">Accessで現場管理表を作成し、振られた仕事番号を入力してください。引渡後も、施工完了・請求・入金済みになるまで「動いている案件」に残ります。</p>'+
@@ -817,7 +828,7 @@ function vDetail(){
   }else if(c.stage==="lost"){
     act='<div class="ro">失注（'+h(c.lossReason)+'・'+md(c.lossDate)+'）。毎日の一覧には出ません。<button class="btn sm" type="button" data-act="reopen">見積提出済に戻す</button></div>';
   }else if(ro){
-    act='<div class="ro"><b>Access引渡済</b>　仕事番号 <b class="num">'+h(c.jobNo)+'</b>（'+md(c.handedDate)+'）<br>受付内容と立会の記録は読み取り専用です。施工完了・請求・入金はここで記録します。</div>'+payPanel(c);
+    act=(isEizen(c)?'<div class="ro">受付・見積の記録は読み取り専用です。施工完了・請求・入金を記録します。</div>':'<div class="ro"><b>Access引渡済</b>　仕事番号 <b class="num">'+h(c.jobNo)+'</b>（'+md(c.handedDate)+'）<br>受付内容と立会の記録は読み取り専用です。施工完了・請求・入金はここで記録します。</div>')+payPanel(c);
   }
   const ph=photos[c.id]||[];
   return '<button class="back" type="button" data-nav="cases">‹ 案件へ戻る</button>'+
@@ -843,7 +854,7 @@ function vDetail(){
     (c.billDate?'<dt>請求</dt><dd class="num">'+md(c.billDate)+'・'+yen(c.billAmount)+'</dd><dt>請求先</dt><dd>'+h(c.billTo)+'</dd><dt>入金予定</dt><dd class="num">'+mdh(c.payDue)+'</dd>':'')+
     (c.paidDate?'<dt>入金済</dt><dd class="num">'+md(c.paidDate)+'</dd>':'')+
     '<dt>メモ</dt><dd>'+(h(c.note)||"—")+'</dd></dl></div>'+
-  (c.stage==="new"&&c.type!=="kinkyu"?gcalPreview(c):'')+
+  (c.stage==="new"&&c.type!=="kinkyu"&&!isEizen(c)?gcalPreview(c):'')+
   (isTaikyo(c)?itemsPanel(c,ro||lockEst&&c.stage!=="new"):'')+
   '<div class="panel"><h3>写真</h3>'+
     (ph.length?'<div class="photos">'+ph.map(src=>'<img alt="現地写真" src="'+src+'">').join("")+'</div>':'<p class="note" style="margin:0">まだ写真がありません。</p>')+
@@ -998,9 +1009,8 @@ async function gReadOne(cal,from,to,mine){
     const v=await gApi("calendars/"+encodeURIComponent(cal.id)+"/events?"+q);
     for(const e of (v&&v.items)||[]){
       if(!e||e.status==="cancelled"||!e.start)continue;
-      /* events this device registered are already shown as HUB events */
+      /* HUBから登録した予定もGoogleの予定として表示する。案件の進捗印は予定画面に足さない */
       const hub=e.extendedProperties&&e.extendedProperties.private&&e.extendedProperties.private.cpgHubCase;
-      if(hub&&mine.has(hub))continue;
       const allDay=!!e.start.date;
       /* 非公開の予定は、そのカレンダーの持ち主以外には中身を出さず「予定あり」だけにする（Google側で見える権限があっても） */
       const hide=!e.summary||(!cal.primary&&!cal.owner&&(e.visibility==="private"||e.visibility==="confidential"));
@@ -1108,9 +1118,7 @@ const hm=d=>pad(d.getHours())+":"+pad(d.getMinutes());
 /* Spread each event over the days it covers (all-day "end" is the day after the last day) */
 function gcalByDay(j){
   const by={};
-  const roh=roHub(); /* 社員がHUBから登録した予定は、社員の案件の予定として出すので二重にしない */
   for(const e of (j&&j.events)||[]){
-    if(e.hub&&roh.has(e.hub))continue;
     const allDay=!!e.allDay, st=allDay?parseYmd(e.start):new Date(e.start), en=allDay?parseYmd(e.end):new Date(e.end);
     if(!st||isNaN(st))continue;
     const first=ymd(st);
@@ -1130,22 +1138,20 @@ function gcalStatus(g){
     return '<p class="gcst">前回の同期（'+hmd(g.at)+'）の予定を表示しています。最新にするには「Googleとまとめて同期」を押してください。'+cals.map(n=>'<span class="ev '+gcalColor(n)+'">'+h(gcalLabel(n))+'</span>').join("")+'</p>'}
   if(g.state==="off")return '<p class="gcst">Googleカレンダー未接続（「Googleとまとめて同期」を押すと表示されます）'+(g.msg?'：'+h(g.msg):'')+'</p>';
   if(g.state==="loading"&&!g.data)return '<p class="gcst">Googleカレンダーを読み込み中…</p>';
-  if(g.state==="error")return '<p class="gcst" style="color:var(--amber)">Googleカレンダーを読めませんでした（'+h(g.msg)+'）。HUBの予定だけを表示しています。</p>';
+  if(g.state==="error")return '<p class="gcst" style="color:var(--amber)">Googleカレンダーを読めませんでした（'+h(g.msg)+'）。'+(g.data?'前回取得したGoogleの予定を表示しています。':'Googleの予定は表示できません。')+'</p>';
   const cals=(g.data&&g.data.calendars)||[];
   return '<p class="gcst">Googleカレンダー：'+(cals.map(n=>'<span class="ev '+gcalColor(n)+'">'+h(gcalLabel(n))+'</span>').join("")||'表示するカレンダーがありません')+
     (g.data&&g.data.missing?'<span>（読めないカレンダーが'+Number(g.data.missing)+'つあります）</span>':'')+(g.state==="loading"?'<span>更新中…</span>':'')+'</p>';
 }
 function vCal(){
-  const t=todayS(), by={};
-  const slot=d=>by[d]=by[d]||{ev:[],td:[]};
-  eventsOf().forEach(e=>slot(e.d).ev.push(e));
-  genTodos().concat(roTodos()).forEach(x=>{if(x.due)slot(x.due).td.push(x)});
-  const day=s=>by[s]||{ev:[],td:[]};
+  const t=todayS();
+  const dueToday=genTodos().concat(roTodos()).filter(x=>!x.done&&/^\d{4}-\d{2}-\d{2}$/.test(x.due||"")&&x.due<=t);
+  const day=s=>({td:s===t?dueToday:[]});
   const [rFrom,rTo]=calRange();
   const g=gcalRange(rFrom,rTo), gby=g.data?gcalByDay(g.data):{}, gday=s=>gby[s]||[];
-  const gst=gSyncPanel()+gcalStatus(g)+roNote();
-  const legend='<div class="legend"><span><i style="background:var(--accent-soft)"></i>立会・調査の予定</span><span><i style="background:var(--green-soft)"></i>実施</span><span><i style="background:var(--amber-soft)"></i>見積提出</span><span><i style="background:var(--sunk)"></i>受注</span><span><i style="background:var(--red)"></i>土日祝の立会</span></div>';
-  const note='<p class="note" style="margin:0">社内会議・客先会議・営業活動は次の段階で追加します。</p>';
+  const gst=gSyncPanel()+gcalStatus(g);
+  const legend="";
+  const note='<p class="note" style="margin:0">予定はGoogleカレンダーから表示します。案件の進捗は「案件」「ガント」で確認してください。ToDoは「ToDo」で管理し、今日が期限・期限を過ぎた未完了のものだけ今日の欄にも表示します。</p>';
   const views='<div class="seg cv" role="group" aria-label="表示の切り替え">'+[["month","月"],["week","週"],["day","日"]].map(([k,l])=>'<button type="button" data-cv="'+k+'" aria-pressed="'+(ui.calView===k)+'">'+l+'</button>').join("")+'</div>';
   const nav=(step,title,todayLabel,prevLabel,nextLabel)=>'<div class="calnav"><button class="btn sm" type="button" data-shift="'+(-step)+'" aria-label="'+prevLabel+'">‹</button><h2 class="num">'+title+'</h2>'+
     '<button class="btn sm" type="button" data-shift="today">'+todayLabel+'</button><button class="btn sm" type="button" data-shift="'+step+'" aria-label="'+nextLabel+'">›</button></div>';
@@ -1157,9 +1163,8 @@ function vCal(){
     for(let i=0;i<7;i++){
       const s=addDays(from,i), d=parseYmd(s), b=day(s), hol=holidayName(s);
       const kind=dayKind(s), cls=["wkd",s===t?"today":"",kind].join(" ");
-      const items=b.ev.map(e=>'<button type="button" class="wkev" data-open="'+h(e.c.id)+'"><span class="'+evCls(e)+'">'+h(e.label)+'</span><span class="t">'+h(e.c.property)+' '+h(e.c.room)+'</span>'+(e.c.ro?personBadge(e.c.tantou):'')+'</button>').join("")+
-        gday(s).map(x=>'<div class="wkev gcev"><span class="ev '+gcalColor(x.cal)+'">'+h(gcalLabel(x.cal))+'</span><span class="t">'+(x.time==="終日"?"":h(x.time.replace(/〜.*$/,"〜"))+' ')+h(x.title)+'</span></div>').join("")+
-        b.td.map(x=>'<div class="wkev td'+(s<t?" over":"")+'"><span class="ev td'+(s<t?" over":"")+'">ToDo</span><span class="t">'+h(x.title)+'</span></div>').join("");
+      const items=gday(s).map(x=>'<div class="wkev gcev"><span class="ev '+gcalColor(x.cal)+'">'+h(gcalLabel(x.cal))+'</span><span class="t">'+(x.time==="終日"?"":h(x.time.replace(/〜.*$/,"〜"))+' ')+h(x.title)+'</span></div>').join("")+
+        b.td.map(x=>'<button type="button" data-nav="todo" class="wkev td'+(x.due<t?" over":"")+'"><span class="ev td'+(x.due<t?" over":"")+'">ToDo</span><span class="t">'+h(x.title)+'</span>'+dueLabel(x.due)+'</button>').join("");
       rows+='<div class="wkrow '+kind+(s===ui.calDay?" sel":"")+'"><button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+mdw(s)+(hol?' '+hol:'')+'を日表示で開く"'+(s===t?' aria-current="date"':'')+'><span class="dn">'+d.getDate()+'</span><span class="dw">'+WD[d.getDay()]+'</span></button>'+
         '<div class="wki">'+(hol?'<span class="hol-name">'+hol+'</span>':'')+(items||'<span class="wknone">予定なし</span>')+'</div></div>';
     }
@@ -1171,10 +1176,9 @@ function vCal(){
     const sel=day(ui.calDay);
     const gRows=gday(ui.calDay).map(x=>'<div class="card gccard"><div class="row"><span class="ev '+gcalColor(x.cal)+'" style="font-size:12px;padding:1px 6px">'+h(gcalLabel(x.cal))+'</span><span class="note num">'+h(x.time)+'</span></div>'+
       '<div class="ttl">'+h(x.title)+'</div>'+(x.loc?'<div class="row note"><span style="min-width:0;overflow-wrap:anywhere">'+h(x.loc)+'</span><a class="btn sm" style="display:inline-flex;align-items:center;text-decoration:none" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(x.loc)+'">地図</a></div>':'')+'</div>').join("");
-    const evRows=sel.ev.map(e=>'<button type="button" class="card" data-open="'+h(e.c.id)+'"><div class="row"><span class="'+evCls(e)+'" style="font-size:12px;padding:1px 6px">'+h(e.label)+'</span>'+typeChip(e.c)+'<span class="sp"></span>'+stagePill(e.c)+'</div><div class="ttl">'+h(e.c.property)+' '+h(e.c.room)+'</div><div class="row note"><span>'+h(e.c.client)+'</span>'+(e.c.ro?personBadge(e.c.tantou)+roChip():'<span>担当 '+h(e.c.tantou)+'</span>')+'</div></button>').join("");
     return '<section class="sec">'+gst+views+
       nav(1,'<span class="dtitle '+dayKind(ui.calDay)+'">'+mdw(ui.calDay)+'</span>'+(holidayName(ui.calDay)?' <span class="hol-name">'+holidayName(ui.calDay)+'</span>':''),"今日","前の日","次の日")+
-      '<div class="list">'+evRows+gRows+sel.td.map(todoRow).join("")+((evRows||gRows||sel.td.length)?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div>'+note+'</section>';
+      '<div class="list">'+gRows+sel.td.map(x=>'<button type="button" class="card" data-nav="todo"><div class="row"><span class="chip">ToDo</span><span class="ttl">'+h(x.title)+'</span>'+dueLabel(x.due)+'</div><span class="note">ToDo画面で確認する</span></button>').join("")+((gRows||sel.td.length)?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div>'+note+'</section>';
   }
   const [y,m]=ui.calMonth.split("-").map(Number);
   const first=new Date(y,m-1,1), start=new Date(y,m-1,1-first.getDay());
@@ -1182,10 +1186,10 @@ function vCal(){
   for(let i=0;i<42;i++){
     const dt=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i), s=ymd(dt), b=day(s), hol=holidayName(s);
     const cls=["d",dt.getMonth()!==m-1?"out":"",s===t?"today":"",s===ui.calDay?"sel":"",dayKind(s)].join(" ");
-    const all=b.ev.map(e=>[evCls(e),e.label]).sort((a,c)=>c[0].endsWith(" off")-a[0].endsWith(" off")).concat(gday(s).map(x=>["ev "+gcalColor(x.cal),gcalLabel(x.cal)+" "+x.title]));
+    const all=gday(s).map(x=>["ev "+gcalColor(x.cal),gcalLabel(x.cal)+" "+x.title]);
     const shown=all.slice(0,2).map(([cl,l])=>'<span class="'+cl+'">'+h(l)+'</span>').join("");
     const more=all.length>2?'<span class="ev td">ほか'+(all.length-2)+'件</span>':'';
-    const tdl=b.td.length?'<span class="ev td'+(s<t?" over":"")+'">ToDo '+b.td.length+'</span>':'';
+    const tdl=b.td.length?'<span class="ev td'+(b.td.some(x=>x.due<t)?" over":"")+'">ToDo '+b.td.length+'</span>':'';
     cells+='<button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+(dt.getMonth()+1)+'月'+dt.getDate()+'日'+(hol?' '+hol:'')+'を日表示で開く"><span class="n">'+dt.getDate()+'</span>'+(hol?'<span class="hn">'+hol+'</span>':'')+shown+more+tdl+'</button>';
   }
   return '<section class="sec">'+gst+views+'<div class="calnav"><button class="btn sm" type="button" data-mon="-1" aria-label="前の月">‹</button><h2 class="num">'+y+'年'+m+'月</h2><button class="btn sm" type="button" data-mon="0">今月</button><button class="btn sm" type="button" data-mon="1" aria-label="次の月">›</button></div>'+
@@ -1197,7 +1201,7 @@ function vGantt(){
   const DAYS=29, W=26, from=addDays(todayS(),-14), t=todayS();
   const x=s=>Math.max(0,Math.min(DAYS,diffDays(s,from)));
   const todos=genTodos().concat(roTodos());
-  const order={new:0,site:1,quoted:2,hold:3,won:4,handed:5,built:6,billed:7};
+  const order={new:0,site:1,quoted:2,hold:3,won:4,handed:5,working:5,built:6,billed:7};
   const gco=ui.gCo||"all";
   const act=allCases().filter(c=>!ended(c)&&(gco==="all"||c.company===gco)), tans=[...new Set(act.map(c=>c.tantou||"未設定"))];
   if(ui.gTantou&&ui.gTantou!=="all"&&!tans.includes(ui.gTantou))ui.gTantou="all";
@@ -1208,8 +1212,8 @@ function vGantt(){
   const todayLine='<span class="gtoday" style="left:'+(x(t)*W+W/2)+'px"></span>';
   const rows=list.map(c=>{
     const r=c.receivedAt?ymd(new Date(c.receivedAt)):t;
-    let bars=seg(r,c.siteDate||t,"g-new");
-    if(c.siteDate)bars+=seg(c.siteDate,c.estSentDate||t,"g-site");
+    let bars=isEizen(c)?seg(r,c.estSentDate||t,"g-site"):seg(r,c.siteDate||t,"g-new");
+    if(!isEizen(c)&&c.siteDate)bars+=seg(c.siteDate,c.estSentDate||t,"g-site");
     if(c.estSentDate)bars+=seg(c.estSentDate,c.orderDate||t,c.stage==="hold"?"g-hold":"g-wait");
     if(c.orderDate)bars+=seg(c.orderDate,t,"g-won");
     if(c.planDate&&c.stage==="new"&&diffDays(c.planDate,from)>=0&&diffDays(c.planDate,from)<DAYS)bars+='<span class="gplan" style="left:'+(x(c.planDate)*W+W/2)+'px" title="'+TYPES[c.type].site+'予定 '+md(c.planDate)+'"></span>';
@@ -1267,7 +1271,7 @@ function vStats(){
     ''+
     '</form></section>'+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.33 用）を開く</a></section>';
+  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.34 用）を開く</a></section>';
 }
 function gSettings(){
   const head='<section class="sec"><div class="sec-h"><h2>Googleカレンダー連携</h2></div>';
@@ -2163,7 +2167,8 @@ document.addEventListener("click",e=>{
     if(!(isTaikyo(c)&&c.items.length)){const v=val("d_est");if(v===""){toast("見積額を入力してください");return}c.estAmount=Number(v)}
     if(isTaikyo(c)&&c.items.some(i=>i.burden==="要確認")){toast("負担区分が「要確認」の箇所があります。先に決めてください");return}
     c.estSentDate=val("d_sent")||todayS();c.stage="quoted";save();render();toast("見積を提出済みにしました");return}
-  if(a==="win"){c.orderDate=val("d_order")||todayS();c.stage="won";c.holdDate="";save();render();toast("受注にしました。Accessへ引き渡してください");return}
+  if(a==="win"){c.orderDate=val("d_order")||todayS();c.stage=isEizen(c)?"working":"won";c.holdDate="";save();render();toast(isEizen(c)?"受注しました。施工完了を記録できます":"受注にしました。Accessへ引き渡してください");return}
+  if(a==="eizenwork"&&isEizen(c)&&c.stage==="won"){c.stage="working";save();render();return}
   if(a==="lose"){c.lossReason=val("d_loss");c.lossDate=todayS();c.stage="lost";c.holdDate="";save();render();toast("失注にしました。毎日の一覧から外れます");return}
   if(a==="hold"){const d=val("d_hold");if(!d){toast("次に確認する日を入れてください");return}c.holdDate=d;c.stage="hold";save();render();toast(md(d)+"に再確認のToDoを出します");return}
   if(a==="built"){c.builtDate=val("d_built")||todayS();c.stage="built";save();render();toast("施工完了にしました。次は請求です");return}
