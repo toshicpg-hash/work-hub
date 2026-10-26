@@ -289,7 +289,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.34・10/26更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.35・10/26更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -949,10 +949,10 @@ const evCls=e=>"ev "+e.k+(e.c.type==="taikyo"&&(e.k==="plan"||e.k==="site")&&day
 const mdw=s=>{const d=parseYmd(s);return (d.getMonth()+1)+"月"+d.getDate()+"日（"+WD[d.getDay()]+"）"};
 
 /* Google連携。PAPA HUBと同じ方式（Google Identity Servicesのトークン、同じ公開クライアントID）。
-   トークンと取得した予定はメモリだけに置き、localStorageには保存しない（案件に付けた予定IDだけ保存する） */
+   トークンはメモリだけ。取得した予定は、読み込み対象のカレンダーIDとともにこの端末へ残す */
 const GOOGLE_CLIENT_ID="766726293537-1e4kdsqmoit29rbvh559fnmha3q0s6up.apps.googleusercontent.com";
 const GSCOPE="https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events";
-const G={token:"",exp:0,scope:"",cals:null,pending:null};
+const G={token:"",exp:0,scope:"",cals:null,pending:null,readEpoch:0};
 const GNAMES={"only.1.mybrand@gmail.com":"黒木","h-kuroki@cleanpapa.com":"黒木","toshi.cpg@gmail.com":"社長"};
 const gSignedIn=()=>!!G.token&&Date.now()<G.exp;
 /* Must be called directly from a tap so the Google window is not blocked */
@@ -967,17 +967,17 @@ function gAuthorize(withData){
     callback:r=>{if(!r||r.error||!r.access_token){rej(new Error(r&&r.error==="access_denied"?"denied":"auth"));return}
       const sc=typeof r.scope==="string"?r.scope:need;
       if(withData&&!DSCOPE.split(" ").every(x=>sc.split(/\s+/).includes(x))){rej(new Error("denied"));return} /* the person unticked the Drive / Sheets permission */
-      G.token=r.access_token;G.scope=sc;G.exp=Date.now()+Math.max(0,(Number(r.expires_in)||3600)-60)*1000;res()},
+      gResetReads(true);G.cals=null;G.token=r.access_token;G.scope=sc;G.exp=Date.now()+Math.max(0,(Number(r.expires_in)||3600)-60)*1000;res()},
     error_callback:e=>rej(new Error(e&&e.type==="popup_failed_to_open"?"popup":e&&e.type==="popup_closed"?"closed":"auth"))}).requestAccessToken({prompt:""})}catch(e){rej(new Error("auth"))}});
   G.pending=p;p.then(()=>{G.pending=null},()=>{G.pending=null});return p;
 }
 async function gApi(path,opt){
   if(!gSignedIn())throw new Error("signin");
-  const o=opt||{}, ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(),20000);
+  const token=G.token, o=opt||{}, ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(),20000);
   try{
     const r=await fetch("https://www.googleapis.com/calendar/v3/"+path,{method:o.method||"GET",signal:ctl.signal,cache:"no-store",credentials:"omit",
-      headers:Object.assign({Authorization:"Bearer "+G.token},o.body?{"Content-Type":"application/json"}:{}),body:o.body?JSON.stringify(o.body):undefined});
-    if(r.status===401){G.token="";G.exp=0;throw new Error("signin")}
+      headers:Object.assign({Authorization:"Bearer "+token},o.body?{"Content-Type":"application/json"}:{}),body:o.body?JSON.stringify(o.body):undefined});
+    if(r.status===401){if(G.token===token){G.token="";G.exp=0}throw new Error("signin")}
     if(!r.ok){const e=new Error("http");e.status=r.status;throw e}
     return r.status===204?null:await r.json();
   }finally{clearTimeout(tm)}
@@ -986,27 +986,53 @@ const gMsg=err=>{const m=err&&err.message;return m==="gis"?"Googleの読み込�
   m==="signin"?"もう一度「Googleとまとめて同期」を押してください":m==="nowrite"?"書き込めるカレンダーがありません":err&&err.name==="AbortError"?"時間切れ":err&&err.status===403?"権限がありません":err&&err.status===404?"見つかりません":"通信できませんでした"};
 const gCalName=c=>c.primary?"自分":GNAMES[c.id]||c.summaryOverride||c.summary||c.id;
 async function gLoadCalendars(){
-  let page="", items=[];
-  do{const v=await gApi("users/me/calendarList?maxResults=250"+(page?"&pageToken="+encodeURIComponent(page):""));items.push(...((v&&v.items)||[]));page=(v&&v.nextPageToken)||""}while(page);
+  const epoch=G.readEpoch;let page="", items=[];
+  do{const v=await gApi("users/me/calendarList?maxResults=250"+(page?"&pageToken="+encodeURIComponent(page):""));if(epoch!==G.readEpoch)throw new Error("stale");items.push(...((v&&v.items)||[]));page=(v&&v.nextPageToken)||""}while(page);
+  if(epoch!==G.readEpoch)throw new Error("stale");
   G.cals=items.filter(c=>c&&c.id&&!c.deleted).map(c=>({id:c.id,name:gCalName(c),primary:!!c.primary,owner:c.accessRole==="owner",write:c.accessRole==="owner"||c.accessRole==="writer"}));
+  gResetReads();gCleanReadPrefs(true);
   return G.cals;
 }
 /* 会社みんなで使う共有カレンダーの名前。社長個人の仕事カレンダー「CPG」とは別にする */
 const GSHARED="CPG HUB";
-/* Shown calendars: the saved choice, or the shared calendar, the signed-in person's own calendar and the named people's calendars.
-   社長個人の「CPG」はPAPA HUB側で見るので、初期表示には入れない */
-const gShowIds=()=>Array.isArray(DB.settings.gShow)?DB.settings.gShow:(G.cals||[]).filter(c=>c.primary||c.name===GSHARED||GNAMES[c.id]).map(c=>c.id);
+/* Read privacy policy, not a device preference: never import the president's personal primary calendar.
+   Match the stable calendar ID, not its mutable label (「自分」 / 「社長」). Other staff primary calendars remain available.
+   Keep G.cals intact: write destinations and admin-account recognition must not change. */
+const GPRIVATE_ID="toshi.cpg@gmail.com";
+const gIdKey=id=>typeof id==="string"?id.trim().toLowerCase():"";
+const gConcreteReadable=id=>!!gIdKey(id)&&gIdKey(id)!=="primary"&&gIdKey(id)!==GPRIVATE_ID;
+const gReadId=id=>gIdKey(id)==="primary"?((G.cals||[]).find(c=>c.primary&&gIdKey(c.id)!=="primary")||{}).id||"":id;
+const gReadable=c=>!!c&&gConcreteReadable(gReadId(c.id));
+const gFilterReadIds=ids=>[...new Set(ids.map(gReadId).filter(gConcreteReadable))];
+/* An explicit empty selection stays empty; it must never turn back into the defaults. */
+const gShowIds=()=>gFilterReadIds(Array.isArray(DB.settings.gShow)?DB.settings.gShow:(G.cals||[]).filter(c=>c.primary||c.name===GSHARED||GNAMES[c.id]).map(c=>c.id));
+function gCleanReadPrefs(resolvePrimary){
+  const old=DB.settings.gShow;if(!Array.isArray(old))return;
+  const ids=resolvePrimary?gFilterReadIds(old):old.filter(id=>gConcreteReadable(id)||gIdKey(id)==="primary");
+  if(JSON.stringify(old)!==JSON.stringify(ids)){DB.settings.gShow=ids;save()}
+}
+/* Every render/cache boundary checks provenance; labels alone cannot prove that a legacy event is safe. */
+function gSafeData(data){
+  if(!data)return data;
+  const selected=Array.isArray(DB.settings.gShow)?new Set(gShowIds().map(gIdKey)):null;
+  const allowed=id=>gConcreteReadable(id)&&(!selected||selected.has(gIdKey(id)));
+  const events=(Array.isArray(data.events)?data.events:[]).filter(e=>e&&allowed(e.calendarId));
+  const sources=(Array.isArray(data.sources)?data.sources:[]).filter(c=>c&&allowed(c.id));
+  return {...data,events,sources,calendars:[...new Set(sources.map(c=>c.name))]};
+}
 const gWritable=()=>(G.cals||[]).filter(c=>c.write);
 const gWriteCal=()=>{const w=gWritable();return w.find(c=>c.id===DB.settings.gWrite)||w.find(c=>c.name===GSHARED)||null};
-const gCalOf=id=>(G.cals||[]).find(c=>c.id===id);
+const gCalOf=id=>(G.cals||[]).find(c=>gIdKey(c.id)===gIdKey(gReadId(id)));
 /* カレンダーごとの読み込みは同時に行う（PAPA HUBと同じく並行で、待ち時間を短くする） */
 async function gReadOne(cal,from,to,mine){
-  const out=[];let page="";
+  const calendarId=gReadId(cal&&cal.id);if(!gConcreteReadable(calendarId))return [];
+  const epoch=G.readEpoch, out=[];let page="";
   do{
     const q=new URLSearchParams({timeZone:"Asia/Tokyo",singleEvents:"true",orderBy:"startTime",maxResults:"2500",timeMin:from+"T00:00:00+09:00",timeMax:addDays(to,1)+"T00:00:00+09:00",
       fields:"items(id,status,summary,location,visibility,start,end,extendedProperties/private),nextPageToken"});
     if(page)q.set("pageToken",page);
-    const v=await gApi("calendars/"+encodeURIComponent(cal.id)+"/events?"+q);
+    const v=await gApi("calendars/"+encodeURIComponent(calendarId)+"/events?"+q);
+    if(epoch!==G.readEpoch)throw new Error("stale");
     for(const e of (v&&v.items)||[]){
       if(!e||e.status==="cancelled"||!e.start)continue;
       /* HUBから登録した予定もGoogleの予定として表示する。案件の進捗印は予定画面に足さない */
@@ -1014,20 +1040,21 @@ async function gReadOne(cal,from,to,mine){
       const allDay=!!e.start.date;
       /* 非公開の予定は、そのカレンダーの持ち主以外には中身を出さず「予定あり」だけにする（Google側で見える権限があっても） */
       const hide=!e.summary||(!cal.primary&&!cal.owner&&(e.visibility==="private"||e.visibility==="confidential"));
-      out.push({hub:hub||"",calendar:cal.name,title:hide?"予定あり":e.summary,location:hide?"":e.location||"",allDay,start:allDay?e.start.date:e.start.dateTime,end:allDay?(e.end&&e.end.date)||addDays(e.start.date,1):(e.end&&e.end.dateTime)||e.start.dateTime});
+      out.push({hub:hub||"",calendarId,calendar:cal.name,title:hide?"予定あり":e.summary,location:hide?"":e.location||"",allDay,start:allDay?e.start.date:e.start.dateTime,end:allDay?(e.end&&e.end.date)||addDays(e.start.date,1):(e.end&&e.end.dateTime)||e.start.dateTime});
     }
     page=(v&&v.nextPageToken)||"";
   }while(page);
   return out;
 }
 async function gReadRange(from,to){
-  const ids=gShowIds(), mine=new Set(DB.cases.map(c=>c.id));
+  const epoch=G.readEpoch, ids=gShowIds(), mine=new Set(DB.cases.map(c=>c.id));
   const cals=ids.map(gCalOf);
   const res=await Promise.allSettled(cals.map(cal=>cal?gReadOne(cal,from,to,mine):Promise.reject(new Error("nocal"))));
+  if(epoch!==G.readEpoch)throw new Error("stale");
   if(res.some(r=>r.status==="rejected"&&r.reason&&r.reason.message==="signin"))throw new Error("signin");
-  const events=[], calendars=[];let missing=0;
-  res.forEach((r,i)=>{if(r.status==="fulfilled"){events.push(...r.value);calendars.push(cals[i].name)}else missing++});
-  return {events,calendars,missing};
+  const events=[], sources=[];let missing=0;
+  res.forEach((r,i)=>{if(r.status==="fulfilled"){events.push(...r.value);sources.push({id:gReadId(cals[i].id),name:cals[i].name})}else missing++});
+  return gSafeData({events,sources,missing});
 }
 const GCAL_TTL=5*60000, GCAL_ERR_TTL=60000, gcalCache={}, gcalColorIdx={};
 /* 前の月の初めから次の月の終わりまでを一度に読み、日・週・月の移動やスワイプでは読み直さない */
@@ -1036,19 +1063,26 @@ function gWin(from,to){
   return [ymd(new Date(a.getFullYear(),a.getMonth()-1,1)),ymd(new Date(b.getFullYear(),b.getMonth()+2,0))];
 }
 /* 最後に読んだGoogleの予定をこの端末に残し、開き直したときは同期するまでそれを表示する（ログイン情報は残さない） */
-const GKEEP="workhub_gcal_last_v1", GKEEP_DAYS=30;
-function gKeepSave(e){const t=todayS();if(!(e.from<=t&&e.to>=t))return;/* 今日を含む範囲だけ残す */try{localStorage.setItem(GKEEP,JSON.stringify({at:e.at,from:e.from,to:e.to,data:e.data}))}catch(err){}}
-function gKeepLoad(){try{const k=JSON.parse(localStorage.getItem(GKEEP)||"null");if(!k||!k.data||Date.now()-k.at>GKEEP_DAYS*864e5)return null;return k}catch(err){return null}}
+const GKEEP="workhub_gcal_last_v1", GKEEP_DAYS=30, GKEEP_POLICY=2;
+function gDropKept(){try{localStorage.removeItem(GKEEP)}catch(err){}}
+function gResetReads(dropKept=false){G.readEpoch++;for(const k in gcalCache)delete gcalCache[k];if(dropKept)gDropKept()}
+function gKeepSave(e){const t=todayS();if(!(e.from<=t&&e.to>=t))return;/* 今日を含む範囲だけ残す */try{localStorage.setItem(GKEEP,JSON.stringify({policy:GKEEP_POLICY,at:e.at,from:e.from,to:e.to,data:gSafeData(e.data)}))}catch(err){}}
+function gKeepLoad(){try{
+  const raw=localStorage.getItem(GKEEP), k=JSON.parse(raw||"null");if(!k)return null;
+  /* v1.34 and earlier have display names only. Remove that cache before any screen can render it. */
+  if(k.policy!==GKEEP_POLICY||!k.data||!Number.isFinite(k.at)||Date.now()-k.at>GKEEP_DAYS*864e5){gDropKept();return null}
+  k.data=gSafeData(k.data);const clean=JSON.stringify(k);if(clean!==raw)localStorage.setItem(GKEEP,clean);return k;
+}catch(err){gDropKept();return null}}
 const hmd=t=>{const d=new Date(t);return (d.getMonth()+1)+"/"+d.getDate()+" "+pad(d.getHours())+":"+pad(d.getMinutes())};
 function gcalRange(from,to){
   if(!gSignedIn()||!G.cals){const k=gKeepLoad();return k&&k.from<=from&&k.to>=to?{state:"kept",data:k.data,at:k.at}:{state:"off"}}
   const ids=gShowIds().join(",");
   for(const k in gcalCache){const c=gcalCache[k];
-    if(c.ids===ids&&c.from<=from&&c.to>=to&&(c.state==="loading"||Date.now()-c.at<(c.state==="ok"?GCAL_TTL:GCAL_ERR_TTL)))return c}
+    if(c.ids===ids&&c.from<=from&&c.to>=to&&(c.state==="loading"||Date.now()-c.at<(c.state==="ok"?GCAL_TTL:GCAL_ERR_TTL))){c.data=gSafeData(c.data);return c}}
   const [wf,wt]=gWin(from,to), k=ids+"|"+wf+"|"+wt, old=gcalCache[k];
-  const e=gcalCache[k]={state:"loading",at:Date.now(),data:old&&old.data,ids,from:wf,to:wt};
+  const epoch=G.readEpoch, e=gcalCache[k]={state:"loading",at:Date.now(),data:gSafeData(old&&old.data),ids,from:wf,to:wt};
   e.p=gReadRange(wf,wt)
-    .then(j=>{Object.assign(e,{state:"ok",at:Date.now(),data:j});gKeepSave(e)},err=>Object.assign(e,{state:gSignedIn()?"error":"off",at:Date.now(),msg:gMsg(err)}))
+    .then(j=>{if(epoch!==G.readEpoch||gcalCache[k]!==e)return;Object.assign(e,{state:"ok",at:Date.now(),data:gSafeData(j)});gKeepSave(e)},err=>{if(epoch===G.readEpoch)Object.assign(e,{state:gSignedIn()?"error":"off",at:Date.now(),msg:gMsg(err)})})
     .then(()=>{if(ui.view==="cal")render()});
   return e;
 }
@@ -1065,9 +1099,9 @@ async function gSyncAll(){
   try{
     try{await gAuthorize(dataOn());step("Googleにログイン",true,"できました")}catch(err){step("Googleにログイン",false,gMsg(err));return}
     try{const cs=await gLoadCalendars();step("カレンダー一覧",true,cs.length+"件")}catch(err){step("カレンダー一覧",false,gMsg(err));return}
-    for(const x in gcalCache)delete gcalCache[x];
+    gResetReads();const epoch=G.readEpoch;
     const [f0,t0]=calRange(), [f,t]=gWin(f0,t0), ids=gShowIds().join(",");
-    try{const j=await gReadRange(f,t);gcalCache[ids+"|"+f+"|"+t]={state:"ok",at:Date.now(),data:j,ids,from:f,to:t};gKeepSave(gcalCache[ids+"|"+f+"|"+t]);
+    try{const j=await gReadRange(f,t);if(epoch!==G.readEpoch)throw new Error("stale");gcalCache[ids+"|"+f+"|"+t]={state:"ok",at:Date.now(),data:j,ids,from:f,to:t};gKeepSave(gcalCache[ids+"|"+f+"|"+t]);
       step("予定の読み込み",!j.missing,j.events.length+"件・前後の月も含む（"+(j.calendars.join("・")||"表示するカレンダーなし")+"）"+(j.missing?"。読めないカレンダーが"+j.missing+"つあります":""))}
     catch(err){step("予定の読み込み",false,gMsg(err))}
     const moved=DB.cases.filter(c=>c.gcal&&c.gcal.id&&c.gcal.date&&c.planDate&&c.gcal.date!==c.planDate&&!ended(c));
@@ -1118,7 +1152,7 @@ const hm=d=>pad(d.getHours())+":"+pad(d.getMinutes());
 /* Spread each event over the days it covers (all-day "end" is the day after the last day) */
 function gcalByDay(j){
   const by={};
-  for(const e of (j&&j.events)||[]){
+  for(const e of (gSafeData(j)||{}).events||[]){
     const allDay=!!e.allDay, st=allDay?parseYmd(e.start):new Date(e.start), en=allDay?parseYmd(e.end):new Date(e.end);
     if(!st||isNaN(st))continue;
     const first=ymd(st);
@@ -1134,6 +1168,7 @@ function gcalByDay(j){
   return by;
 }
 function gcalStatus(g){
+  g={...g,data:gSafeData(g.data)};
   if(g.state==="kept"){const cals=(g.data&&g.data.calendars)||[];
     return '<p class="gcst">前回の同期（'+hmd(g.at)+'）の予定を表示しています。最新にするには「Googleとまとめて同期」を押してください。'+cals.map(n=>'<span class="ev '+gcalColor(n)+'">'+h(gcalLabel(n))+'</span>').join("")+'</p>'}
   if(g.state==="off")return '<p class="gcst">Googleカレンダー未接続（「Googleとまとめて同期」を押すと表示されます）'+(g.msg?'：'+h(g.msg):'')+'</p>';
@@ -1271,7 +1306,7 @@ function vStats(){
     ''+
     '</form></section>'+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.34 用）を開く</a></section>';
+  '<section class="sec"><a class="btn" href="./manual.html" style="text-decoration:none;text-align:center">使い方マニュアル（v1.35 用）を開く</a></section>';
 }
 function gSettings(){
   const head='<section class="sec"><div class="sec-h"><h2>Googleカレンダー連携</h2></div>';
@@ -1279,7 +1314,7 @@ function gSettings(){
   const show=new Set(gShowIds()), w=gWriteCal();
   return head+'<form id="gsetForm" class="panel">'+
     '<fieldset class="gcals" style="border:0;padding:0;margin:0"><legend class="note">予定画面に表示するカレンダー</legend>'+
-    G.cals.map((c,i)=>'<label><input type="checkbox" name="gshow" value="'+i+'"'+(show.has(c.id)?' checked':'')+'>'+h(c.name)+'</label>').join("")+'</fieldset>'+
+    G.cals.map((c,i)=>!gReadable(c)?"":'<label><input type="checkbox" name="gshow" value="'+i+'"'+(show.has(c.id)?' checked':'')+'>'+h(c.name)+'</label>').join("")+'</fieldset><p class="note" style="margin:0">社長のマイカレンダーは、このアプリでは読み込みません。社員自身のカレンダーと共有のCPG HUBは表示できます。</p>'+
     '<label class="f">案件の日程を登録するカレンダー<select id="g_write">'+(gWritable().map(c=>'<option value="'+h(c.id)+'"'+(w&&w.id===c.id?' selected':'')+'>'+h(c.name)+'</option>').join("")||'<option value="">書き込めるカレンダーがありません</option>')+'</select></label>'+
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div></form></section>';
 }
@@ -2244,7 +2279,7 @@ document.addEventListener("submit",e=>{
   if(f.id==="rsetForm"){const S=RS();S.name=val("rs_name").trim();COMPANIES.forEach(co=>{S.payDays[co]=Number(val("rs_pd_"+co));S.to[co]=val("rs_to_"+co).trim()});S.useCard=document.getElementById("rs_card").checked;save();render();toast("領収書の設定を保存しました");return}
   if(f.id==="todoForm"){DB.todos.push({id:"T"+Date.now(),title:val("td_title").trim(),due:val("td_due"),tantou:val("td_tantou"),done:false});save();render();toast("ToDoを追加しました");return}
   if(f.id==="gsetForm"){const picked=[...f.querySelectorAll('input[name="gshow"]:checked')].map(x=>G.cals[Number(x.value)]).filter(Boolean).map(c=>c.id);
-    DB.settings.gShow=picked;DB.settings.gWrite=val("g_write");for(const x in gcalCache)delete gcalCache[x];save();render();toast("Googleカレンダーの設定を保存しました");return}
+    DB.settings.gShow=gFilterReadIds(picked);DB.settings.gWrite=val("g_write");gResetReads(true);save();render();toast("Googleカレンダーの設定を保存しました");return}
   if(f.id==="setForm"){for(const k of ["schedule","quote","reply","jobno","billAfter","acctWait"]){const v=Number(val("s_"+k));if(!isNaN(v)&&v>=0)DB.settings[k]=v}if(PAY_RULES[val("s_payRule")])DB.settings.payRule=val("s_payRule");save();render();toast("期限の日数を保存しました");return}
 });
 /* 予定画面：横にスワイプして前後へ（日表示は1日、週表示は1週、月表示は1か月） */
@@ -2260,9 +2295,11 @@ main.addEventListener("touchend",e=>{
   render();
 },{passive:true});
 setInterval(()=>{document.querySelectorAll("[data-since]").forEach(el=>el.textContent=since(el.dataset.since))},30000);
+gCleanReadPrefs(false);gKeepLoad(); /* sanitize Google-only state before the first render */
 corpKeepLoad();
 render();
 })();
 </script>
 </body>
 </html>
+

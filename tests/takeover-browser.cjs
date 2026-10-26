@@ -40,7 +40,7 @@ async function main(){
   const {p,c,errors}=await context(width,db);const before=await raw(p);
   await p.evaluate(()=>{testHub.ui.corp={at:Date.now(),kept:true};testHub.ui.corpRO=[{...testHub.CASE_DEFAULTS(),id:'remote・社員',srcId:'remote',ro:true,type:'reno',stage:'new',property:'社員案件',room:'',tantou:'社員',planDate:'2026-10-25'}];testHub.ui.corpTodo=[{title:'社員・超過',due:'2026-10-24',ro:true,tantou:'社員',caseId:'remote・社員'},{title:'社員・未来',due:'2026-10-26',ro:true}];testHub.db.settings.data.admin=true});
   // Seed the existing last-calendar cache, including both local and staff-linked events.
-  await p.evaluate(()=>localStorage.setItem('workhub_gcal_last_v1',JSON.stringify({at:Date.now(),from:'2026-09-01',to:'2026-11-30',data:{calendars:['テスト'],events:[{hub:'U-0100',calendar:'テスト',title:'Googleから取得した予定',allDay:true,start:'2026-10-25',end:'2026-10-26'},{hub:'remote',calendar:'テスト',title:'Google社員予定',allDay:true,start:'2026-10-25',end:'2026-10-26'}]}})));
+  await p.evaluate(()=>localStorage.setItem('workhub_gcal_last_v1',JSON.stringify({policy:2,at:Date.now(),from:'2026-09-01',to:'2026-11-30',data:{sources:[{id:'test-calendar',name:'テスト'}],calendars:['テスト'],events:[{calendarId:'test-calendar',hub:'U-0100',calendar:'テスト',title:'Googleから取得した予定',allDay:true,start:'2026-10-25',end:'2026-10-26'},{calendarId:'test-calendar',hub:'remote',calendar:'テスト',title:'Google社員予定',allDay:true,start:'2026-10-25',end:'2026-10-26'}]}})));
   await go(p,'cal');assert.equal(await p.locator('.cal [data-day="2026-10-25"] .ev.td').innerText(),'ToDo 4');assert.equal(await p.locator('.cal [data-day="2026-10-23"] .ev.td').count(),0);assert.equal(await p.locator('.cal [data-day="2026-10-26"] .ev.td').count(),0);
   assert.equal(await p.locator('.cal [data-day="2026-10-25"] .gc0').count(),2);assert.equal(await p.locator('#main [data-open]').count(),0);
   for(const mode of ['week','day']){
@@ -58,7 +58,7 @@ async function main(){
   await p.route('https://www.googleapis.com/calendar/v3/**',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({items:[{id:'linked',summary:'紐付予定',start:{date:'2026-10-25'},end:{date:'2026-10-26'},extendedProperties:{private:{cpgHubCase:'U-0100'}}},{id:'private',summary:'秘密',location:'秘密場所',visibility:'private',start:{date:'2026-10-25'},end:{date:'2026-10-26'}},{status:'cancelled',start:{date:'2026-10-25'}}]})}));
   const events=await p.evaluate(async()=>{testHub.G.token='test-token';testHub.G.exp=Date.now()+3600000;return testHub.gReadOne({id:'test-calendar',name:'テスト',primary:false,owner:false},'2026-10-01','2026-10-31',new Set(['U-0100']))});
   assert.equal(events.length,2);assert.equal(events[0].title,'紐付予定');assert.equal(events[1].title,'予定あり');assert.equal(events[1].location,'');
-  const days=await p.evaluate(()=>Object.keys(testHub.gcalByDay({events:[{title:'複数日',calendar:'test',allDay:true,start:'2026-10-24',end:'2026-10-27'}]})));assert.deepEqual(days,['2026-10-24','2026-10-25','2026-10-26']);
+  const days=await p.evaluate(()=>Object.keys(testHub.gcalByDay({events:[{calendarId:'test-calendar',title:'複数日',calendar:'test',allDay:true,start:'2026-10-24',end:'2026-10-27'}]})));assert.deepEqual(days,['2026-10-24','2026-10-25','2026-10-26']);
   const status=await p.evaluate(()=>[testHub.gcalStatus({state:'error',msg:'offline'}),testHub.gcalStatus({state:'error',msg:'offline',data:{events:[]}})]);assert(status[0].includes('表示できません'));assert(status[1].includes('前回取得'));assert(!status.join('').includes('HUBの予定だけ'));assert(requests.every(r=>r.method==='GET'));assert.deepEqual(errors,[]);await c.close();
  });
  await check('営繕：受付→見積→保留→施工→請求→一部入金→完了・再読込',async()=>{
@@ -94,3 +94,4 @@ async function main(){
  console.log(JSON.stringify({passed:results.length,environment:'Chromium / synthetic Google / Asia/Tokyo',results},null,2));
 }
 main().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();if(server)server.close()});
+
