@@ -118,6 +118,10 @@ nav.bottom{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--sur
 .cper{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:10px}
 ul.dl{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;overflow-wrap:anywhere}
 .ph{position:relative;display:inline-block}
+.receipt-file{display:flex;flex-direction:column;gap:6px;max-width:100%;min-width:0;padding:8px;border:1px solid var(--line);border-radius:8px;overflow-wrap:anywhere}
+.receipt-file a{font-size:13px;overflow-wrap:anywhere}.receipt-file-name{font-size:12px;color:var(--muted)}
+.receipt-file img{max-width:150px;max-height:150px;object-fit:contain}.receipt-file .phx{position:static;align-self:flex-end}
+.receipt-file-content{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;max-width:100%}
 .phx{position:absolute;top:-6px;right:-6px;width:26px;height:26px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--red);font-weight:700;cursor:pointer;line-height:1}
 ol.hist{margin:4px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:2px}
 ol.hist li{overflow-wrap:anywhere}
@@ -300,7 +304,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.41・10/27更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.42・10/27更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -356,6 +360,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </form></dialog>
 <script src="./case-identity.js?v=1.37"></script>
 <script src="./manual-todo.js?v=1.38"></script>
+<script src="./receipt-files.js?v=1.42"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -973,7 +978,7 @@ function cancelledManualTodos(){
  const rows=DB.todos.filter(t=>t.cancelled&&manualTodoEditable(t)&&(ui.tTantou==="all"||t.tantou===ui.tTantou));
  return rows.length?'<section class="panel"><details><summary>取り消した手入力ToDo（全期間） '+rows.length+'件</summary><p class="note">取消は完了・入金済みとは別です。元の記録を保持しています。</p><div class="list">'+rows.map(t=>'<div class="card" style="cursor:default"><div class="row"><span class="ttl">'+h(t.title)+'</span><span class="chip">取消済み</span></div><p class="note">元の期限 '+h(t.due||"なし")+' ／ 担当 '+h(t.tantou||"未設定")+'<br>取消 '+h(t.cancelledAt?new Date(t.cancelledAt).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}):"日時不明")+'<br>理由 '+h(t.cancelReason||"記録なし")+'</p></div>').join("")+'</div></details></section>':'';
 }
-function manualTodoBusy(){return !!(ui.gsync?.busy||ui.gbusy||ui.oBusy||ui.dbusy||ui.cdelBusy);}
+function manualTodoBusy(){return !!(ui.gsync?.busy||ui.gbusy||ui.oBusy||ui.dbusy||ui.cdelBusy||receiptSaving||receiptSelecting);}
 function manualTodoInputs(){return {title:val("manualTodoTitle"),due:val("manualTodoDue"),tantou:val("manualTodoAssignee")};}
 function manualTodoFill(t){document.getElementById("manualTodoTitle").value=t.title??"";document.getElementById("manualTodoDue").value=t.due??"";document.getElementById("manualTodoAssignee").value=t.tantou??"";}
 function manualTodoHistoryRender(){const box=document.getElementById("manualTodoHistory");try{const value=manualTodoApi().history(localStorage,manualTodoSession.id);manualTodoHistoryRows=value.records;box.innerHTML=(value.warnings.length?'<p class="note">読み取れない履歴があります。元の控えは保持しています。</p>':'')+(value.records.map((r,i)=>'<div class="manual-history"><p>'+h(new Date(r.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'・'+(r.verified?'保存確認済み':'保存の確認記録なし')+'</p><p>'+h(r.before.title)+'<br>期限 '+h(r.before.due||"なし")+' ／ 担当 '+h(r.before.tantou||"未設定")+'<br>'+(r.before.cancelled?'取消済み':r.before.done?'完了':'未完了')+'</p><button class="btn sm" type="button" data-mtdprevious="'+i+'">この内容を編集欄に戻す</button></div>').join("")||'<p class="note">この端末にはまだ編集履歴がありません。</p>');}catch{box.textContent="履歴を読み取れません。元の記録は保持しています。";}}
@@ -1259,6 +1264,7 @@ function calRange(){
 /* 「Googleとまとめて同期」: sign in, read the calendar list, then the events. Each step's result is shown on its own */
 let manualTodoSyncPending=null;
 async function gSyncAll(){
+  if(receiptSaving||receiptSelecting||receiptSending||ui.rSaveUncertain){toast("領収書の処理が終わってから同期してください。入力は残しています。",5000);return;}
   if(manualTodoSyncPending)return manualTodoSyncPending;
   const run=async()=>{
     try{if(localStorage.getItem(KEY)!==dbPersistedRaw)throw Error("別の画面で記録が更新されています。古い内容を送信しないため同期を止めました。入力を控え、再読み込みしてください。");}
@@ -1510,7 +1516,7 @@ const rEditable=r=>r.method==="立替"?r.status==="未提出"||r.status==="差�
 const fileSafe=x=>String(x||"").replace(/[\\/:*?"<>|\s]+/g,"").slice(0,40);
 const payDayLabel=co=>{const d=Number(RS().payDays[co]);return d>=0?WD[d]+"曜精算":"精算日は決まっていません"};
 
-/* Photos: IndexedDB "workhub_receipt_photos", key = <receipt id>-<n>, value = JPEG Blob */
+/* Receipt originals stay in the existing photos store, without conversion. */
 let idbP=null;
 function idb(){return idbP||(idbP=new Promise((res,rej)=>{const r=indexedDB.open("workhub_receipt_photos",1);r.onupgradeneeded=()=>r.result.createObjectStore("photos");r.onsuccess=()=>res(r.result);r.onerror=()=>{idbP=null;rej(r.error)}}))}
 function idbDo(mode,fn){return idb().then(db=>new Promise((res,rej)=>{const tx=db.transaction("photos",mode),q=fn(tx.objectStore("photos"));tx.oncomplete=()=>res(q&&q.result);tx.onerror=()=>rej(tx.error);tx.onabort=()=>rej(tx.error)}))}
@@ -1518,10 +1524,24 @@ const photoPut=(k,b)=>idbDo("readwrite",st=>st.put(b,k));
 const photoGet=k=>idbDo("readonly",st=>st.get(k));
 const photoDel=k=>idbDo("readwrite",st=>st.delete(k));
 const photoURL={};
+let receiptPreviewGeneration=0;
+const receiptFileApi=()=>{if(!globalThis.WorkHubReceiptFiles)throw Error("領収書のファイル処理を読み込めません。入力を控え、オンラインで再読み込みしてください。");return WorkHubReceiptFiles;};
+function receiptReleaseURLs(){receiptPreviewGeneration++;for(const k of Object.keys(photoURL)){URL.revokeObjectURL(photoURL[k]);delete photoURL[k];}}
+function receiptFileContent(box,blob,meta,url){
+  box.replaceChildren();
+  const name=document.createElement("span");name.className="receipt-file-name";name.textContent=meta.name;box.append(name);
+  if(meta.kind==="image"){const img=document.createElement("img");img.alt="領収書の画像";img.loading="lazy";img.decoding="async";img.src=url;img.onerror=()=>{img.remove();const note=document.createElement("span");note.className="note";note.textContent="この画像は下のリンクから原本を確認してください。";box.prepend(note);};box.append(img);}
+  const link=document.createElement("a");link.href=url;link.target="_blank";link.rel="noopener noreferrer";link.textContent=meta.kind==="pdf"?"PDFを開く":"画像を開く";if(meta.kind==="pdf")link.dataset.rfileOpen="1";box.append(link);const download=document.createElement("a");download.href=url;download.download=meta.name;download.textContent="原本を保存";box.append(download);
+}
+function receiptSavedMarkup(key,removable){return '<span class="receipt-file" data-rfile-key="'+h(key)+'"><span class="receipt-file-content" data-rfile-content>添付を確認しています…</span>'+(removable?'<button type="button" class="phx" data-rdelph="'+h(key)+'" aria-label="この添付を外す">×</button>':'')+'</span>';}
+function receiptNewMarkup(x,i){return '<span class="receipt-file" data-rnew-token="'+h(x.token)+'"><span class="receipt-file-content" data-rfile-content></span><button type="button" class="phx" data-rnewx="'+i+'" aria-label="この添付を外す">×</button></span>';}
 function fillPhotos(){
-  main.querySelectorAll("img[data-pkey]").forEach(img=>{const k=img.dataset.pkey;
-    if(photoURL[k]){img.src=photoURL[k];return}
-    photoGet(k).then(b=>{if(b){photoURL[k]=URL.createObjectURL(b);img.src=photoURL[k]}else img.alt="写真が見つかりません"}).catch(()=>{img.alt="写真を読み込めません"})});
+  const generation=receiptPreviewGeneration;
+  main.querySelectorAll('[data-rfile-key]').forEach(el=>{const k=el.dataset.rfileKey,box=el.querySelector('[data-rfile-content]');
+    photoGet(k).then(async b=>{if(!b)throw Error("原本が見つかりません。保存済みの記録は保持しています。");const meta=await receiptFileApi().describe(b);if(generation!==receiptPreviewGeneration||!el.isConnected)return;
+      const r=ui.rId?rFind(ui.rId):null;if(r?.pfiles?.[k]?.name)meta.name=r.pfiles[k].name;const url=photoURL[k]||(photoURL[k]=URL.createObjectURL(receiptFileApi().typed(b,meta)));receiptFileContent(box,b,meta,url);
+    }).catch(error=>{if(generation===receiptPreviewGeneration&&el.isConnected)box.textContent=error.message||"添付を読み込めません。原本は削除していません。";});});
+  main.querySelectorAll('[data-rnew-token]').forEach(el=>{const x=(ui.rNew||[]).find(x=>x.token===el.dataset.rnewToken);if(x)receiptFileContent(el.querySelector('[data-rfile-content]'),x.blob,x.meta,x.url);});
 }
 /* Photos are stored exactly as taken (no resizing or re-compression), for a later move to electronic storage of receipts */
 
@@ -1574,9 +1594,9 @@ function xlsxBlob(sheets){
 const RCOLS=["No","日付","計上月","支払先","内容","区分","金額","現場（物件・部屋）","仕事番号","受付番号","メモ","写真ファイル名","経理確認（○／差戻し）","確認日","備考"];
 const RWIDTHS=[5,11,9,18,22,9,11,24,12,10,20,26,14,10,20];
 const DATA_KEYS=["receiptId","no","date","payee","item","category","amount","company","site","jobNo","caseId","memo","photo","month","settlementNo","submitter","submittedAt"];
-const ACCT_STEPS=["経理の方へ：","1. 領収書の写真（原本）と、金額・内容が合っているか確認し、「経理確認」に ○ か 差戻し を記入してください。","2. 差戻しのときは、理由を「備考」に書いて本人に返してください。","3. サーバーの「会社／年月」フォルダに、このファイルと写真を保存してください。"];
-const extOf=t=>({"image/jpeg":"jpg","image/png":"png","image/heic":"heic","image/heif":"heif","image/webp":"webp"})[t]||"jpg";
-const photoNames=(no,n,r)=>r.photos.map((k,i)=>no+"-"+n+(i?"-"+(i+1):"")+"."+((r.pext||{})[k]||"jpg"));
+const ACCT_STEPS=["経理の方へ：","1. 領収書の添付（PDF・画像の原本）と、金額・内容が合っているか確認し、「経理確認」に ○ か 差戻し を記入してください。","2. 差戻しのときは、理由を「備考」に書いて本人に返してください。","3. サーバーの「会社／年月」フォルダに、このファイルと添付を保存してください。"];
+const extOf=t=>({"application/pdf":"pdf","image/jpeg":"jpg","image/png":"png","image/heic":"heic","image/heif":"heif","image/webp":"webp"})[t]||"jpg";
+const photoNames=(no,n,r)=>r.photos.map((k,i)=>no+"-"+n+(i?"-"+(i+1):"")+"."+((r.pfiles||{})[k]?.ext||(r.pext||{})[k]||"jpg"));
 function rBook(title,head,no,list,company,steps){
   const S=RS(), rows=[[{v:title,s:1}],head,[],RCOLS.map(v=>({v,s:1}))];
   list.forEach((r,i)=>rows.push([i+1,slash(r.date),slash(r.date.slice(0,7)),r.payee,r.item,r.cat,{v:Number(r.amount)||0,s:2},r.site,r.jobNo,r.caseId,r.note,photoNames(no,i+1,r).join(" "),"","",""]));
@@ -1610,28 +1630,31 @@ function cardPeriods(k){
   return [...m.entries()].sort((a,b)=>b[0].localeCompare(a[0])).map(([close,list])=>({close,from:periodFrom(close,k.closeDay),list:rClaimSort(list),no:k.company+"-C"+close.replace(/-/g,"")+"-"+k.id,closed:list.every(r=>r.closeNo)}));
 }
 /* Share the .xlsx with the photos (named <番号>-<No>.jpg); without file sharing, offer downloads instead */
-async function rSend(title,text,fileName,no,sheets,list){
-  const files=[new File([xlsxBlob(sheets)],fileName,{type:XLSX_MIME})];
-  for(let i=0;i<list.length;i++){const names=photoNames(no,i+1,list[i]);
-    for(let j=0;j<list[i].photos.length;j++){const b=await photoGet(list[i].photos[j]).catch(()=>null);if(b)files.push(new File([b],names[j],{type:b.type||"image/jpeg"}))}}
-  if(navigator.share&&navigator.canShare&&navigator.canShare({files})){
-    try{await navigator.share({files,title,text});toast("共有しました");return}
-    catch(e){if(e&&e.name==="AbortError")return}
-  }
-  rClearDl();
-  ui.dl={title,text,items:files.map(f=>({name:f.name,url:URL.createObjectURL(f)}))};
-  render();
-  const a=main.querySelector("a[data-dlfirst]");if(a)a.click();
-  toast("この端末では一緒に送れないため、Excelを保存しました。写真は下から1枚ずつ保存できます",5000);
+let receiptSending=false;
+async function rSend(title,text,fileName,no,makeSheets,list){
+  if(receiptSending)return;receiptSending=true;
+  try{
+    const originals=[],exportList=JSON.parse(JSON.stringify(list));
+    for(let i=0;i<exportList.length;i++){const r=exportList[i];r.pext={...r.pext};r.pfiles={...r.pfiles};
+      for(const k of r.photos){const blob=await photoGet(k);if(!blob)throw Error("添付が見つからないため書き出しを停止しました："+r.id);const meta=await receiptFileApi().describe(blob);r.pext[k]=meta.ext;r.pfiles[k]=meta;originals.push({blob,meta});}}
+    const files=[new File([xlsxBlob(makeSheets(exportList))],fileName,{type:XLSX_MIME})];let n=0;
+    for(let i=0;i<exportList.length;i++){const names=photoNames(no,i+1,exportList[i]);for(const name of names){const {blob,meta}=originals[n++];files.push(new File([blob],name,{type:meta.type}));}}
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files})){
+      try{await navigator.share({files,title,text});toast("共有しました");return;}catch(e){if(e?.name==="AbortError")return;}
+    }
+    rClearDl();ui.rTab=exportList.every(r=>r.method==="法人カード")?"card":"claims";ui.dl={title,text,items:files.map(f=>({name:f.name,url:URL.createObjectURL(f)}))};render();
+    const a=main.querySelector("a[data-dlfirst]");if(a)a.click();toast("Excelを保存しました。PDF・画像は下の一覧から原本を保存できます。",5000);
+  }catch(error){toast(error.message||"書き出しを完了できませんでした。元の記録は保持しています。",7000);}
+  finally{receiptSending=false;}
 }
 function rClearDl(){if(ui.dl)ui.dl.items.forEach(x=>URL.revokeObjectURL(x.url));ui.dl=null}
 const claimFile=(co,no)=>"立替精算書_"+co+"_"+no+"_"+(fileSafe(RS().name)||"未設定")+".xlsx";
 function rSendClaim(no){const g=rClaims().find(x=>x.no===no);if(!g)return;const S=RS(),to=S.to[g.company]||"";
   const text=(to?to+"さん　":"")+"立替精算書（"+no+"）を送ります。"+g.list.length+"件・"+yen(rSum(g.list));
-  return rSend("立替精算書 "+no,text,claimFile(g.company,no),no,rBook("立替精算書",["氏名",S.name||"（未設定）","","会社",g.company,"","提出先",to,"","精算書番号",no,"","作成日",slash(todayS())],no,g.list,g.company,true),g.list)}
+  return rSend("立替精算書 "+no,text,claimFile(g.company,no),no,exportList=>rBook("立替精算書",["氏名",S.name||"（未設定）","","会社",g.company,"","提出先",to,"","精算書番号",no,"","作成日",slash(todayS())],no,exportList,g.company,true),g.list)}
 function rSendCard(id,close){const k=cardOf(id);if(!k)return;const p=cardPeriods(k).find(x=>x.close===close);if(!p)return;const S=RS(),to=S.to[k.company]||"";
   const text=(to?to+"さん　":"")+"法人カードの締めの表（"+p.no+"）を送ります。"+p.list.length+"件・"+yen(rSum(p.list));
-  return rSend("法人カード 締めの表 "+p.no,text,"法人カード締め_"+k.company+"_"+p.no+"_"+(fileSafe(S.name)||"未設定")+".xlsx",p.no,rBook("法人カード 締めの表",["氏名",S.name||"（未設定）","","会社",k.company,"","カード",k.name,"","締め期間",slash(p.from)+"〜"+slash(p.close),"","作成日",slash(todayS())],p.no,p.list,k.company,false),p.list)}
+  return rSend("法人カード 締めの表 "+p.no,text,"法人カード締め_"+k.company+"_"+p.no+"_"+(fileSafe(S.name)||"未設定")+".xlsx",p.no,exportList=>rBook("法人カード 締めの表",["氏名",S.name||"（未設定）","","会社",k.company,"","カード",k.name,"","締め期間",slash(p.from)+"〜"+slash(p.close),"","作成日",slash(todayS())],p.no,exportList,k.company,false),p.list)}
 
 /* Reminders for home and ToDo: the day before a company's 精算日, the run-up to the 8月末 決算, and 90+ day old receipts */
 function rcptNotices(){
@@ -1667,7 +1690,7 @@ function vRcpt(){
       (cl.length?cl.map(g=>'<div class="panel"><div class="row"><h3 class="num">'+h(g.no)+'</h3><span class="sp"></span><span class="pill '+(g.settled?'s-paid':'s-billed')+'">'+(g.settled?'精算済':'提出済・未精算')+'</span></div>'+
         '<p class="note num" style="margin:0">'+g.company+'・提出先 '+h(S.to[g.company]||"—")+'・提出 '+md(g.date)+'・'+g.list.length+'件・<b>'+yen(rSum(g.list))+'</b></p>'+
         '<details><summary class="note">内訳'+(g.settled?'':'（経理から差し戻された領収書は、ここで「差戻し」にします）')+'</summary><div class="rlist">'+g.list.map(r=>rRow(r,false,true)).join("")+'</div></details>'+
-        '<div class="row"><button class="btn pri sm" type="button" data-rshare="'+h(g.no)+'">Excelと写真を送る</button>'+
+        '<div class="row"><button class="btn pri sm" type="button" data-rshare="'+h(g.no)+'">Excelと添付を送る</button>'+
         (g.settled?'':'<button class="btn sm" type="button" data-rsettle="'+h(g.no)+'">精算済にする</button><button class="btn sm danger" type="button" data-rcancel="'+h(g.no)+'">取り消す</button>')+'</div>'+
         (ui.rcCancel===g.no?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><span>この精算書を取り消して、'+g.list.length+'件を「未提出」に戻します。経理にまだ渡していないときだけ使ってください。</span><div class="row"><button class="btn danger" type="button" data-act="rcanceldo">取り消す</button><button class="btn" type="button" data-act="rcancelno">やめる</button></div></div>':'')+'</div>').join("")
       :'<div class="empty">まだ精算書はありません</div>');
@@ -1700,7 +1723,7 @@ function vRcpt(){
     body+'</section>';
 }
 /* Changes made after a receipt was once submitted are kept (from → to, when), never removed */
-const R_FIELDS=[["date","日付"],["payee","支払先"],["item","内容"],["amount","金額"],["company","会社"],["method","支払い方法"],["cardId","カード"],["cat","区分"],["caseId","受付番号"],["site","現場"],["jobNo","仕事番号"],["note","メモ"],["photos","写真"]];
+const R_FIELDS=[["date","日付"],["payee","支払先"],["item","内容"],["amount","金額"],["company","会社"],["method","支払い方法"],["cardId","カード"],["cat","区分"],["caseId","受付番号"],["site","現場"],["jobNo","仕事番号"],["note","メモ"],["photos","添付"]];
 function rHistory(r){
   if(!r||!r.edits.length)return "";
   return '<details class="note"><summary>変更の履歴（'+r.edits.length+'件）</summary><ol class="hist">'+r.edits.map(e=>'<li><span class="num">'+h(slash(ymd(new Date(e.at)))+" "+hm(new Date(e.at)))+'</span> '+h(e.label)+'：'+h(e.from===""?"（空）":e.from)+' → '+h(e.to===""?"（空）":e.to)+'</li>').join("")+'</ol></details>';
@@ -1708,18 +1731,17 @@ function rHistory(r){
 /* Entry / edit form. New photos stay in memory (ui.rNew) until 保存 */
 function vRform(){
   const r=ui.rId?rFind(ui.rId):null, S=RS(), edit=!r||rEditable(r), t=todayS();
-  const v=Object.assign(RECEIPT_DEFAULTS(),{date:t,company:S.lastCo||"CP"},r||{});
+  const v=Object.assign(RECEIPT_DEFAULTS(),{date:t,company:S.lastCo||"CP"},r||{},ui.rDraft||{});
   const cases=DB.cases.filter(c=>c.stage!=="lost").slice().sort((a,b)=>b.id.localeCompare(a.id));
-  const thumbs='<div class="photos" id="r_photos">'+v.photos.filter(k=>!(ui.rDel||[]).includes(k)).map(k=>'<span class="ph"><img data-pkey="'+h(k)+'" alt="領収書の写真">'+(edit?'<button type="button" class="phx" data-rdelph="'+h(k)+'" aria-label="この写真を外す">×</button>':'')+'</span>').join("")+
-    (ui.rNew||[]).map((x,i)=>'<span class="ph"><img src="'+x.url+'" alt="追加する写真"><button type="button" class="phx" data-rnewx="'+i+'" aria-label="この写真を外す">×</button></span>').join("")+'</div>';
+  const thumbs='<div class="photos" id="r_photos">'+v.photos.filter(k=>!(ui.rDel||[]).includes(k)).map(k=>receiptSavedMarkup(k,edit)).join("")+(ui.rNew||[]).map(receiptNewMarkup).join("")+'</div>';
   if(!edit)return '<button class="back" type="button" data-nav="rcpt">‹ 領収書へ戻る</button><section class="panel"><h2 style="font-size:18px">'+h(r.id)+' '+h(r.payee)+'</h2>'+
     '<p class="note" style="margin:0">'+(r.method==="立替"?r.status+(r.claimNo?'（'+h(r.claimNo)+'）':''):'締め済み（'+h(r.closeNo)+'）')+'のため、変更できません。</p>'+thumbs+
     rHistory(r)+'<dl class="kv"><dt>日付</dt><dd>'+mdh(r.date)+'</dd><dt>支払先</dt><dd>'+h(r.payee)+'</dd><dt>内容</dt><dd>'+h(r.item)+'</dd><dt>金額</dt><dd class="num">'+yen(r.amount)+'</dd><dt>会社</dt><dd>'+r.company+'</dd><dt>支払い</dt><dd>'+h(r.method)+(r.cardId&&cardOf(r.cardId)?'（'+h(cardOf(r.cardId).name)+'）':'')+'</dd><dt>区分</dt><dd>'+h(r.cat)+'</dd><dt>現場</dt><dd>'+(h(r.site)||'—')+'</dd><dt>仕事番号</dt><dd>'+(h(r.jobNo)||'—')+'</dd><dt>受付番号</dt><dd>'+(h(r.caseId)||'—')+'</dd><dt>メモ</dt><dd>'+(h(r.note)||'—')+'</dd></dl></section>';
   const cardOpts=co=>S.cards.filter(k=>k.company===co).map(k=>'<option value="'+h(k.id)+'"'+(v.cardId===k.id?' selected':'')+'>'+h(k.name)+'</option>').join("");
   return '<button class="back" type="button" data-nav="rcpt">‹ 領収書へ戻る</button>'+
   '<section class="panel"><h2 style="font-size:18px">'+(r?h(r.id)+' を直す':'領収書を登録')+'</h2>'+
-  '<form id="rForm" class="form">'+
-    '<div class="f full"><span class="fk">写真（複数枚できます）</span>'+thumbs+'<label class="btn" style="align-self:flex-start;display:inline-flex;align-items:center">写真を撮る・選ぶ<input type="file" id="r_photo" accept="image/*" capture="environment" multiple hidden></label></div>'+
+  '<form id="rForm" class="form"><p id="rSaveStatus" class="full note" role="status" aria-live="polite">'+h(ui.rSaveMessage||"")+'</p>'+
+    '<div class="f full"><span class="fk">添付（PDF・画像、複数選択できます）</span>'+thumbs+'<label class="btn" style="align-self:flex-start;display:inline-flex;align-items:center">ファイルから選ぶ<input type="file" id="r_photo" accept="application/pdf,image/*,.pdf,.heic,.heif" multiple hidden></label></div>'+
     '<label class="f">日付<input type="date" id="r_date" required value="'+h(v.date)+'"></label>'+
     '<label class="f">金額（税込・円）<input type="number" inputmode="numeric" min="1" id="r_amount" required value="'+h(v.amount??"")+'"></label>'+
     '<label class="f full">支払先（店名）<input type="text" id="r_payee" required value="'+h(v.payee)+'" placeholder="例：○○ホームセンター"></label>'+
@@ -1734,34 +1756,36 @@ function vRform(){
     '<label class="f full">メモ<textarea id="r_note" placeholder="何に使ったか など">'+h(v.note)+'</textarea></label>'+
     '<div class="full row"><button class="btn pri" type="submit">保存する</button>'+(r?'<span class="sp"></span><button class="btn sm danger" type="button" data-act="rdel">この領収書を削除</button>':'')+'</div>'+
     (r&&ui.rDelAsk?'<div class="full ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><span>この領収書と写真を削除します。</span><div class="row"><button class="btn danger" type="button" data-act="rdeldo">削除する</button><button class="btn" type="button" data-act="rdelno">やめる</button></div></div>':'')+
-  '</form>'+(r&&r.status==="差戻し"?'<p style="margin:0;color:var(--red)" class="note">経理から差し戻されました（元の精算書 '+h(r.returnedFrom)+'）。直して保存し、もう一度精算書を作ってください。新しい精算書番号になります。</p>':'')+rHistory(r)+'<p class="note" style="margin:0">写真は撮ったままの画質で、この端末の中（IndexedDB）にだけ保存されます。精算書を送るときに一緒に送れます。</p></section>';
+  '</form>'+(r&&r.status==="差戻し"?'<p style="margin:0;color:var(--red)" class="note">経理から差し戻されました（元の精算書 '+h(r.returnedFrom)+'）。直して保存し、もう一度精算書を作ってください。新しい精算書番号になります。</p>':'')+rHistory(r)+'<p class="note" style="margin:0">Googleドライブなどに保存したPDF・画像を「ファイルから選ぶ」で取り込めます。原本の形式・画質を保ってこの端末へ保存し、精算書と一緒に送れます。PDFは「PDFを開く」で確認できます。</p></section>';
 }
+let receiptSaving=false,receiptSelecting=false,receiptSelectionGeneration=0,receiptSession=null;
+function receiptStatus(message){ui.rSaveMessage=message;const el=document.getElementById("rSaveStatus");if(el)el.textContent=message;}
+function receiptOtherBusy(){return !!(ui.gsync?.busy||ui.gbusy||ui.oBusy||ui.dbusy||manualTodoSyncPending||manualTodoSaving||caseIdentitySaving||manualTodoCancelling);}
+function receiptControls(disabled){const form=document.getElementById("rForm");if(form)for(const el of form.elements)el.disabled=disabled;}
 function rPhotoPreview(){
-  const box=document.getElementById("r_photos");if(!box)return;
-  const r=ui.rId?rFind(ui.rId):null;
-  box.innerHTML=(r?r.photos.filter(k=>!(ui.rDel||[]).includes(k)).map(k=>'<span class="ph"><img data-pkey="'+h(k)+'" alt="領収書の写真"><button type="button" class="phx" data-rdelph="'+h(k)+'" aria-label="この写真を外す">×</button></span>').join(""):"")+
-    (ui.rNew||[]).map((x,i)=>'<span class="ph"><img src="'+x.url+'" alt="追加する写真"><button type="button" class="phx" data-rnewx="'+i+'" aria-label="この写真を外す">×</button></span>').join("");
-  fillPhotos();
+  const box=document.getElementById("r_photos");if(!box)return;receiptReleaseURLs();const r=ui.rId?rFind(ui.rId):null;
+  box.innerHTML=(r?r.photos.filter(k=>!(ui.rDel||[]).includes(k)).map(k=>receiptSavedMarkup(k,true)).join(""):"")+(ui.rNew||[]).map(receiptNewMarkup).join("");fillPhotos();
 }
-function rFormClear(){(ui.rNew||[]).forEach(x=>URL.revokeObjectURL(x.url));ui.rNew=[];ui.rDel=[];ui.rDelAsk=false}
+function rFormClear(){receiptSelectionGeneration++;receiptReleaseURLs();(ui.rNew||[]).forEach(x=>URL.revokeObjectURL(x.url));ui.rNew=[];ui.rDel=[];ui.rDelAsk=false;ui.rSaveUncertain=false;ui.rDraft=null;ui.rSaveMessage="";receiptSession=null;}
+async function receiptSelectFiles(files){
+  if(!files.length||receiptSelecting||receiptSaving||ui.rSaveUncertain)return;
+  const generation=receiptSelectionGeneration;receiptSelecting=true;receiptControls(true);receiptStatus("ファイルの形式を確認しています…");
+  try{const added=await receiptFileApi().select(files,ui.rNew||[]);if(generation!==receiptSelectionGeneration||ui.view!=="rform")return;
+    for(const x of added)x.url=URL.createObjectURL(receiptFileApi().typed(x.blob,x.meta));ui.rNew=(ui.rNew||[]).concat(added);rPhotoPreview();receiptStatus(added.length?added.length+"件を選択しました。まだ保存していません。":"同じ添付は選択済みです。重ねて追加しませんでした。");
+  }catch(error){if(generation===receiptSelectionGeneration)receiptStatus(error.message+" 入力と選択済みの添付は残しています。");}
+  finally{receiptSelecting=false;if(generation===receiptSelectionGeneration)receiptControls(false);}
+}
 async function rSaveForm(){
-  const r=ui.rId?rFind(ui.rId):null, amt=Number(val("r_amount")), date=val("r_date"), payee=val("r_payee").trim(), method=val("r_method");
-  if(!date||!payee||!(amt>0)){toast("日付・支払先・金額を入れてください");return}
-  if(method==="法人カード"&&!val("r_card")){toast("カードを選んでください（「設定」で登録できます）");return}
-  const id=r?r.id:"R-"+String((DB.rseq||0)+1).padStart(4,"0");
-  const keys=r?r.photos.filter(k=>!(ui.rDel||[]).includes(k)):[], pext=Object.assign({},r?r.pext:{});
-  let n=(r?r.photos:[]).reduce((m,k)=>Math.max(m,Number(k.split("-").pop())||0),0);
-  try{for(const x of ui.rNew||[]){const k=id+"-"+(++n);await photoPut(k,x.blob);keys.push(k);pext[k]=extOf(x.blob.type)}}
-  catch(e){toast("写真を保存できませんでした。端末の空き容量を確認してください",6000);return}
-  for(const k of ui.rDel||[]){photoDel(k).catch(()=>{});delete pext[k];if(photoURL[k]){URL.revokeObjectURL(photoURL[k]);delete photoURL[k]}}
-  const next={date,payee,item:val("r_item").trim(),amount:amt,company:val("r_co"),method,cardId:method==="法人カード"?val("r_card"):"",cat:val("r_cat"),caseId:val("r_case"),site:val("r_site").trim(),jobNo:val("r_job").trim(),note:val("r_note").trim(),photos:keys};
-  if(r&&r.everSub){const at=t0();for(const [f,label] of R_FIELDS){const a=f==="photos"?r.photos.length+"枚":String(r[f]??""),b=f==="photos"?keys.length+"枚":String(next[f]??"");
-    if(f==="photos"?JSON.stringify(r.photos)!==JSON.stringify(keys):a!==b)r.edits.push({at,field:f,label,from:f==="photos"?a+"（"+r.photos.join(",")+"）":a,to:f==="photos"?b+"（"+keys.join(",")+"）":b})}}
-  const rec=r||Object.assign(RECEIPT_DEFAULTS(),{id,createdAt:t0()});
-  Object.assign(rec,next,{pext});
-  if(!r){DB.rseq=(DB.rseq||0)+1;DB.receipts.push(rec)}
-  RS().lastCo=rec.company;
-  rFormClear();save();go("rcpt",{rTab:method==="法人カード"?"card":"list"});toast(id+"を保存しました"+(keys.length?"":"（写真なし）"));
+  if(receiptSaving||receiptSelecting||!receiptSession)return;
+  if(receiptOtherBusy()){receiptStatus("同期などの処理中です。終了してから保存してください。入力は残しています。");return;}
+  const method=val("r_method"),fields={date:val("r_date"),payee:val("r_payee").trim(),item:val("r_item").trim(),amount:Number(val("r_amount")),company:val("r_co"),method,cardId:method==="法人カード"?val("r_card"):"",cat:val("r_cat"),caseId:val("r_case"),site:val("r_site").trim(),jobNo:val("r_job").trim(),note:val("r_note").trim()};
+  receiptSaving=true;receiptControls(true);receiptStatus("添付と保存前の控えを保存し、読み戻して確認しています…");
+  const session=receiptSession;
+  try{const work=async()=>{if(receiptOtherBusy())throw Error("ほかの処理中です。入力は残しています。");return receiptFileApi().commit({storage:localStorage,key:KEY,db:await idb(),defaults:RECEIPT_DEFAULTS,historyFields:R_FIELDS},session,fields,ui.rNew||[],ui.rDel||[]);};
+    const result=navigator.locks?.request?await navigator.locks.request(KEY+":manual-todo-edit",work):await work();
+    DB=upgrade(result.db);dbPersistedRaw=result.raw;receiptSaving=false;rFormClear();go("rcpt",{rTab:result.record.method==="法人カード"?"card":"list"});toast(result.record.id+"を保存し、読み戻して確認しました。",6000);
+  }catch(error){ui.rSaveUncertain=ui.rSaveUncertain||!!error.mayHaveSaved;const message=error.name==="QuotaExceededError"?"保存容量が不足して保存できませんでした。":error.name==="Error"?error.message:"添付または本文の保存を完了できませんでした。";receiptStatus(message+" 入力と選択済みの添付は残しています。");}
+  finally{receiptSaving=false;receiptControls(!!ui.rSaveUncertain);const button=main.querySelector('#rForm button[type="submit"]');if(button){button.disabled=false;button.textContent=ui.rSaveUncertain?"保存状況を確認":"保存する";}}
 }
 const t0=()=>new Date().toISOString();
 
@@ -1849,8 +1873,9 @@ async function backupPhotos(){
   let done=0,fail=0;
   for(const [r,k] of todo){
     try{const b=await photoGet(k);if(!b){fail++;continue}
-      const i=r.photos.indexOf(k), name=fileSafe(r.date+"_"+r.company+"_"+r.payee+"_"+(Number(r.amount)||0)).slice(0,80)+(i?"_"+(i+1):"")+"."+((r.pext||{})[k]||extOf(b.type));
-      const f=await driveUpload(b,name,D().rFolder);r.drive=Object.assign({},r.drive,{[k]:{id:f.id,link:f.webViewLink||""}});save();done++}
+      const meta=await receiptFileApi().describe(b);
+      const i=r.photos.indexOf(k), name=fileSafe(r.date+"_"+r.company+"_"+r.payee+"_"+(Number(r.amount)||0)).slice(0,80)+(i?"_"+(i+1):"")+"."+meta.ext;
+      const f=await driveUpload(receiptFileApi().typed(b,meta),name,D().rFolder);r.drive=Object.assign({},r.drive,{[k]:{id:f.id,link:f.webViewLink||""}});save();done++}
     catch(err){if(err.message==="signin")throw err;fail++}
   }
   return {done,fail};
@@ -2201,11 +2226,15 @@ function dSettings(){
 
 const main=document.getElementById("main");
 function render(){
+  if(ui.view==="rform"&&(receiptSaving||receiptSelecting))return;
+  if(ui.view==="rform"&&document.getElementById("rForm")){const ids={date:"r_date",payee:"r_payee",item:"r_item",amount:"r_amount",company:"r_co",method:"r_method",cardId:"r_card",cat:"r_cat",caseId:"r_case",site:"r_site",jobNo:"r_job",note:"r_note"};ui.rDraft=Object.fromEntries(Object.entries(ids).map(([k,id])=>[k,val(id)]));}
+  receiptReleaseURLs();
   const v={home:vHome,cases:vCases,new:vNew,detail:vDetail,todo:vTodo,cal:vCal,gantt:vGantt,stats:vStats,rcpt:vRcpt,rform:vRform}[ui.view]||vHome;
   main.innerHTML=v();
   document.querySelector(".proto").hidden=!hasExamples();
   const navKey=ui.view==="new"||ui.view==="detail"?"cases":ui.view==="rform"?"rcpt":ui.view;
   if(ui.view==="rcpt"||ui.view==="rform")fillPhotos();
+  if(ui.view==="rform"&&ui.rSaveUncertain){receiptControls(true);const button=main.querySelector('#rForm button[type="submit"]');if(button){button.disabled=false;button.textContent="保存状況を確認";}}
   document.querySelectorAll("[data-nav]").forEach(b=>{if(b.closest("nav"))b.setAttribute("aria-current",b.dataset.nav===navKey?"page":"false")});
   const t=todayS(), n=genTodos().filter(x=>x.due&&x.due<t).length;
   const bd=document.getElementById("todoBadge"); bd.hidden=!n; bd.textContent=n;
@@ -2216,7 +2245,13 @@ function render(){
     const sync=()=>{sw.hidden=ty.value!=="kinkyu"};ty.addEventListener("change",sync);sync();
   }
 }
-function go(view,extra){if(view!=="rcpt")rClearDl();if(view!=="rform")rFormClear();Object.assign(ui,{view,coEdit:false,rcvEdit:false,rcvSuggest:"",acct:false,exAsk:false,rcCancel:null,cdel:null,cdelMsg:"",cdelBusy:false,cdelCal:true},extra||{});render();window.scrollTo(0,0)}
+function go(view,extra){
+  if(receiptSaving||receiptSelecting||receiptSending||ui.rSaveUncertain){toast("領収書の保存状況を確認してから移動してください。入力は残しています。",5000);return;}
+  if(view==="rform"){
+    if(ui.view!=="rform"||(extra?.rId||null)!==(ui.rId||null))rFormClear();
+    try{if(dbPersistedRaw===null&&localStorage.getItem(KEY)===null&&!save())return;if(localStorage.getItem(KEY)!==dbPersistedRaw)throw Error("別の画面で記録が更新されています。再読み込みしてから領収書を開いてください。");receiptSession=extra?.rId&&!rEditable(rFind(extra.rId))?null:receiptFileApi().open(localStorage,KEY,extra?.rId||null);}catch(error){toast(error.message,6500);return;}
+  }
+if(view!=="rcpt")rClearDl();if(view!=="rform")rFormClear();Object.assign(ui,{view,coEdit:false,rcvEdit:false,rcvSuggest:"",acct:false,exAsk:false,rcCancel:null,cdel:null,cdelMsg:"",cdelBusy:false,cdelCal:true},extra||{});render();window.scrollTo(0,0)}
 let toastT;
 function toast(msg,ms){const el=document.getElementById("toast");el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,ms||2600)}
 /* An on-page confirmation can open near the bottom, behind the menu bar; bring it to the middle of the screen */
@@ -2236,6 +2271,8 @@ const val=id=>{const el=document.getElementById(id);return el?el.value:""};
 document.addEventListener("click",e=>{
   const el=e.target.closest("button,[data-open]");
   if(!el)return;
+  if(receiptSaving||receiptSelecting||receiptSending){toast("領収書の処理中です。入力は残しています。",4000);return;}
+  if(ui.rSaveUncertain&&el.closest("#rForm")&&!el.matches('button[type="submit"]'))return;
   const c=ui.caseId?editCase(ui.caseId):null;
   if(el.dataset.caseidentity){caseIdentityOpen(el.dataset.caseidentity);return}
   if(el.dataset.caseprevious!=null){try{caseIdentityFill(caseIdentityApi().previousFields(caseIdentityHistoryRows[Number(el.dataset.caseprevious)],caseIdentitySession.id));document.getElementById("caseIdentityStatus").textContent="以前の物件名・号室を編集欄に戻しました。保存すると新しい履歴を残します。進捗は変わりません。";}catch(error){toast(error.message,5000)}return}
@@ -2254,7 +2291,7 @@ document.addEventListener("click",e=>{
   if(el.dataset.ropen){rFormClear();go("rform",{rId:el.dataset.ropen});return}
   if(el.dataset.rclaim){const co=el.dataset.rclaim,ids=el.dataset.rall?rPending(co).map(r=>r.id):[...main.querySelectorAll('input[name="rsel_'+co+'"]:checked')].map(x=>x.value);
     if(!ids.length){toast("精算書に入れる領収書を選んでください");return}
-    const no=rMakeClaim(co,ids);if(no){ui.rTab="claims";render();toast("精算書 "+no+" を作りました（"+ids.length+"件）。「Excelと写真を送る」で経理に送れます",5000)}return}
+    const no=rMakeClaim(co,ids);if(no){ui.rTab="claims";render();toast("精算書 "+no+" を作りました（"+ids.length+"件）。「Excelと添付を送る」で経理に送れます",5000)}return}
   if(el.dataset.rshare){rSendClaim(el.dataset.rshare);return}
   if(el.dataset.rsettle){const t=todayS();DB.receipts.filter(r=>r.claimNo===el.dataset.rsettle).forEach(r=>Object.assign(r,{status:"精算済",settleDate:t}));save();render();toast("精算済にしました");return}
   if(el.dataset.dunshare!=null){ui.dUnshare=Number(el.dataset.dunshare);render();showAlert();return}
@@ -2435,7 +2472,7 @@ document.addEventListener("change",e=>{
   const t=e.target, c=ui.caseId?editCase(ui.caseId):null;
   if(t.id==="showEnded"){ui.showEnded=t.checked;render();return}
   if(t.id==="cdel_gcal"){ui.cdelCal=t.checked;ui.cdelMsg="";render();return}
-  if(t.id==="r_photo"){const files=[...t.files];t.value="";files.forEach(f=>(ui.rNew=ui.rNew||[]).push({blob:f,url:URL.createObjectURL(f)}));rPhotoPreview();return}
+  if(t.id==="r_photo"){const files=[...t.files];t.value="";receiptSelectFiles(files);return}
   if(t.id==="r_case"){const cc=findCase(t.value);if(cc){document.getElementById("r_site").value=(cc.property+" "+cc.room).trim();document.getElementById("r_job").value=cc.jobNo||"";
     const rc=document.getElementById("r_co");if(rc&&COMPANIES.includes(cc.company)&&rc.value!==cc.company){rc.value=cc.company;rc.dispatchEvent(new Event("change",{bubbles:true}))}}return}
   if(t.id==="r_method"||t.id==="r_co"){const card=val("r_method")==="法人カード",w=document.getElementById("r_cardWrap"),sel=document.getElementById("r_card");if(w)w.hidden=!card;
