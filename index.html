@@ -121,6 +121,9 @@ ul.dl{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;over
 .receipt-file{display:flex;flex-direction:column;gap:6px;max-width:100%;min-width:0;padding:8px;border:1px solid var(--line);border-radius:8px;overflow-wrap:anywhere}
 .receipt-file a{font-size:13px;overflow-wrap:anywhere}.receipt-file-name{font-size:12px;color:var(--muted)}
 .receipt-file img{max-width:150px;max-height:150px;object-fit:contain}.receipt-file .phx{position:static;align-self:flex-end}
+.receipt-input-field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.receipt-suggestions{display:flex;gap:6px;flex-wrap:wrap;min-width:0}
+.receipt-suggestions button{min-height:44px;max-width:100%;padding:7px 10px;text-align:left;white-space:normal;overflow-wrap:anywhere;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:13px}
 .receipt-file-content{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;max-width:100%}
 .phx{position:absolute;top:-6px;right:-6px;width:26px;height:26px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--red);font-weight:700;cursor:pointer;line-height:1}
 ol.hist{margin:4px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:2px}
@@ -304,7 +307,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.42・10/27更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.43・10/27更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -360,7 +363,8 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </form></dialog>
 <script src="./case-identity.js?v=1.37"></script>
 <script src="./manual-todo.js?v=1.38"></script>
-<script src="./receipt-files.js?v=1.42"></script>
+<script src="./receipt-files.js?v=1.43"></script>
+<script src="./receipt-input.js?v=1.43"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1504,7 +1508,7 @@ function gSettings(){
 /* ===== 領収書（立替・法人カード）step 1: entry, photos kept in IndexedDB on this device, 精算書 / カードの締め as .xlsx, sharing.
    Receipt data is in DB.receipts (same localStorage key); photos never go into localStorage */
 const COMPANIES=["CP","CPY","AT"], CO_LABEL={CP:"本社",CPY:"横浜",AT:"アートテック"};
-const RCAT=["材料費","駐車場代","交通費","消耗品","その他"];
+const RCAT=["材料費","駐車場代","交通費","消耗品","会議費","接待交際費","その他"];
 const RS=()=>DB.settings.rcpt;
 const rFind=id=>DB.receipts.find(r=>r.id===id);
 const rSum=list=>list.reduce((s,r)=>s+(Number(r.amount)||0),0);
@@ -1599,10 +1603,10 @@ const extOf=t=>({"application/pdf":"pdf","image/jpeg":"jpg","image/png":"png","i
 const photoNames=(no,n,r)=>r.photos.map((k,i)=>no+"-"+n+(i?"-"+(i+1):"")+"."+((r.pfiles||{})[k]?.ext||(r.pext||{})[k]||"jpg"));
 function rBook(title,head,no,list,company,steps){
   const S=RS(), rows=[[{v:title,s:1}],head,[],RCOLS.map(v=>({v,s:1}))];
-  list.forEach((r,i)=>rows.push([i+1,slash(r.date),slash(r.date.slice(0,7)),r.payee,r.item,r.cat,{v:Number(r.amount)||0,s:2},r.site,r.jobNo,r.caseId,r.note,photoNames(no,i+1,r).join(" "),"","",""]));
+  list.forEach((r,i)=>rows.push([i+1,slash(r.date),slash(r.date.slice(0,7)),r.payee,r.item,r.cat,{v:Number(r.amount)||0,s:2},receiptSiteLabel(r),r.jobNo,receiptCaseLabel(r),r.note,photoNames(no,i+1,r).join(" "),"","",""]));
   rows.push([{v:"合計",s:1},"","","","","",{f:"SUM(G5:G"+(4+list.length)+")",v:rSum(list),s:3}]);
   if(steps){rows.push([]);ACCT_STEPS.forEach((x,i)=>rows.push([i?x:{v:x,s:1}]))}
-  const data=[DATA_KEYS].concat(list.map((r,i)=>[r.id,i+1,r.date,r.payee,r.item,r.cat,Number(r.amount)||0,r.company,r.site,r.jobNo,r.caseId,r.note,photoNames(no,i+1,r).join(" "),r.date.slice(0,7),no,S.name||"",r.submitDate||todayS()]));
+  const data=[DATA_KEYS].concat(list.map((r,i)=>[r.id,i+1,r.date,r.payee,r.item,r.cat,Number(r.amount)||0,r.company,receiptSiteLabel(r),r.jobNo,receiptCaseLabel(r),r.note,photoNames(no,i+1,r).join(" "),r.date.slice(0,7),no,S.name||"",r.submitDate||todayS()]));
   return [{name:company,rows,widths:RWIDTHS},{name:"data",rows:data,widths:DATA_KEYS.map(()=>14)}];
 }
 const rClaimSort=list=>list.slice().sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
@@ -1670,7 +1674,7 @@ function rcptNotices(){
 function rRow(r,check,ret){
   return '<div class="rrow">'+(check?'<input type="checkbox" name="rsel_'+r.company+'" value="'+r.id+'" aria-label="'+h(r.id)+'を選ぶ">':'')+
     '<button type="button" class="rbody" data-ropen="'+r.id+'"><span class="row"><span class="num">'+md(r.date)+'</span><b class="ttl">'+h(r.payee)+'</b><span class="sp"></span><b class="num">'+yen(r.amount)+'</b></span>'+
-    '<span class="row note"><span>'+h(r.item)+'</span><span class="chip">'+h(r.cat)+'</span>'+(r.site?'<span>'+h(r.site)+'</span>':'')+(r.photos.length?'<span>写真'+r.photos.length+'</span>':'<span style="color:var(--amber)">写真なし</span>')+(r.status==="差戻し"?'<span class="chip" style="background:var(--red-soft);color:var(--red)">差戻し（'+h(r.returnedFrom)+'）</span>':'')+'</span></button>'+
+    '<span class="row note"><span>'+h(r.item)+'</span><span class="chip">'+h(r.cat)+'</span>'+(receiptSiteLabel(r)?'<span>'+h(receiptSiteLabel(r))+'</span>':'')+(r.photos.length?'<span>写真'+r.photos.length+'</span>':'<span style="color:var(--amber)">写真なし</span>')+(r.status==="差戻し"?'<span class="chip" style="background:var(--red-soft);color:var(--red)">差戻し（'+h(r.returnedFrom)+'）</span>':'')+'</span></button>'+
     (ret&&r.status==="提出済"?'<button class="btn sm danger" type="button" data-rreturn="'+r.id+'">差戻し</button>':'')+'</div>';
 }
 function vRcpt(){
@@ -1723,7 +1727,41 @@ function vRcpt(){
     body+'</section>';
 }
 /* Changes made after a receipt was once submitted are kept (from → to, when), never removed */
-const R_FIELDS=[["date","日付"],["payee","支払先"],["item","内容"],["amount","金額"],["company","会社"],["method","支払い方法"],["cardId","カード"],["cat","区分"],["caseId","受付番号"],["site","現場"],["jobNo","仕事番号"],["note","メモ"],["photos","添付"]];
+function receiptInputApi(){if(!globalThis.WorkHubReceiptInput)throw Error("領収書の入力候補を読み込めません。オンラインで再読み込みしてください。");return WorkHubReceiptInput;}
+const receiptSiteLabel=r=>globalThis.WorkHubReceiptInput?WorkHubReceiptInput.siteLabel(r):String(r.site||"");
+const receiptCaseLabel=r=>globalThis.WorkHubReceiptInput?WorkHubReceiptInput.caseLabel(r):String(r.caseId||"");
+function receiptCaseChoices(){
+  let sources=[];
+  if(roOn()&&ui.corp?.data){
+    const signature=(owner,id,company,property,room,jobNo)=>JSON.stringify([owner,id,company,property,room,jobNo]);
+    const visible=new Set(ui.corpRO.map(c=>signature(c.owner,c.srcId,c.company,c.property,c.room,c.jobNo)));
+    sources=ui.corp.data.filter(x=>x.ok&&Array.isArray(x.cases)).map(x=>({ok:true,s:{sheetId:x.s.sheetId,name:x.s.name},cases:x.cases.filter(r=>{const v=k=>String(r[k]??"");return visible.has(signature(x.s.name,v("受付番号"),COMPANIES.includes(v("会社"))?v("会社"):"",v("物件"),v("部屋"),v("仕事番号")));})}));
+  }
+  return receiptInputApi().caseChoices(DB.cases,sources);
+}
+function receiptCaseOptions(v,cases){
+  const current=String(v.caseId||""),option=c=>'<option value="'+h(c.key)+'"'+(current===c.key?' selected':'')+'>'+h(receiptInputApi().choiceLabel(c))+'</option>';
+  let html='<option value="">選ばない</option>';
+  for(const [shared,label] of [[false,"この端末の案件"],[true,"共有案件（見るだけ）"]]){const list=cases.filter(c=>c.shared===shared);if(list.length)html+='<optgroup label="'+label+'">'+list.map(option).join("")+'</optgroup>';}
+  if(current&&!cases.some(c=>c.key===current))html+='<option value="'+h(current)+'" selected>保存済みの関連：'+h(receiptCaseLabel({...v,caseRef:ui.rCasePick?.value===current?ui.rCasePick.ref:v.caseRef}))+'（現在の候補外）</option>';
+  return html;
+}
+function receiptCaseChanged(value){
+  if(!value){ui.rCasePick={value:"",ref:null};return;}
+  const c=receiptCaseChoices().find(c=>c.key===value);if(!c){document.getElementById("r_case").value=ui.rCasePick?.value||"";receiptStatus("案件の候補を確認できません。元の入力は残しています。選び直してください。");return;}
+  ui.rCasePick={value:c.key,ref:c.ref?JSON.parse(JSON.stringify(c.ref)):null};
+  for(const [id,field] of [["r_site","property"],["r_room","room"],["r_job","jobNo"]])document.getElementById(id).value=c[field]||"";
+}
+function receiptRefreshSuggestions(){
+  if(ui.view!=="rform")return;
+  for(const [field,id,label] of [["payee","r_payee","支払先"],["item","r_item","内容"]]){
+    const box=document.getElementById(id+"Suggestions");if(!box)continue;
+    const rows=receiptInputApi().suggestions(DB.receipts,field,val(id),val("r_payee"));box.replaceChildren();
+    for(const value of rows){const button=document.createElement("button");button.type="button";button.textContent=value;button.dataset.receiptSuggestion=field;button.dataset.value=value;button.setAttribute("aria-label",label+"候補："+value);box.append(button);}
+    if(!rows.length){const note=document.createElement("span");note.className="note";note.textContent=val(id)?"一致する履歴はありません。自由に入力できます。":"履歴がない場合も自由に入力できます。";box.append(note);}
+  }
+}
+const R_FIELDS=[["date","日付"],["payee","支払先"],["item","内容"],["amount","金額"],["company","会社"],["method","支払い方法"],["cardId","カード"],["cat","区分"],["caseId","受付番号"],["caseRef","参照元案件"],["site","現場"],["room","部屋"],["jobNo","仕事番号"],["note","メモ"],["photos","添付"]];
 function rHistory(r){
   if(!r||!r.edits.length)return "";
   return '<details class="note"><summary>変更の履歴（'+r.edits.length+'件）</summary><ol class="hist">'+r.edits.map(e=>'<li><span class="num">'+h(slash(ymd(new Date(e.at)))+" "+hm(new Date(e.at)))+'</span> '+h(e.label)+'：'+h(e.from===""?"（空）":e.from)+' → '+h(e.to===""?"（空）":e.to)+'</li>').join("")+'</ol></details>';
@@ -1732,11 +1770,12 @@ function rHistory(r){
 function vRform(){
   const r=ui.rId?rFind(ui.rId):null, S=RS(), edit=!r||rEditable(r), t=todayS();
   const v=Object.assign(RECEIPT_DEFAULTS(),{date:t,company:S.lastCo||"CP"},r||{},ui.rDraft||{});
-  const cases=DB.cases.filter(c=>c.stage!=="lost").slice().sort((a,b)=>b.id.localeCompare(a.id));
+  const cases=receiptCaseChoices();
+  if(!ui.rCasePick)ui.rCasePick={value:String(v.caseId||""),ref:v.caseRef?JSON.parse(JSON.stringify(v.caseRef)):null};
   const thumbs='<div class="photos" id="r_photos">'+v.photos.filter(k=>!(ui.rDel||[]).includes(k)).map(k=>receiptSavedMarkup(k,edit)).join("")+(ui.rNew||[]).map(receiptNewMarkup).join("")+'</div>';
   if(!edit)return '<button class="back" type="button" data-nav="rcpt">‹ 領収書へ戻る</button><section class="panel"><h2 style="font-size:18px">'+h(r.id)+' '+h(r.payee)+'</h2>'+
     '<p class="note" style="margin:0">'+(r.method==="立替"?r.status+(r.claimNo?'（'+h(r.claimNo)+'）':''):'締め済み（'+h(r.closeNo)+'）')+'のため、変更できません。</p>'+thumbs+
-    rHistory(r)+'<dl class="kv"><dt>日付</dt><dd>'+mdh(r.date)+'</dd><dt>支払先</dt><dd>'+h(r.payee)+'</dd><dt>内容</dt><dd>'+h(r.item)+'</dd><dt>金額</dt><dd class="num">'+yen(r.amount)+'</dd><dt>会社</dt><dd>'+r.company+'</dd><dt>支払い</dt><dd>'+h(r.method)+(r.cardId&&cardOf(r.cardId)?'（'+h(cardOf(r.cardId).name)+'）':'')+'</dd><dt>区分</dt><dd>'+h(r.cat)+'</dd><dt>現場</dt><dd>'+(h(r.site)||'—')+'</dd><dt>仕事番号</dt><dd>'+(h(r.jobNo)||'—')+'</dd><dt>受付番号</dt><dd>'+(h(r.caseId)||'—')+'</dd><dt>メモ</dt><dd>'+(h(r.note)||'—')+'</dd></dl></section>';
+    rHistory(r)+'<dl class="kv"><dt>日付</dt><dd>'+mdh(r.date)+'</dd><dt>支払先</dt><dd>'+h(r.payee)+'</dd><dt>内容</dt><dd>'+h(r.item)+'</dd><dt>金額</dt><dd class="num">'+yen(r.amount)+'</dd><dt>会社</dt><dd>'+r.company+'</dd><dt>支払い</dt><dd>'+h(r.method)+(r.cardId&&cardOf(r.cardId)?'（'+h(cardOf(r.cardId).name)+'）':'')+'</dd><dt>区分</dt><dd>'+h(r.cat)+'</dd><dt>現場</dt><dd>'+(h(r.site)||'—')+'</dd>'+(r.room?'<dt>部屋</dt><dd>'+h(r.room)+'</dd>':'')+'<dt>仕事番号</dt><dd>'+(h(r.jobNo)||'—')+'</dd><dt>受付番号</dt><dd>'+(h(receiptCaseLabel(r))||'—')+'</dd><dt>メモ</dt><dd>'+(h(r.note)||'—')+'</dd></dl></section>';
   const cardOpts=co=>S.cards.filter(k=>k.company===co).map(k=>'<option value="'+h(k.id)+'"'+(v.cardId===k.id?' selected':'')+'>'+h(k.name)+'</option>').join("");
   return '<button class="back" type="button" data-nav="rcpt">‹ 領収書へ戻る</button>'+
   '<section class="panel"><h2 style="font-size:18px">'+(r?h(r.id)+' を直す':'領収書を登録')+'</h2>'+
@@ -1744,14 +1783,15 @@ function vRform(){
     '<div class="f full"><span class="fk">添付（PDF・画像、複数選択できます）</span>'+thumbs+'<label class="btn" style="align-self:flex-start;display:inline-flex;align-items:center">ファイルから選ぶ<input type="file" id="r_photo" accept="application/pdf,image/*,.pdf,.heic,.heif" multiple hidden></label></div>'+
     '<label class="f">日付<input type="date" id="r_date" required value="'+h(v.date)+'"></label>'+
     '<label class="f">金額（税込・円）<input type="number" inputmode="numeric" min="1" id="r_amount" required value="'+h(v.amount??"")+'"></label>'+
-    '<label class="f full">支払先（店名）<input type="text" id="r_payee" required value="'+h(v.payee)+'" placeholder="例：○○ホームセンター"></label>'+
-    '<label class="f full">内容（品目）<input type="text" id="r_item" value="'+h(v.item)+'" placeholder="例：コーキング材・養生テープ"></label>'+
+    '<div class="receipt-input-field full"><label for="r_payee" class="fk">支払先（店名）</label><input type="text" id="r_payee" autocomplete="off" required value="'+h(v.payee)+'" placeholder="例：○○ホームセンター"><span class="note">この端末の履歴候補（最大5件）</span><div id="r_payeeSuggestions" class="receipt-suggestions" role="group" aria-label="支払先の候補"></div></div>'+
+    '<div class="receipt-input-field full"><label for="r_item" class="fk">内容（品目）</label><input type="text" id="r_item" autocomplete="off" value="'+h(v.item)+'" placeholder="例：コーキング材・養生テープ"><span class="note">この支払先で使った内容を優先（最大5件）</span><div id="r_itemSuggestions" class="receipt-suggestions" role="group" aria-label="内容の候補"></div></div>'+
     '<label class="f">会社<select id="r_co">'+COMPANIES.map(co=>'<option'+(v.company===co?' selected':'')+'>'+co+'</option>').join("")+'</select></label>'+
-    '<label class="f">区分<select id="r_cat">'+RCAT.map(x=>'<option'+(v.cat===x?' selected':'')+'>'+x+'</option>').join("")+'</select></label>'+
+    '<label class="f">区分<select id="r_cat">'+RCAT.concat(v.cat&&!RCAT.includes(v.cat)?[v.cat]:[]).map(x=>'<option'+(v.cat===x?' selected':'')+'>'+x+'</option>').join("")+'</select></label>'+
     '<label class="f">支払い方法<select id="r_method"><option'+(v.method==="立替"?' selected':'')+'>立替</option>'+(S.useCard||v.method==="法人カード"?'<option'+(v.method==="法人カード"?' selected':'')+'>法人カード</option>':'')+'</select></label>'+
     '<label class="f" id="r_cardWrap"'+(v.method==="法人カード"?'':' hidden')+'>カード<select id="r_card">'+(cardOpts(v.company)||'<option value="">この会社のカードがありません</option>')+'</select></label>'+
-    '<label class="f full">案件（任意。選ぶと現場と仕事番号が入ります）<select id="r_case"><option value="">選ばない</option>'+cases.map(c=>'<option value="'+c.id+'"'+(v.caseId===c.id?' selected':'')+'>'+h(c.id+' '+c.property+' '+c.room)+'</option>').join("")+'</select></label>'+
-    '<label class="f">現場（物件・部屋）<input type="text" id="r_site" value="'+h(v.site)+'"></label>'+
+    '<label class="f full">案件（任意。現場・部屋・仕事番号を転記）<select id="r_case">'+receiptCaseOptions(v,cases)+'</select><span class="note">共有案件は最後に読み込んだ内容です。共有元は変更しません。案件を選ばず手入力もできます。</span></label>'+
+    '<label class="f full">現場（物件・手入力可）<input type="text" id="r_site" value="'+h(v.site)+'"></label>'+
+    '<label class="f">部屋（任意）<input type="text" id="r_room" value="'+h(v.room??"")+'"></label>'+
     '<label class="f">仕事番号<input type="text" id="r_job" value="'+h(v.jobNo)+'"></label>'+
     '<label class="f full">メモ<textarea id="r_note" placeholder="何に使ったか など">'+h(v.note)+'</textarea></label>'+
     '<div class="full row"><button class="btn pri" type="submit">保存する</button>'+(r?'<span class="sp"></span><button class="btn sm danger" type="button" data-act="rdel">この領収書を削除</button>':'')+'</div>'+
@@ -1766,7 +1806,7 @@ function rPhotoPreview(){
   const box=document.getElementById("r_photos");if(!box)return;receiptReleaseURLs();const r=ui.rId?rFind(ui.rId):null;
   box.innerHTML=(r?r.photos.filter(k=>!(ui.rDel||[]).includes(k)).map(k=>receiptSavedMarkup(k,true)).join(""):"")+(ui.rNew||[]).map(receiptNewMarkup).join("");fillPhotos();
 }
-function rFormClear(){receiptSelectionGeneration++;receiptReleaseURLs();(ui.rNew||[]).forEach(x=>URL.revokeObjectURL(x.url));ui.rNew=[];ui.rDel=[];ui.rDelAsk=false;ui.rSaveUncertain=false;ui.rDraft=null;ui.rSaveMessage="";receiptSession=null;}
+function rFormClear(){receiptSelectionGeneration++;receiptReleaseURLs();(ui.rNew||[]).forEach(x=>URL.revokeObjectURL(x.url));ui.rNew=[];ui.rDel=[];ui.rDelAsk=false;ui.rSaveUncertain=false;ui.rDraft=null;ui.rSaveMessage="";ui.rCasePick=null;receiptSession=null;}
 async function receiptSelectFiles(files){
   if(!files.length||receiptSelecting||receiptSaving||ui.rSaveUncertain)return;
   const generation=receiptSelectionGeneration;receiptSelecting=true;receiptControls(true);receiptStatus("ファイルの形式を確認しています…");
@@ -1778,7 +1818,8 @@ async function receiptSelectFiles(files){
 async function rSaveForm(){
   if(receiptSaving||receiptSelecting||!receiptSession)return;
   if(receiptOtherBusy()){receiptStatus("同期などの処理中です。終了してから保存してください。入力は残しています。");return;}
-  const method=val("r_method"),fields={date:val("r_date"),payee:val("r_payee").trim(),item:val("r_item").trim(),amount:Number(val("r_amount")),company:val("r_co"),method,cardId:method==="法人カード"?val("r_card"):"",cat:val("r_cat"),caseId:val("r_case"),site:val("r_site").trim(),jobNo:val("r_job").trim(),note:val("r_note").trim()};
+  if(val("r_case")&&ui.rCasePick?.value!==val("r_case")){receiptStatus("案件の選択を確認できません。選び直してください。入力は残しています。");return;}
+  const method=val("r_method"),fields={date:val("r_date"),payee:val("r_payee").trim(),item:val("r_item").trim(),amount:Number(val("r_amount")),company:val("r_co"),method,cardId:method==="法人カード"?val("r_card"):"",cat:val("r_cat"),caseId:val("r_case"),caseRef:ui.rCasePick?.value===val("r_case")?ui.rCasePick.ref:null,site:val("r_site").trim(),room:val("r_room").trim(),jobNo:val("r_job").trim(),note:val("r_note").trim()};
   receiptSaving=true;receiptControls(true);receiptStatus("添付と保存前の控えを保存し、読み戻して確認しています…");
   const session=receiptSession;
   try{const work=async()=>{if(receiptOtherBusy())throw Error("ほかの処理中です。入力は残しています。");return receiptFileApi().commit({storage:localStorage,key:KEY,db:await idb(),defaults:RECEIPT_DEFAULTS,historyFields:R_FIELDS},session,fields,ui.rNew||[],ui.rDel||[]);};
@@ -1856,7 +1897,7 @@ function dataRows(){
     for(const x of c.payments||[])pay.push([...base,x.date,"入金",Number(x.amount)||0,x.by||""]);
   }
   const S=RS();
-  const rc=[RC_COLS,...DB.receipts.filter(r=>!fake(r.payee)).map(r=>[r.id,r.date,r.payee,r.item,r.cat,Number(r.amount)||0,r.company,r.site,r.jobNo,r.method==="立替"?r.status:(r.closeNo?"締め済み":"締め前"),r.claimNo||r.closeNo,r.photos.map(k=>(r.drive||{})[k]&&r.drive[k].link).filter(Boolean).join(" "),r.method,S.name])];
+  const rc=[RC_COLS,...DB.receipts.filter(r=>!fake(r.payee)).map(r=>[r.id,r.date,r.payee,r.item,r.cat,Number(r.amount)||0,r.company,receiptSiteLabel(r),r.jobNo,r.method==="立替"?r.status:(r.closeNo?"締め済み":"締め前"),r.claimNo||r.closeNo,r.photos.map(k=>(r.drive||{})[k]&&r.drive[k].link).filter(Boolean).join(" "),r.method,S.name])];
   /* ToDo: what genTodos() shows on this device (case ToDos and hand-added ones; done ones are not in it). Receipt notices and the examples are left out */
   const todo=[TODO_COLS,...genTodos().filter(t=>t.auto||t.manual).flatMap(t=>{
     const c=t.caseId&&DB.cases.find(x=>x.id===t.caseId);
@@ -2227,13 +2268,14 @@ function dSettings(){
 const main=document.getElementById("main");
 function render(){
   if(ui.view==="rform"&&(receiptSaving||receiptSelecting))return;
-  if(ui.view==="rform"&&document.getElementById("rForm")){const ids={date:"r_date",payee:"r_payee",item:"r_item",amount:"r_amount",company:"r_co",method:"r_method",cardId:"r_card",cat:"r_cat",caseId:"r_case",site:"r_site",jobNo:"r_job",note:"r_note"};ui.rDraft=Object.fromEntries(Object.entries(ids).map(([k,id])=>[k,val(id)]));}
+  if(ui.view==="rform"&&document.getElementById("rForm")){const ids={date:"r_date",payee:"r_payee",item:"r_item",amount:"r_amount",company:"r_co",method:"r_method",cardId:"r_card",cat:"r_cat",caseId:"r_case",site:"r_site",room:"r_room",jobNo:"r_job",note:"r_note"};ui.rDraft=Object.fromEntries(Object.entries(ids).map(([k,id])=>[k,val(id)]));}
   receiptReleaseURLs();
   const v={home:vHome,cases:vCases,new:vNew,detail:vDetail,todo:vTodo,cal:vCal,gantt:vGantt,stats:vStats,rcpt:vRcpt,rform:vRform}[ui.view]||vHome;
   main.innerHTML=v();
   document.querySelector(".proto").hidden=!hasExamples();
   const navKey=ui.view==="new"||ui.view==="detail"?"cases":ui.view==="rform"?"rcpt":ui.view;
   if(ui.view==="rcpt"||ui.view==="rform")fillPhotos();
+  if(ui.view==="rform")receiptRefreshSuggestions();
   if(ui.view==="rform"&&ui.rSaveUncertain){receiptControls(true);const button=main.querySelector('#rForm button[type="submit"]');if(button){button.disabled=false;button.textContent="保存状況を確認";}}
   document.querySelectorAll("[data-nav]").forEach(b=>{if(b.closest("nav"))b.setAttribute("aria-current",b.dataset.nav===navKey?"page":"false")});
   const t=todayS(), n=genTodos().filter(x=>x.due&&x.due<t).length;
@@ -2249,7 +2291,7 @@ function go(view,extra){
   if(receiptSaving||receiptSelecting||receiptSending||ui.rSaveUncertain){toast("領収書の保存状況を確認してから移動してください。入力は残しています。",5000);return;}
   if(view==="rform"){
     if(ui.view!=="rform"||(extra?.rId||null)!==(ui.rId||null))rFormClear();
-    try{if(dbPersistedRaw===null&&localStorage.getItem(KEY)===null&&!save())return;if(localStorage.getItem(KEY)!==dbPersistedRaw)throw Error("別の画面で記録が更新されています。再読み込みしてから領収書を開いてください。");receiptSession=extra?.rId&&!rEditable(rFind(extra.rId))?null:receiptFileApi().open(localStorage,KEY,extra?.rId||null);}catch(error){toast(error.message,6500);return;}
+    try{receiptInputApi();if(dbPersistedRaw===null&&localStorage.getItem(KEY)===null&&!save())return;if(localStorage.getItem(KEY)!==dbPersistedRaw)throw Error("別の画面で記録が更新されています。再読み込みしてから領収書を開いてください。");receiptSession=extra?.rId&&!rEditable(rFind(extra.rId))?null:receiptFileApi().open(localStorage,KEY,extra?.rId||null);}catch(error){toast(error.message,6500);return;}
   }
 if(view!=="rcpt")rClearDl();if(view!=="rform")rFormClear();Object.assign(ui,{view,coEdit:false,rcvEdit:false,rcvSuggest:"",acct:false,exAsk:false,rcCancel:null,cdel:null,cdelMsg:"",cdelBusy:false,cdelCal:true},extra||{});render();window.scrollTo(0,0)}
 let toastT;
@@ -2273,6 +2315,7 @@ document.addEventListener("click",e=>{
   if(!el)return;
   if(receiptSaving||receiptSelecting||receiptSending){toast("領収書の処理中です。入力は残しています。",4000);return;}
   if(ui.rSaveUncertain&&el.closest("#rForm")&&!el.matches('button[type="submit"]'))return;
+  if(el.dataset.receiptSuggestion){const id=el.dataset.receiptSuggestion==="payee"?"r_payee":"r_item",input=document.getElementById(id);if(input){input.value=el.dataset.value;receiptRefreshSuggestions();input.focus({preventScroll:true});}return;}
   const c=ui.caseId?editCase(ui.caseId):null;
   if(el.dataset.caseidentity){caseIdentityOpen(el.dataset.caseidentity);return}
   if(el.dataset.caseprevious!=null){try{caseIdentityFill(caseIdentityApi().previousFields(caseIdentityHistoryRows[Number(el.dataset.caseprevious)],caseIdentitySession.id));document.getElementById("caseIdentityStatus").textContent="以前の物件名・号室を編集欄に戻しました。保存すると新しい履歴を残します。進捗は変わりません。";}catch(error){toast(error.message,5000)}return}
@@ -2461,6 +2504,7 @@ document.addEventListener("click",e=>{
   if(a==="csvone"){go("cases",{csv:true});return}
 });
 document.addEventListener("input",e=>{
+  if(e.target.id==="r_payee"||e.target.id==="r_item"){receiptRefreshSuggestions();return;}
   const t=e.target;
   if(t.id==="q"){ui.q=t.value;const pos=t.selectionStart;render();const q=document.getElementById("q");q.focus();try{q.setSelectionRange(pos,pos)}catch(err){}return}
   if(t.id==="d_bdate"){const pd=document.getElementById("d_pdue");if(pd&&t.value){pd.value=payDueOf(t.value,DB.settings.payRule);const dl=main.querySelector('[data-dl="d_pdue"]');if(dl)dl.textContent=mdh(pd.value)+"（"+PAY_RULES[DB.settings.payRule]+"）"}}
@@ -2473,8 +2517,7 @@ document.addEventListener("change",e=>{
   if(t.id==="showEnded"){ui.showEnded=t.checked;render();return}
   if(t.id==="cdel_gcal"){ui.cdelCal=t.checked;ui.cdelMsg="";render();return}
   if(t.id==="r_photo"){const files=[...t.files];t.value="";receiptSelectFiles(files);return}
-  if(t.id==="r_case"){const cc=findCase(t.value);if(cc){document.getElementById("r_site").value=(cc.property+" "+cc.room).trim();document.getElementById("r_job").value=cc.jobNo||"";
-    const rc=document.getElementById("r_co");if(rc&&COMPANIES.includes(cc.company)&&rc.value!==cc.company){rc.value=cc.company;rc.dispatchEvent(new Event("change",{bubbles:true}))}}return}
+  if(t.id==="r_case"){receiptCaseChanged(t.value);return;}
   if(t.id==="r_method"||t.id==="r_co"){const card=val("r_method")==="法人カード",w=document.getElementById("r_cardWrap"),sel=document.getElementById("r_card");if(w)w.hidden=!card;
     if(sel){const ks=RS().cards.filter(k=>k.company===val("r_co"));sel.innerHTML=ks.map(k=>'<option value="'+h(k.id)+'">'+h(k.name)+'</option>').join("")||'<option value="">この会社のカードがありません</option>'}return}
   if(t.id==="payOnly"){ui.payOnly=t.checked;render();return}
