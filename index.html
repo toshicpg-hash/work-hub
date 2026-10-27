@@ -148,6 +148,8 @@ ol.hist li{overflow-wrap:anywhere}
 .chip.t-vacant,.chip.t-reno,.chip.t-occupied,.chip.t-reform{background:var(--amber-soft);color:var(--amber)}
 .chip.t-eizen,.chip.t-teiki,.chip.t-cleaning{background:var(--green-soft);color:var(--green)}
 .pill{font-size:12px;font-weight:700;padding:2px 10px;border-radius:6px;border:1px solid var(--line);white-space:nowrap}
+.case-stage{display:flex;justify-content:flex-start;min-width:0;text-align:left}
+.case-stage>.pill{max-width:100%;white-space:normal;overflow-wrap:anywhere}
 .pill.s-won{border-color:var(--green);color:var(--green)}
 .pill.s-working,.pill.s-handed{border-color:var(--accent);color:var(--accent)}
 .pill.s-built{border-color:var(--amber);color:var(--amber)}
@@ -298,7 +300,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.40・10/27更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.41・10/27更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -607,8 +609,9 @@ const stagePill=c=>'<span class="pill s-'+c.stage+(lateDays(c)?" late":"")+'">'+
 function caseCard(c){
   const urgent=c.type==="kinkyu"&&(c.stage==="new"||c.stage==="site"), late=lateDays(c);
   return '<button type="button" class="card'+(urgent?" urgent":"")+'" data-open="'+h(c.id)+'">'+
-    '<div class="row">'+coChip(c.company)+typeChip(c)+'<span class="note num">'+h(c.id)+'</span><span class="sp"></span>'+stagePill(c)+'</div>'+
+    '<div class="row">'+coChip(c.company)+typeChip(c)+'<span class="note num">'+h(c.id)+'</span></div>'+
     (c.ro?'<div class="row">'+roChip(c)+'</div>':'')+
+    '<div class="case-stage">'+stagePill(c)+'</div>'+
     '<div class="ttl">'+h(c.property)+' '+h(c.room)+(c.symptom?' ・ '+h(c.symptom):'')+'</div>'+
     '<div class="row note"><span>'+h(c.client)+'</span>'+(c.ro?personBadge(c.tantou):'<span>担当 '+h(c.tantou)+'</span>')+(estOf(c)!=null?'<span class="num">見積 '+yen(estOf(c))+'</span>':'')+'</div>'+
     (c.stage==="billed"?'<div class="payline num"><span>請求 '+yen(c.billAmount)+'</span><span>残 '+yen(remainOf(c))+'</span><span>入金予定 '+md(c.payDue)+'</span>'+(late?'<span class="late">'+late+'日遅れ</span>':'')+(lastReq(c)?'<span>経理に確認依頼 '+md(lastReq(c))+'</span>':'')+'</div>':'')+
@@ -2078,7 +2081,7 @@ function corpCaseCard(r){
   const dt=k=>v(k)?mdh(v(k).slice(0,10)):"";
   const rows=[["依頼元",v("依頼元")],["受付",dt("受付日")],["予定日",dt("予定日")],["実施日",dt("実施日")],["見積",v("見積額")?yen(Number(v("見積額"))):""],["受注",dt("受注日")],["仕事番号",v("仕事番号")],["請求",v("請求額")?yen(Number(v("請求額")))+"（"+dt("請求日")+"）":""],["入金予定",dt("入金予定日")],["残額",Number(v("残額"))?yen(Number(v("残額")))+(Number(v("遅れ日数"))?"・"+v("遅れ日数")+"日遅れ":""):""]].filter(x=>x[1]);
   const late=Number(v("遅れ日数"))>0;
-  return '<div class="card" style="cursor:default'+(late?';border-color:var(--red)':'')+'"><div class="row">'+coChip(v("会社"))+'<span class="chip">'+h(v("種類"))+'</span><span class="note num">'+h(v("受付番号"))+'</span><span class="sp"></span><span class="pill">'+h(v("段階"))+'</span></div>'+
+  return '<div class="card" style="cursor:default'+(late?';border-color:var(--red)':'')+'"><div class="row">'+coChip(v("会社"))+'<span class="chip">'+h(v("種類"))+'</span><span class="note num">'+h(v("受付番号"))+'</span></div><div class="case-stage"><span class="pill">'+h(v("段階"))+'</span></div>'+
     '<div class="ttl">'+h(v("物件"))+' '+h(v("部屋"))+'</div>'+
     '<dl class="kv">'+rows.map(([k,x])=>'<dt>'+k+'</dt><dd>'+h(x)+'</dd>').join("")+'</dl>'+
     (v("最終の動き")?'<div class="note">最終の動き '+h(dt("最終の動き"))+'</div>':'')+'</div>';
