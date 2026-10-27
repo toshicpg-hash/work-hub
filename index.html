@@ -35,6 +35,8 @@
 
 
 #caseIdentityEditor{width:min(94vw,680px);max-height:90dvh;overflow:auto;border:0;border-radius:18px;padding:18px}#caseIdentityEditor::backdrop{background:#14272b88}#caseIdentityEditor h2{margin:0;font-size:20px}#caseIdentityEditor .form{margin:0}#caseIdentityEditor .row{flex-wrap:wrap}#caseIdentityStatus{white-space:pre-wrap;overflow-wrap:anywhere}#caseIdentityEditor .f{min-width:0}#caseIdentityEditor .btn{min-height:44px}
+
+#manualTodoCancelEditor{width:min(94vw,680px);max-height:90dvh;overflow:auto;border:0;border-radius:18px;padding:18px}#manualTodoCancelEditor::backdrop{background:#14272b88}#manualTodoCancelEditor .form{margin:0}#manualTodoCancelEditor h2{margin:0;font-size:20px}#manualTodoCancelEditor .row{flex-wrap:wrap}#manualTodoCancelTarget,#manualTodoCancelStatus{white-space:pre-wrap;overflow-wrap:anywhere}#manualTodoCancelEditor .f{min-width:0}#manualTodoCancelEditor .btn{min-height:44px}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -295,7 +297,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.37・10/27更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.38・10/27更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -327,6 +329,16 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 <p class="note full">この端末の手入力ToDoだけを編集します。担当名は編集権限ではありません。社員の「見るだけ」の記録や、Googleのリクエスト・予定は別の記録です。</p>
 </form></dialog>
 
+<dialog id="manualTodoCancelEditor" aria-labelledby="manualTodoCancelHeading">
+<form id="manualTodoCancelForm" class="form">
+<div class="full row"><h2 id="manualTodoCancelHeading">手入力ToDoを取り消す</h2><span class="sp"></span><button class="btn" type="button" data-act="mtdcancelclose">閉じる</button></div>
+<p class="note full">この端末の手入力ToDoが対象です。内容・期限を確認してください。社員宛てのリクエストは変更しません。</p>
+<p id="manualTodoCancelTarget" class="full"></p>
+<label class="f full">取消理由<input id="manualTodoCancelReason" type="text" required maxlength="500" value="予定変更のため不要"></label>
+<p class="note full">完了・入金済みにはしません。通常の未完了一覧と期限超過件数から外し、元の内容を取消履歴に残します。</p>
+<p id="manualTodoCancelStatus" class="full" role="status" aria-live="polite"></p>
+<div class="full row"><button id="manualTodoCancelSave" class="btn danger" type="submit">この手入力ToDoを取り消す</button><button class="btn" type="button" data-act="mtdcancelbackup">取消前の控えを保存</button></div>
+</form></dialog>
 <dialog id="caseIdentityEditor" aria-labelledby="caseIdentityHeading">
 <form id="caseIdentityForm" class="form">
 <div class="full row"><h2 id="caseIdentityHeading">物件名・号室を直す</h2><span class="sp"></span><button class="btn" type="button" data-act="caseidentityclose">閉じる</button></div>
@@ -340,7 +352,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 <p class="note full">保存後に「Googleとまとめて同期」を押すと、会社側の一覧へ反映されます。登録済みのGoogle予定やAccessの内容は、この操作では書き換えません。</p>
 </form></dialog>
 <script src="./case-identity.js?v=1.37"></script>
-<script src="./manual-todo.js?v=1.36"></script>
+<script src="./manual-todo.js?v=1.38"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -473,8 +485,13 @@ function roCase(r,x){
 function roBuild(data){
   const ok=corpByCo(data,ui.corpCo||"all").filter(x=>x.ok);
   ui.corpRO=ok.flatMap(x=>x.cases.filter(r=>r["受付番号"]).map(r=>roCase(r,x)));
-  ui.corpTodo=ok.flatMap(x=>(x.todo||[]).filter(r=>r["内容"]).map(r=>{const no=String(r["受付番号"]||"");
-    return {ro:true,owner:x.s.name,title:String(r["内容"]),due:String(r["期限"]||"").slice(0,10),tantou:surname(r["担当"]||x.s.name),kind:String(r["種類"]||""),property:String(r["物件"]||""),room:String(r["部屋"]||""),caseId:no?no+"・"+x.s.name:""}}));
+  ui.corpTodo=ok.flatMap(x=>{
+    const exported=(x.todo||[]).filter(r=>r["内容"]);
+    /* When the request ledger was fetched, its same-ID state is authoritative.
+       An old employee ToDo export must not resurrect a cancelled request or hide a restored one. */
+    const rows=Array.isArray(x.orders)?exported.filter(r=>!isReqKind(r["種類"])).concat(x.orders.filter(o=>o["指示ID"]&&o["内容"]&&o["状態"]==="未完了").map(o=>({"内容":o["内容"],"期限":o["期限"],"担当":x.s.name,"種類":"リクエスト",sourceRequestId:String(o["指示ID"])}))):exported;
+    return rows.map(r=>{const no=String(r["受付番号"]||"");return {ro:true,owner:x.s.name,title:String(r["内容"]),due:String(r["期限"]||"").slice(0,10),tantou:surname(r["担当"]||x.s.name),kind:String(r["種類"]||""),property:String(r["物件"]||""),room:String(r["部屋"]||""),caseId:no?no+"・"+x.s.name:"",...(r.sourceRequestId?{sourceRequestId:r.sourceRequestId}:{})};});
+  });
 }
 /* 最後に読んだ社員の記録をこの端末に残し、開き直したときは次の読み込みまでそれを表示する（ログイン情報は残さない。30日を過ぎたら使わない） */
 const CKEEP="workhub_corp_last_v1", CKEEP_DAYS=30;
@@ -564,7 +581,7 @@ function genTodos(){
     if(unpaid(c)&&lastReq(c)&&!acctReplied(c)&&addDays(lastReq(c),S.acctWait)<=todayS())out.push(Object.assign({},base,{title:"経理の返事を確認する（"+md(lastReq(c))+"に入金確認を依頼）",due:addDays(lastReq(c),S.acctWait)}));
     if(lateDays(c))out.push(Object.assign({},base,{title:"入金を確認する（"+lateDays(c)+"日遅れ・残 "+yen(remainOf(c))+"）",due:c.payDue}));
   }
-  for(const t of DB.todos)if(!t.done)out.push(Object.assign({manual:true},t));
+  for(const t of DB.todos)if(!t.done&&!t.cancelled)out.push(Object.assign({manual:true},t));
   rcptNotices().forEach((title,i)=>out.push({id:"rc"+i,title,due:todayS(),tantou:RS().name||"自分",nav:"rcpt"}));
   return out.sort((a,b)=>(a.due||"9").localeCompare(b.due||"9"));
 }
@@ -607,7 +624,7 @@ function todoRow(t){
   return '<div class="card" style="cursor:default">'+
     '<div class="row"><span class="ttl">'+h(t.title)+'</span><span class="sp"></span>'+dueLabel(t.due)+'</div>'+
     '<div class="row note">'+(c?typeChip(c)+'<span>'+h(c.property)+' '+h(c.room)+'</span>':'<span class="chip">'+(t.nav?'領収書':'手入力')+'</span>')+'<span>担当 '+h(t.tantou)+'</span><span class="sp"></span>'+
-    (c?'<button class="btn sm" type="button" data-open="'+h(c.id)+'">案件を開く</button>':t.nav?'<button class="btn sm" type="button" data-nav="'+t.nav+'">領収書を開く</button>':(manualTodoEditable(t)?'<button class="btn sm" type="button" data-mtdedit="'+h(t.id)+'">編集</button>':'')+(t.done?'<span class="chip">完了済み</span>':'<button class="btn sm" type="button" data-done="'+h(t.id)+'">完了</button>'))+'</div></div>';
+    (c?'<button class="btn sm" type="button" data-open="'+h(c.id)+'">案件を開く</button>':t.nav?'<button class="btn sm" type="button" data-nav="'+t.nav+'">領収書を開く</button>':(manualTodoEditable(t)?'<button class="btn sm" type="button" data-mtdedit="'+h(t.id)+'">編集</button>'+(!t.done&&!t.cancelled?'<button class="btn sm" type="button" data-mtdcancel="'+h(t.id)+'">取消</button>':''):'')+(t.done?'<span class="chip">完了済み</span>':'<button class="btn sm" type="button" data-done="'+h(t.id)+'">完了</button>'))+'</div></div>';
 }
 
 function vHome(){
@@ -926,7 +943,7 @@ function vTodo(){
   seg("tt",ui.tTantou,[["all","全員"],...tans.map(s=>[s,s])])+roNote()+
   '<p class="note" style="margin:0">案件のToDoは段階に合わせて自動で出ます。案件を進めると消えます。</p>'+
   '<div class="list">'+(list.map(todoRow).join("")||'<div class="empty">この条件のToDoはありません</div>')+'</div></section>'+
-  completedManualTodos()+
+  completedManualTodos()+cancelledManualTodos()+
   '<section class="panel"><h3>ToDoを手で追加</h3><form id="todoForm" class="form">'+
     '<label class="f full">内容<input type="text" id="td_title" required placeholder="例：管理会社へ挨拶まわり"></label>'+
     '<label class="f">期限<input type="date" id="td_due" value="'+t+'"></label>'+
@@ -940,12 +957,16 @@ let manualTodoSession=null,manualTodoHistoryRows=[],manualTodoSaving=false;
 const manualTodoApi=()=>globalThis.WorkHubManualTodo;
 function manualStorageNotice(message){const el=document.getElementById("manualTodoStorageNotice");if(el){el.textContent=message;el.hidden=false}setTimeout(()=>toast(message,6500),0);}
 function manualTodoEditable(t){return !!(manualTodoApi()?.editable(t)&&DB.todos.filter(x=>x.id===t.id).length===1&&manualTodoApi().editable(DB.todos.find(x=>x.id===t.id)));}
-function completedManualTodos(){const rows=DB.todos.filter(t=>t.done&&manualTodoEditable(t)&&(ui.tTantou==="all"||t.tantou===ui.tTantou));return rows.length?'<section class="panel"><details><summary>完了した手入力ToDo（全期間） '+rows.length+'件</summary><p class="note">内容は編集できます。完了状態は保持します。</p><div class="list">'+rows.map(todoRow).join("")+'</div></details></section>':'';}
+function completedManualTodos(){const rows=DB.todos.filter(t=>t.done&&!t.cancelled&&manualTodoEditable(t)&&(ui.tTantou==="all"||t.tantou===ui.tTantou));return rows.length?'<section class="panel"><details><summary>完了した手入力ToDo（全期間） '+rows.length+'件</summary><p class="note">内容は編集できます。完了状態は保持します。</p><div class="list">'+rows.map(todoRow).join("")+'</div></details></section>':'';}
+function cancelledManualTodos(){
+ const rows=DB.todos.filter(t=>t.cancelled&&manualTodoEditable(t)&&(ui.tTantou==="all"||t.tantou===ui.tTantou));
+ return rows.length?'<section class="panel"><details><summary>取り消した手入力ToDo（全期間） '+rows.length+'件</summary><p class="note">取消は完了・入金済みとは別です。元の記録を保持しています。</p><div class="list">'+rows.map(t=>'<div class="card" style="cursor:default"><div class="row"><span class="ttl">'+h(t.title)+'</span><span class="chip">取消済み</span></div><p class="note">元の期限 '+h(t.due||"なし")+' ／ 担当 '+h(t.tantou||"未設定")+'<br>取消 '+h(t.cancelledAt?new Date(t.cancelledAt).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}):"日時不明")+'<br>理由 '+h(t.cancelReason||"記録なし")+'</p></div>').join("")+'</div></details></section>':'';
+}
 function manualTodoBusy(){return !!(ui.gsync?.busy||ui.gbusy||ui.oBusy||ui.dbusy||ui.cdelBusy);}
 function manualTodoInputs(){return {title:val("manualTodoTitle"),due:val("manualTodoDue"),tantou:val("manualTodoAssignee")};}
 function manualTodoFill(t){document.getElementById("manualTodoTitle").value=t.title??"";document.getElementById("manualTodoDue").value=t.due??"";document.getElementById("manualTodoAssignee").value=t.tantou??"";}
-function manualTodoHistoryRender(){const box=document.getElementById("manualTodoHistory");try{const value=manualTodoApi().history(localStorage,manualTodoSession.id);manualTodoHistoryRows=value.records;box.innerHTML=(value.warnings.length?'<p class="note">読み取れない履歴があります。元の控えは保持しています。</p>':'')+(value.records.map((r,i)=>'<div class="manual-history"><p>'+h(new Date(r.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'・'+(r.verified?'保存確認済み':'保存の確認記録なし')+'</p><p>'+h(r.before.title)+'<br>期限 '+h(r.before.due||"なし")+' ／ 担当 '+h(r.before.tantou||"未設定")+'<br>'+(r.before.done?'完了':'未完了')+'</p><button class="btn sm" type="button" data-mtdprevious="'+i+'">この内容を編集欄に戻す</button></div>').join("")||'<p class="note">この端末にはまだ編集履歴がありません。</p>');}catch{box.textContent="履歴を読み取れません。元の記録は保持しています。";}}
-function manualTodoOpen(id){if(manualTodoBusy()){toast("同期などの処理が終わってから編集してください",5000);return}try{if(!manualTodoApi())throw Error("編集機能を読み込めません。再読み込みしてください。");const session=manualTodoApi().open(localStorage,KEY,id);manualTodoSession=session;manualTodoFill(session.before);document.getElementById("manualTodoStaff").innerHTML=[...new Set(STAFF.concat(DB.todos.map(t=>t.tantou).filter(Boolean)))].map(t=>'<option value="'+h(t)+'"></option>').join("");document.getElementById("manualTodoState").textContent="手入力ToDo・この端末 ／ "+(session.before.done?"完了済み（状態を保持）":"未完了（入金確認などが済むまで保持）");document.getElementById("manualTodoStatus").textContent="編集前の控えを端末に残してから、同じToDoに保存します。";document.getElementById("manualTodoSave").disabled=false;manualTodoHistoryRender();document.getElementById("manualTodoEditor").showModal();}catch(error){toast(error.message,6500);}}
+function manualTodoHistoryRender(){const box=document.getElementById("manualTodoHistory");try{const value=manualTodoApi().history(localStorage,manualTodoSession.id);manualTodoHistoryRows=value.records;box.innerHTML=(value.warnings.length?'<p class="note">読み取れない履歴があります。元の控えは保持しています。</p>':'')+(value.records.map((r,i)=>'<div class="manual-history"><p>'+h(new Date(r.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'・'+(r.verified?'保存確認済み':'保存の確認記録なし')+'</p><p>'+h(r.before.title)+'<br>期限 '+h(r.before.due||"なし")+' ／ 担当 '+h(r.before.tantou||"未設定")+'<br>'+(r.before.cancelled?'取消済み':r.before.done?'完了':'未完了')+'</p><button class="btn sm" type="button" data-mtdprevious="'+i+'">この内容を編集欄に戻す</button></div>').join("")||'<p class="note">この端末にはまだ編集履歴がありません。</p>');}catch{box.textContent="履歴を読み取れません。元の記録は保持しています。";}}
+function manualTodoOpen(id){if(manualTodoBusy()){toast("同期などの処理が終わってから編集してください",5000);return}try{if(!manualTodoApi())throw Error("編集機能を読み込めません。再読み込みしてください。");const session=manualTodoApi().open(localStorage,KEY,id);manualTodoSession=session;manualTodoFill(session.before);document.getElementById("manualTodoStaff").innerHTML=[...new Set(STAFF.concat(DB.todos.map(t=>t.tantou).filter(Boolean)))].map(t=>'<option value="'+h(t)+'"></option>').join("");document.getElementById("manualTodoState").textContent="手入力ToDo・この端末 ／ "+(session.before.cancelled?"取消済み（状態を保持）":session.before.done?"完了済み（状態を保持）":"未完了（入金確認などが済むまで保持）");document.getElementById("manualTodoStatus").textContent="編集前の控えを端末に残してから、同じToDoに保存します。";document.getElementById("manualTodoSave").disabled=false;manualTodoHistoryRender();document.getElementById("manualTodoEditor").showModal();}catch(error){toast(error.message,6500);}}
 function manualTodoClose(){if(manualTodoSaving)return;if(manualTodoSession){const input=manualTodoInputs(),before=manualTodoSession.before;if(["title","due","tantou"].some(k=>input[k]!==String(before[k]??""))&&!confirm("保存していない入力があります。閉じますか？"))return;}document.getElementById("manualTodoEditor").close();manualTodoSession=null;}
 function manualTodoDownload(draft){if(!manualTodoSession)return;try{const value=draft?{format:"workhub-manual-todo-draft-v1",id:manualTodoSession.id,fields:manualTodoInputs(),original:manualTodoSession.before,at:new Date().toISOString()}:{format:"workhub-manual-todo-before-v1",id:manualTodoSession.id,before:manualTodoSession.before,beforeRaw:manualTodoSession.beforeRaw,at:new Date().toISOString()};const blob=new Blob([JSON.stringify(value,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="CPG-HUB-ToDo-"+(draft?"draft-":"before-")+new Date().toLocaleDateString("sv-SE",{timeZone:"Asia/Tokyo"})+".json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}catch{document.getElementById("manualTodoStatus").textContent="控えファイルを保存できませんでした。入力内容は残しています。空き容量やダウンロードの設定を確認してください。";}}
 async function manualTodoSave(){if(manualTodoSaving||!manualTodoSession)return;if(manualTodoBusy()){document.getElementById("manualTodoStatus").textContent="同期などの処理中です。終了してから保存してください。入力は残しています。";return}const input=manualTodoInputs(),session=manualTodoSession;manualTodoSaving=true;const button=document.getElementById("manualTodoSave"),status=document.getElementById("manualTodoStatus");button.disabled=true;status.textContent="最新の記録と編集前の控えを照合しています…";try{const commit=()=>{if(manualTodoBusy())throw Error("ほかの処理中のため保存していません。入力は残しています。");return manualTodoApi().commit(localStorage,KEY,session,input,{operationId:crypto.randomUUID(),at:new Date().toISOString()});};const result=navigator.locks?.request?await navigator.locks.request(KEY+":manual-todo-edit",commit):commit();if(manualTodoSession!==session)throw Error("編集画面が変わりました。最新の記録を確認してください。");DB=upgrade(result.db);dbPersistedRaw=result.raw;document.getElementById("manualTodoStorageNotice").hidden=true;manualTodoSession=null;document.getElementById("manualTodoEditor").close();render();toast(result.changed?(result.proofSaved?"同じToDoを更新し、保存内容を読み戻して確認しました。完了状態は保持しています。":"ToDoの保存・読み戻しは確認済みです。履歴の確認記録だけ保存できませんでした。編集前の控えは残っています。") :"変更はありません。元の記録を保持しています。",6500);}catch(error){status.textContent=error.message;if(error.mayHaveSaved)status.textContent+=" 入力を控えてから画面を閉じ、再読み込みで確認してください。";manualTodoHistoryRender();}finally{manualTodoSaving=false;button.disabled=false;}}
@@ -1001,6 +1022,34 @@ async function caseIdentitySave(){
 }
 if(window.addEventListener)window.addEventListener("storage",e=>{if(e.key===KEY&&caseIdentitySession)document.getElementById("caseIdentityStatus").textContent="別の画面で更新がありました。入力は残しています。保存時に最新の案件を照合します。";});
 document.getElementById("caseIdentityEditor").addEventListener("cancel",e=>{e.preventDefault();caseIdentityClose();});
+
+
+/* Explicit cancellation is separate from completion and from employee requests. */
+let manualTodoCancelSession=null,manualTodoCancelling=false;
+function manualTodoCancelBusy(){return manualTodoBusy()||manualTodoSaving||caseIdentitySaving;}
+function manualTodoCancelOpen(id){
+ if(manualTodoCancelBusy()){toast("同期などの処理が終わってから取り消してください",5000);return;}
+ try{if(!manualTodoApi()?.cancel)throw Error("取消機能を読み込めません。再読み込みしてください。");const session=manualTodoApi().open(localStorage,KEY,id);if(session.before.done||session.before.cancelled)throw Error("このToDoは完了済み、または取消済みです。記録は変更していません。");manualTodoCancelSession=session;
+  document.getElementById("manualTodoCancelTarget").textContent=session.before.title+"\n期限 "+(session.before.due||"なし")+" ／ 担当 "+(session.before.tantou||"未設定")+"\nID "+session.id;
+  document.getElementById("manualTodoCancelReason").value="予定変更のため不要";document.getElementById("manualTodoCancelStatus").textContent="取消前の控えを残し、同じIDの記録を保持します。";document.getElementById("manualTodoCancelSave").disabled=false;document.getElementById("manualTodoCancelEditor").showModal();
+ }catch(error){toast(error.message,6500);}
+}
+function manualTodoCancelClose(){if(manualTodoCancelling)return;document.getElementById("manualTodoCancelEditor").close();manualTodoCancelSession=null;}
+function manualTodoCancelBackup(){
+ if(!manualTodoCancelSession)return;
+ try{const value={format:"workhub-manual-todo-before-cancel-v1",id:manualTodoCancelSession.id,before:manualTodoCancelSession.before,beforeRaw:manualTodoCancelSession.beforeRaw,at:new Date().toISOString()},url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:"application/json"})),a=document.createElement("a");a.href=url;a.download="CPG-HUB-ToDo-before-cancel.json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}
+ catch{document.getElementById("manualTodoCancelStatus").textContent="控えファイルを保存できません。元の記録は変更していません。";}
+}
+async function manualTodoCancelSave(){
+ if(manualTodoCancelling||!manualTodoCancelSession)return;const status=document.getElementById("manualTodoCancelStatus"),button=document.getElementById("manualTodoCancelSave");if(manualTodoCancelBusy()){status.textContent="同期などの処理中です。終了してから操作してください。";return;}
+ const session=manualTodoCancelSession,reason=val("manualTodoCancelReason");manualTodoCancelling=true;button.disabled=true;status.textContent="最新の記録と取消前の控えを照合しています…";
+ try{const commit=()=>{if(manualTodoCancelBusy())throw Error("ほかの処理中のため取り消していません。入力は残しています。");return manualTodoApi().cancel(localStorage,KEY,session,reason,{operationId:crypto.randomUUID(),at:new Date().toISOString()});};const result=navigator.locks?.request?await navigator.locks.request(KEY+":manual-todo-edit",commit):commit();
+  if(manualTodoCancelSession!==session)throw Error("取消画面が変わりました。最新の記録を確認してください。");DB=upgrade(result.db);dbPersistedRaw=result.raw;manualTodoCancelSession=null;document.getElementById("manualTodoCancelEditor").close();document.getElementById("manualTodoStorageNotice").hidden=true;render();toast(result.changed?(result.proofSaved?"手入力ToDoを取り消し、読み戻して確認しました。元の記録は取消履歴に残しています。完了にはしていません。":"取消の保存・読み戻しは確認済みです。履歴の確認記録だけ保存できませんでした。取消前の控えは残っています。") :"すでに取消済みです。元の記録を保持しています。",6500);
+ }catch(error){status.textContent=error.message;if(error.mayHaveSaved)status.textContent+=" もう一度押さず、再読み込みで確認してください。";}
+ finally{manualTodoCancelling=false;button.disabled=false;}
+}
+document.getElementById("manualTodoCancelEditor").addEventListener("cancel",e=>{e.preventDefault();manualTodoCancelClose();});
+window.addEventListener?.("storage",e=>{if(e.key===KEY&&manualTodoCancelSession)document.getElementById("manualTodoCancelStatus").textContent="別の画面で更新がありました。入力は残しています。保存前に最新状態を照合します。";});
 
 /* 社員の案件の詳細（見るだけ。編集・削除・登録のボタンは出さない） */
 function roDetail(c){
@@ -2181,6 +2230,9 @@ document.addEventListener("click",e=>{
   if(el.dataset.caseprevious!=null){try{caseIdentityFill(caseIdentityApi().previousFields(caseIdentityHistoryRows[Number(el.dataset.caseprevious)],caseIdentitySession.id));document.getElementById("caseIdentityStatus").textContent="以前の物件名・号室を編集欄に戻しました。保存すると新しい履歴を残します。進捗は変わりません。";}catch(error){toast(error.message,5000)}return}
   if(el.dataset.act==="caseidentityclose"){caseIdentityClose();return}
   if(el.dataset.act==="caseidentitybackup"||el.dataset.act==="caseidentitydraft"){caseIdentityDownload(el.dataset.act==="caseidentitydraft");return}
+  if(el.dataset.mtdcancel){manualTodoCancelOpen(el.dataset.mtdcancel);return}
+  if(el.dataset.act==="mtdcancelclose"){manualTodoCancelClose();return}
+  if(el.dataset.act==="mtdcancelbackup"){manualTodoCancelBackup();return}
   if(el.dataset.mtdedit){manualTodoOpen(el.dataset.mtdedit);return}
   if(el.dataset.mtdprevious!=null){const record=manualTodoHistoryRows[Number(el.dataset.mtdprevious)];try{manualTodoFill(manualTodoApi().previousFields(record,manualTodoSession.id));document.getElementById("manualTodoStatus").textContent="以前の内容を編集欄へ戻しました。保存すると新しい履歴を残します。完了状態は変わりません。";}catch(error){toast(error.message,5000)}return}
   if(el.dataset.act==="mtdclose"){manualTodoClose();return}
@@ -2224,7 +2276,7 @@ document.addEventListener("click",e=>{
     ui.oBusy=true;ui.oMsg={k,ok:true,text:"送っています…"};render();
     adminOrderAdd(x,title,due).then(()=>{ui.oMsg={k,ok:true,text:"リクエストしました。"+x.s.name+"さんが同期すると届きます。急ぎならLINEでも伝えてください"}},
       err=>{ui.oMsg={k,ok:false,text:"リクエストできませんでした："+dMsg(err)}}).finally(()=>{ui.oBusy=false;corpKeepSave();render()});return}
-  if(el.dataset.done){const t=DB.todos.find(x=>x.id===el.dataset.done);if(t){t.done=true;save();render();toast("ToDoを完了にしました")}return}
+  if(el.dataset.done){const t=DB.todos.find(x=>x.id===el.dataset.done);if(t&&!t.done&&!t.cancelled&&!t.order&&!t.ro){t.done=true;save();render();toast("ToDoを完了にしました")}return}
   if(el.dataset.burden!=null&&c){const it=c.items[Number(el.dataset.burden)];if(it){it.burden=el.dataset.b;save();render()}return}
   if(el.dataset.delitem&&c){c.items.splice(Number(el.dataset.delitem),1);save();render();return}
   if(el.dataset.cset&&c){c.company=el.dataset.cset;ui.coEdit=false;save();render();toast("会社を"+c.company+"にしました");return}
@@ -2399,6 +2451,7 @@ document.addEventListener("submit",e=>{
       items:[],estAmount:null,estSentDate:"",siteDate:"",lossReason:"",lossDate:"",holdDate:"",orderDate:"",jobNo:"",billingTenant:"入居者に直接",handedDate:""});
     save();go("detail",{caseId:id});toast(id+"で受付しました");return}
   if(f.id==="caseIdentityForm"){caseIdentitySave();return}
+  if(f.id==="manualTodoCancelForm"){manualTodoCancelSave();return}
   if(f.id==="manualTodoEditForm"){manualTodoSave();return}
   if(f.id==="rForm"){rSaveForm();return}
   if(f.id==="rsetForm"){const S=RS();S.name=val("rs_name").trim();COMPANIES.forEach(co=>{S.payDays[co]=Number(val("rs_pd_"+co));S.to[co]=val("rs_to_"+co).trim()});S.useCard=document.getElementById("rs_card").checked;save();render();toast("領収書の設定を保存しました");return}
