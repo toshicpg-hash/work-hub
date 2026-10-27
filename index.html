@@ -308,7 +308,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.44・10/28更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.45・10/28更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -2341,6 +2341,7 @@ function render(){
 }
 function go(view,extra){
   if(receiptSaving||receiptSelecting||receiptSending||ui.rSaveUncertain){toast("領収書の保存状況を確認してから移動してください。入力は残しています。",5000);return;}
+  if(view==="rcpt"&&ui.view!=="rcpt"&&!extra?.rScope)ui.rScope=ui.view==="rform"?"own":D().admin?"shared":"own";
   if(view==="rform"){
     ui.rScope="own";
     if(ui.view!=="rform"||(extra?.rId||null)!==(ui.rId||null))rFormClear();
