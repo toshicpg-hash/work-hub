@@ -37,6 +37,7 @@
 #caseIdentityEditor{width:min(94vw,680px);max-height:90dvh;overflow:auto;border:0;border-radius:18px;padding:18px}#caseIdentityEditor::backdrop{background:#14272b88}#caseIdentityEditor h2{margin:0;font-size:20px}#caseIdentityEditor .form{margin:0}#caseIdentityEditor .row{flex-wrap:wrap}#caseIdentityStatus{white-space:pre-wrap;overflow-wrap:anywhere}#caseIdentityEditor .f{min-width:0}#caseIdentityEditor .btn{min-height:44px}
 
 #manualTodoCancelEditor{width:min(94vw,680px);max-height:90dvh;overflow:auto;border:0;border-radius:18px;padding:18px}#manualTodoCancelEditor::backdrop{background:#14272b88}#manualTodoCancelEditor .form{margin:0}#manualTodoCancelEditor h2{margin:0;font-size:20px}#manualTodoCancelEditor .row{flex-wrap:wrap}#manualTodoCancelTarget,#manualTodoCancelStatus{white-space:pre-wrap;overflow-wrap:anywhere}#manualTodoCancelEditor .f{min-width:0}#manualTodoCancelEditor .btn{min-height:44px}
+.shared-totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px}.shared-totals div{background:var(--sunk);padding:10px;border-radius:8px;display:flex;flex-direction:column;gap:4px}.shared-person,.shared-receipt{min-width:0;overflow-wrap:anywhere}.shared-receipt .row{flex-wrap:wrap}.shared-receipt .btn{white-space:normal;min-height:44px}.shared-receipt dd{overflow-wrap:anywhere}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -307,7 +308,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.43・10/27更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.44・10/28更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -365,6 +366,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 <script src="./manual-todo.js?v=1.38"></script>
 <script src="./receipt-files.js?v=1.43"></script>
 <script src="./receipt-input.js?v=1.43"></script>
+<script src="shared-receipts.js?v=1.44"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -515,16 +517,20 @@ function corpKeepSave(){if(!ui.corp||!ui.corp.data)return;try{localStorage.setIt
 function corpKeepClear(){try{localStorage.removeItem(CKEEP)}catch(err){}}
 function corpKeepLoad(){
   if(!D().admin&&!D().viewListId)return;
+  ui.receiptCacheState="none";
   try{const k=JSON.parse(localStorage.getItem(CKEEP)||"null");
+    if(k)ui.receiptCacheState=k.who!==corpWho()?"account":Date.now()-k.at>CKEEP_DAYS*864e5?"expired":"invalid";
     if(!k||!Array.isArray(k.data)||k.who!==corpWho()||Date.now()-k.at>CKEEP_DAYS*864e5){if(k)corpKeepClear();return}
-    ui.corp={data:k.data,at:k.at,kept:true};if(!D().admin&&k.viewList)ui.viewList=k.viewList;roBuild(k.data)}catch(err){}
+    ui.receiptCacheState="loaded";ui.corp={data:k.data,at:k.at,kept:true};if(!D().admin&&k.viewList)ui.viewList=k.viewList;roBuild(k.data)}catch(err){ui.receiptCacheState="invalid";}
 }
 const corpErr=err=>err.message==="notviewer"?"全社・GMの役割ではなくなっています。前回の内容は消しました":!D().admin&&(err.status===403||err.status===404)?"見る人用一覧を開けません（役割や共有が外れた可能性があります）。前回の内容は消しました":dMsg(err);
 const corpAtText=()=>md(ymd(new Date(ui.corp.at)))+' '+hm(new Date(ui.corp.at));
 const keptNote=()=>'前回の読み込み（'+corpAtText()+'）の内容です。最新にするには「Googleとまとめて同期」を押してください';
 /* 「社員の記録を読み込む」と「Googleとまとめて同期」から */
 async function corpRun(){
-  try{const data=await corpLoad();ui.corp={data,at:Date.now()};roBuild(data);D().corpAt=new Date(ui.corp.at).toISOString();save();corpKeepSave();return data}
+  try{const before=ui.corp?.data||[],data=await corpLoad();
+    for(const x of data)if((!x.ok||x.receiptRead?.state==="invalid")&&!x.accessDenied){const old=before.find(y=>y.s.sheetId===x.s.sheetId);if(old){const prior=["ready","cached"].includes(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.state(old):"unknown")?{rc:old.rc,lastSync:old.s.lastSync,readAt:old.receiptRead?.at||ui.corp?.at,receiptRead:old.receiptRead}:old.receiptPrevious;if(prior)x.receiptPrevious=prior;}}
+    ui.corp={data,at:Date.now()};roBuild(data);D().corpAt=new Date(ui.corp.at).toISOString();save();corpKeepSave();return data}
   catch(err){
     /* 見る人で、一覧の共有が外れた・役割が外れたときは、残した内容を使わず消す */
     if(!D().admin&&(err.status===403||err.status===404||err.message==="notviewer")){corpKeepClear();ui.corp=null;ui.corpRO=null;ui.corpTodo=null}
@@ -1677,7 +1683,11 @@ function rRow(r,check,ret){
     '<span class="row note"><span>'+h(r.item)+'</span><span class="chip">'+h(r.cat)+'</span>'+(receiptSiteLabel(r)?'<span>'+h(receiptSiteLabel(r))+'</span>':'')+(r.photos.length?'<span>写真'+r.photos.length+'</span>':'<span style="color:var(--amber)">写真なし</span>')+(r.status==="差戻し"?'<span class="chip" style="background:var(--red-soft);color:var(--red)">差戻し（'+h(r.returnedFrom)+'）</span>':'')+'</span></button>'+
     (ret&&r.status==="提出済"?'<button class="btn sm danger" type="button" data-rreturn="'+r.id+'">差戻し</button>':'')+'</div>';
 }
+function receiptScopeHeader(){
+  return '<div class="seg cv" role="group" aria-label="領収書の所有者"><button type="button" data-rscope="own" aria-pressed="'+(ui.rScope!=="shared")+'">自分の領収書</button><button type="button" data-rscope="shared" aria-pressed="'+(ui.rScope==="shared")+'">社員の共有領収書</button></div>';
+}
 function vRcpt(){
+  if(ui.rScope==="shared")return receiptScopeHeader()+vSharedReceipts();
   const S=RS(),tab=ui.rTab==="card"&&!S.useCard?"list":ui.rTab||"list", notes=rcptNotices();
   const tabs=[["list","立替"],["claims","精算書"],...(S.useCard?[["card","法人カード"]]:[]),["set","設定"]];
   let body="";
@@ -1721,10 +1731,53 @@ function vRcpt(){
         '<label class="f full">カード名<input type="text" id="rc_name" placeholder="例：CP 法人カード"></label></div>'+
         '<div class="row"><button class="btn sm" type="button" data-act="cardadd">カードを登録</button></div></div>':'');
   }
-  return '<section class="sec"><button class="btn pri" type="button" data-act="rnew" style="width:100%;min-height:52px;font-size:16px">＋ 領収書を登録</button>'+
+  return receiptScopeHeader()+'<section class="sec"><h2>自分の領収書</h2><p class="note" style="margin:0">この端末で登録した領収書です。社員分は上の「社員の共有領収書」で確認できます。</p><button class="btn pri" type="button" data-act="rnew" style="width:100%;min-height:52px;font-size:16px">＋ 領収書を登録</button>'+
     (notes.length?'<div class="banner" role="status">'+notes.map(n=>'<div>'+h(n)+'</div>').join("")+'</div>':'')+
     '<div class="seg cv rtabs" role="group" aria-label="領収書の表示">'+tabs.map(([k,l])=>'<button type="button" data-rtab="'+k+'" aria-pressed="'+(tab===k)+'">'+l+'</button>').join("")+'</div>'+
     body+'</section>';
+}
+/* Shared receipts never enter DB.receipts, edit forms, settlement actions or input history. */
+function sharedReceiptContext(){return {admin:!!D().admin,staff:D().staff||[],viewList:ui.viewList||[],email:D().viewEmail||""};}
+function receiptReadTime(value){if(!value)return "未確認";const date=new Date(value);return Number.isFinite(date.getTime())?ymd(date)+' '+hm(date):'未確認';}
+function sharedReceiptCard(r){
+  const rows=[['支払い方法',r.rawMethod||'未確認'],['状態',r.status||'未確認'],['内容',r.item],['区分',r.category],['会社',r.company],['現場',r.site],['仕事番号',r.jobNo],['精算書・締め番号',r.claimNo],['提出者',r.submitter]].filter(x=>x[1]);
+  return '<article class="card shared-receipt" data-shared-receipt="'+h(r.key)+'"><div class="row"><b class="ttl">'+h(r.payee||'支払先未確認')+'</b><span class="sp"></span><b class="num">'+(r.amount===null?'金額未確認':yen(r.amount))+'</b></div><p class="note num" style="margin:0">'+h(r.date||'日付未確認')+'・'+h(r.id||'受付ID未確認')+'・見るだけ</p>'+
+    (r.duplicate?'<p class="note" role="status">同じ受付IDの行が複数あります。自動でまとめず、元の行を表示しています。</p>':'')+
+    '<dl class="kv">'+rows.map(([k,v])=>'<dt>'+k+'</dt><dd>'+h(v)+'</dd>').join('')+'</dl><div class="row">'+(r.links.length?r.links.map((url,i)=>'<a class="btn sm" href="'+h(url)+'" target="_blank" rel="noopener noreferrer">原本'+(i+1)+'をDriveで開く</a>').join(''):'<span class="note">原本リンクは未同期・未確認です。原本の削除を意味しません。</span>')+'</div></article>';
+}
+function vSharedReceipts(){
+  if(!globalThis.WorkHubSharedReceipts)return '<section class="sec"><h2>社員の共有領収書</h2><p class="banner" role="alert">共有領収書の表示機能を読み込めませんでした。通信を確認して読み直してください。領収書がないという意味ではなく、保存済みの記録も変更していません。</p></section>';
+  const context=sharedReceiptContext(),data=ui.corp?.data||[],sources=WorkHubSharedReceipts.authorized(context,data),access=context.admin||!!D().viewListId;
+  const active=context.admin?(D().staff||[]).filter(s=>!s.removed):sources.map(x=>x.s),known=new Set(sources.map(x=>x.s.sheetId));
+  const pending=active.filter(s=>!known.has(s.sheetId));
+  const choices=sources.map(x=>x.s).concat(pending).filter((s,i,a)=>a.findIndex(t=>t.sheetId===s.sheetId)===i);
+  if(ui.rSharedSource&&!choices.some(s=>s.sheetId===ui.rSharedSource))ui.rSharedSource='';
+  const filter={source:ui.rSharedSource||'',company:ui.rSharedCompany||'',method:ui.rSharedMethod||''},groups=WorkHubSharedReceipts.project(context,data,filter);
+  const select=(id,label,options,value)=>'<label class="f">'+label+'<select id="'+id+'">'+options.map(([v,l])=>'<option value="'+h(v)+'"'+(v===value?' selected':'')+'>'+h(l)+'</option>').join('')+'</select></label>';
+  const cacheReason={none:'この端末では共有記録をまだ読み込んでいません。',expired:'この端末の前回読み込みは保存期間を過ぎたため、現在の内容は未確認です。',account:'この端末の前回読み込みは別の利用設定のため使用していません。',invalid:'この端末の前回読み込みを確認できませんでした。'}[ui.receiptCacheState]||'共有記録の読み込み状況は未確認です。';
+  let body='<section class="sec"><h2>社員の共有領収書</h2><p class="note" style="margin:0">社員から共有された記録を閲覧します。金額・精算状態・原本は変更できません。自分の領収書や入力履歴には混ざりません。</p>';
+  if(!access)return body+'<div class="banner" role="status">この端末では会社の共有記録につながっていません。既存の社長用・見る人用設定を確認してください。領収書がないという意味ではありません。</div></section>';
+  body+='<button class="btn" type="button" data-act="corp"'+(ui.corp?.busy?' disabled':'')+'>'+(ui.corp?.busy?'読み込んでいます…':'社員の共有記録を読み直す')+'</button>';
+  if(ui.corp?.err)body+='<div class="banner" role="alert">'+h(ui.corp.err)+'。以下の前回記録は最新と確認できていません。</div>';
+  if(ui.corp?.kept)body+='<div class="banner" role="status">この端末の前回読み込み：'+h(receiptReadTime(ui.corp.at))+'。今回のGoogle照合は未確認です。</div>';
+  else if(ui.corp?.at)body+='<p class="note" style="margin:0">この端末での読み込み：'+h(receiptReadTime(ui.corp.at))+'</p>';
+  if(!data.length)body+='<div class="banner" role="status">'+h(ui.corp?.at&&!ui.corp?.kept?'今回の読み込みで表示できる共有元は確認できませんでした。':cacheReason)+'「社員の共有記録を読み直す」で確認してください。空とは判定していません。</div>';
+  body+='<div class="form">'+select('rs_person','社員',[['','全員'],...choices.map(s=>[s.sheetId,s.name])],filter.source)+select('rs_company','会社',[['','全社'],...COMPANIES.map(c=>[c,c])],filter.company)+select('rs_method','支払い方法',[['','すべて'],['立替','立替'],['法人カード','法人カード'],['未確認','未確認']],filter.method)+'</div>';
+  for(const group of groups){
+    const x=group.source,ss=group.summary,prev=group.previous,ready=['ready','cached'].includes(group.state),has=ready||prev;
+    body+='<section class="panel shared-person" data-shared-person="'+h(x.s.sheetId)+'"><h3>'+h(x.s.name)+'さん（見るだけ）</h3><p class="note num" style="margin:0">共有元の最終同期：'+h(prev?x.receiptPrevious.lastSync||'未確認':x.s.lastSync||'未同期・未確認')+'</p><p class="note num" style="margin:0">この明細の読み込み：'+h(receiptReadTime(prev?x.receiptPrevious.readAt:x.receiptRead?.at||ui.corp?.at))+(x.receiptRead?.version?'／送信側 '+h(x.receiptRead.version):'')+'</p>';
+    if(!ready)body+='<div class="banner" role="status">'+h(group.state==='denied'?'共有記録へのアクセスを確認できません。現在の明細・原本は表示しません。':group.state==='failed'?'読み込みに失敗しました（'+(x.msg||'詳細未確認')+'）。空とは判定していません。':group.state==='invalid'?'領収書の列を確認できません。空とは判定していません。':'領収書の読み込み結果は未確認です。空とは判定していません。')+(prev?' 前回取得した明細を参考表示しています。最新の件数・金額ではありません。':'')+'</div>';
+    if(!x.s.lastSync||group.state==='cached')body+='<p class="note" role="status">'+(!x.s.lastSync?'共有元の同期時刻を確認できません。':'前回保存された明細です。読み直して最新状態を確認してください。')+'</p>';
+    if(has){
+      body+='<div class="shared-totals" aria-label="'+h(x.s.name)+'の領収書集計">'+[['全体',ss.all],['立替',ss.advance],['法人カード',ss.card],...(ss.unknown.count?[['方法未確認',ss.unknown]]:[])].map(([label,v])=>'<div><span>'+label+'</span><b>'+v.count+'件・'+yen(v.total)+(v.unconfirmed?'（金額未確認 '+v.unconfirmed+'件を除く）':'')+'</b></div>').join('')+'</div>';
+      body+='<p class="note" style="margin:0">'+(filter.company?'会社「'+h(filter.company)+'」の':'')+'集計。表示中 '+group.rows.length+'件'+(prev?'（前回記録）':'')+'</p>';
+      body+=group.rows.length?'<div class="list">'+group.rows.map(sharedReceiptCard).join('')+'</div>':'<p class="note">'+(ss.all.count?'この支払い方法に該当する明細はありません。他の方法には記録があります。':filter.company?'この会社に該当する明細はありません。会社の絞り込みを外して確認できます。':x.s.lastSync&&ready?'取得した共有記録に明細は0件です。未同期の追加分は確認できません。':'共有元の同期が未確認のため、領収書がないとは判定していません。')+'</p>';
+    }
+    body+='</section>';
+  }
+  for(const s of pending.filter(s=>!filter.source||s.sheetId===filter.source))body+='<div class="panel" role="status"><h3>'+h(s.name)+'さん</h3><p>この端末ではまだ読み込めていません。件数・金額は未確認です。</p></div>';
+  body+='<p class="note" style="margin:0">共有元の最終同期以降に本人端末で追加・編集した未同期分は確認できません。原本はDriveの既存の共有権限で開きます。開けない場合も、共有権限を自動で変更しません。</p></section>';
+  return body;
 }
 /* Changes made after a receipt was once submitted are kept (from → to, when), never removed */
 function receiptInputApi(){if(!globalThis.WorkHubReceiptInput)throw Error("領収書の入力候補を読み込めません。オンラインで再読み込みしてください。");return WorkHubReceiptInput;}
@@ -2134,9 +2187,8 @@ async function corpLoad(){
       const v=await sheetRead(s.sheetId,["案件","入金","立替","情報"].concat(hasTodo?["ToDo"]:[],hasOrd?["指示"]:[]));
       const info=Object.fromEntries((v["情報"]||[]).slice(1).map(r=>[r[0],r[1]]));
       s.lastSync=String(info["最終同期"]||"");
-      out.push({s,ok:true,cases:objRows(v["案件"]),rc:objRows(v["立替"]),todo:hasTodo?objRows(v["ToDo"]):null,orders:hasOrd?objRows(v["指示"]).filter(o=>o["指示ID"]):[]})}
-    catch(err){if(err.message==="signin")throw err;if(viewer&&(err.status===403||err.status===404))continue; /* 見る人：共有されていないシートは黙って飛ばす */
-      out.push({s,ok:false,msg:dMsg(err)})}
+      out.push({s,ok:true,receiptRead:{...(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.parseSheet(v["立替"]):{state:"invalid",message:"領収書の表示機能を読み込めません。"}),at:Date.now(),version:String(info["版"]||"")},cases:objRows(v["案件"]),rc:objRows(v["立替"]),todo:hasTodo?objRows(v["ToDo"]):null,orders:hasOrd?objRows(v["指示"]).filter(o=>o["指示ID"]):[]})}
+    catch(err){if(err.message==="signin")throw err;out.push({s,ok:false,accessDenied:err.status===403||err.status===404,msg:dMsg(err)})}
   }
   save();return out;
 }
@@ -2205,7 +2257,7 @@ function corpView(){
         byTan.map(([n,rs])=>'<details open><summary>'+personBadge(n)+'（'+rs.length+'件）</summary><div class="list" style="margin-top:6px">'+rs.slice().sort((a,b)=>String(b["最終の動き"]).localeCompare(String(a["最終の動き"]))).map(corpCaseCard).join("")+'</div></details>').join("")+'</div>'+
       '<div class="panel"><h3>ToDo</h3>'+(ok.length?c.data.map(x=>x.ok?corpTodos(x,x._i):'').join(""):'<p class="note" style="margin:0">読めた社員がいません</p>')+'</div>'+
       '<div class="panel"><h3>未入金</h3>'+(unp.length?'<p class="fk" style="margin:0">担当者別</p>'+tbl("担当",grp("担当").map(trow).join(""))+'<p class="fk" style="margin:0">物件別</p>'+tbl("物件",grp("物件").map(trow).join("")):'<p class="note" style="margin:0">未入金はありません</p>')+'</div>'+
-      '<div class="panel"><h3>立替</h3>'+(rcRows.length?'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>社員</th><th>会社</th><th>未提出</th><th>提出済・未精算</th></tr></thead><tbody>'+
+      '<div class="panel"><h3>立替</h3><button class="btn sm" type="button" data-nav="rcpt" data-shared-receipts="1">社員の共有領収書（立替・法人カード）を確認</button><p class="note">下の集計は立替のみです。法人カード・原本は共有領収書で確認できます。</p>'+(rcRows.length?'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>社員</th><th>会社</th><th>未提出</th><th>提出済・未精算</th></tr></thead><tbody>'+
         rcRows.map(r=>'<tr><td>'+h(r[0])+'</td><td>'+r[1]+'</td><td class="num">'+yen(r[2])+'</td><td class="num">'+yen(r[3])+'</td></tr>').join("")+'</tbody></table></div>':'<p class="note" style="margin:0">立替はありません</p>')+'</div>';
   }
   const staffL=D().admin?D().staff:(ui.viewList||[]), gl=gmLine(staffL);
@@ -2290,6 +2342,7 @@ function render(){
 function go(view,extra){
   if(receiptSaving||receiptSelecting||receiptSending||ui.rSaveUncertain){toast("領収書の保存状況を確認してから移動してください。入力は残しています。",5000);return;}
   if(view==="rform"){
+    ui.rScope="own";
     if(ui.view!=="rform"||(extra?.rId||null)!==(ui.rId||null))rFormClear();
     try{receiptInputApi();if(dbPersistedRaw===null&&localStorage.getItem(KEY)===null&&!save())return;if(localStorage.getItem(KEY)!==dbPersistedRaw)throw Error("別の画面で記録が更新されています。再読み込みしてから領収書を開いてください。");receiptSession=extra?.rId&&!rEditable(rFind(extra.rId))?null:receiptFileApi().open(localStorage,KEY,extra?.rId||null);}catch(error){toast(error.message,6500);return;}
   }
@@ -2329,7 +2382,8 @@ document.addEventListener("click",e=>{
   if(el.dataset.act==="mtdclose"){manualTodoClose();return}
   if(el.dataset.act==="mtdbackup"||el.dataset.act==="mtddraft"){manualTodoDownload(el.dataset.act==="mtddraft");return}
   if(el.dataset.open){go("detail",{caseId:el.dataset.open});return}
-  if(el.dataset.nav){const ex={csv:false};if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";if(el.dataset.nav==="cases")ex.payOnly=!!el.dataset.pay;if(el.dataset.nav==="rcpt"&&el.closest(".tile"))ex.rTab=el.dataset.rtab2||"list";go(el.dataset.nav,ex);return}
+  if(el.dataset.nav){const ex={csv:false};if(el.dataset.sharedReceipts)ex.rScope="shared";if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";if(el.dataset.nav==="cases")ex.payOnly=!!el.dataset.pay;if(el.dataset.nav==="rcpt"&&el.closest(".tile")){ex.rTab=el.dataset.rtab2||"list";ex.rScope="own";}go(el.dataset.nav,ex);return}
+  if(el.dataset.rscope){ui.rScope=el.dataset.rscope;rClearDl();render();return;}
   if(el.dataset.rtab){ui.rTab=el.dataset.rtab;rClearDl();ui.rcCancel=null;render();return}
   if(el.dataset.ropen){rFormClear();go("rform",{rId:el.dataset.ropen});return}
   if(el.dataset.rclaim){const co=el.dataset.rclaim,ids=el.dataset.rall?rPending(co).map(r=>r.id):[...main.querySelectorAll('input[name="rsel_'+co+'"]:checked')].map(x=>x.value);
@@ -2516,6 +2570,7 @@ document.addEventListener("change",e=>{
   const t=e.target, c=ui.caseId?editCase(ui.caseId):null;
   if(t.id==="showEnded"){ui.showEnded=t.checked;render();return}
   if(t.id==="cdel_gcal"){ui.cdelCal=t.checked;ui.cdelMsg="";render();return}
+  if(["rs_person","rs_company","rs_method"].includes(t.id)){ui[{rs_person:"rSharedSource",rs_company:"rSharedCompany",rs_method:"rSharedMethod"}[t.id]]=t.value;render();return;}
   if(t.id==="r_photo"){const files=[...t.files];t.value="";receiptSelectFiles(files);return}
   if(t.id==="r_case"){receiptCaseChanged(t.value);return;}
   if(t.id==="r_method"||t.id==="r_co"){const card=val("r_method")==="法人カード",w=document.getElementById("r_cardWrap"),sel=document.getElementById("r_card");if(w)w.hidden=!card;
