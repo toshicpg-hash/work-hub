@@ -32,6 +32,9 @@
 
 #manualTodoEditor{width:min(94vw,680px);max-height:90dvh;overflow:auto;border:0;border-radius:18px;padding:18px}#manualTodoEditor::backdrop{background:#14272b88}#manualTodoEditor h2{margin:0;font-size:20px}#manualTodoEditor .form{margin:0}#manualTodoEditor textarea{resize:vertical;min-height:96px}#manualTodoStatus{white-space:pre-wrap;overflow-wrap:anywhere}#manualTodoEditor .row{flex-wrap:wrap}.manual-history{padding:10px 0;border-top:1px solid #d7dfdf;overflow-wrap:anywhere}.manual-history p{margin:6px 0}.manual-storage-notice{position:sticky;top:0;z-index:25;padding:12px;background:#fff3d6;color:#573b00;font-size:14px;line-height:1.5}
 @media(max-width:420px){#manualTodoEditor{padding:14px}#manualTodoEditor .btn{min-height:44px}#manualTodoEditor .f{min-width:0}}
+
+
+#caseIdentityEditor{width:min(94vw,680px);max-height:90dvh;overflow:auto;border:0;border-radius:18px;padding:18px}#caseIdentityEditor::backdrop{background:#14272b88}#caseIdentityEditor h2{margin:0;font-size:20px}#caseIdentityEditor .form{margin:0}#caseIdentityEditor .row{flex-wrap:wrap}#caseIdentityStatus{white-space:pre-wrap;overflow-wrap:anywhere}#caseIdentityEditor .f{min-width:0}#caseIdentityEditor .btn{min-height:44px}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -292,7 +295,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.36・10/26更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.37・10/27更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -324,6 +327,19 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 <p class="note full">この端末の手入力ToDoだけを編集します。担当名は編集権限ではありません。社員の「見るだけ」の記録や、Googleのリクエスト・予定は別の記録です。</p>
 </form></dialog>
 
+<dialog id="caseIdentityEditor" aria-labelledby="caseIdentityHeading">
+<form id="caseIdentityForm" class="form">
+<div class="full row"><h2 id="caseIdentityHeading">物件名・号室を直す</h2><span class="sp"></span><button class="btn" type="button" data-act="caseidentityclose">閉じる</button></div>
+<p id="caseIdentityState" class="note full"></p>
+<label class="f full">物件名<input id="caseIdentityProperty" type="text" required maxlength="300" autocomplete="off"></label>
+<label class="f full">号室<input id="caseIdentityRoom" type="text" maxlength="100" autocomplete="off" placeholder="例：206、203A（戸建てなどは空欄）"></label>
+<p class="note full">同じ受付番号のまま修正します。進捗・日付・見積・請求・入金の記録はそのまま保持します。</p>
+<p id="caseIdentityStatus" class="full" role="status" aria-live="polite"></p>
+<div class="row full"><button id="caseIdentitySave" class="btn pri" type="submit">変更を保存</button><button class="btn" type="button" data-act="caseidentitybackup">編集前の控えを保存</button><button class="btn" type="button" data-act="caseidentitydraft">入力内容を控えとして保存</button></div>
+<details class="full"><summary>編集履歴（この端末）</summary><div id="caseIdentityHistory"></div></details>
+<p class="note full">保存後に「Googleとまとめて同期」を押すと、会社側の一覧へ反映されます。登録済みのGoogle予定やAccessの内容は、この操作では書き換えません。</p>
+</form></dialog>
+<script src="./case-identity.js?v=1.37"></script>
 <script src="./manual-todo.js?v=1.36"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -853,6 +869,7 @@ function vDetail(){
   '<section class="sec"><div class="row">'+coChip(c.company)+typeChip(c)+'<span class="note num">'+h(c.id)+'</span><span class="sp"></span>'+stagePill(c)+'</div>'+
   '<h2 style="font-size:20px">'+h(c.property)+' '+h(c.room)+(c.symptom?' ・ '+h(c.symptom):'')+'</h2>'+
   (c.type==="kinkyu"&&(c.stage==="new"||c.stage==="site")?'<div class="since" data-since="'+h(c.receivedAt)+'">'+since(c.receivedAt)+'</div>':'')+
+  (caseIdentityEditable(c)?'<div class="row"><button class="btn" type="button" data-caseidentity="'+h(c.id)+'">物件名・号室を直す</button></div>':'')+
   stepBar(c)+'</section>'+
   act+
   '<div class="panel"><h3>受付内容</h3><dl class="kv">'+
@@ -934,6 +951,56 @@ function manualTodoDownload(draft){if(!manualTodoSession)return;try{const value=
 async function manualTodoSave(){if(manualTodoSaving||!manualTodoSession)return;if(manualTodoBusy()){document.getElementById("manualTodoStatus").textContent="同期などの処理中です。終了してから保存してください。入力は残しています。";return}const input=manualTodoInputs(),session=manualTodoSession;manualTodoSaving=true;const button=document.getElementById("manualTodoSave"),status=document.getElementById("manualTodoStatus");button.disabled=true;status.textContent="最新の記録と編集前の控えを照合しています…";try{const commit=()=>{if(manualTodoBusy())throw Error("ほかの処理中のため保存していません。入力は残しています。");return manualTodoApi().commit(localStorage,KEY,session,input,{operationId:crypto.randomUUID(),at:new Date().toISOString()});};const result=navigator.locks?.request?await navigator.locks.request(KEY+":manual-todo-edit",commit):commit();if(manualTodoSession!==session)throw Error("編集画面が変わりました。最新の記録を確認してください。");DB=upgrade(result.db);dbPersistedRaw=result.raw;document.getElementById("manualTodoStorageNotice").hidden=true;manualTodoSession=null;document.getElementById("manualTodoEditor").close();render();toast(result.changed?(result.proofSaved?"同じToDoを更新し、保存内容を読み戻して確認しました。完了状態は保持しています。":"ToDoの保存・読み戻しは確認済みです。履歴の確認記録だけ保存できませんでした。編集前の控えは残っています。") :"変更はありません。元の記録を保持しています。",6500);}catch(error){status.textContent=error.message;if(error.mayHaveSaved)status.textContent+=" 入力を控えてから画面を閉じ、再読み込みで確認してください。";manualTodoHistoryRender();}finally{manualTodoSaving=false;button.disabled=false;}}
 document.getElementById("manualTodoEditor").addEventListener("cancel",e=>{e.preventDefault();manualTodoClose();});
 window.addEventListener?.("storage",e=>{if(e.key!==KEY)return;manualStorageNotice("別のCPG HUB画面で記録が更新されました。入力を控え、最新の記録を確認してください。");if(manualTodoSession)document.getElementById("manualTodoStatus").textContent="別の画面で更新がありました。入力は残しています。保存時にこのToDoの最新状態を照合します。";});
+
+
+/* Owner-device correction of the case identity only; financial and progress fields stay intact. */
+let caseIdentitySession=null,caseIdentityHistoryRows=[],caseIdentitySaving=false;
+const caseIdentityApi=()=>globalThis.WorkHubCaseIdentity;
+function caseIdentityEditable(c){return !!(caseIdentityApi()?.editable(c)&&DB.cases.filter(x=>x.id===c.id).length===1&&caseIdentityApi().editable(DB.cases.find(x=>x.id===c.id)));}
+function caseIdentityBusy(){return manualTodoBusy()||manualTodoSaving;}
+function caseIdentityInputs(){return {property:val("caseIdentityProperty"),room:val("caseIdentityRoom")};}
+function caseIdentityFill(c){document.getElementById("caseIdentityProperty").value=c.property??"";document.getElementById("caseIdentityRoom").value=c.room??"";}
+function caseIdentityHistoryRender(){
+  const box=document.getElementById("caseIdentityHistory");
+  try{const value=caseIdentityApi().history(localStorage,caseIdentitySession.id);caseIdentityHistoryRows=value.records;
+    box.innerHTML=(value.warnings.length?'<p class="note">読み取れない履歴があります。元の控えは保持しています。</p>':'')+(value.records.map((r,i)=>'<div class="manual-history"><p>'+h(new Date(r.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'・'+(r.verified?'保存確認済み':'保存の確認記録なし')+'</p><p>'+h(r.before.property)+' ／ '+h(r.before.room||"号室なし")+'</p><button class="btn sm" type="button" data-caseprevious="'+i+'">この内容を編集欄に戻す</button></div>').join("")||'<p class="note">この端末にはまだ編集履歴がありません。</p>');
+  }catch{box.textContent="履歴を読み取れません。元の記録は保持しています。";}
+}
+function caseIdentityOpen(id){
+  if(caseIdentityBusy()){toast("同期などの処理が終わってから修正してください",5000);return;}
+  try{if(!caseIdentityApi())throw Error("修正機能を読み込めません。再読み込みしてください。");
+    caseIdentitySession=caseIdentityApi().open(localStorage,KEY,id);caseIdentityFill(caseIdentitySession.before);
+    document.getElementById("caseIdentityState").textContent="受付番号 "+caseIdentitySession.id+" ／ この端末の案件";
+    document.getElementById("caseIdentityStatus").textContent="編集前の控えを端末に残してから、同じ案件に保存します。";
+    document.getElementById("caseIdentitySave").disabled=false;caseIdentityHistoryRender();document.getElementById("caseIdentityEditor").showModal();
+  }catch(error){toast(error.message,6500);}
+}
+function caseIdentityClose(){
+  if(caseIdentitySaving)return;
+  if(caseIdentitySession){const input=caseIdentityInputs(),before=caseIdentitySession.before;if(["property","room"].some(k=>input[k]!==String(before[k]??""))&&!confirm("保存していない入力があります。閉じますか？"))return;}
+  document.getElementById("caseIdentityEditor").close();caseIdentitySession=null;
+}
+function caseIdentityDownload(draft){
+  if(!caseIdentitySession)return;
+  try{const value=draft?{format:"workhub-case-identity-draft-v1",id:caseIdentitySession.id,fields:caseIdentityInputs(),original:caseIdentitySession.before,at:new Date().toISOString()}:{format:"workhub-case-identity-before-v1",id:caseIdentitySession.id,before:caseIdentitySession.before,beforeRaw:caseIdentitySession.beforeRaw,at:new Date().toISOString()};
+    const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:"application/json"})),a=document.createElement("a");a.href=url;a.download="CPG-HUB-case-"+(draft?"draft-":"before-")+new Date().toLocaleDateString("sv-SE",{timeZone:"Asia/Tokyo"})+".json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }catch{document.getElementById("caseIdentityStatus").textContent="控えファイルを保存できませんでした。入力は残しています。空き容量やダウンロードの設定を確認してください。";}
+}
+async function caseIdentitySave(){
+  if(caseIdentitySaving||!caseIdentitySession)return;
+  const status=document.getElementById("caseIdentityStatus"),button=document.getElementById("caseIdentitySave");
+  if(caseIdentityBusy()){status.textContent="同期などの処理中です。終了してから保存してください。入力は残しています。";return;}
+  const session=caseIdentitySession,input=caseIdentityInputs();caseIdentitySaving=true;button.disabled=true;status.textContent="最新の記録と編集前の控えを照合しています…";
+  try{const commit=()=>{if(caseIdentityBusy())throw Error("ほかの処理中のため保存していません。入力は残しています。");return caseIdentityApi().commit(localStorage,KEY,session,input,{operationId:crypto.randomUUID(),at:new Date().toISOString()});};
+    const result=navigator.locks?.request?await navigator.locks.request(KEY+":manual-todo-edit",commit):commit();
+    if(caseIdentitySession!==session)throw Error("編集画面が変わりました。最新の記録を確認してください。");
+    DB=upgrade(result.db);dbPersistedRaw=result.raw;document.getElementById("manualTodoStorageNotice").hidden=true;caseIdentitySession=null;document.getElementById("caseIdentityEditor").close();render();
+    toast(result.changed?(result.proofSaved?"物件名・号室を保存し、読み戻して確認しました。会社側へは「Googleとまとめて同期」で反映します。":"案件の保存・読み戻しは確認済みです。履歴の確認記録だけ保存できませんでした。編集前の控えは残っています。") :"変更はありません。元の記録を保持しています。",6500);
+  }catch(error){status.textContent=error.message;if(error.mayHaveSaved)status.textContent+=" 入力を控え、再読み込みで確認してください。";caseIdentityHistoryRender();}
+  finally{caseIdentitySaving=false;button.disabled=false;}
+}
+if(window.addEventListener)window.addEventListener("storage",e=>{if(e.key===KEY&&caseIdentitySession)document.getElementById("caseIdentityStatus").textContent="別の画面で更新がありました。入力は残しています。保存時に最新の案件を照合します。";});
+document.getElementById("caseIdentityEditor").addEventListener("cancel",e=>{e.preventDefault();caseIdentityClose();});
 
 /* 社員の案件の詳細（見るだけ。編集・削除・登録のボタンは出さない） */
 function roDetail(c){
@@ -2110,6 +2177,10 @@ document.addEventListener("click",e=>{
   const el=e.target.closest("button,[data-open]");
   if(!el)return;
   const c=ui.caseId?editCase(ui.caseId):null;
+  if(el.dataset.caseidentity){caseIdentityOpen(el.dataset.caseidentity);return}
+  if(el.dataset.caseprevious!=null){try{caseIdentityFill(caseIdentityApi().previousFields(caseIdentityHistoryRows[Number(el.dataset.caseprevious)],caseIdentitySession.id));document.getElementById("caseIdentityStatus").textContent="以前の物件名・号室を編集欄に戻しました。保存すると新しい履歴を残します。進捗は変わりません。";}catch(error){toast(error.message,5000)}return}
+  if(el.dataset.act==="caseidentityclose"){caseIdentityClose();return}
+  if(el.dataset.act==="caseidentitybackup"||el.dataset.act==="caseidentitydraft"){caseIdentityDownload(el.dataset.act==="caseidentitydraft");return}
   if(el.dataset.mtdedit){manualTodoOpen(el.dataset.mtdedit);return}
   if(el.dataset.mtdprevious!=null){const record=manualTodoHistoryRows[Number(el.dataset.mtdprevious)];try{manualTodoFill(manualTodoApi().previousFields(record,manualTodoSession.id));document.getElementById("manualTodoStatus").textContent="以前の内容を編集欄へ戻しました。保存すると新しい履歴を残します。完了状態は変わりません。";}catch(error){toast(error.message,5000)}return}
   if(el.dataset.act==="mtdclose"){manualTodoClose();return}
@@ -2327,6 +2398,7 @@ document.addEventListener("submit",e=>{
       receivedAt:at?new Date(at).toISOString():new Date().toISOString(),symptom:type==="kinkyu"?val("n_sym"):"",note:val("n_note").trim(),
       items:[],estAmount:null,estSentDate:"",siteDate:"",lossReason:"",lossDate:"",holdDate:"",orderDate:"",jobNo:"",billingTenant:"入居者に直接",handedDate:""});
     save();go("detail",{caseId:id});toast(id+"で受付しました");return}
+  if(f.id==="caseIdentityForm"){caseIdentitySave();return}
   if(f.id==="manualTodoEditForm"){manualTodoSave();return}
   if(f.id==="rForm"){rSaveForm();return}
   if(f.id==="rsetForm"){const S=RS();S.name=val("rs_name").trim();COMPANIES.forEach(co=>{S.payDays[co]=Number(val("rs_pd_"+co));S.to[co]=val("rs_to_"+co).trim()});S.useCard=document.getElementById("rs_card").checked;save();render();toast("領収書の設定を保存しました");return}
