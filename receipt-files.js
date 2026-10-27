@@ -65,12 +65,24 @@
   catch(e){reason=e;tx.abort();}
   tx.oncomplete=resolve;tx.onerror=tx.onabort=()=>reject(reason||tx.error||Error('添付の一括保存を完了できません。'));
  });}
- function fieldsOf(fields){const v=Object.fromEntries(FIELD_NAMES.map(k=>[k,fields[k]??'']));if(!/^\d{4}-\d{2}-\d{2}$/.test(v.date)||!Number.isFinite(Date.parse(v.date+'T00:00:00Z'))||new Date(v.date+'T00:00:00Z').toISOString().slice(0,10)!==v.date||!v.payee||!Number.isSafeInteger(v.amount)||v.amount<1||!['CP','CPY','AT'].includes(v.company)||!['立替','法人カード'].includes(v.method)||v.method==='法人カード'&&!v.cardId)throw fail('日付・支払先・金額・会社・支払い方法を確認してください。');return v;}
+ function fieldsOf(fields,before){const v=Object.fromEntries(FIELD_NAMES.map(k=>[k,fields[k]??'']));if(!/^\d{4}-\d{2}-\d{2}$/.test(v.date)||!Number.isFinite(Date.parse(v.date+'T00:00:00Z'))||new Date(v.date+'T00:00:00Z').toISOString().slice(0,10)!==v.date||!v.payee||!Number.isSafeInteger(v.amount)||v.amount<1||!['CP','CPY','AT'].includes(v.company)||!['立替','法人カード'].includes(v.method)||v.method==='法人カード'&&!v.cardId)throw fail('日付・支払先・金額・会社・支払い方法を確認してください。');if(!Object.hasOwn(fields,'caseRef')&&before?.caseRef?.kind==='shared'&&v.caseId!==before.caseId)throw fail('共有案件の関連を安全に変更できません。最新版で開き直してください。');
+  if(Object.hasOwn(fields,'room')){if(typeof fields.room!=='string')throw fail('部屋の入力を確認してください。');v.room=fields.room;}
+  if(Object.hasOwn(fields,'caseRef')){
+   const ref=fields.caseRef;
+   if(ref!=null){
+    if(ref.kind==='shared'){
+     if(!ref.sourceId||!ref.caseId||!['sourceId','caseId','owner','company','property','room','jobNo'].every(k=>typeof ref[k]==='string')||v.caseId!=='@shared:'+JSON.stringify([ref.sourceId,ref.caseId]))throw fail('共有案件の参照元を確認できません。選び直してください。');
+    }else if(canonical(ref)!==canonical(before?.caseRef)||v.caseId!==before?.caseId)throw fail('案件の参照元を確認できません。');
+   }
+   if(ref==null&&String(v.caseId).startsWith('@shared:')&&!(before?.caseId===v.caseId&&before.caseRef==null))throw fail('共有案件の参照元を確認できません。選び直してください。');
+   v.caseRef=ref==null?null:clone(ref);
+  }
+  return v;}
  async function commit(env,session,fields,files=[],removed=[]){
   const {storage,key,db,defaults,historyFields,now=()=>new Date().toISOString()}=env;
   let current=latest(storage,key,session);
   if(current.already){for(const x of files){const k='receipt-'+session.operationId+'-'+x.token;if(!await sameBytes(await get(db,k),x.blob))throw fail('前回の添付を読み戻せません。再登録せず確認してください。',true);}const verify=latest(storage,key,session);if(!verify.already)throw fail('前回の保存結果を確認できません。',true);return {db:verify.db,raw:verify.raw,record:verify.already,recovered:true};}
-  const values=fieldsOf(fields),attachments=[];
+  const values=fieldsOf(fields,session.before),attachments=[];
   for(const x of files)attachments.push({...x,meta:await describe(x.blob),key:'receipt-'+session.operationId+'-'+x.token});
   current=latest(storage,key,session);
   if(!session.backup)session.backup=JSON.stringify({format:'workhub-receipt-before-v1',operationId:session.operationId,at:now(),beforeRaw:current.raw,receipt:session.before});
@@ -85,8 +97,8 @@
   const photos=(before?.photos||[]).filter(k=>!removed.includes(k)),pext={...record.pext},pfiles={...record.pfiles};
   for(const x of attachments){photos.push(x.key);pext[x.key]=x.meta.ext;pfiles[x.key]=x.meta;}
   const next={...values,photos};
-  if(before?.everSub)for(const [field,label] of historyFields){const a=field==='photos'?JSON.stringify(before.photos):String(before[field]??''),b=field==='photos'?JSON.stringify(photos):String(next[field]??'');if(a!==b)record.edits.push({at:now(),field,label,from:a,to:b});}
-  Object.assign(record,next,{pext,pfiles,receiptOperationId:session.operationId});
+  if(before?.everSub)for(const [field,label] of historyFields){const a=field==='photos'?JSON.stringify(before.photos):field==='caseRef'&&before.caseRef?canonical(before.caseRef):String(before[field]??''),b=field==='photos'?JSON.stringify(photos):field==='caseRef'&&next.caseRef?canonical(next.caseRef):String(next[field]??'');if(a!==b)record.edits.push({at:now(),field,label,from:a,to:b});}
+  Object.assign(record,next,{pext,pfiles,receiptOperationId:session.operationId,updatedAt:now()});
   const data=clone(current.db);if(before)data.receipts[data.receipts.findIndex(r=>r.id===id)]=record;else{data.rseq=seq;data.receipts.push(record);}data.settings.rcpt.lastCo=record.company;
   const raw=JSON.stringify(data);session.expectedRecord=clone(record);
   if(storage.getItem(key)!==current.raw)throw fail('保存直前に別の更新がありました。入力は残しています。もう一度保存してください。');
