@@ -145,8 +145,8 @@ ol.hist li{overflow-wrap:anywhere}
 .seg.cv.rtabs button{flex:1 1 auto;min-width:0;padding:8px 4px;white-space:nowrap;font-size:clamp(13px,4vw,18px)}
 .chip.t-kinkyu{background:var(--red-soft);color:var(--red)}
 .chip.t-taikyo{background:var(--accent-soft);color:var(--accent)}
-.chip.t-vacant,.chip.t-reno{background:var(--amber-soft);color:var(--amber)}
-.chip.t-eizen,.chip.t-teiki{background:var(--green-soft);color:var(--green)}
+.chip.t-vacant,.chip.t-reno,.chip.t-occupied,.chip.t-reform{background:var(--amber-soft);color:var(--amber)}
+.chip.t-eizen,.chip.t-teiki,.chip.t-cleaning{background:var(--green-soft);color:var(--green)}
 .pill{font-size:12px;font-weight:700;padding:2px 10px;border-radius:6px;border:1px solid var(--line);white-space:nowrap}
 .pill.s-won{border-color:var(--green);color:var(--green)}
 .pill.s-working,.pill.s-handed{border-color:var(--accent);color:var(--accent)}
@@ -298,7 +298,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.39・10/27更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.40・10/27更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -365,7 +365,10 @@ const TYPES={
   reno:{label:"リノベーション",site:"現地調査"},
   teiki:{label:"定期清掃",site:"現地確認"},
   vacant:{label:"空室見積",site:"現地調査"},
-  eizen:{label:"営繕",site:"現地確認"}
+  eizen:{label:"営繕",site:"現地確認"},
+  occupied:{label:"在宅見積",site:"現地調査"},
+  cleaning:{label:"クリーニング",site:"現地確認"},
+  reform:{label:"リフォーム",site:"現地調査"}
 };
 const STAGES={new:"受付",site:"現地確認済",quoted:"見積提出済",hold:"保留",won:"受注・引渡待ち",handed:"引渡済・施工中",working:"施工中",built:"完工・請求待ち",billed:"請求済・入金待ち",paid:"入金済（完了）",lost:"失注"};
 const SYMPTOMS=["水漏れ","給湯器凍結","その他"];
