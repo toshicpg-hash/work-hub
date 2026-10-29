@@ -308,7 +308,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.46.1" title="使い方マニュアルを開く">v1.46.1・10/29更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.46.2" title="使い方マニュアルを開く">v1.46.2・10/29更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -505,7 +505,7 @@ const typeKeyOf=l=>Object.keys(TYPES).find(k=>TYPES[k].label===l)||"reno";
 function roCase(r,x){
   const v=k=>String(r[k]==null?"":r[k]), d=k=>v(k).slice(0,10), num=k=>v(k)===""?null:Number(v(k));
   const stage=STAGES[v("段階キー")]?v("段階キー"):Object.keys(STAGES).find(k=>STAGES[k]===v("段階"))||"new", paid=Number(v("入金済額"))||0;
-  return Object.assign(CASE_DEFAULTS(),{ro:true,company:COMPANIES.includes(v("会社"))?v("会社"):"",owner:x.s.name,srcId:v("受付番号"),id:v("受付番号")+"・"+x.s.name,type:typeKeyOf(v("種類")),stage,clientKind:"",client:v("依頼元"),property:v("物件"),room:v("部屋"),tantou:surname(v("担当")||x.s.name),
+  return Object.assign(CASE_DEFAULTS(),{ro:true,company:COMPANIES.includes(v("会社"))?v("会社"):"",owner:x.s.name,srcId:v("受付番号"),id:v("受付番号")+"・"+x.s.name,type:typeKeyOf(v("種類")),stage,clientKind:"",client:v("依頼元"),property:v("物件"),room:v("部屋"),tantou:tantouLabel(v("担当")||x.s.name,x.s.name),
     receivedAt:v("受付日時")||(d("受付日")?new Date(d("受付日")+"T00:00:00").toISOString():""),planDate:d("予定日"),planTime:v("予定時刻（日本時間）"),cancelledAt:v("受注後取消日時"),cancelReason:v("受注後取消理由"),siteDate:d("実施日"),estAmount:num("見積額"),estSentDate:d("見積提出日"),holdDate:d("保留日"),lossDate:d("失注日"),
     orderDate:d("受注日"),jobNo:v("仕事番号"),handedDate:d("引渡日"),builtDate:d("施工完了日"),billDate:d("請求日"),billAmount:num("請求額"),payDue:d("入金予定日"),payments:paid?[{date:d("入金日")||d("請求日"),amount:paid}]:[],paidDate:stage==="paid"?d("入金日"):""});
 }
@@ -517,7 +517,7 @@ function roBuild(data){
     /* When the request ledger was fetched, its same-ID state is authoritative.
        An old employee ToDo export must not resurrect a cancelled request or hide a restored one. */
     const rows=Array.isArray(x.orders)?exported.filter(r=>!isReqKind(r["種類"])).concat(x.orders.filter(o=>o["指示ID"]&&o["内容"]&&o["状態"]==="未完了").map(o=>({"内容":o["内容"],"期限":o["期限"],"担当":x.s.name,"種類":"リクエスト",sourceRequestId:String(o["指示ID"])}))):exported;
-    return rows.map(r=>{const no=String(r["受付番号"]||"");return {ro:true,owner:x.s.name,title:String(r["内容"]),due:String(r["期限"]||"").slice(0,10),tantou:surname(r["担当"]||x.s.name),kind:String(r["種類"]||""),property:String(r["物件"]||""),room:String(r["部屋"]||""),caseId:no?no+"・"+x.s.name:"",...(r.sourceRequestId?{sourceRequestId:r.sourceRequestId}:{})};});
+    return rows.map(r=>{const no=String(r["受付番号"]||"");return {ro:true,owner:x.s.name,title:String(r["内容"]),due:String(r["期限"]||"").slice(0,10),tantou:tantouLabel(r["担当"]||x.s.name,x.s.name),kind:String(r["種類"]||""),property:String(r["物件"]||""),room:String(r["部屋"]||""),caseId:no?no+"・"+x.s.name:"",...(r.sourceRequestId?{sourceRequestId:r.sourceRequestId}:{})};});
   });
 }
 /* 最後に読んだ社員の記録をこの端末に残し、開き直したときは次の読み込みまでそれを表示する（ログイン情報は残さない。30日を過ぎたら使わない） */
@@ -570,11 +570,44 @@ function corpByCo(data,co){
 const surname=n=>{const t=String(n||"").trim();if(!t)return "";const flat=t.replace(/[\s　]+/g,"");
   const st=STAFF.find(x=>flat.startsWith(x));return st||t.split(/[\s　]+/)[0]};
 const staffOrder=()=>D().admin?D().staff:(ui.viewList||[]);
-function personBadge(name,small){
-  const sn=surname(name);if(!sn)return "";
-  const i=staffOrder().findIndex(s=>surname(s.name)===sn);
-  return '<span class="pbadge '+(i<0?"pbx":"pb"+(i%6))+(small?' sm':'')+'">'+h(sn)+'</span>';
+/* 担当の表示名（v1.46.2）。保存データは書き換えない（表示・絞り込み・まとめだけ）。
+   - HUBの担当（STAFF）と同じ姓の人は、いつも姓＋名の1字（例：黒木秀・黒木祐）。それ以外の人は、同じ姓が2人以上いるときだけ姓＋名の1字、1人なら姓だけ
+   - 姓だけの担当（例「黒木」）や空の担当は、その記録シートの持ち主（owner）で決める。持ち主が別の姓なら、その姓の人のうち役割が「全社」の人、いなければ社員一覧で先の人
+   - 社員一覧の無い社員の端末では、自分の氏名（領収書の設定の氏名）だけを一覧として使う（姓だけの担当は自分） */
+const flatName=n=>String(n||"").replace(/[\s　]+/g,"");
+const givenOf=n=>flatName(n).slice(surname(n).length);
+const nameList=()=>staffOrder().length?staffOrder():(RS().name?[{name:String(RS().name).trim()}]:[]);
+const ownOwner=()=>staffOrder().length?"":String(RS().name||"").trim();
+function personOf(name,owner){
+  const list=nameList(), n=String(name||"").trim()||String(owner||"").trim();if(!n||!list.length)return null;
+  const f=flatName(n), exact=list.find(s=>flatName(s.name)===f);if(exact)return exact;
+  const sn=surname(n), same=list.filter(s=>surname(s.name)===sn);
+  if(same.length<=1)return same[0]||null;
+  const g=f.slice(sn.length);
+  if(g){const m=same.filter(s=>givenOf(s.name).startsWith(g));return m.length===1?m[0]:null}
+  const o=owner&&same.find(s=>flatName(s.name)===flatName(owner));
+  return o||same.find(s=>s.role==="全社")||same[0];
 }
+function personLabel(p){
+  const sn=surname(p.name), g=givenOf(p.name).slice(0,1);
+  return g&&(STAFF.includes(sn)||nameList().filter(s=>!s.removed&&surname(s.name)===sn).length>1)?sn+g:sn;
+}
+/* 画面に出す担当名（略称）と、帳票・外に出すファイルに出す担当名（社員一覧の氏名） */
+const tantouLabel=(name,owner)=>{const p=personOf(name,owner===undefined?ownOwner():owner);return p?personLabel(p):surname(name)};
+const tantouFull=(name,owner)=>{const p=personOf(name,owner===undefined?ownOwner():owner);return p&&p.name?p.name:String(name||"")};
+function personBadge(name,small,owner){
+  const p=personOf(name,owner), lab=p?personLabel(p):surname(name);if(!lab)return "";
+  const i=p?staffOrder().indexOf(p):-1;
+  return '<span class="pbadge '+(i<0?"pbx":"pb"+(i%6))+(small?' sm':'')+'">'+h(lab)+'</span>';
+}
+/* 担当の選択肢 {v:保存する値, l:画面の表示}。HUBの担当（STAFF）は今まで通りの値（例「黒木」）で保存し、表示だけ区別した名前にする。
+   社員一覧の人のうち、STAFFの値で表せない人は氏名で保存する（旧版でも姓でまとまり、新版では氏名で本人に決まる） */
+function tantouOptions(){
+  const out=STAFF.map(v=>({v,l:tantouLabel(v)})), taken=new Set(STAFF.map(v=>personOf(v,ownOwner())).filter(Boolean));
+  for(const p of nameList())if(!p.removed&&!taken.has(p)){out.push({v:p.name,l:personLabel(p)});taken.add(p)}
+  const seen=new Set();return out.filter(o=>!seen.has(o.l)&&seen.add(o.l));
+}
+const tantouOptsHtml=()=>tantouOptions().map(o=>'<option value="'+h(o.v)+'">'+h(o.l)+'</option>').join("");
 const isEizen=c=>c.type==="eizen";
 const isTaikyo=c=>c.type==="taikyo";
 const itemsSum=(c,b)=>c.items.filter(i=>!b||i.burden===b).reduce((s,i)=>s+(Number(i.amount)||0),0);
@@ -640,7 +673,7 @@ function caseCard(c){
     (c.ro?'<div class="row">'+roChip(c)+'</div>':'')+
     '<div class="case-stage">'+stagePill(c)+'</div>'+
     '<div class="ttl">'+h(c.property)+' '+h(c.room)+(c.symptom?' ・ '+h(c.symptom):'')+'</div>'+
-    '<div class="row note"><span>'+h(c.client)+'</span>'+(c.ro?personBadge(c.tantou):'<span>担当 '+h(c.tantou)+'</span>')+(estOf(c)!=null?'<span class="num">見積 '+yen(estOf(c))+'</span>':'')+'</div>'+
+    '<div class="row note"><span>'+h(c.client)+'</span>'+(c.ro?personBadge(c.tantou):'<span>担当 '+h(tantouLabel(c.tantou))+'</span>')+(estOf(c)!=null?'<span class="num">見積 '+yen(estOf(c))+'</span>':'')+'</div>'+
     (c.stage==="billed"?'<div class="payline num"><span>請求 '+yen(c.billAmount)+'</span><span>残 '+yen(remainOf(c))+'</span><span>入金予定 '+md(c.payDue)+'</span>'+(late?'<span class="late">'+late+'日遅れ</span>':'')+(lastReq(c)?'<span>経理に確認依頼 '+md(lastReq(c))+'</span>':'')+'</div>':'')+
     (urgent?'<div class="since" data-since="'+h(c.receivedAt)+'">'+since(c.receivedAt)+'</div>':'')+
   '</button>';
@@ -661,7 +694,7 @@ function todoRow(t){
       '<div class="row"><button class="btn pri" type="button" data-act="odonedo">完了にする</button><button class="btn" type="button" data-act="odoneno">やめる</button></div><span class="note">次の「Googleとまとめて同期」で社長に届きます</span></div>':'')+'</div>';
   return '<div class="card" style="cursor:default">'+
     todoCardHeading(t)+
-    '<div class="row note">'+(c?typeChip(c)+'<span>'+h(c.property)+' '+h(c.room)+'</span>':'<span class="chip">'+(t.nav?'領収書':'手入力')+'</span>')+'<span>担当 '+h(t.tantou)+'</span><span class="sp"></span>'+
+    '<div class="row note">'+(c?typeChip(c)+'<span>'+h(c.property)+' '+h(c.room)+'</span>':'<span class="chip">'+(t.nav?'領収書':'手入力')+'</span>')+'<span>担当 '+h(tantouLabel(t.tantou))+'</span><span class="sp"></span>'+
     (c?'<button class="btn sm" type="button" data-open="'+h(c.id)+'">案件を開く</button>':t.nav?'<button class="btn sm" type="button" data-nav="'+t.nav+'">領収書を開く</button>':(manualTodoEditable(t)?'<button class="btn sm" type="button" data-mtdedit="'+h(t.id)+'">編集</button>'+(!t.done&&!t.cancelled?'<button class="btn sm" type="button" data-mtdcancel="'+h(t.id)+'">取消</button>':''):'')+(t.done?'<span class="chip">完了済み</span>':'<button class="btn sm" type="button" data-done="'+h(t.id)+'">完了</button>'))+'</div></div>';
 }
 
@@ -675,7 +708,7 @@ function vHome(){
   const un=all.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   const ord=todos.filter(x=>x.order), ordOver=ord.filter(x=>x.due&&x.due<t).length;
   return (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）と付いた案件は練習用の例です。入力した内容はこの端末のブラウザにだけ残ります。</div>':'')+
-  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.46.1">マニュアル</a>へ。</p></div>')+
+  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.46.2">マニュアル</a>へ。</p></div>')+
   '<section class="sec">'+gSyncPanel()+'</section>'+
   (ord.length?'<button type="button" class="banner" data-nav="todo" style="text-align:left;width:100%;cursor:pointer'+(ordOver?';border-color:var(--red)':'')+'"><b>タスクリクエスト '+ord.length+'件</b>'+(ordOver?'<span style="color:var(--red);font-weight:700">（期限切れ '+ordOver+'件）</span>':'')+'<div class="note">'+ord.slice(0,3).map(x=>h(x.title)).join("・")+'</div></button>':'')+
   (D().admin||D().viewListId?corpView():'')+
@@ -722,7 +755,7 @@ function vCases(){
 const CSV_COLS=["受付番号","依頼種類","依頼元区分","依頼元","物件","部屋","住所","担当","受付日","症状","見積金額","家主負担","入居者負担","入居者負担の請求先","受注日","メモ"];
 function csvText(list){
   const q=v=>{v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-  return [CSV_COLS.join(","),...list.map(c=>[c.id,TYPES[c.type].label,c.clientKind,c.client,c.property,c.room,c.addr,c.tantou,c.receivedAt?ymd(new Date(c.receivedAt)):"",c.symptom,estOf(c)??"",isTaikyo(c)?itemsSum(c,"家主"):"",isTaikyo(c)?itemsSum(c,"入居者"):"",isTaikyo(c)?c.billingTenant:"",c.orderDate,c.note].map(q).join(","))].join("\n");
+  return [CSV_COLS.join(","),...list.map(c=>[c.id,TYPES[c.type].label,c.clientKind,c.client,c.property,c.room,c.addr,tantouFull(c.tantou),c.receivedAt?ymd(new Date(c.receivedAt)):"",c.symptom,estOf(c)??"",isTaikyo(c)?itemsSum(c,"家主"):"",isTaikyo(c)?itemsSum(c,"入居者"):"",isTaikyo(c)?c.billingTenant:"",c.orderDate,c.note].map(q).join(","))].join("\n");
 }
 function csvPanel(list){
   return '<div class="panel"><h3>Access取込用データ（受注・引渡待ち '+list.length+'件）</h3>'+
@@ -743,7 +776,7 @@ function vNew(){
     '<label class="f">物件<input type="text" id="n_prop" required placeholder="物件名"></label>'+
     '<label class="f">部屋<input type="text" id="n_room" placeholder="例：203"></label>'+
     '<label class="f full">住所（Googleカレンダーの「場所」に入ります）<input type="text" id="n_addr" placeholder="例：神奈川県相模原市中央区…"></label>'+
-    '<label class="f">担当<select id="n_tantou">'+STAFF.map(s=>'<option>'+s+'</option>').join("")+'</select></label>'+
+    '<label class="f">担当<select id="n_tantou">'+tantouOptsHtml()+'</select></label>'+
     '<label class="f">受付日時<input type="datetime-local" id="n_at"><span class="note">実際に依頼を受けた日時を入れてください（後から入力するときは過去の日時に）</span></label>'+
     '<label class="f full">状況・メモ<textarea id="n_note" placeholder="連絡してきた人、入居者の連絡先、詳しい状況など"></textarea></label>'+
     '<div class="full row"><button class="btn pri" type="submit">受付する</button><span class="note">受付すると仮の受付番号が付きます。仕事番号は受注後にAccessで振られます。</span></div>'+
@@ -938,7 +971,7 @@ function vDetail(){
     '<dt>住所</dt><dd>'+(c.addr?h(c.addr)+' <a class="btn sm" style="display:inline-flex;align-items:center;text-decoration:none;margin-left:4px" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(c.addr)+'">地図を開く</a>':'—')+'</dd>'+
     '<dt>会社</dt><dd>'+(ui.coEdit?coSeg("data-cset",c.company)+'<div class="row" style="margin-top:6px"><button class="btn" type="button" data-act="coeditno">やめる</button></div>':coChip(c.company)+' <button class="btn sm" type="button" data-act="coedit">'+(c.company?'直す':'選ぶ')+'</button>')+'</dd>'+
     '<dt>依頼元</dt><dd>'+h(c.client)+'（'+h(c.clientKind)+'）</dd>'+
-    '<dt>担当</dt><dd>'+h(c.tantou)+'</dd>'+
+    '<dt>担当</dt><dd>'+h(tantouLabel(c.tantou))+'</dd>'+
     '<dt>受付</dt><dd class="num">'+(c.receivedAt?new Date(c.receivedAt).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"—")+(ui.rcvEdit?'':' <button class="btn sm" type="button" data-act="rcvedit">直す</button>')+
       (ui.rcvEdit?'<div class="ro" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"><label class="f">受付日時<input type="datetime-local" id="d_rcv" value="'+h(ui.rcvSuggest?ui.rcvSuggest+"T"+localDT(c.receivedAt).slice(11):localDT(c.receivedAt))+'"></label>'+
         '<span class="note">実際に依頼を受けた日時にします。緊急の経過時間・ToDoの期限・ガントも、この日時で計算し直します。</span>'+
@@ -979,8 +1012,8 @@ function caseDelete(c){
 
 function vTodo(){
   const t=todayS(), wk=addDays(t,7);
-  const ro=roTodos(), tans=[...new Set(STAFF.concat(DB.todos.map(x=>x.tantou).filter(Boolean),ro.map(x=>x.tantou)))];
-  let list=genTodos().concat(ro).filter(x=>x.order||ui.tTantou==="all"||x.tantou===ui.tTantou); /* タスクリクエスト is always shown */
+  const ro=roTodos(), lab=x=>x.ro?x.tantou:tantouLabel(x.tantou), tans=[...new Set(tantouOptions().map(o=>o.l).concat(DB.todos.map(x=>x.tantou).filter(Boolean).map(tantouLabel),ro.map(x=>x.tantou)))];
+  let list=genTodos().concat(ro).filter(x=>x.order||ui.tTantou==="all"||lab(x)===ui.tTantou); /* タスクリクエスト is always shown */
   if(ui.tPeriod==="today")list=list.filter(x=>x.order||x.due&&x.due<=t);
   if(ui.tPeriod==="week")list=list.filter(x=>x.order||x.due&&x.due<=wk);
   const seg=(id,cur,opts)=>'<div class="seg" role="group">'+opts.map(([k,l])=>'<button type="button" data-'+id+'="'+h(k)+'" aria-pressed="'+(cur===k)+'">'+h(l)+'</button>').join("")+'</div>';
@@ -993,7 +1026,7 @@ function vTodo(){
   '<section class="panel"><h3>ToDoを手で追加</h3><form id="todoForm" class="form">'+
     '<label class="f full">内容<input type="text" id="td_title" required placeholder="例：管理会社へ挨拶まわり"></label>'+
     '<label class="f">期限<input type="date" id="td_due" value="'+t+'"></label>'+
-    '<label class="f">担当<select id="td_tantou">'+STAFF.map(s=>'<option>'+s+'</option>').join("")+'</select></label>'+
+    '<label class="f">担当<select id="td_tantou">'+tantouOptsHtml()+'</select></label>'+
     '<div class="full"><button class="btn pri" type="submit">追加する</button></div></form></section>';
 }
 
@@ -1003,16 +1036,16 @@ let manualTodoSession=null,manualTodoHistoryRows=[],manualTodoSaving=false;
 const manualTodoApi=()=>globalThis.WorkHubManualTodo;
 function manualStorageNotice(message){const el=document.getElementById("manualTodoStorageNotice");if(el){el.textContent=message;el.hidden=false}setTimeout(()=>toast(message,6500),0);}
 function manualTodoEditable(t){return !!(manualTodoApi()?.editable(t)&&DB.todos.filter(x=>x.id===t.id).length===1&&manualTodoApi().editable(DB.todos.find(x=>x.id===t.id)));}
-function completedManualTodos(){const rows=DB.todos.filter(t=>t.done&&!t.cancelled&&manualTodoEditable(t)&&(ui.tTantou==="all"||t.tantou===ui.tTantou));return rows.length?'<section class="panel"><details><summary>完了した手入力ToDo（全期間） '+rows.length+'件</summary><p class="note">内容は編集できます。完了状態は保持します。</p><div class="list">'+rows.map(todoRow).join("")+'</div></details></section>':'';}
+function completedManualTodos(){const rows=DB.todos.filter(t=>t.done&&!t.cancelled&&manualTodoEditable(t)&&(ui.tTantou==="all"||tantouLabel(t.tantou)===ui.tTantou));return rows.length?'<section class="panel"><details><summary>完了した手入力ToDo（全期間） '+rows.length+'件</summary><p class="note">内容は編集できます。完了状態は保持します。</p><div class="list">'+rows.map(todoRow).join("")+'</div></details></section>':'';}
 function cancelledManualTodos(){
- const rows=DB.todos.filter(t=>t.cancelled&&manualTodoEditable(t)&&(ui.tTantou==="all"||t.tantou===ui.tTantou));
+ const rows=DB.todos.filter(t=>t.cancelled&&manualTodoEditable(t)&&(ui.tTantou==="all"||tantouLabel(t.tantou)===ui.tTantou));
  return rows.length?'<section class="panel"><details><summary>取り消した手入力ToDo（全期間） '+rows.length+'件</summary><p class="note">取消は完了・入金済みとは別です。元の記録を保持しています。</p><div class="list">'+rows.map(t=>'<div class="card" style="cursor:default"><div class="row"><span class="ttl">'+h(t.title)+'</span><span class="chip">取消済み</span></div><p class="note">元の期限 '+h(t.due||"なし")+' ／ 担当 '+h(t.tantou||"未設定")+'<br>取消 '+h(t.cancelledAt?new Date(t.cancelledAt).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}):"日時不明")+'<br>理由 '+h(t.cancelReason||"記録なし")+'</p></div>').join("")+'</div></details></section>':'';
 }
 function manualTodoBusy(){return !!(ui.gsync?.busy||ui.gbusy||ui.oBusy||ui.dbusy||ui.cdelBusy||receiptSaving||receiptSelecting);}
 function manualTodoInputs(){return {title:val("manualTodoTitle"),due:val("manualTodoDue"),tantou:val("manualTodoAssignee")};}
 function manualTodoFill(t){document.getElementById("manualTodoTitle").value=t.title??"";document.getElementById("manualTodoDue").value=t.due??"";document.getElementById("manualTodoAssignee").value=t.tantou??"";}
 function manualTodoHistoryRender(){const box=document.getElementById("manualTodoHistory");try{const value=manualTodoApi().history(localStorage,manualTodoSession.id);manualTodoHistoryRows=value.records;box.innerHTML=(value.warnings.length?'<p class="note">読み取れない履歴があります。元の控えは保持しています。</p>':'')+(value.records.map((r,i)=>'<div class="manual-history"><p>'+h(new Date(r.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'・'+(r.verified?'保存確認済み':'保存の確認記録なし')+'</p><p>'+h(r.before.title)+'<br>期限 '+h(r.before.due||"なし")+' ／ 担当 '+h(r.before.tantou||"未設定")+'<br>'+(r.before.cancelled?'取消済み':r.before.done?'完了':'未完了')+'</p><button class="btn sm" type="button" data-mtdprevious="'+i+'">この内容を編集欄に戻す</button></div>').join("")||'<p class="note">この端末にはまだ編集履歴がありません。</p>');}catch{box.textContent="履歴を読み取れません。元の記録は保持しています。";}}
-function manualTodoOpen(id){if(manualTodoBusy()){toast("同期などの処理が終わってから編集してください",5000);return}try{if(!manualTodoApi())throw Error("編集機能を読み込めません。再読み込みしてください。");const session=manualTodoApi().open(localStorage,KEY,id);manualTodoSession=session;manualTodoFill(session.before);document.getElementById("manualTodoStaff").innerHTML=[...new Set(STAFF.concat(DB.todos.map(t=>t.tantou).filter(Boolean)))].map(t=>'<option value="'+h(t)+'"></option>').join("");document.getElementById("manualTodoState").textContent="手入力ToDo・この端末 ／ "+(session.before.cancelled?"取消済み（状態を保持）":session.before.done?"完了済み（状態を保持）":"未完了（入金確認などが済むまで保持）");document.getElementById("manualTodoStatus").textContent="編集前の控えを端末に残してから、同じToDoに保存します。";document.getElementById("manualTodoSave").disabled=false;manualTodoHistoryRender();document.getElementById("manualTodoEditor").showModal();}catch(error){toast(error.message,6500);}}
+function manualTodoOpen(id){if(manualTodoBusy()){toast("同期などの処理が終わってから編集してください",5000);return}try{if(!manualTodoApi())throw Error("編集機能を読み込めません。再読み込みしてください。");const session=manualTodoApi().open(localStorage,KEY,id);manualTodoSession=session;manualTodoFill(session.before);document.getElementById("manualTodoStaff").innerHTML=tantouOptions().map(o=>'<option value="'+h(o.v)+'" label="'+h(o.l)+'"></option>').join("")+[...new Set(DB.todos.map(t=>t.tantou).filter(Boolean))].filter(t=>!tantouOptions().some(o=>o.v===t)).map(t=>'<option value="'+h(t)+'"></option>').join("");document.getElementById("manualTodoState").textContent="手入力ToDo・この端末 ／ "+(session.before.cancelled?"取消済み（状態を保持）":session.before.done?"完了済み（状態を保持）":"未完了（入金確認などが済むまで保持）");document.getElementById("manualTodoStatus").textContent="編集前の控えを端末に残してから、同じToDoに保存します。";document.getElementById("manualTodoSave").disabled=false;manualTodoHistoryRender();document.getElementById("manualTodoEditor").showModal();}catch(error){toast(error.message,6500);}}
 function manualTodoClose(){if(manualTodoSaving)return;if(manualTodoSession){const input=manualTodoInputs(),before=manualTodoSession.before;if(["title","due","tantou"].some(k=>input[k]!==String(before[k]??""))&&!confirm("保存していない入力があります。閉じますか？"))return;}document.getElementById("manualTodoEditor").close();manualTodoSession=null;}
 function manualTodoDownload(draft){if(!manualTodoSession)return;try{const value=draft?{format:"workhub-manual-todo-draft-v1",id:manualTodoSession.id,fields:manualTodoInputs(),original:manualTodoSession.before,at:new Date().toISOString()}:{format:"workhub-manual-todo-before-v1",id:manualTodoSession.id,before:manualTodoSession.before,beforeRaw:manualTodoSession.beforeRaw,at:new Date().toISOString()};const blob=new Blob([JSON.stringify(value,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="CPG-HUB-ToDo-"+(draft?"draft-":"before-")+new Date().toLocaleDateString("sv-SE",{timeZone:"Asia/Tokyo"})+".json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}catch{document.getElementById("manualTodoStatus").textContent="控えファイルを保存できませんでした。入力内容は残しています。空き容量やダウンロードの設定を確認してください。";}}
 async function manualTodoSave(){if(manualTodoSaving||!manualTodoSession)return;if(manualTodoBusy()){document.getElementById("manualTodoStatus").textContent="同期などの処理中です。終了してから保存してください。入力は残しています。";return}const input=manualTodoInputs(),session=manualTodoSession;manualTodoSaving=true;const button=document.getElementById("manualTodoSave"),status=document.getElementById("manualTodoStatus");button.disabled=true;status.textContent="最新の記録と編集前の控えを照合しています…";try{const commit=()=>{if(manualTodoBusy())throw Error("ほかの処理中のため保存していません。入力は残しています。");return manualTodoApi().commit(localStorage,KEY,session,input,{operationId:crypto.randomUUID(),at:new Date().toISOString()});};const result=navigator.locks?.request?await navigator.locks.request(KEY+":manual-todo-edit",commit):commit();if(manualTodoSession!==session)throw Error("編集画面が変わりました。最新の記録を確認してください。");DB=upgrade(result.db);dbPersistedRaw=result.raw;document.getElementById("manualTodoStorageNotice").hidden=true;manualTodoSession=null;document.getElementById("manualTodoEditor").close();render();toast(result.changed?(result.proofSaved?"同じToDoを更新し、保存内容を読み戻して確認しました。完了状態は保持しています。":"ToDoの保存・読み戻しは確認済みです。履歴の確認記録だけ保存できませんでした。編集前の控えは残っています。") :"変更はありません。元の記録を保持しています。",6500);}catch(error){status.textContent=error.message;if(error.mayHaveSaved)status.textContent+=" 入力を控えてから画面を閉じ、再読み込みで確認してください。";manualTodoHistoryRender();}finally{manualTodoSaving=false;button.disabled=false;}}
@@ -1076,7 +1109,7 @@ function manualTodoCancelBusy(){return manualTodoBusy()||manualTodoSaving||caseI
 function manualTodoCancelOpen(id){
  if(manualTodoCancelBusy()){toast("同期などの処理が終わってから取り消してください",5000);return;}
  try{if(!manualTodoApi()?.cancel)throw Error("取消機能を読み込めません。再読み込みしてください。");const session=manualTodoApi().open(localStorage,KEY,id);if(session.before.done||session.before.cancelled)throw Error("このToDoは完了済み、または取消済みです。記録は変更していません。");manualTodoCancelSession=session;
-  document.getElementById("manualTodoCancelTarget").textContent=session.before.title+"\n期限 "+(session.before.due||"なし")+" ／ 担当 "+(session.before.tantou||"未設定")+"\nID "+session.id;
+  document.getElementById("manualTodoCancelTarget").textContent=session.before.title+"\n期限 "+(session.before.due||"なし")+" ／ 担当 "+(tantouLabel(session.before.tantou)||"未設定")+"\nID "+session.id;
   document.getElementById("manualTodoCancelReason").value="予定変更のため不要";document.getElementById("manualTodoCancelStatus").textContent="取消前の控えを残し、同じIDの記録を保持します。";document.getElementById("manualTodoCancelSave").disabled=false;document.getElementById("manualTodoCancelEditor").showModal();
  }catch(error){toast(error.message,6500);}
 }
@@ -1335,7 +1368,7 @@ function gSyncPanel(){
    The event id is saved on the case before it is sent, so a retry updates the same event instead of making a second one. */
 const gRand=()=>{const a="0123456789abcdefghijklmnopqrstuv", b=new Uint8Array(20);crypto.getRandomValues(b);return "cpghub"+Array.from(b,x=>a[x%32]).join("")};
 const gTitle=c=>"【"+TYPES[c.type].label+"】"+c.property+" "+c.room;
-const gDesc=c=>["受付番号："+c.id,"依頼の種類："+TYPES[c.type].label,"依頼元："+c.client+"（"+c.clientKind+"）","担当："+c.tantou,"（CPG HUBから登録）"].join("\n");
+const gDesc=c=>["受付番号："+c.id,"依頼の種類："+TYPES[c.type].label,"依頼元："+c.client+"（"+c.clientKind+"）","担当："+tantouFull(c.tantou),"（CPG HUBから登録）"].join("\n");
 async function gRegister(c){
   await gAuthorize();
   if(!G.cals)await gLoadCalendars();
@@ -1450,9 +1483,9 @@ function vGantt(){
   const todos=genTodos().concat(roTodos());
   const order={new:0,site:1,quoted:2,hold:3,won:4,handed:5,working:5,built:6,billed:7};
   const gco=ui.gCo||"all";
-  const act=allCases().filter(c=>!ended(c)&&(gco==="all"||c.company===gco)), tans=[...new Set(act.map(c=>c.tantou||"未設定"))];
+  const act=allCases().filter(c=>!ended(c)&&(gco==="all"||c.company===gco)), gl=c=>(c.ro?c.tantou:tantouLabel(c.tantou))||"未設定", tans=[...new Set(act.map(gl))];
   if(ui.gTantou&&ui.gTantou!=="all"&&!tans.includes(ui.gTantou))ui.gTantou="all";
-  const list=act.filter(c=>!ui.gTantou||ui.gTantou==="all"||(c.tantou||"未設定")===ui.gTantou).sort((a,b)=>(b.type==="kinkyu")-(a.type==="kinkyu")||order[a.stage]-order[b.stage]||a.id.localeCompare(b.id));
+  const list=act.filter(c=>!ui.gTantou||ui.gTantou==="all"||gl(c)===ui.gTantou).sort((a,b)=>(b.type==="kinkyu")-(a.type==="kinkyu")||order[a.stage]-order[b.stage]||a.id.localeCompare(b.id));
   const seg=(a,b,cls)=>{if(!a)return "";const L=x(a),R=b===t?x(b)+1:x(b);if(R<=0||L>=DAYS)return "";return '<span class="gseg '+cls+'" style="left:'+(L*W)+'px;width:'+Math.max(4,(R-L)*W)+'px"></span>'};
   let head="";
   for(let i=0;i<DAYS;i++){const d=parseYmd(addDays(from,i));head+='<span class="gday'+(d.getDay()===0?" sun":"")+'" style="left:'+(i*W)+'px">'+(d.getDate()===1||i===0?(d.getMonth()+1)+'/':'&nbsp;')+'<br>'+d.getDate()+'</span>'}
@@ -1492,7 +1525,7 @@ function vStats(){
   const row=([k,g])=>'<tr><td>'+h(k)+'</td><td class="num">'+g.n+'件</td><td class="num">'+yen(g.sum)+'</td><td class="num"'+(g.late?' style="color:var(--red);font-weight:700"':'')+'>'+(g.late?g.late+'日':'—')+'</td></tr>';
   const tbl=(head,rows)=>'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>'+head+'</th><th>件数</th><th>未入金</th><th>最長の遅れ</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   const unpaidSec='<section class="sec"><div class="sec-h"><h2>未入金</h2><span class="note num">'+un.length+'件 '+yen(un.reduce((s,c)=>s+remainOf(c),0))+'</span></div>'+
-    (un.length?'<div class="panel"><h3>担当者別</h3>'+tbl("担当",group(c=>c.tantou||"未設定").map(row).join(""))+'</div>'+acctPanel()+
+    (un.length?'<div class="panel"><h3>担当者別</h3>'+tbl("担当",group(c=>(c.ro?c.tantou:tantouLabel(c.tantou))||"未設定").map(row).join(""))+'</div>'+acctPanel()+
       '<div class="panel"><h3>物件別</h3>'+tbl("物件",group(c=>c.property||"（物件名なし）").map(row).join(""))+'<p class="note" style="margin:0">遅れの長い順です。案件一覧の「入金待ちだけ」でも確認できます。</p></div>'
       :'<div class="empty">未入金の案件はありません</div>')+'</section>';
   return (hasExamples()?'<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>':'')+unpaidSec+
@@ -1518,7 +1551,7 @@ function vStats(){
     ''+
     '</form></section>'+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.46.1" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a></section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.46.2" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a></section>';
 }
 function gSettings(){
   const head='<section class="sec"><div class="sec-h"><h2>Googleカレンダー連携</h2></div>';
@@ -2280,7 +2313,7 @@ function corpView(){
     const cases=ok.flatMap(x=>x.cases.map(r=>Object.assign({_who:x.s.name},r)));
     const active=cases.filter(r=>r["段階"]&&r["段階"]!==STAGES.paid&&r["段階"]!==STAGES.lost);
     const byStage=Object.values(STAGES).filter(l=>l!==STAGES.paid&&l!==STAGES.lost).map(l=>[l,active.filter(r=>r["段階"]===l).length]).filter(x=>x[1]);
-    const tanOf=r=>surname(r["担当"]||r._who)||"未設定";
+    const tanOf=r=>tantouLabel(r["担当"]||r._who,r._who)||"未設定";
     const byTan=[...new Set(active.map(tanOf))].map(n=>[n,active.filter(r=>tanOf(r)===n)]);
     const unp=cases.filter(r=>Number(r["残額"])>0&&r["段階"]===STAGES.billed);
     const grp=key=>{const m=new Map();for(const r of unp){const k=r[key]||"—",g=m.get(k)||{n:0,sum:0,late:0};g.n++;g.sum+=Number(r["残額"])||0;g.late=Math.max(g.late,Number(r["遅れ日数"])||0);m.set(k,g)}return [...m.entries()].sort((a,b)=>b[1].late-a[1].late||b[1].sum-a[1].sum)};
@@ -2288,8 +2321,8 @@ function corpView(){
     const tbl=(hd,rows)=>'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>'+hd+'</th><th>件数</th><th>未入金</th><th>最長の遅れ</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
     const rcSum=(x,co,st)=>x.rc.filter(r=>r["会社"]===co&&r["支払い方法"]!=="法人カード"&&(Array.isArray(st)?st.includes(r["状態"]):r["状態"]===st)).reduce((s,r)=>s+(Number(r["金額"])||0),0);
     const rcRows=ok.flatMap(x=>COMPANIES.filter(k=>co==="all"||k===co).map(co=>[x.s.name,co,rcSum(x,co,["未提出","差戻し"]),rcSum(x,co,"提出済")])).filter(r=>r[2]||r[3]);
-    body='<div class="panel"><h3>同期の状況</h3><ul class="dl">'+c0.data.map(x=>{const ls=x.ok&&x.s.lastSync?x.s.lastSync:"", old=!ls||diffDays(t,ls.slice(0,10))>=3;
-        return '<li>'+personBadge(x.s.name)+' '+(x.ok?(ls?'最終同期 '+h(ls):'まだ同期していません')+(old?' <b style="color:var(--red)">（3日以上同期していません）</b>':''):'<b style="color:var(--red)">読めませんでした（'+h(x.msg)+'）</b>')+'</li>'}).join("")+'</ul></div>'+
+    body='<div class="panel"><h3>同期の状況</h3><ul class="dl">'+c0.data.map(x=>{const ls=x.ok&&x.s.lastSync?x.s.lastSync:"", old=!ls||String(ls).slice(0,10)!==t; /* 1日3回の同期（v1.47）：今日の同期が無い人を赤 */
+        return '<li'+(x.ok&&old?' style="color:var(--red)"':'')+'>'+personBadge(x.s.name)+' '+(x.ok?(ls?'最終同期 '+h(ls):'まだ同期していません')+(old?' <b style="color:var(--red)">（今日まだ同期していません）</b>':''):'<b style="color:var(--red)">読めませんでした（'+h(x.msg)+'）</b>')+'</li>'}).join("")+'</ul></div>'+
       '<div class="panel"><h3>動いている案件 '+active.length+'件</h3>'+(byStage.length?'<p class="note num" style="margin:0">'+byStage.map(([l,n])=>h(l)+' '+n).join("・")+'</p>':'')+
         byTan.map(([n,rs])=>'<details open><summary>'+personBadge(n)+'（'+rs.length+'件）</summary><div class="list" style="margin-top:6px">'+rs.slice().sort((a,b)=>String(b["最終の動き"]).localeCompare(String(a["最終の動き"]))).map(corpCaseCard).join("")+'</div></details>').join("")+'</div>'+
       '<div class="panel"><h3>ToDo</h3>'+(ok.length?c.data.map(x=>x.ok?corpTodos(x,x._i):'').join(""):'<p class="note" style="margin:0">読めた社員がいません</p>')+'</div>'+
