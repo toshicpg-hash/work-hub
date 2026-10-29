@@ -308,7 +308,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.46" title="使い方マニュアルを開く">v1.46・10/29更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.47-rc1" title="使い方マニュアルを開く">v1.47-rc1・10/29 未公開</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -675,7 +675,7 @@ function vHome(){
   const un=all.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   const ord=todos.filter(x=>x.order), ordOver=ord.filter(x=>x.due&&x.due<t).length;
   return (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）と付いた案件は練習用の例です。入力した内容はこの端末のブラウザにだけ残ります。</div>':'')+
-  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.46">マニュアル</a>へ。</p></div>')+
+  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.47-rc1">マニュアル</a>へ。</p></div>')+
   '<section class="sec">'+gSyncPanel()+'</section>'+
   (ord.length?'<button type="button" class="banner" data-nav="todo" style="text-align:left;width:100%;cursor:pointer'+(ordOver?';border-color:var(--red)':'')+'"><b>タスクリクエスト '+ord.length+'件</b>'+(ordOver?'<span style="color:var(--red);font-weight:700">（期限切れ '+ordOver+'件）</span>':'')+'<div class="note">'+ord.slice(0,3).map(x=>h(x.title)).join("・")+'</div></button>':'')+
   (D().admin||D().viewListId?corpView():'')+
@@ -1498,8 +1498,8 @@ function vStats(){
     reasons.map(([r,n])=>'<div class="brk"><span>'+r+'</span><span class="bar"><i style="width:'+(n/maxR*100)+'%"></i></span><span class="num">'+n+'件</span></div>').join("")+'</div></section>'+
   '<section class="sec"><div class="sec-h"><h2>依頼の種類別</h2></div><div class="panel"><div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>種類</th><th>受注</th><th>失注</th></tr></thead><tbody>'+
     byType.map(([l,w,x])=>'<tr><td>'+l+'</td><td class="num">'+w+'件</td><td class="num">'+x+'件</td></tr>').join("")+'</tbody></table></div></div></section>'+
-  '<section class="sec"><div class="sec-h"><h2>ToDoの期限（仮）</h2></div><form id="setForm" class="panel">'+
-    '<p class="note" style="margin:0">自動で出るToDoの期限日数です。使いながら調整してください。</p>'+
+  '<section class="sec"><div class="sec-h"><h2>自動ToDoの期限設定（目安）</h2></div><form id="setForm" class="panel">'+
+    '<p class="note" style="margin:0">自動ToDoの期限を決める日数です。土日祝も含みます。この端末だけの設定で、保存すると既存案件の該当する自動ToDoにも反映されます。手入力ToDoやリクエストの期限は変わりません。</p>'+
     '<div class="form">'+
     '<label class="f">受付 → 日程調整まで（日）<input type="number" min="0" id="s_schedule" value="'+S.schedule+'"></label>'+
     '<label class="f">現地確認 → 見積提出まで（日）<input type="number" min="0" id="s_quote" value="'+S.quote+'"></label>'+
@@ -1512,7 +1512,7 @@ function vStats(){
     ''+
     '</form></section>'+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.46" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a></section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.47-rc1" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a></section>';
 }
 function gSettings(){
   const head='<section class="sec"><div class="sec-h"><h2>Googleカレンダー連携</h2></div>';
