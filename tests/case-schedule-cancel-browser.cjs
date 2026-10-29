@@ -5,8 +5,8 @@ const sheetReply=require('./helpers/case-sheet-mock.cjs');
 const root=path.resolve(__dirname,'..'),KEY='workhub_proto_v1';
 const hook='window.testHub={get db(){return DB},ui,go,emptyDB,CASE_DEFAULTS,save,render,genTodos,dataRows,roCase,roDetail,upgrade,ended,gSyncAll,sheetWrite,sheetRead,vStats,get uncertain(){return caseSaveUncertain},authorize(){G.token="synthetic-token";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000;}};';
 let server,browser,origin;const results=[];
-async function setup(db,tz='Asia/Tokyo',width=390,network=null,baseline=false){
- const ctx=await browser.newContext({timezoneId:tz,locale:'ja-JP',viewport:{width,height:900}}),requests=[],errors=[];
+async function setup(db,tz='Asia/Tokyo',width=390,network=null,baseline=false,touch=false){
+ const ctx=await browser.newContext({timezoneId:tz,locale:'ja-JP',viewport:{width,height:900},hasTouch:touch,isMobile:touch,...(touch?{userAgent:'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36'}:{})}),requests=[],errors=[];
  await ctx.route('**/*',r=>{const u=r.request().url();if(u===origin+'/')return r.fulfill({contentType:'text/html',body:(baseline?require('node:child_process').execFileSync('git',['show','c8db9bd:index.html'],{cwd:root,encoding:'utf8'}):fs.readFileSync(path.join(root,'index.html'),'utf8')).replace('corpKeepLoad();\nrender();',hook+'\ncorpKeepLoad();\nrender();')});if(u===origin+'/seed')return r.fulfill({contentType:'text/html',body:'<!doctype html>'});if(u.startsWith(origin+'/'))return r.continue();requests.push({url:u,method:r.request().method()});
  if(network&&u.includes('/calendar/v3/users/me/calendarList'))return r.fulfill({contentType:'application/json',body:'{"items":[]}'});
  if(network&&u.startsWith('https://sheets.googleapis.com/v4/spreadsheets/synthetic-own')){
@@ -15,6 +15,8 @@ async function setup(db,tz='Asia/Tokyo',width=390,network=null,baseline=false){
  return r.fulfill({status:200,body:''});});
  const p=await ctx.newPage();p.on('pageerror',e=>errors.push(e.message));await p.clock.setFixedTime(new Date('2026-10-29T15:05:00Z'));await p.goto(origin+'/seed');if(db)await p.evaluate(({KEY,db})=>localStorage.setItem(KEY,JSON.stringify(db)),{KEY,db});await p.goto(origin+'/');await p.waitForFunction(()=>!!window.testHub);return {ctx,p,requests,errors};
 }
+const setTime=async(p,time)=>{const [hour='',minute='']=time.split(':');await p.locator('#d_plan_hour').selectOption(hour);await p.locator('#d_plan_minute').selectOption(minute);};
+const readTime=async p=>{const h=await p.locator('#d_plan_hour').inputValue(),m=await p.locator('#d_plan_minute').inputValue();return h!==''&&m!==''?h+':'+m:'';};
 const read=p=>p.evaluate(KEY=>JSON.parse(localStorage.getItem(KEY)),KEY);
 const open=(p,id)=>p.evaluate(id=>testHub.go('detail',{caseId:id}),id);
 const click=(p,a)=>p.locator('[data-act="'+a+'"]').click();
@@ -31,10 +33,10 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
    assert.equal(await p.evaluate(()=>testHub.genTodos().find(t=>t.caseId==='synthetic-emergency').due),tz==='America/Los_Angeles'?'2026-10-28':'2026-10-29');
    assert.match(await p.locator('.since').innerText(),/受付から/);
    await p.locator('#d_plan').fill('2026-11-11');await click(p,'plan');assert.equal((await read(p)).cases[0].planDate,undefined);
-   await p.locator('#d_plan_time').fill('10:00');await p.locator('[data-nav="cases"]').first().click();await open(p,'synthetic-emergency');assert.equal(await p.locator('#d_plan_time').inputValue(),'');
+   await setTime(p,'10:00');await p.locator('[data-nav="cases"]').first().click();await open(p,'synthetic-emergency');assert.equal(await readTime(p),'');
    for(const [day,time] of [['2026-11-11','10:00'],['2026-11-12','00:05'],['2026-11-11','23:55']]){
-    await p.locator('#d_plan').fill(day);await p.locator('#d_plan_time').fill(time);await click(p,'plan');let c=(await read(p)).cases[0];assert.equal(c.planDate,day);assert.equal(c.planTime,time);assert.equal(c.stage,'new');assert.equal(c.siteDate,'');assert.equal(c.gcal,null);assert.equal(await p.evaluate(()=>testHub.genTodos().find(t=>t.caseId==='synthetic-emergency').due),day);
-    await p.reload();await open(p,c.id);assert.equal(await p.locator('#d_plan').inputValue(),day);assert.equal(await p.locator('#d_plan_time').inputValue(),time);assert.match(await p.locator('#main').innerText(),/日本時間/);
+    await p.locator('#d_plan').fill(day);await setTime(p,time);await click(p,'plan');let c=(await read(p)).cases[0];assert.equal(c.planDate,day);assert.equal(c.planTime,time);assert.equal(c.stage,'new');assert.equal(c.siteDate,'');assert.equal(c.gcal,null);assert.equal(await p.evaluate(()=>testHub.genTodos().find(t=>t.caseId==='synthetic-emergency').due),day);
+    await p.reload();await open(p,c.id);assert.equal(await p.locator('#d_plan').inputValue(),day);assert.equal(await readTime(p),time);assert.match(await p.locator('#main').innerText(),/日本時間/);
    }
    // JSON backup/restore through actual upgrade and reload; unknown data survives.
    const backup=await read(p);await p.evaluate(({KEY,backup})=>{localStorage.setItem(KEY,JSON.stringify(testHub.upgrade(JSON.parse(JSON.stringify(backup)))));},{KEY,backup});await p.reload();assert.deepEqual(await read(p),backup);
@@ -56,19 +58,19 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
   }
   for(const fault of ['quota','readback','concurrent','busy']){
    for(const action of ['cancel','plan']){
-    const a=await setup(db),{p}=a;await open(p,action==='cancel'?'synthetic-won':'synthetic-emergency');if(action==='cancel'){await click(p,'woncancelask');await p.locator('#d_cancel_reason').fill('保持する理由');}else{await p.locator('#d_plan').fill('2026-11-11');await p.locator('#d_plan_time').fill('10:00');}
+    const a=await setup(db),{p}=a;await open(p,action==='cancel'?'synthetic-won':'synthetic-emergency');if(action==='cancel'){await click(p,'woncancelask');await p.locator('#d_cancel_reason').fill('保持する理由');}else{await p.locator('#d_plan').fill('2026-11-11');await setTime(p,'10:00');}
     await p.evaluate(({KEY,fault})=>{if(fault==='busy'){testHub.ui.gsync={busy:true};return}if(fault==='concurrent'){const other=JSON.parse(localStorage.getItem(KEY));other.unknown.newer=true;localStorage.setItem(KEY,JSON.stringify(other));return}const original=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k===KEY){if(fault==='quota')throw new DOMException('quota','QuotaExceededError');return;}return original.call(this,k,v)};},{KEY,fault});const before=await read(p);await click(p,action==='cancel'?'woncancelsave':'plan');assert.deepEqual(await read(p),before);assert.equal(await p.evaluate(()=>testHub.db.cases[1].stage),'won');assert.equal(await p.evaluate(()=>testHub.db.cases[0].planDate),'');if(action==='cancel'){assert.equal(await p.locator('#d_cancel_reason').inputValue(),'保持する理由');assert.match(await p.locator('#wonCancelStatus').innerText(),/保存|処理中/);}assert.doesNotMatch(await p.locator('#toast').innerText(),/取消を記録しました|の予定を入れました/);await a.ctx.close();results.push(action+' failure '+fault+' preserves state and never reports success');
    }
   }
   {
-   const a=await setup(db),{p}=a;await open(p,'synthetic-normal');assert.equal(await p.locator('#d_plan_time').count(),0);await p.locator('#d_plan').fill('2026-11-15');await click(p,'plan');assert.equal((await read(p)).cases[2].planDate,'2026-11-15');
+   const a=await setup(db),{p}=a;await open(p,'synthetic-normal');assert.equal(await p.locator('#d_plan_hour,#d_plan_minute,input[type=time]').count(),0);await p.locator('#d_plan').fill('2026-11-15');await click(p,'plan');assert.equal((await read(p)).cases[2].planDate,'2026-11-15');
    await open(p,'synthetic-quoted');await click(p,'lose');assert.equal((await read(p)).cases.find(c=>c.id==='synthetic-quoted').stage,'lost');await click(p,'reopen');assert.equal((await read(p)).cases.find(c=>c.id==='synthetic-quoted').stage,'quoted');await p.locator('#d_hold').fill('2026-11-20');await click(p,'hold');assert.equal((await read(p)).cases.find(c=>c.id==='synthetic-quoted').holdDate,'2026-11-20');
    for(const stage of ['handed','working','built','billed','paid']){await open(p,'synthetic-'+stage);assert.equal(await p.locator('[data-act="woncancelask"]').count(),0);await stale(p,'woncancelask');assert.equal(await p.locator('#d_cancel_reason').count(),0);}
    const old=await p.evaluate(()=>testHub.roCase({'受付番号':'old','種類':'緊急対応','段階キー':'new'},{s:{name:'合成旧版'}}));assert.equal(old.planTime,'');assert.equal(old.cancelledAt,'');assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('Normal schedule/loss/reopen/hold, old share defaults and post-handoff scope');
   }
   {
    const syncDb=structuredClone(db);syncDb.settings.data.sheetId='synthetic-own';const network={exports:{}},a=await setup(syncDb,'Asia/Tokyo',390,network),{p}=a;
-   await open(p,'synthetic-emergency');await p.locator('#d_plan').fill('2026-11-11');await p.locator('#d_plan_time').fill('10:00');await click(p,'plan');
+   await open(p,'synthetic-emergency');await p.locator('#d_plan').fill('2026-11-11');await setTime(p,'10:00');await click(p,'plan');
    await open(p,'synthetic-won');await click(p,'woncancelask');await p.locator('#d_cancel_reason').fill('合成同期確認');await click(p,'woncancelsave');const before=await read(p);
    for(let i=0;i<2;i++){
     await p.evaluate(async()=>{testHub.authorize();await testHub.gSyncAll();});assert.equal(await p.evaluate(()=>testHub.ui.gsync.busy),false);
@@ -82,7 +84,7 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
   for(const fault of ['read-throws','read-old','read-replaced'])for(const action of ['cancel','plan']){
    const syncDb=structuredClone(db);syncDb.settings.data.sheetId='synthetic-own';const network={exports:{}},a=await setup(syncDb,'Asia/Tokyo',390,network),{p}=a;
    await open(p,action==='cancel'?'synthetic-won':'synthetic-emergency');
-   if(action==='cancel'){await click(p,'woncancelask');await p.locator('#d_cancel_reason').fill('合成保存結果不明');}else{await p.locator('#d_plan').fill('2026-11-11');await p.locator('#d_plan_time').fill('00:05');}
+   if(action==='cancel'){await click(p,'woncancelask');await p.locator('#d_cancel_reason').fill('合成保存結果不明');}else{await p.locator('#d_plan').fill('2026-11-11');await setTime(p,'00:05');}
    await p.evaluate(({KEY,fault})=>{
     const get=Storage.prototype.getItem,set=Storage.prototype.setItem,old=get.call(localStorage,KEY);let written=false;
     window.keyWrites=0;window.actualRaw=()=>get.call(localStorage,KEY);window.restoreFault=()=>{Storage.prototype.getItem=get;Storage.prototype.setItem=set;};
@@ -93,7 +95,7 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
    },{KEY,fault});
    await click(p,action==='cancel'?'woncancelsave':'plan');const saved=await p.evaluate(()=>JSON.parse(actualRaw()));
    assert.equal(await p.evaluate(()=>keyWrites),1);assert.equal(await p.evaluate(()=>testHub.uncertain),true);assert.equal(await p.evaluate(()=>testHub.db.cases[1].stage),'won');assert.equal(await p.evaluate(()=>testHub.db.cases[0].planDate),'');
-   if(action==='cancel'){assert.equal(saved.cases[1].stage,'lost');assert.equal(await p.locator('#d_cancel_reason').inputValue(),'合成保存結果不明');}else{assert.equal(saved.cases[0].planTime,'00:05');assert.equal(await p.locator('#d_plan_time').inputValue(),'00:05');}
+   if(action==='cancel'){assert.equal(saved.cases[1].stage,'lost');assert.equal(await p.locator('#d_cancel_reason').inputValue(),'合成保存結果不明');}else{assert.equal(saved.cases[0].planTime,'00:05');assert.equal(await readTime(p),'00:05');}
    if(fault==='read-replaced')assert.equal(saved.unknown.concurrent,'preserve-newer');
    const requestsBefore=a.requests.length;
    await click(p,action==='cancel'?'woncancelsave':'plan');await stale(p,'rushwin');
@@ -104,7 +106,7 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
    assert.match(await p.locator('#manualTodoStorageNotice').innerText(),/保存・共有を停止/);
    await p.evaluate(()=>restoreFault());await p.reload();assert.equal(await p.evaluate(()=>testHub.uncertain),false);assert.deepEqual(await read(p),saved);
    await open(p,action==='cancel'?'synthetic-won':'synthetic-emergency');
-   if(action==='cancel'){assert.match(await p.locator('#main').innerText(),/受注後取消済み/);await stale(p,'woncancelsave');assert.equal((await read(p)).cases[1].cancelledAt,saved.cases[1].cancelledAt);}else assert.equal(await p.locator('#d_plan_time').inputValue(),'00:05');
+   if(action==='cancel'){assert.match(await p.locator('#main').innerText(),/受注後取消済み/);await stale(p,'woncancelsave');assert.equal((await read(p)).cases[1].cancelledAt,saved.cases[1].cancelledAt);}else assert.equal(await readTime(p),'00:05');
    await p.evaluate(async()=>{testHub.authorize();await testHub.gSyncAll();});assert.equal(await p.evaluate(()=>testHub.ui.gsync.rows.every(r=>r.ok)),true);assert.deepEqual((await read(p)).cases,saved.cases);
    const rows=network.exports['案件'],n=action==='cancel'?2:1,key=action==='cancel'?'受注後取消日時':'予定時刻（日本時間）';assert.equal(rows[n][rows[0].indexOf(key)],action==='cancel'?saved.cases[1].cancelledAt:'00:05');
    assert.deepEqual(a.errors,[]);await a.ctx.close();results.push(action+' actual write then '+fault+': no success toast, retry/save/sync blocked, reload restores latest once');
@@ -114,7 +116,7 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
    const backup=await read(p);await p.evaluate(({KEY,backup})=>localStorage.setItem(KEY,JSON.stringify(testHub.upgrade(JSON.parse(JSON.stringify(backup))))),{KEY,backup});await p.reload();assert.deepEqual(await read(p),backup);await open(p,'synthetic-won');assert.match(await p.locator('#main').innerText(),/受注後取消済み/);await a.ctx.close();results.push('Cancellation keeps original order/loss statistics and survives explicit JSON backup restore');
   }
   {
-   const a=await setup(db),{p}=a;await open(p,'synthetic-emergency');const before=await read(p);await p.locator('#d_plan').fill('');await click(p,'plan');assert.match(await p.locator('#toast').innerText(),/予定日を入れて/);await p.locator('#d_plan_time').fill('10:00');await click(p,'plan');assert.deepEqual(await read(p),before);await p.locator('#d_plan').fill('2026-11-11');await click(p,'plan');const booked=await read(p);await p.locator('#d_plan').fill('');await p.locator('#d_plan_time').fill('');await click(p,'plan');assert.deepEqual(await read(p),booked);await p.reload();await open(p,'synthetic-emergency');assert.equal(await p.locator('#d_plan_time').inputValue(),'10:00');await a.ctx.close();results.push('Empty date, time-only and clearing fields do not save or silently remove an appointment');
+   const a=await setup(db),{p}=a;await open(p,'synthetic-emergency');const before=await read(p);await p.locator('#d_plan').fill('');await click(p,'plan');assert.match(await p.locator('#toast').innerText(),/予定日を入れて/);await setTime(p,'10:00');await click(p,'plan');assert.deepEqual(await read(p),before);await p.locator('#d_plan').fill('2026-11-11');await click(p,'plan');const booked=await read(p);await p.locator('#d_plan').fill('');await setTime(p,'');await click(p,'plan');assert.deepEqual(await read(p),booked);await p.reload();await open(p,'synthetic-emergency');assert.equal(await readTime(p),'10:00');await a.ctx.close();results.push('Empty date, time-only and clearing fields do not save or silently remove an appointment');
   }
   for(const fault of [null,'metadata','missing-grid','batch','expand','values']){
    const original=[['old header'],['old mirror']],network={exports:{'案件':structuredClone(original)},fault,grid:{sheetId:17,columnCount:29,rowCount:3}},a=await setup(db,'Asia/Tokyo',390,network),{p}=a;
@@ -125,7 +127,7 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
    assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('29-column bounded mirror '+(fault||'grow/repeat/header-only')+': no preclear and no partial mutation');
   }
   {
-   const a=await setup(db),{p}=a;await open(p,'synthetic-emergency');await p.locator('#d_plan').fill('2026-11-11');await p.locator('#d_plan_time').fill('10:00');await click(p,'plan');await open(p,'synthetic-won');await click(p,'woncancelask');await p.locator('#d_cancel_reason').fill('合成旧版互換');await click(p,'woncancelsave');
+   const a=await setup(db),{p}=a;await open(p,'synthetic-emergency');await p.locator('#d_plan').fill('2026-11-11');await setTime(p,'10:00');await click(p,'plan');await open(p,'synthetic-won');await click(p,'woncancelask');await p.locator('#d_cancel_reason').fill('合成旧版互換');await click(p,'woncancelsave');
    const stored=await read(p),newRows=await p.evaluate(()=>testHub.dataRows().cases),old=await setup(stored,'Asia/Tokyo',390,null,true);
    const result=await old.p.evaluate(rows=>{const r=Object.fromEntries(rows[0].map((k,i)=>[k,rows[2][i]])),c=testHub.roCase(r,{s:{name:'合成旧版'}});return {stage:c.stage,ended:testHub.ended(c),save:testHub.save(),rows:testHub.dataRows().cases};},newRows);
    assert.equal(result.stage,'lost');assert.equal(result.ended,true);assert.equal(result.save,true);assert.deepEqual((await read(old.p)).cases,stored.cases);assert.equal(result.rows[0].length,29);
@@ -160,6 +162,25 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
    assert.equal(batch({range:{sheetId:17,startRowIndex:0,endRowIndex:1},rows:[{values:[{userEnteredValue:{stringValue:'new-header'}}]}],fields:'userEnteredValue'}).status,undefined);assert.deepEqual(get(),[['new-header'],['retired-id','retired-value']]);
    batch({range:{sheetId:17},rows:[],fields:'userEnteredFormat'});assert.deepEqual(get(),[['new-header'],['retired-id','retired-value']]);
    batch({range:{sheetId:17},rows:[{values:[{userEnteredValue:{stringValue:'new-header'}}]}],fields:'userEnteredValue'});assert.deepEqual(get(),[['new-header']]);results.push('Grid model negative controls: bounded ranges and format-only masks retain old values; full value range clears them');
+  }
+  for(const width of [320,390,822]){
+   const a=await setup(db,'Asia/Tokyo',width,null,false,true),{p}=a;await open(p,'synthetic-emergency');
+   const hour=p.getByLabel('時（日本時間・24時間）',{exact:true}),minute=p.getByLabel('分（日本時間）',{exact:true});
+   assert.equal(await p.locator('input[type=time]').count(),0);assert.equal(await hour.inputValue(),'');assert.equal(await minute.inputValue(),'');assert.equal(await hour.getAttribute('required'),'');assert.equal(await minute.getAttribute('required'),'');
+   await p.locator('#d_plan').fill('2026-11-11');const before=await read(p);
+   for(const partial of [['',''],['10',''],['','07']]){await hour.selectOption(partial[0]);await minute.selectOption(partial[1]);await p.locator('[data-act=plan]').tap();assert.deepEqual(await read(p),before);assert.match(await p.locator('#toast').innerText(),/予定時刻/);}
+   // Tap opens each select, then keyboard navigation selects its actual option. No fill/selectOption here.
+   const choose=async(field,n)=>{await field.tap();await p.keyboard.press('Home');for(let i=0;i<=n;i++)await p.keyboard.press('ArrowDown');await p.keyboard.press('Enter');assert.equal(await field.inputValue(),String(n).padStart(2,'0'));};
+   for(const [h,m] of [[0,0],[23,59],[10,7]]){await choose(hour,h);await choose(minute,m);await p.locator('[data-act=plan]').tap();const expected=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');assert.equal((await read(p)).cases[0].planTime,expected);await p.reload();await open(p,'synthetic-emergency');assert.equal(await readTime(p),expected);assert.equal(await p.evaluate(()=>testHub.genTodos().find(t=>t.caseId==='synthetic-emergency').due),'2026-11-11');}
+   await choose(hour,12);await p.locator('[data-nav=cases]').first().tap();await open(p,'synthetic-emergency');assert.equal(await readTime(p),'10:07');
+   const saved=await read(p);await hour.tap();await p.keyboard.press('Escape');assert.deepEqual(await read(p),saved);
+   await p.addStyleTag({content:'#d_plan_hour,#d_plan_minute{font-size:24px} label.f:has(#d_plan_hour),label.f:has(#d_plan_minute){font-size:24px}'});
+   for(const f of [hour,minute]){assert(await f.evaluate(e=>e.getBoundingClientRect().width>=42&&e.getBoundingClientRect().height>=42));assert(await f.evaluate(e=>e.scrollWidth<=e.clientWidth));}
+   await p.evaluate(()=>{document.body.style.zoom='1.25'});for(const f of [hour,minute]){await f.scrollIntoViewIfNeeded();assert(await f.isVisible());assert(await f.evaluate(e=>e.scrollWidth<=e.clientWidth));}
+   assert.deepEqual(a.errors,[]);assert.equal(a.requests.filter(r=>r.method!=='GET').length,0);await a.ctx.close();results.push('Touch/keyboard selects, required/partial, midnight/latest/minute precision, back/cancel/reload, large text and zoom '+width+'px');
+  }
+  {
+   const malformed=structuredClone(db);malformed.cases[0].planTime='25:91';const a=await setup(malformed),{p}=a;await open(p,'synthetic-emergency');assert.equal(await readTime(p),'');assert.match(await p.locator('#main').innerText(),/保存済みの時刻を選択欄に表示できません/);await click(p,'plan');assert.equal((await read(p)).cases[0].planTime,'25:91');await p.reload();assert.equal((await read(p)).cases[0].planTime,'25:91');await a.ctx.close();results.push('Invalid legacy time remains unchanged and requires explicit valid selection');
   }
   for(const r of results)console.log('PASS '+r);console.log(JSON.stringify({passed:results.length,liveData:false,liveGoogleWrites:false}));
  }finally{await browser.close();await new Promise(r=>server.close(r));}
