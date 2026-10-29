@@ -308,7 +308,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.46.2" title="使い方マニュアルを開く">v1.46.2・10/29更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.46.3" title="使い方マニュアルを開く">v1.46.3・10/29更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -708,7 +708,7 @@ function vHome(){
   const un=all.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   const ord=todos.filter(x=>x.order), ordOver=ord.filter(x=>x.due&&x.due<t).length;
   return (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）と付いた案件は練習用の例です。入力した内容はこの端末のブラウザにだけ残ります。</div>':'')+
-  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.46.2">マニュアル</a>へ。</p></div>')+
+  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.46.3">マニュアル</a>へ。</p></div>')+
   '<section class="sec">'+gSyncPanel()+'</section>'+
   (ord.length?'<button type="button" class="banner" data-nav="todo" style="text-align:left;width:100%;cursor:pointer'+(ordOver?';border-color:var(--red)':'')+'"><b>タスクリクエスト '+ord.length+'件</b>'+(ordOver?'<span style="color:var(--red);font-weight:700">（期限切れ '+ordOver+'件）</span>':'')+'<div class="note">'+ord.slice(0,3).map(x=>h(x.title)).join("・")+'</div></button>':'')+
   (D().admin||D().viewListId?corpView():'')+
@@ -1551,7 +1551,7 @@ function vStats(){
     ''+
     '</form></section>'+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.46.2" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a></section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.46.3" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a></section>';
 }
 function gSettings(){
   const head='<section class="sec"><div class="sec-h"><h2>Googleカレンダー連携</h2></div>';
@@ -2007,7 +2007,14 @@ const PAY_COLS=["受付番号","物件","部屋","担当","日付","種類","金
 const TODO_COLS=["内容","期限","担当","受付番号","物件","部屋","種類","状態"];
 const todoState=due=>{if(!due)return "期限なし";const n=diffDays(due,todayS());return n<0?"期限切れ":n===0?"今日":"今後"};
 const RC_COLS=["受付ID","日付","支払先","内容","区分","金額","会社","現場","仕事番号","状態","精算書番号","写真リンク","支払い方法","提出者"];
-function lastMove(c){return [c.cancelledAt?new Date(new Date(c.cancelledAt).getTime()+9*3600e3).toISOString().slice(0,10):"",c.receivedAt?ymd(new Date(c.receivedAt)):"",c.planDate,c.siteDate,c.estSentDate,c.orderDate,c.lossDate,c.handedDate,c.builtDate,c.billDate,c.paidDate,...(c.payments||[]).map(x=>x.date),...(c.payLog||[]).map(x=>x.at)].filter(Boolean).sort().pop()||""}
+/* 最終の動き（v1.46.3）：実際に起きたことの日付のうち、今日以前で一番新しい日。予定日・入金予定日など、これからの予定は含めない */
+const jstDay=iso=>{const t=iso?new Date(iso).getTime():NaN;return isNaN(t)?"":new Date(t+9*3600e3).toISOString().slice(0,10)};
+function lastMove(c){const t=todayS();return [jstDay(c.cancelledAt),c.receivedAt?ymd(new Date(c.receivedAt)):"",c.siteDate,c.estSentDate,c.orderDate,c.holdDate,c.lossDate,c.handedDate,c.builtDate,c.billDate,c.paidDate,...(c.payments||[]).map(x=>x.date),...(c.payLog||[]).map(x=>x.at)].map(d=>String(d||"").slice(0,10)).filter(d=>d&&d<=t).sort().pop()||""}
+/* 会社の動き：記録シートの「最終の動き」。v1.46.2 以前の端末が送った未来の日付（予定日）は使わず、その行の実際の日付から決め直す */
+function corpLastMove(r){
+  const t=todayS(), v=String(r["最終の動き"]||"").slice(0,10);if(v&&v<=t)return v;
+  return ["受付日","実施日","見積提出日","受注日","保留日","失注日","引渡日","施工完了日","請求日","入金日"].map(k=>String(r[k]||"").slice(0,10)).concat([jstDay(r["受注後取消日時"])]).filter(d=>d&&d<=t).sort().pop()||"";
+}
 function dataRows(){
   const real=DB.cases.filter(c=>!fake(c.client)&&!fake(c.property));
   const cases=[CASE_COLS,...real.map(c=>[c.id,TYPES[c.type].label,STAGES[c.stage],c.property,c.room,c.client,c.tantou,c.receivedAt?ymd(new Date(c.receivedAt)):"",c.planDate,c.siteDate,estOf(c)??"",c.orderDate,c.jobNo,c.builtDate,c.billDate,c.billAmount??"",c.payDue,c.billDate?paidSum(c):"",c.billDate?Math.max(0,remainOf(c)):"",lateDays(c)||"",lastMove(c),
@@ -2272,7 +2279,7 @@ function corpCaseCard(r){
   return '<div class="card" style="cursor:default'+(late?';border-color:var(--red)':'')+'"><div class="row">'+coChip(v("会社"))+'<span class="chip">'+h(v("種類"))+'</span><span class="note num">'+h(v("受付番号"))+'</span></div><div class="case-stage"><span class="pill">'+h(v("段階"))+'</span></div>'+
     '<div class="ttl">'+h(v("物件"))+' '+h(v("部屋"))+'</div>'+
     '<dl class="kv">'+rows.map(([k,x])=>'<dt>'+k+'</dt><dd>'+h(x)+'</dd>').join("")+'</dl>'+
-    (v("最終の動き")?'<div class="note">最終の動き '+h(dt("最終の動き"))+'</div>':'')+'</div>';
+    (corpLastMove(r)?'<div class="note">最終の動き '+h(mdh(corpLastMove(r)))+'</div>':'')+'</div>';
 }
 /* 会社の動き：社員ごとに「タスクリクエスト」と「社員のToDo」。ToDoは期限切れ→今日→今後7日を一覧、それより先と期限なしは件数だけ */
 function corpTodos(x,k){
@@ -2324,7 +2331,7 @@ function corpView(){
     body='<div class="panel"><h3>同期の状況</h3><ul class="dl">'+c0.data.map(x=>{const ls=x.ok&&x.s.lastSync?x.s.lastSync:"", old=!ls||String(ls).slice(0,10)!==t; /* 1日3回の同期（v1.47）：今日の同期が無い人を赤 */
         return '<li'+(x.ok&&old?' style="color:var(--red)"':'')+'>'+personBadge(x.s.name)+' '+(x.ok?(ls?'最終同期 '+h(ls):'まだ同期していません')+(old?' <b style="color:var(--red)">（今日まだ同期していません）</b>':''):'<b style="color:var(--red)">読めませんでした（'+h(x.msg)+'）</b>')+'</li>'}).join("")+'</ul></div>'+
       '<div class="panel"><h3>動いている案件 '+active.length+'件</h3>'+(byStage.length?'<p class="note num" style="margin:0">'+byStage.map(([l,n])=>h(l)+' '+n).join("・")+'</p>':'')+
-        byTan.map(([n,rs])=>'<details open><summary>'+personBadge(n)+'（'+rs.length+'件）</summary><div class="list" style="margin-top:6px">'+rs.slice().sort((a,b)=>String(b["最終の動き"]).localeCompare(String(a["最終の動き"]))).map(corpCaseCard).join("")+'</div></details>').join("")+'</div>'+
+        byTan.map(([n,rs])=>'<details open><summary>'+personBadge(n)+'（'+rs.length+'件）</summary><div class="list" style="margin-top:6px">'+rs.slice().sort((a,b)=>corpLastMove(b).localeCompare(corpLastMove(a))).map(corpCaseCard).join("")+'</div></details>').join("")+'</div>'+
       '<div class="panel"><h3>ToDo</h3>'+(ok.length?c.data.map(x=>x.ok?corpTodos(x,x._i):'').join(""):'<p class="note" style="margin:0">読めた社員がいません</p>')+'</div>'+
       '<div class="panel"><h3>未入金</h3>'+(unp.length?'<p class="fk" style="margin:0">担当者別</p>'+tbl("担当",grp("担当").map(trow).join(""))+'<p class="fk" style="margin:0">物件別</p>'+tbl("物件",grp("物件").map(trow).join("")):'<p class="note" style="margin:0">未入金はありません</p>')+'</div>'+
       '<div class="panel"><h3>立替</h3><button class="btn sm" type="button" data-nav="rcpt" data-shared-receipts="1">社員の共有領収書（立替・法人カード）を確認</button><p class="note">下の集計は立替のみです。法人カード・原本は共有領収書で確認できます。</p>'+(rcRows.length?'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>社員</th><th>会社</th><th>未提出</th><th>提出済・未精算</th></tr></thead><tbody>'+
