@@ -308,7 +308,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.45・10/28更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.46-rc1・10/29 未公開</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -403,7 +403,7 @@ const diffDays=(a,b)=>Math.round((parseYmd(a)-parseYmd(b))/864e5);
 
 /* Stored-data defaults: when a field is added, give it a default here. withDefaults only fills keys that are missing */
 const SCHEMA_VERSION=2;
-const CASE_DEFAULTS=()=>({company:"",addr:"",items:[],note:"",symptom:"",planDate:"",estAmount:null,estSentDate:"",siteDate:"",lossReason:"",lossDate:"",holdDate:"",orderDate:"",jobNo:"",billingTenant:"入居者に直接",handedDate:"",gcal:null,builtDate:"",billDate:"",billAmount:null,billTo:"",payDue:"",payments:[],paidDate:"",payLog:[]});
+const CASE_DEFAULTS=()=>({company:"",addr:"",items:[],note:"",symptom:"",planDate:"",planTime:"",cancelledAt:"",cancelReason:"",estAmount:null,estSentDate:"",siteDate:"",lossReason:"",lossDate:"",holdDate:"",orderDate:"",jobNo:"",billingTenant:"入居者に直接",handedDate:"",gcal:null,builtDate:"",billDate:"",billAmount:null,billTo:"",payDue:"",payments:[],paidDate:"",payLog:[]});
 const TODO_DEFAULTS=()=>({title:"",due:"",tantou:"",done:false});
 const RECEIPT_DEFAULTS=()=>({date:"",payee:"",item:"",amount:null,company:"CP",method:"立替",cardId:"",cat:"材料費",caseId:"",site:"",jobNo:"",note:"",photos:[],pext:{},status:"未提出",claimNo:"",submitDate:"",settleDate:"",closeNo:"",createdAt:"",everSub:false,returnedFrom:"",edits:[],drive:{}});
 const RSET_DEFAULTS=()=>({name:"",payDays:{CP:2,CPY:4,AT:-1},to:{CP:"桜田",CPY:"桜田",AT:"大須"},useCard:false,cards:[],lastCo:"CP",noSeq:{}});
@@ -496,7 +496,7 @@ function roCase(r,x){
   const v=k=>String(r[k]==null?"":r[k]), d=k=>v(k).slice(0,10), num=k=>v(k)===""?null:Number(v(k));
   const stage=STAGES[v("段階キー")]?v("段階キー"):Object.keys(STAGES).find(k=>STAGES[k]===v("段階"))||"new", paid=Number(v("入金済額"))||0;
   return Object.assign(CASE_DEFAULTS(),{ro:true,company:COMPANIES.includes(v("会社"))?v("会社"):"",owner:x.s.name,srcId:v("受付番号"),id:v("受付番号")+"・"+x.s.name,type:typeKeyOf(v("種類")),stage,clientKind:"",client:v("依頼元"),property:v("物件"),room:v("部屋"),tantou:surname(v("担当")||x.s.name),
-    receivedAt:v("受付日時")||(d("受付日")?new Date(d("受付日")+"T00:00:00").toISOString():""),planDate:d("予定日"),siteDate:d("実施日"),estAmount:num("見積額"),estSentDate:d("見積提出日"),holdDate:d("保留日"),lossDate:d("失注日"),
+    receivedAt:v("受付日時")||(d("受付日")?new Date(d("受付日")+"T00:00:00").toISOString():""),planDate:d("予定日"),planTime:v("予定時刻（日本時間）"),cancelledAt:v("受注後取消日時"),cancelReason:v("受注後取消理由"),siteDate:d("実施日"),estAmount:num("見積額"),estSentDate:d("見積提出日"),holdDate:d("保留日"),lossDate:d("失注日"),
     orderDate:d("受注日"),jobNo:v("仕事番号"),handedDate:d("引渡日"),builtDate:d("施工完了日"),billDate:d("請求日"),billAmount:num("請求額"),payDue:d("入金予定日"),payments:paid?[{date:d("入金日")||d("請求日"),amount:paid}]:[],paidDate:stage==="paid"?d("入金日"):""});
 }
 function roBuild(data){
@@ -593,7 +593,7 @@ function genTodos(){
     const base={caseId:c.id,tantou:c.tantou,auto:true};
     const rd=c.receivedAt?ymd(new Date(c.receivedAt)):todayS();
     if(c.stage==="new"&&isEizen(c))out.push(Object.assign({},base,{title:"見積書をExcelで作成して提出",due:addDays(rd,S.quote)}));
-    else if(c.stage==="new")out.push(Object.assign({},base,c.type==="kinkyu"?{title:"緊急：担当を手配して現地へ向かう",due:rd}:c.planDate?{title:TYPES[c.type].site+"を実施",due:c.planDate}:{title:TYPES[c.type].site+"の日程を調整",due:addDays(rd,S.schedule)}));
+    else if(c.stage==="new")out.push(Object.assign({},base,c.type==="kinkyu"?{title:"緊急：担当を手配して現地へ向かう",due:c.planDate||rd}:c.planDate?{title:TYPES[c.type].site+"を実施",due:c.planDate}:{title:TYPES[c.type].site+"の日程を調整",due:addDays(rd,S.schedule)}));
     if(c.stage==="site")out.push(Object.assign({},base,{title:"見積書をExcelで作成して提出",due:addDays(c.siteDate||rd,S.quote)}));
     if(c.stage==="quoted")out.push(Object.assign({},base,{title:"受注か失注かを依頼元に確認",due:addDays(c.estSentDate,S.reply)}));
     if(c.stage==="hold")out.push(Object.assign({},base,{title:"保留中の案件を再確認",due:c.holdDate}));
@@ -619,7 +619,9 @@ function since(iso){
   return "受付から"+(d?d+"日":"")+(d||hh?hh+"時間":"")+mm+"分";
 }
 const typeChip=c=>'<span class="chip t-'+c.type+'">'+TYPES[c.type].label+'</span>';
-const stagePill=c=>'<span class="pill s-'+c.stage+(lateDays(c)?" late":"")+'">'+(c.stage==="billed"&&paidSum(c)>0?"一部入金・残あり":STAGES[c.stage])+'</span>';
+const caseStageLabel=c=>c.stage==="lost"&&c.cancelledAt?"受注後取消済み":STAGES[c.stage];
+const japanStamp=iso=>iso?new Date(iso).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"})+"（日本時間）":"";
+const stagePill=c=>'<span class="pill s-'+c.stage+(lateDays(c)?" late":"")+'">'+(c.stage==="billed"&&paidSum(c)>0?"一部入金・残あり":caseStageLabel(c))+'</span>';
 
 function caseCard(c){
   const urgent=c.type==="kinkyu"&&(c.stage==="new"||c.stage==="site"), late=lateDays(c);
@@ -703,7 +705,7 @@ function vCases(){
     '<div class="seg" role="group" aria-label="会社">'+[["all","全社"],...COMPANIES.map(x=>[x,x]),["none","会社未設定"]].map(([k,l])=>'<button type="button" data-ccf="'+k+'" aria-pressed="'+(cf===k)+'">'+l+'</button>').join("")+'</div>'+
     (noCo?'<p class="note" style="margin:0">会社が未設定の案件が '+noCo+'件あります。案件を開いて「会社」の <b>選ぶ</b> で CP・CPY・AT を選んでください。</p>':'')+
     '<div class="seg" role="group" aria-label="依頼の種類">'+[["all","すべて"],...Object.entries(TYPES).map(([k,v])=>[k,v.label])].map(([k,l])=>'<button type="button" data-type="'+k+'" aria-pressed="'+(ui.type===k)+'">'+l+'</button>').join("")+'</div>'+
-    '<div class="row note"><label class="row"><input type="checkbox" id="payOnly"'+(ui.payOnly?" checked":"")+'> 入金待ちだけ</label><label class="row"><input type="checkbox" id="showEnded"'+(ui.showEnded?" checked":"")+'> 失注・入金済も表示</label></div>'+
+    '<div class="row note"><label class="row"><input type="checkbox" id="payOnly"'+(ui.payOnly?" checked":"")+'> 入金待ちだけ</label><label class="row"><input type="checkbox" id="showEnded"'+(ui.showEnded?" checked":"")+'> 失注・受注後取消・入金済も表示</label></div>'+
     (ui.payOnly?acctPanel():'')+
     '<div class="list">'+(list.map(caseCard).join("")||'<div class="empty">該当する案件はありません</div>')+'</div></section>';
 }
@@ -741,14 +743,14 @@ function vNew(){
 function stepBar(c){
   if(isEizen(c)){
     const pos={new:0,site:1,quoted:1,hold:1,won:2,handed:2,working:2,built:3,billed:3,paid:4,lost:1}[c.stage];
-    return '<div class="steps" aria-label="進み具合">'+["受付","見積","施工","請求"].map((l,i)=>'<span class="'+(c.stage==="lost"&&i===1?"end":i<pos?"done":i===pos?"cur":"")+'">'+(i===1&&c.stage==="lost"?"失注":i===1&&c.stage==="hold"?"保留":l)+'</span>').join("")+'</div>';
+    return '<div class="steps" aria-label="進み具合">'+["受付","見積","施工","請求"].map((l,i)=>'<span class="'+(c.stage==="lost"&&i===1?"end":i<pos?"done":i===pos?"cur":"")+'">'+(i===1&&c.stage==="lost"?caseStageLabel(c):i===1&&c.stage==="hold"?"保留":l)+'</span>').join("")+'</div>';
   }
   const keys=["new","site","quoted","decide","handed","built","billed","paid"], labels=["受付",TYPES[c.type].site,"見積","受注","引渡","完工","請求","入金"];
   const pos={new:0,site:1,quoted:2,hold:2,won:3,lost:3,handed:4,built:5,billed:6,paid:8}[c.stage];
   return '<div class="steps" aria-label="進み具合">'+keys.map((k,i)=>{
     let cls=i<pos?"done":i===pos?"cur":"";
     if(c.stage==="lost"&&i===3)cls="end";
-    const lab=i===3&&c.stage==="lost"?"失注":i===2&&c.stage==="hold"?"保留":labels[i];
+    const lab=i===3&&c.stage==="lost"?caseStageLabel(c):i===2&&c.stage==="hold"?"保留":labels[i];
     return '<span class="'+cls+'">'+lab+'</span>';
   }).join("")+'</div>';
 }
@@ -878,7 +880,7 @@ function vDetail(){
   let act="";
   if(c.stage==="new"&&!isEizen(c)){
     act='<div class="panel"><h3>次にやること：'+TYPES[c.type].site+'</h3>'+
-      (c.type==="kinkyu"?'':'<div class="row"><label class="f" style="flex:1">'+TYPES[c.type].site+'の予定日'+(c.planDate?'（'+mdh(c.planDate)+'に決定済み）':'')+'<input type="date" id="d_plan" value="'+h(c.planDate||addDays(todayS(),2))+'"><span class="note" data-dl="d_plan">'+mdh(c.planDate||addDays(todayS(),2))+'</span></label><button class="btn" type="button" data-act="plan" style="align-self:flex-end">日程を決める</button></div>')+
+      ('<div class="row"><label class="f" style="flex:1 1 200px">'+TYPES[c.type].site+'の予定日（日本時間）'+(c.planDate?'（'+mdh(c.planDate)+'に決定済み）':'')+'<input type="date" id="d_plan" value="'+h(c.planDate||addDays(todayS(),2))+'"><span class="note" data-dl="d_plan">'+mdh(c.planDate||addDays(todayS(),2))+'</span></label>'+ (c.type==="kinkyu"?'<label class="f">時刻（日本時間）<input type="time" id="d_plan_time" value="'+h(c.planTime||"")+'"></label>':'')+'<button class="btn" type="button" data-act="plan" style="align-self:flex-end">日程を決める</button></div>')+
       '<label class="f">'+TYPES[c.type].site+'を実施した日<input type="date" id="d_site" value="'+todayS()+'"><span class="note" data-dl="d_site">'+mdh(todayS())+'</span></label>'+
       '<div class="row"><button class="btn pri" type="button" data-act="site">'+TYPES[c.type].site+'を済みにする</button>'+
       (c.type==="kinkyu"?'<button class="btn" type="button" data-act="rushwin">見積を省いて受注へ（緊急）</button>':'')+'</div>'+
@@ -903,10 +905,11 @@ function vDetail(){
       '<label class="f">仕事番号（Accessで振られた番号）<input type="text" id="d_job" placeholder="Accessの仕事番号"></label>'+
       '<div class="row"><button class="btn pri" type="button" data-act="hand">引渡済にする</button><button class="btn sm" type="button" data-act="csvone">この案件をAccess用に書き出す</button></div></div>';
   }else if(c.stage==="lost"){
-    act='<div class="ro">失注（'+h(c.lossReason)+'・'+md(c.lossDate)+'）。毎日の一覧には出ません。<button class="btn sm" type="button" data-act="reopen">見積提出済に戻す</button></div>';
+    act=c.cancelledAt?'<div class="ro"><b>受注後取消済み</b><br>'+h(japanStamp(c.cancelledAt))+'<br>理由：'+h(c.cancelReason)+'<br>元の記録を保持しています。毎日の一覧には出ません。再開はできません。</div>':'<div class="ro">失注（'+h(c.lossReason)+'・'+md(c.lossDate)+'）。毎日の一覧には出ません。<button class="btn sm" type="button" data-act="reopen">見積提出済に戻す</button></div>';
   }else if(ro){
     act=(isEizen(c)?'<div class="ro">受付・見積の記録は読み取り専用です。施工完了・請求・入金を記録します。</div>':'<div class="ro"><b>Access引渡済</b>　仕事番号 <b class="num">'+h(c.jobNo)+'</b>（'+md(c.handedDate)+'）<br>受付内容と立会の記録は読み取り専用です。施工完了・請求・入金はここで記録します。</div>')+payPanel(c);
   }
+  if(c.stage==="won")act+=ui.wonCancel===c.id?'<div class="panel" role="alert"><h3>受注後の依頼を取り消しますか？</h3><p>'+h(c.id)+' ／ '+h(c.property)+' '+h(c.room)+' ／ '+h(c.client)+'</p><p>受注日 '+h(c.orderDate)+'・見積 '+yen(estOf(c))+'。元の記録を残し、自動ToDoと動いている案件から外します。完了・入金済みにはしません。</p><label class="f">取消理由（必須）<textarea id="d_cancel_reason" maxlength="1000"></textarea></label><div class="row"><button class="btn danger" data-act="woncancelsave">取消を記録する</button><button class="btn" data-act="woncancelno">やめる</button></div><p id="wonCancelStatus" role="status"></p></div>':'<div class="row"><button class="btn danger" data-act="woncancelask">受注後の依頼を取り消す</button></div>';
   const ph=photos[c.id]||[];
   return '<button class="back" type="button" data-nav="cases">‹ 案件へ戻る</button>'+
   '<section class="sec"><div class="row">'+coChip(c.company)+typeChip(c)+'<span class="note num">'+h(c.id)+'</span><span class="sp"></span>'+stagePill(c)+'</div>'+
@@ -924,6 +927,7 @@ function vDetail(){
       (ui.rcvEdit?'<div class="ro" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"><label class="f">受付日時<input type="datetime-local" id="d_rcv" value="'+h(ui.rcvSuggest?ui.rcvSuggest+"T"+localDT(c.receivedAt).slice(11):localDT(c.receivedAt))+'"></label>'+
         '<span class="note">実際に依頼を受けた日時にします。緊急の経過時間・ToDoの期限・ガントも、この日時で計算し直します。</span>'+
         '<div class="row"><button class="btn pri" type="button" data-act="rcvsave">受付日時を保存</button><button class="btn" type="button" data-act="rcvno">やめる</button></div></div>':'')+'</dd>'+
+    (c.planDate?'<dt>現地予定（日本時間）</dt><dd>'+h(c.planDate)+' '+h(c.planTime||"時刻未定")+'</dd>':'')+
     (c.siteDate?'<dt>'+TYPES[c.type].site+'</dt><dd class="num">'+mdh(c.siteDate)+'</dd>':'')+
     (estOf(c)!=null&&c.stage!=="new"&&c.stage!=="site"?'<dt>見積</dt><dd class="num">'+yen(estOf(c))+(c.estSentDate?'（'+md(c.estSentDate)+'提出）':'')+'</dd>':'')+
     (c.orderDate?'<dt>受注日</dt><dd class="num">'+md(c.orderDate)+'</dd>':'')+
@@ -946,7 +950,7 @@ function caseDeletePanel(c){
   const linked=DB.receipts.filter(r=>r.caseId===c.id).length, cal=!!(c.gcal&&c.gcal.id);
   const box=x=>'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px">'+x+'</div>';
   if(linked)return box('<b style="color:var(--red)">この案件に紐づいた領収書が'+linked+'件あります。先に領収書の案件の紐づけを外してください。</b><div class="row"><button class="btn" type="button" data-act="cdelno">閉じる</button></div>');
-  return box('<b style="color:var(--red)">'+h(c.id)+'（'+h(c.property)+' '+h(c.room)+'）を削除します。元に戻せません。</b><span>間違えて登録した案件のときだけ使ってください。依頼が無くなった場合は「失注」にしてください。</span>'+
+  return box('<b style="color:var(--red)">'+h(c.id)+'（'+h(c.property)+' '+h(c.room)+'）を削除します。元に戻せません。</b><span>間違えて登録した案件のときだけ使ってください。依頼が無くなった場合は、見積提出済・保留なら「失注」、受注・引渡待ちなら「受注後の依頼を取り消す」を使ってください。</span>'+
     (cal?'<label class="row"><input type="checkbox" id="cdel_gcal"'+(ui.cdelCal!==false?' checked':'')+'> Googleカレンダーの予定も削除する</label>'+
       (ui.cdelCal!==false&&!gSignedIn()?'<span class="note" style="color:var(--amber)">Googleにログインしていません。カレンダーの予定も消すときは、「Googleとまとめて同期」でログインしてから削除してください。チェックを外すと、カレンダーの予定を残して案件だけ削除します。</span>':''):'')+
     (ui.cdelMsg?'<span style="color:var(--red)">'+h(ui.cdelMsg)+'</span>':'')+
@@ -1080,7 +1084,7 @@ window.addEventListener?.("storage",e=>{if(e.key===KEY&&manualTodoCancelSession)
 /* 社員の案件の詳細（見るだけ。編集・削除・登録のボタンは出さない） */
 function roDetail(c){
   const dt=x=>x?mdh(x):"";
-  const rows=[["依頼元",c.client],["受付",c.receivedAt?dt(ymd(new Date(c.receivedAt))):""],[TYPES[c.type].site+"の予定",dt(c.planDate)],[TYPES[c.type].site+"の実施",dt(c.siteDate)],
+  const rows=[["受注後取消日時",japanStamp(c.cancelledAt)],["取消理由",c.cancelReason],["依頼元",c.client],["受付",c.receivedAt?dt(ymd(new Date(c.receivedAt))):""],[TYPES[c.type].site+"の予定（日本時間）",c.planDate?c.planDate+" "+(c.planTime||"時刻未定"):""],[TYPES[c.type].site+"の実施",dt(c.siteDate)],
     ["見積",estOf(c)!=null?yen(estOf(c)):""],["見積提出",dt(c.estSentDate)],["保留（次の確認）",c.stage==="hold"?dt(c.holdDate):""],["失注",dt(c.lossDate)],["受注",dt(c.orderDate)],["仕事番号",c.jobNo],["引渡",dt(c.handedDate)],["施工完了",dt(c.builtDate)],
     ["請求",c.billAmount!=null?yen(c.billAmount)+(c.billDate?"（"+dt(c.billDate)+"）":""):""],["入金予定",dt(c.payDue)],["入金済",paidSum(c)?yen(paidSum(c)):""],["残額",c.stage==="billed"?yen(remainOf(c))+(lateDays(c)?"・"+lateDays(c)+"日遅れ":""):""]].filter(x=>x[1]);
   const td=roTodos().filter(t=>t.caseId===c.id);
@@ -1932,16 +1936,16 @@ const sheetIdOf=x=>{const m=String(x||"").match(/\/spreadsheets\/d\/([A-Za-z0-9_
 const fake=x=>String(x||"").includes("（架空）");
 
 /* What a person sends: the main points only — no memo, symptom or detailed address */
-const CASE_COLS=["受付番号","種類","段階","物件","部屋","依頼元","担当","受付日","予定日","実施日","見積額","受注日","仕事番号","施工完了日","請求日","請求額","入金予定日","入金済額","残額","遅れ日数","最終の動き","見積提出日","保留日","失注日","引渡日","入金日","段階キー","受付日時","会社"];
+const CASE_COLS=["受付番号","種類","段階","物件","部屋","依頼元","担当","受付日","予定日","実施日","見積額","受注日","仕事番号","施工完了日","請求日","請求額","入金予定日","入金済額","残額","遅れ日数","最終の動き","見積提出日","保留日","失注日","引渡日","入金日","段階キー","受付日時","会社","予定時刻（日本時間）","受注後取消日時","受注後取消理由"];
 const PAY_COLS=["受付番号","物件","部屋","担当","日付","種類","金額","区分"];
 const TODO_COLS=["内容","期限","担当","受付番号","物件","部屋","種類","状態"];
 const todoState=due=>{if(!due)return "期限なし";const n=diffDays(due,todayS());return n<0?"期限切れ":n===0?"今日":"今後"};
 const RC_COLS=["受付ID","日付","支払先","内容","区分","金額","会社","現場","仕事番号","状態","精算書番号","写真リンク","支払い方法","提出者"];
-function lastMove(c){return [c.receivedAt?ymd(new Date(c.receivedAt)):"",c.planDate,c.siteDate,c.estSentDate,c.orderDate,c.lossDate,c.handedDate,c.builtDate,c.billDate,c.paidDate,...(c.payments||[]).map(x=>x.date),...(c.payLog||[]).map(x=>x.at)].filter(Boolean).sort().pop()||""}
+function lastMove(c){return [c.cancelledAt?new Date(new Date(c.cancelledAt).getTime()+9*3600e3).toISOString().slice(0,10):"",c.receivedAt?ymd(new Date(c.receivedAt)):"",c.planDate,c.siteDate,c.estSentDate,c.orderDate,c.lossDate,c.handedDate,c.builtDate,c.billDate,c.paidDate,...(c.payments||[]).map(x=>x.date),...(c.payLog||[]).map(x=>x.at)].filter(Boolean).sort().pop()||""}
 function dataRows(){
   const real=DB.cases.filter(c=>!fake(c.client)&&!fake(c.property));
   const cases=[CASE_COLS,...real.map(c=>[c.id,TYPES[c.type].label,STAGES[c.stage],c.property,c.room,c.client,c.tantou,c.receivedAt?ymd(new Date(c.receivedAt)):"",c.planDate,c.siteDate,estOf(c)??"",c.orderDate,c.jobNo,c.builtDate,c.billDate,c.billAmount??"",c.payDue,c.billDate?paidSum(c):"",c.billDate?Math.max(0,remainOf(c)):"",lateDays(c)||"",lastMove(c),
-    c.estSentDate,c.holdDate,c.lossDate,c.handedDate,(c.payments||[]).map(x=>x.date).filter(Boolean).sort().pop()||"",c.stage,c.receivedAt||"",c.company||""])];
+    c.estSentDate,c.holdDate,c.lossDate,c.handedDate,(c.payments||[]).map(x=>x.date).filter(Boolean).sort().pop()||"",c.stage,c.receivedAt||"",c.company||"",c.planTime||"",c.cancelledAt||"",c.cancelReason||""])];
   const pay=[PAY_COLS];
   for(const c of real){
     const base=[c.id,c.property,c.room,c.tantou];
@@ -2347,7 +2351,7 @@ function go(view,extra){
     if(ui.view!=="rform"||(extra?.rId||null)!==(ui.rId||null))rFormClear();
     try{receiptInputApi();if(dbPersistedRaw===null&&localStorage.getItem(KEY)===null&&!save())return;if(localStorage.getItem(KEY)!==dbPersistedRaw)throw Error("別の画面で記録が更新されています。再読み込みしてから領収書を開いてください。");receiptSession=extra?.rId&&!rEditable(rFind(extra.rId))?null:receiptFileApi().open(localStorage,KEY,extra?.rId||null);}catch(error){toast(error.message,6500);return;}
   }
-if(view!=="rcpt")rClearDl();if(view!=="rform")rFormClear();Object.assign(ui,{view,coEdit:false,rcvEdit:false,rcvSuggest:"",acct:false,exAsk:false,rcCancel:null,cdel:null,cdelMsg:"",cdelBusy:false,cdelCal:true},extra||{});render();window.scrollTo(0,0)}
+if(view!=="rcpt")rClearDl();if(view!=="rform")rFormClear();Object.assign(ui,{view,wonCancel:null,coEdit:false,rcvEdit:false,rcvSuggest:"",acct:false,exAsk:false,rcCancel:null,cdel:null,cdelMsg:"",cdelBusy:false,cdelCal:true},extra||{});render();window.scrollTo(0,0)}
 let toastT;
 function toast(msg,ms){const el=document.getElementById("toast");el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,ms||2600)}
 /* An on-page confirmation can open near the bottom, behind the menu bar; bring it to the middle of the screen */
@@ -2501,6 +2505,18 @@ document.addEventListener("click",e=>{
     corpRun().catch(err=>{ui.corp=Object.assign({},ui.corp,{busy:false,err:"読み込めませんでした："+corpErr(err)})}).then(render);return}
   if(a==="gsync"){if(!(ui.gsync&&ui.gsync.busy))gSyncAll();return}
   if(!c)return;
+  if(c.cancelledAt&&["plan","site","rushwin","quote","win","eizenwork","lose","hold","built","bill","pay","payundo","acctnopay","hand","reopen"].includes(a)){toast("受注後取消済みの案件は再開できません");return}
+  if(a==="woncancelask"){if(c.stage!=="won"||c.cancelledAt)return;ui.wonCancel=c.id;render();document.getElementById("d_cancel_reason")?.focus();return}
+  if(a==="woncancelno"){ui.wonCancel=null;render();return}
+  if(a==="woncancelsave"){
+    if(c.stage!=="won"||c.cancelledAt||ui.wonCancel!==c.id)return;
+    const status=document.getElementById("wonCancelStatus"),reason=val("d_cancel_reason").trim();
+    if(!reason){status.textContent="取消理由を入力してください";return}
+    if(manualTodoBusy()){status.textContent="同期などの処理中です。終わってから記録してください。";return}
+    const before={...c};Object.assign(c,{stage:"lost",cancelledAt:new Date().toISOString(),cancelReason:reason});
+    if(!save()){for(const k of Object.keys(c))delete c[k];Object.assign(c,before);status.textContent="保存を確認できません。入力を控え、再読み込みして記録を確認してください。";return}
+    ui.wonCancel=null;render();toast("受注後の取消を記録しました");return;
+  }
   if(a==="coedit"){ui.coEdit=true;render();return}
   if(a==="coeditno"){ui.coEdit=false;render();return}
   if(a==="rcvedit"){ui.rcvEdit=true;ui.rcvSuggest="";render();const i=document.getElementById("d_rcv");if(i){i.scrollIntoView({block:"center"});i.focus()}return}
@@ -2516,7 +2532,16 @@ document.addEventListener("click",e=>{
     const f=main.querySelector('[data-item="'+(c.items.length-1)+'"][data-f="place"]');if(f){f.focus();f.scrollIntoView({block:"center"})}return}
   if(a==="greg"&&c){if(ui.gbusy)return;if(!c.planDate){toast("先に日程を決めてください");return}ui.gbusy=true;
     gRegister(c).then(r=>{toast(r==="updated"?"Googleカレンダーの予定を更新しました":"Googleカレンダーに登録しました")},err=>{toast("登録できませんでした："+gMsg(err),5000)}).finally(()=>{ui.gbusy=false;render()});return}
-  if(a==="plan"){const d=val("d_plan");if(!d){toast("予定日を入れてください");return}c.planDate=d;save();render();toast(mdh(d)+"に"+TYPES[c.type].site+"の予定を入れました");return}
+  if(a==="plan"){
+    if(c.stage!=="new"||isEizen(c))return;
+    const d=val("d_plan"),time=c.type==="kinkyu"?val("d_plan_time"):c.planTime||"";
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!parseYmd(d)){toast("予定日を入れてください");return}
+    if(c.type==="kinkyu"&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)){toast("予定時刻（日本時間）を入れてください");return}
+    if(manualTodoBusy()){toast("同期などの処理が終わってから保存してください");return}
+    const before={...c};Object.assign(c,{planDate:d,planTime:time});
+    if(!save()){for(const k of Object.keys(c))delete c[k];Object.assign(c,before);toast("予定の保存を確認できません。入力を控え、再読み込みで確認してください",6000);return}
+    render();toast(d+" "+time+"（日本時間）に"+TYPES[c.type].site+"の予定を入れました");return;
+  }
   if(a==="site"){c.siteDate=val("d_site")||todayS();c.stage="site";save();render();toast(TYPES[c.type].site+"を済みにしました");return}
   if(a==="rushwin"){c.orderDate=todayS();c.stage="won";save();render();toast("受注にしました。Accessへ引き渡してください");return}
   if(a==="quote"){
