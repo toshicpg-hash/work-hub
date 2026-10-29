@@ -89,6 +89,18 @@ async function main(){
   const s=await sum(p);
   assert.equal(s['見積提出'],'2件',JSON.stringify(s));assert.equal(s['受注'],'2件');assert.equal(await unpaidHead(p),'0件 0円');
   assert.ok(await overflow(p)<=0);
+  const rows=await p.$$eval('.sec:has(h2:text-matches("月の担当別")) tbody tr',a=>a.map(x=>[...x.cells].map(c=>c.textContent).join('|')));
+  assert.deepEqual(rows.sort(),['例題|1件|1件|200,000円|0件 0円','見本|1件|1件|100,000円|0件 0円'].sort(),rows.join(' / '));
+  /* 会社の動きも GMの会社に固定 */
+  await p.evaluate(()=>{ST.ui.corpCo='AT';ST.roBuild(ST.ui.corp.data);ST.go('home')});
+  assert.equal(await p.$$eval('[data-cco]',a=>a.length),0,'no company buttons in 会社の動き on a GM device');
+  const home=await p.textContent('main');
+  assert.ok(home.includes('GMの会社（CPY）の社員の分です'));
+  const cards=await p.$$eval('.panel:has(h3:text-matches("動いている案件")) .card .ttl',a=>a.map(x=>x.textContent.trim().split(' ')[0]).sort());
+  assert.deepEqual(cards,['例題荘受注','試験荘受注'],cards.join());
+  await p.evaluate(()=>ST.go('cases'));
+  assert.equal(await p.$$eval('.chip.ro',a=>a.length),2,'case list shows only the CPY cases');
+  assert.ok(await overflow(p)<=0);
   assert.deepEqual(errors,[]);await c.close();
  });
  await check('全社の端末：社長と同じく全社から選べる',async()=>{
