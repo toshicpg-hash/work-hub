@@ -308,7 +308,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.46" title="使い方マニュアルを開く">v1.46・10/29更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.46.1" title="使い方マニュアルを開く">v1.46.1・10/29更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -675,7 +675,7 @@ function vHome(){
   const un=all.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   const ord=todos.filter(x=>x.order), ordOver=ord.filter(x=>x.due&&x.due<t).length;
   return (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）と付いた案件は練習用の例です。入力した内容はこの端末のブラウザにだけ残ります。</div>':'')+
-  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.46">マニュアル</a>へ。</p></div>')+
+  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.46.1">マニュアル</a>へ。</p></div>')+
   '<section class="sec">'+gSyncPanel()+'</section>'+
   (ord.length?'<button type="button" class="banner" data-nav="todo" style="text-align:left;width:100%;cursor:pointer'+(ordOver?';border-color:var(--red)':'')+'"><b>タスクリクエスト '+ord.length+'件</b>'+(ordOver?'<span style="color:var(--red);font-weight:700">（期限切れ '+ordOver+'件）</span>':'')+'<div class="note">'+ord.slice(0,3).map(x=>h(x.title)).join("・")+'</div></button>':'')+
   (D().admin||D().viewListId?corpView():'')+
@@ -881,6 +881,12 @@ function payPanel(c){
     (lastReq(c)&&!acctReplied(c)?'<div class="row"><button class="btn sm" type="button" data-act="acctnopay">経理から返事あり（まだ入金なし）</button></div>':'')+
     '<p class="note" style="margin:0">一部だけの入金も記録できます。合計が請求額に届くと「入金済み（完了）」になります。</p></div>';
 }
+function emergencyTimeFields(value){
+  const valid=typeof value==="string"&&/^([01]\d|2[0-3]):[0-5]\d$/.test(value), parts=valid?value.split(":"):[];
+  const options=(n,selected)=>'<option value="">選択してください</option>'+Array.from({length:n},(_,i)=>{const v=String(i).padStart(2,"0");return '<option value="'+v+'"'+(v===selected?' selected':'')+'>'+v+'</option>'}).join("");
+  return '<div class="form" style="width:100%"><label class="f">時（日本時間・24時間）<select id="d_plan_hour" aria-label="時（日本時間・24時間）" required>'+options(24,parts[0])+'</select></label><label class="f">分（日本時間）<select id="d_plan_minute" aria-label="分（日本時間）" required>'+options(60,parts[1])+'</select></label></div>'+
+    (value&&!valid?'<p class="note" role="status">保存済みの時刻を選択欄に表示できません。記録は変更していません。予定時刻を確認して時・分を選んでください。</p>':'');
+}
 function vDetail(){
   const c=findCase(ui.caseId);
   if(!c)return '<div class="empty">案件が見つかりません</div>'+roNote();
@@ -890,7 +896,7 @@ function vDetail(){
   let act="";
   if(c.stage==="new"&&!isEizen(c)){
     act='<div class="panel"><h3>次にやること：'+TYPES[c.type].site+'</h3>'+
-      ('<div class="row"><label class="f" style="flex:1 1 200px">'+TYPES[c.type].site+'の予定日（日本時間）'+(c.planDate?'（'+mdh(c.planDate)+'に決定済み）':'')+'<input type="date" id="d_plan" value="'+h(c.planDate||addDays(todayS(),2))+'"><span class="note" data-dl="d_plan">'+mdh(c.planDate||addDays(todayS(),2))+'</span></label>'+ (c.type==="kinkyu"?'<label class="f">時刻（日本時間）<input type="time" id="d_plan_time" value="'+h(c.planTime||"")+'"></label>':'')+'<button class="btn" type="button" data-act="plan" style="align-self:flex-end">日程を決める</button></div>')+
+      ('<div class="row"><label class="f" style="flex:1 1 200px">'+TYPES[c.type].site+'の予定日（日本時間）'+(c.planDate?'（'+mdh(c.planDate)+'に決定済み）':'')+'<input type="date" id="d_plan" value="'+h(c.planDate||addDays(todayS(),2))+'"><span class="note" data-dl="d_plan">'+mdh(c.planDate||addDays(todayS(),2))+'</span></label>'+ (c.type==="kinkyu"?emergencyTimeFields(c.planTime):'')+'<button class="btn" type="button" data-act="plan" style="align-self:flex-end">日程を決める</button></div>')+
       '<label class="f">'+TYPES[c.type].site+'を実施した日<input type="date" id="d_site" value="'+todayS()+'"><span class="note" data-dl="d_site">'+mdh(todayS())+'</span></label>'+
       '<div class="row"><button class="btn pri" type="button" data-act="site">'+TYPES[c.type].site+'を済みにする</button>'+
       (c.type==="kinkyu"?'<button class="btn" type="button" data-act="rushwin">見積を省いて受注へ（緊急）</button>':'')+'</div>'+
@@ -1512,7 +1518,7 @@ function vStats(){
     ''+
     '</form></section>'+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.46" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a></section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.46.1" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a></section>';
 }
 function gSettings(){
   const head='<section class="sec"><div class="sec-h"><h2>Googleカレンダー連携</h2></div>';
@@ -2561,7 +2567,7 @@ document.addEventListener("click",e=>{
     gRegister(c).then(r=>{toast(r==="updated"?"Googleカレンダーの予定を更新しました":"Googleカレンダーに登録しました")},err=>{toast("登録できませんでした："+gMsg(err),5000)}).finally(()=>{ui.gbusy=false;render()});return}
   if(a==="plan"){
     if(c.stage!=="new"||isEizen(c))return;
-    const d=val("d_plan"),time=c.type==="kinkyu"?val("d_plan_time"):c.planTime||"";
+    const d=val("d_plan"),hour=val("d_plan_hour"),minute=val("d_plan_minute"),time=c.type==="kinkyu"?(hour!==""&&minute!==""?hour+":"+minute:""):c.planTime||"";
     if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!parseYmd(d)){toast("予定日を入れてください");return}
     if(c.type==="kinkyu"&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)){toast("予定時刻（日本時間）を入れてください");return}
     if(manualTodoBusy()){toast("同期などの処理が終わってから保存してください");return}
