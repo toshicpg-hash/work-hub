@@ -182,6 +182,11 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
   {
    const malformed=structuredClone(db);malformed.cases[0].planTime='25:91';const a=await setup(malformed),{p}=a;await open(p,'synthetic-emergency');assert.equal(await readTime(p),'');assert.match(await p.locator('#main').innerText(),/保存済みの時刻を選択欄に表示できません/);await click(p,'plan');assert.equal((await read(p)).cases[0].planTime,'25:91');await p.reload();assert.equal((await read(p)).cases[0].planTime,'25:91');await a.ctx.close();results.push('Invalid legacy time remains unchanged and requires explicit valid selection');
   }
+  {
+   const malformed=structuredClone(db);malformed.cases[0].planTime=['10:00'];const a=await setup(malformed),{p}=a;const before=await read(p);
+   await open(p,'synthetic-emergency');assert.equal(await readTime(p),'');assert.match(await p.locator('#main').innerText(),/保存済みの時刻を選択欄に表示できません/);assert.deepEqual(await read(p),before);
+   await p.locator('[data-nav=cases]').first().click();await open(p,'synthetic-emergency');assert.deepEqual(await read(p),before);await p.reload();await open(p,'synthetic-emergency');assert.deepEqual(await read(p),before);assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('Wrong-type legacy array never crashes detail and opening/back/reload preserve entire DB');
+  }
   for(const r of results)console.log('PASS '+r);console.log(JSON.stringify({passed:results.length,liveData:false,liveGoogleWrites:false}));
  }finally{await browser.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exit(1)});

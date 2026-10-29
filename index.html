@@ -882,7 +882,7 @@ function payPanel(c){
     '<p class="note" style="margin:0">一部だけの入金も記録できます。合計が請求額に届くと「入金済み（完了）」になります。</p></div>';
 }
 function emergencyTimeFields(value){
-  const valid=/^([01]\d|2[0-3]):[0-5]\d$/.test(value||""), parts=valid?value.split(":"):[];
+  const valid=typeof value==="string"&&/^([01]\d|2[0-3]):[0-5]\d$/.test(value), parts=valid?value.split(":"):[];
   const options=(n,selected)=>'<option value="">選択してください</option>'+Array.from({length:n},(_,i)=>{const v=String(i).padStart(2,"0");return '<option value="'+v+'"'+(v===selected?' selected':'')+'>'+v+'</option>'}).join("");
   return '<div class="form" style="width:100%"><label class="f">時（日本時間・24時間）<select id="d_plan_hour" aria-label="時（日本時間・24時間）" required>'+options(24,parts[0])+'</select></label><label class="f">分（日本時間）<select id="d_plan_minute" aria-label="分（日本時間）" required>'+options(60,parts[1])+'</select></label></div>'+
     (value&&!valid?'<p class="note" role="status">保存済みの時刻を選択欄に表示できません。記録は変更していません。予定時刻を確認して時・分を選んでください。</p>':'');
