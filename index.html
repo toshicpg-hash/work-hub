@@ -76,8 +76,11 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background
 .brand{font-family:var(--f-display);font-weight:900;font-size:19px;letter-spacing:.02em}
 .brandbox{display:flex;flex-direction:column;line-height:1.1}
 .ver{font-size:10px;color:var(--muted);letter-spacing:.02em;margin-top:2px;text-decoration:underline dotted;text-underline-offset:2px}
+.brandbox .proto{align-self:flex-start;margin-top:3px;white-space:nowrap;font-size:10px;padding:1px 6px}
 .proto{font-size:11px;font-weight:700;letter-spacing:.08em;background:var(--amber-soft);color:var(--amber);padding:2px 8px;border-radius:99px}
 .top-in .sp{flex:1}
+/* マニュアルへの入口（v1.46.7）：押しやすい高さで、320px幅でも1段に収める */
+.btn.mbtn{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 12px;font-size:14px;text-decoration:none;color:var(--accent);border-color:var(--accent);white-space:nowrap;flex:none}
 .btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:700;min-height:42px}
 .btn:hover{border-color:var(--accent)}
 .btn.pri{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
@@ -318,7 +321,8 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.46.6" title="使い方マニュアルを開く">v1.46.6・10/29更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.46.7" title="使い方マニュアルを開く">v1.46.7・10/29更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="btn mbtn" href="./manual.html?v=1.46.7" aria-label="使い方マニュアルを開く"><span aria-hidden="true">📖</span>使い方</a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -718,7 +722,7 @@ function vHome(){
   const un=all.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   const ord=todos.filter(x=>x.order), ordOver=ord.filter(x=>x.due&&x.due<t).length;
   return (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）と付いた案件は練習用の例です。入力した内容はこの端末のブラウザにだけ残ります。</div>':'')+
-  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.46.6">マニュアル</a>へ。</p></div>')+
+  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.46.7">マニュアル</a>へ。</p></div>')+
   '<section class="sec">'+gSyncPanel()+'</section>'+
   (ord.length?'<button type="button" class="banner" data-nav="todo" style="text-align:left;width:100%;cursor:pointer'+(ordOver?';border-color:var(--red)':'')+'"><b>タスクリクエスト '+ord.length+'件</b>'+(ordOver?'<span style="color:var(--red);font-weight:700">（期限切れ '+ordOver+'件）</span>':'')+'<div class="note">'+ord.slice(0,3).map(x=>h(x.title)).join("・")+'</div></button>':'')+
   (D().admin||D().viewListId?corpView():'')+
@@ -1604,7 +1608,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.46.6" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a></section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.46.7" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a></section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
