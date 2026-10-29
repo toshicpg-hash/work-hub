@@ -38,6 +38,8 @@ h3{font-size:16px;margin-top:6px}
 p{margin:0}
 section{display:flex;flex-direction:column;gap:10px;scroll-margin-top:60px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+#ask{scroll-margin-top:72px}
+.mailex{display:block;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;font-size:14px;line-height:1.7;-webkit-user-select:text;user-select:text}
 .meta{font-size:13.5px;color:var(--muted)}
 .ver{display:inline-block;background:var(--accent-soft);color:var(--accent);font-weight:700;border-radius:99px;padding:1px 10px;font-size:13px}
 ol,ul{margin:0;padding-left:1.5em;display:flex;flex-direction:column;gap:4px}
@@ -80,7 +82,7 @@ th{color:var(--muted);font-size:13px}
       <li><a href="#payment">入金</a></li>
       <li><a href="#receipts">領収書</a></li>
       <li><a href="#sheet">記録シートにつなぐ</a></li>
-      <li><a href="#trouble">困ったとき</a></li>
+      <li><a href="#trouble">困ったとき</a>（<a href="#ask">使い方を質問する</a>）</li>
       <li><a href="#boss">社長用</a></li>
       <li><a href="#viewer">会社の動きを見る人用（全社・GM）</a></li>
     </ol>
@@ -91,6 +93,7 @@ th{color:var(--muted);font-size:13px}
   <h2>改訂履歴</h2>
   <div class="card"><table class="hist">
     <tr><th>版</th><th>できるようになったこと</th></tr>
+    <tr><td>v1.46.4<br><span class="meta">10/29</span></td><td>マニュアルの「困ったとき」に、使い方を質問するしかた（トシさんのGmailへ、本文の最初に「CPGハブの使い方についての質問」と書いてメール。急ぎは電話やLINE）と、本文の例を足しました。アプリは変わっていません（アプリの版の表示は v1.46.3 のままです）。</td></tr>
     <tr><td>v1.46.3<br><span class="meta">10/29</span></td><td>「会社の動き」の案件カードの「最終の動き」に、これからの予定日（例：来月の現地調査の予定日）が出ていたのを直しました。受付・実施・見積提出・受注・引渡・施工完了・請求・入金など、実際に起きたことのうち今日までで一番新しい日を出します。古い版で同期した記録でも、画面では今日より先の日付を出しません。</td></tr>
     <tr><td>v1.46.2<br><span class="meta">10/29</span></td><td>担当の名前の出し方を変えました。専務は、いつも「黒木秀」と出ます（前からある「黒木」の記録も、画面では「黒木秀」）。ほかの人は、同じ名字の社員が2人以上いるときだけ、姓＋名の1字（例：黒木祐）で区別します。担当のバッジの色・ToDoとガントの担当の絞り込み・会社の動きの担当別のまとめ・受付の担当の選択で、別の人として扱います。名字だけの古い記録は、その記録シートの持ち主で決めます。保存してある記録は書き換えません。Access用のCSVやカレンダーの説明など外に出す名前は、フルネーム（社員一覧の氏名）にしました。<br>「1日3回同期」の決まりを書き、「会社の動き」の同期の状況で、今日まだ同期していない人を赤で出すようにしました（前は3日以上で注意）。</td></tr>
     <tr><td>v1.46.1<br><span class="meta">10/29</span></td><td>緊急対応の予定時刻を「時」「分」の選択欄に変更しました。時計画面を開かずに選べます。日付と時・分を確認し「日程を決める」で保存します。保存形式・自動ToDoの期限計算は変わりません。</td></tr>
@@ -337,6 +340,20 @@ th{color:var(--muted);font-size:13px}
     <tr><td>入力した内容が消えた</td><td>別のスマホやブラウザで開いていないか確かめる（内容はその端末にだけ残ります）</td></tr>
     <tr><td>「（架空）」の案件や「試作・架空データ」の表示が残っている</td><td><b>数字</b> の <span class="btn">練習用の例（架空）を消す</span>（自分で入れた内容は消えません）</td></tr>
   </table></div>
+  <h3 id="ask">使い方を質問する</h3>
+  <ol>
+    <li>CPG HUB の使い方で分からないことは、トシさんのGmail <b>toshi.cpg@gmail.com</b> へ<b>メール</b>で質問してください</li>
+    <li>メール本文の<b>一番最初の行</b>に <b>CPGハブの使い方についての質問</b> と書きます（この言葉があると、自動で返事が届きます）。件名は自由です</li>
+    <li>本文には、<b>どの画面で</b>・<b>何をしたら</b>・<b>どうなったか</b> と、左上の<b>版</b>（例：v1.46.3）を書きます。画面のスクリーンショットがあれば付けてください</li>
+    <li><b>すぐ必要な連絡（現場のトラブル・お金のこと）は、メールではなく電話やLINEで</b>連絡してください</li>
+  </ol>
+  <p class="meta">本文の例（長押しでコピーして、中身を書きかえて使えます）</p>
+  <pre class="card mailex">CPGハブの使い方についての質問
+・画面：ToDo
+・したこと：「Googleとまとめて同期」を押した
+・どうなったか：タスクリクエストが出てこない
+・版：v1.46.3
+（スクリーンショットを付けます）</pre>
 </section>
 
 <section id="boss">
