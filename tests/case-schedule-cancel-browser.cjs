@@ -3,7 +3,7 @@
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 const sheetReply=require('./helpers/case-sheet-mock.cjs');
 const root=path.resolve(__dirname,'..'),KEY='workhub_proto_v1';
-const hook='window.testHub={get db(){return DB},ui,go,emptyDB,CASE_DEFAULTS,save,render,genTodos,dataRows,roCase,roDetail,upgrade,ended,gSyncAll,sheetWrite,vStats,get uncertain(){return caseSaveUncertain},authorize(){G.token="synthetic-token";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000;}};';
+const hook='window.testHub={get db(){return DB},ui,go,emptyDB,CASE_DEFAULTS,save,render,genTodos,dataRows,roCase,roDetail,upgrade,ended,gSyncAll,sheetWrite,sheetRead,vStats,get uncertain(){return caseSaveUncertain},authorize(){G.token="synthetic-token";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000;}};';
 let server,browser,origin;const results=[];
 async function setup(db,tz='Asia/Tokyo',width=390,network=null,baseline=false){
  const ctx=await browser.newContext({timezoneId:tz,locale:'ja-JP',viewport:{width,height:900}}),requests=[],errors=[];
@@ -131,6 +131,35 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
    assert.equal(result.stage,'lost');assert.equal(result.ended,true);assert.equal(result.save,true);assert.deepEqual((await read(old.p)).cases,stored.cases);assert.equal(result.rows[0].length,29);
    const restored=await p.evaluate(rows=>{const r=Object.fromEntries(rows[0].map((k,i)=>[k,rows[2][i]])),c=testHub.roCase(r,{s:{name:'合成旧共有'}});return {stage:c.stage,ended:testHub.ended(c),reason:c.cancelReason};},result.rows);
    assert.equal(restored.stage,'lost');assert.equal(restored.ended,true);assert.equal(restored.reason,'');assert.deepEqual(old.errors,[]);await old.ctx.close();await a.ctx.close();results.push('Actual v1.45 reads new lost export and preserves unknown local fields on save; its 29-column re-export loses added detail but stays ended');
+  }
+  {
+   const header=Array.from({length:32},(_,i)=>'column-'+i),many=[header,...Array.from({length:12},(_,i)=>['synthetic-row-'+i,...Array.from({length:31},(_,c)=>'old-value-'+i+'-'+c)])];
+   const few=[header,...[2,7].map(i=>['synthetic-row-'+i,...Array.from({length:31},(_,c)=>'current-value-'+i+'-'+c)])];
+   const oldValues=many.slice(1).flatMap(r=>r.slice(1)),removedIds=many.slice(1).map(r=>r[0]).filter(id=>!few.some(r=>r[0]===id));
+   const network={exports:{},grid:{sheetId:17,columnCount:29,rowCount:3}},a=await setup(db,'Asia/Tokyo',390,network),{p}=a;
+   const write=rows=>p.evaluate(async rows=>{testHub.authorize();await testHub.sheetWrite('synthetic-own','案件',rows);},rows);
+   const get=()=>p.evaluate(async()=>{const data=await testHub.sheetRead('synthetic-own',['案件']);return data['案件'];});
+   const check=(actual,expected,forbidden)=>{assert.deepEqual(actual,expected);const values=new Set(actual.flat());for(const v of forbidden)assert.equal(values.has(v),false,'retired value returned: '+v);for(const cell of Object.values(network.cells))assert.equal(forbidden.includes(cell.userEnteredValue?.stringValue),false,'retired value remains in stored cell');};
+   await write(many);assert.deepEqual(await get(),many);const size={...network.grid};
+   network.cells['11,31'].userEnteredFormat={backgroundColor:{red:0.5}};
+   await write(few);check(await get(),few,[...removedIds,...oldValues]);
+   await write(few);check(await get(),few,[...removedIds,...oldValues]);
+   const allIds=many.slice(1).map(r=>r[0]),currentValues=few.slice(1).flatMap(r=>r.slice(1));
+   await write([header]);check(await get(),[header],[...allIds,...oldValues,...currentValues]);
+   await write([header]);check(await get(),[header],[...allIds,...oldValues,...currentValues]);
+   assert.deepEqual(network.grid,size);assert.deepEqual(network.cells['11,31'].userEnteredFormat,{backgroundColor:{red:0.5}});assert.equal(network.cells['11,31'].userEnteredValue,undefined);assert.equal(network.caseClear,undefined);
+   // Every committed state after removal is checked, not only the last GET response.
+   assert.deepEqual(network.snapshots,[many,few,few,[header],[header]]);assert.equal(network.calls.filter(r=>r.method==='GET'&&r.path.endsWith('/values:batchGet')).length,5);
+   assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('Persistent cells: many to few, GET, same resync, header only, GET and header resync never retain or revive removed IDs/values; formatting remains');
+  }
+  {
+   // Negative controls: a bounded range or wrong field mask must NOT clear old values.
+   const n={exports:{'案件':[['header'],['retired-id','retired-value']]},grid:{sheetId:17,columnCount:3,rowCount:4}};
+   const batch=updateCells=>sheetReply(n,{url:()=> 'https://sheets.googleapis.com/v4/spreadsheets/synthetic-own:batchUpdate',method:()=> 'POST',postDataJSON:()=>({requests:[{updateCells}]})});
+   const get=()=>sheetReply(n,{url:()=> "https://sheets.googleapis.com/v4/spreadsheets/synthetic-own/values/%27%E6%A1%88%E4%BB%B6%27",method:()=> 'GET'}).body.values;
+   assert.equal(batch({range:{sheetId:17,startRowIndex:0,endRowIndex:1},rows:[{values:[{userEnteredValue:{stringValue:'new-header'}}]}],fields:'userEnteredValue'}).status,undefined);assert.deepEqual(get(),[['new-header'],['retired-id','retired-value']]);
+   batch({range:{sheetId:17},rows:[],fields:'userEnteredFormat'});assert.deepEqual(get(),[['new-header'],['retired-id','retired-value']]);
+   batch({range:{sheetId:17},rows:[{values:[{userEnteredValue:{stringValue:'new-header'}}]}],fields:'userEnteredValue'});assert.deepEqual(get(),[['new-header']]);results.push('Grid model negative controls: bounded ranges and format-only masks retain old values; full value range clears them');
   }
   for(const r of results)console.log('PASS '+r);console.log(JSON.stringify({passed:results.length,liveData:false,liveGoogleWrites:false}));
  }finally{await browser.close();await new Promise(r=>server.close(r));}
