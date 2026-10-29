@@ -308,7 +308,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.46-rc1・10/29 未公開</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html" title="使い方マニュアルを開く">v1.46-rc2・10/29 未公開</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -472,13 +472,23 @@ function removeExamples(){
   return {cases:cs.length,receipts:rs.length,cal};
 }
 
-let DB,dbPersistedRaw=null;
+let DB,dbPersistedRaw=null,caseSaveUncertain=false;
+const CASE_SAVE_NOTICE="案件の保存結果を確認できません。入力を控え、再読み込みして最新の記録を確認してください。それまでは保存・共有を停止しています。";
+function caseSaveGuard(){if(!caseSaveUncertain)return false;manualStorageNotice(CASE_SAVE_NOTICE);return true;}
+/* A failed case save is latched until reload: never overwrite an uncertain successful write. */
+function saveCaseChange(c,fields){
+  if(caseSaveGuard())return false;
+  const before={...c};Object.assign(c,fields);
+  if(save())return true;
+  for(const k of Object.keys(c))delete c[k];Object.assign(c,before);
+  caseSaveUncertain=true;manualStorageNotice(CASE_SAVE_NOTICE);return false;
+}
 try{const raw=localStorage.getItem(KEY);dbPersistedRaw=raw;DB=raw?JSON.parse(raw):null}catch(e){DB=null}
 let upgraded=false;
 if(!DB||!Array.isArray(DB.cases))DB=emptyDB();
 else{upgraded=DB.schemaVersion!==SCHEMA_VERSION;upgrade(DB)}
 /* The failure toast is deferred so it replaces the success toast the same handler shows after save() */
-const save=()=>{try{if(localStorage.getItem(KEY)!==dbPersistedRaw){manualStorageNotice("別のCPG HUB画面で記録が更新されました。古い内容で上書きしないため保存を止めています。入力を控え、ほかの画面を閉じて再読み込みしてください。");return false}const next=JSON.stringify(DB);localStorage.setItem(KEY,next);if(localStorage.getItem(KEY)!==next){manualStorageNotice("保存後の内容を確認できません。再保存せず、入力を控えて最新の記録を確認してください。");return false}dbPersistedRaw=next;return true}catch(e){setTimeout(()=>toast("保存できませんでした。端末の空き容量やブラウザの設定を確認してください",6000),0);return false}};
+const save=()=>{if(caseSaveGuard())return false;try{if(localStorage.getItem(KEY)!==dbPersistedRaw){manualStorageNotice("別のCPG HUB画面で記録が更新されました。古い内容で上書きしないため保存を止めています。入力を控え、ほかの画面を閉じて再読み込みしてください。");return false}const next=JSON.stringify(DB);localStorage.setItem(KEY,next);if(localStorage.getItem(KEY)!==next){manualStorageNotice("保存後の内容を確認できません。再保存せず、入力を控えて最新の記録を確認してください。");return false}dbPersistedRaw=next;return true}catch(e){setTimeout(()=>toast("保存できませんでした。端末の空き容量やブラウザの設定を確認してください",6000),0);return false}};
 if(upgraded)save();
 const photos={};
 const ui={view:"home",caseId:null,q:"",type:"all",showEnded:false,tTantou:"all",tPeriod:"week",csv:false,calMonth:todayS().slice(0,7),calDay:todayS(),calView:"month"};
@@ -909,7 +919,7 @@ function vDetail(){
   }else if(ro){
     act=(isEizen(c)?'<div class="ro">受付・見積の記録は読み取り専用です。施工完了・請求・入金を記録します。</div>':'<div class="ro"><b>Access引渡済</b>　仕事番号 <b class="num">'+h(c.jobNo)+'</b>（'+md(c.handedDate)+'）<br>受付内容と立会の記録は読み取り専用です。施工完了・請求・入金はここで記録します。</div>')+payPanel(c);
   }
-  if(c.stage==="won")act+=ui.wonCancel===c.id?'<div class="panel" role="alert"><h3>受注後の依頼を取り消しますか？</h3><p>'+h(c.id)+' ／ '+h(c.property)+' '+h(c.room)+' ／ '+h(c.client)+'</p><p>受注日 '+h(c.orderDate)+'・見積 '+yen(estOf(c))+'。元の記録を残し、自動ToDoと動いている案件から外します。完了・入金済みにはしません。</p><label class="f">取消理由（必須）<textarea id="d_cancel_reason" maxlength="1000"></textarea></label><div class="row"><button class="btn danger" data-act="woncancelsave">取消を記録する</button><button class="btn" data-act="woncancelno">やめる</button></div><p id="wonCancelStatus" role="status"></p></div>':'<div class="row"><button class="btn danger" data-act="woncancelask">受注後の依頼を取り消す</button></div>';
+  if(c.stage==="won")act+=ui.wonCancel===c.id?'<div class="panel" role="alert"><h3>受注後の依頼を取り消しますか？</h3><p>'+h(c.id)+' ／ '+h(c.property)+' '+h(c.room)+' ／ '+h(c.client)+'</p><p>受注日 '+h(c.orderDate)+'・見積 '+yen(estOf(c))+'。元の記録を残し、自動ToDoと動いている案件から外します。完了・入金済みにはしません。「数字」の元の受注月の受注件数・受注額には残ります。取消を新たな失注実績には加算しません。</p><label class="f">取消理由（必須）<textarea id="d_cancel_reason" maxlength="1000"></textarea></label><div class="row"><button class="btn danger" data-act="woncancelsave">取消を記録する</button><button class="btn" data-act="woncancelno">やめる</button></div><p id="wonCancelStatus" role="status"></p></div>':'<div class="row"><button class="btn danger" data-act="woncancelask">受注後の依頼を取り消す</button></div>';
   const ph=photos[c.id]||[];
   return '<button class="back" type="button" data-nav="cases">‹ 案件へ戻る</button>'+
   '<section class="sec"><div class="row">'+coChip(c.company)+typeChip(c)+'<span class="note num">'+h(c.id)+'</span><span class="sp"></span>'+stagePill(c)+'</div>'+
@@ -1278,6 +1288,7 @@ function calRange(){
 /* 「Googleとまとめて同期」: sign in, read the calendar list, then the events. Each step's result is shown on its own */
 let manualTodoSyncPending=null;
 async function gSyncAll(){
+  if(caseSaveGuard())return;
   if(receiptSaving||receiptSelecting||receiptSending||ui.rSaveUncertain){toast("領収書の処理が終わってから同期してください。入力は残しています。",5000);return;}
   if(manualTodoSyncPending)return manualTodoSyncPending;
   const run=async()=>{
@@ -1899,6 +1910,7 @@ const dataOn=()=>!!(D().sheetId||D().admin||D().viewListId);
 /* Google APIs other than Calendar (Sheets / Drive). body: JSON, raw: Blob for uploads */
 async function gReq(url,o){
   o=o||{};
+  if(caseSaveUncertain&&o.method&&o.method!=="GET")throw Error(CASE_SAVE_NOTICE);
   if(!gSignedIn())throw new Error("signin");
   const ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(),45000);
   try{
@@ -1923,7 +1935,22 @@ async function driveUpload(blob,name,folder){
   return gReq("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink",{method:"POST",raw,headers:{"Content-Type":"multipart/related; boundary="+b}});
 }
 const A1=t=>"'"+t.replace(/'/g,"''")+"'";
+/* Case exports grew beyond old 29-column grids. Resize and replace values atomically,
+   leaving formatting intact. No clear-before-write window on this mirror. */
+async function writeCaseSheet(id,rows){
+  const url=SHEETS+"/"+encodeURIComponent(id);
+  const info=await gReq(url+"?fields=sheets.properties(sheetId,title,gridProperties)");
+  const p=info?.sheets?.find(s=>s.properties?.title==="案件")?.properties,g=p?.gridProperties;
+  if(!Number.isInteger(p?.sheetId)||!Number.isInteger(g?.columnCount)||!Number.isInteger(g?.rowCount))throw Error("案件シートの大きさを確認できないため、共有更新を止めました");
+  const requests=[],cols=Math.max(1,...rows.map(r=>r.length));
+  for(const [dimension,need,have] of [["COLUMNS",cols,g.columnCount],["ROWS",rows.length,g.rowCount]])
+    if(need>have)requests.push({appendDimension:{sheetId:p.sheetId,dimension,length:need-have}});
+  const cell=v=>v==null||v===""?{}:{userEnteredValue:typeof v==="number"?{numberValue:v}:typeof v==="boolean"?{boolValue:v}:{stringValue:String(v)}};
+  requests.push({updateCells:{range:{sheetId:p.sheetId},rows:rows.map(r=>({values:r.map(cell)})),fields:"userEnteredValue"}});
+  return gReq(url+":batchUpdate",{method:"POST",body:{requests}});
+}
 async function sheetWrite(id,tab,rows){
+  if(tab==="案件")return writeCaseSheet(id,rows);
   await gReq(SHEETS+"/"+encodeURIComponent(id)+"/values/"+encodeURIComponent(A1(tab))+":clear",{method:"POST",body:{}});
   return gReq(SHEETS+"/"+encodeURIComponent(id)+"/values/"+encodeURIComponent(A1(tab)+"!A1")+"?valueInputOption=RAW",{method:"PUT",body:{values:rows}});
 }
@@ -2369,6 +2396,7 @@ function rcvAsk(el,a,d,r){
 const val=id=>{const el=document.getElementById(id);return el?el.value:""};
 
 document.addEventListener("click",e=>{
+  if(caseSaveGuard()){e.preventDefault();return}
   const el=e.target.closest("button,[data-open]");
   if(!el)return;
   if(receiptSaving||receiptSelecting||receiptSending){toast("領収書の処理中です。入力は残しています。",4000);return;}
@@ -2513,8 +2541,7 @@ document.addEventListener("click",e=>{
     const status=document.getElementById("wonCancelStatus"),reason=val("d_cancel_reason").trim();
     if(!reason){status.textContent="取消理由を入力してください";return}
     if(manualTodoBusy()){status.textContent="同期などの処理中です。終わってから記録してください。";return}
-    const before={...c};Object.assign(c,{stage:"lost",cancelledAt:new Date().toISOString(),cancelReason:reason});
-    if(!save()){for(const k of Object.keys(c))delete c[k];Object.assign(c,before);status.textContent="保存を確認できません。入力を控え、再読み込みして記録を確認してください。";return}
+    if(!saveCaseChange(c,{stage:"lost",cancelledAt:new Date().toISOString(),cancelReason:reason})){status.textContent=CASE_SAVE_NOTICE;return}
     ui.wonCancel=null;render();toast("受注後の取消を記録しました");return;
   }
   if(a==="coedit"){ui.coEdit=true;render();return}
@@ -2538,8 +2565,7 @@ document.addEventListener("click",e=>{
     if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!parseYmd(d)){toast("予定日を入れてください");return}
     if(c.type==="kinkyu"&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)){toast("予定時刻（日本時間）を入れてください");return}
     if(manualTodoBusy()){toast("同期などの処理が終わってから保存してください");return}
-    const before={...c};Object.assign(c,{planDate:d,planTime:time});
-    if(!save()){for(const k of Object.keys(c))delete c[k];Object.assign(c,before);toast("予定の保存を確認できません。入力を控え、再読み込みで確認してください",6000);return}
+    if(!saveCaseChange(c,{planDate:d,planTime:time}))return;
     render();toast(d+" "+time+"（日本時間）に"+TYPES[c.type].site+"の予定を入れました");return;
   }
   if(a==="site"){c.siteDate=val("d_site")||todayS();c.stage="site";save();render();toast(TYPES[c.type].site+"を済みにしました");return}
@@ -2584,6 +2610,7 @@ document.addEventListener("click",e=>{
   if(a==="csvone"){go("cases",{csv:true});return}
 });
 document.addEventListener("input",e=>{
+  if(caseSaveGuard()){e.preventDefault();return}
   if(e.target.id==="r_payee"||e.target.id==="r_item"){receiptRefreshSuggestions();return;}
   const t=e.target;
   if(t.id==="q"){ui.q=t.value;const pos=t.selectionStart;render();const q=document.getElementById("q");q.focus();try{q.setSelectionRange(pos,pos)}catch(err){}return}
@@ -2593,6 +2620,7 @@ document.addEventListener("input",e=>{
   if(t.dataset.item!=null&&c){const it=c.items[Number(t.dataset.item)];if(it){it[t.dataset.f]=t.dataset.f==="amount"?(t.value===""?"":Number(t.value)):t.value;save();refreshItemTotals(c)}return}
 });
 document.addEventListener("change",e=>{
+  if(caseSaveGuard()){e.preventDefault();return}
   const t=e.target, c=ui.caseId?editCase(ui.caseId):null;
   if(t.id==="showEnded"){ui.showEnded=t.checked;render();return}
   if(t.id==="cdel_gcal"){ui.cdelCal=t.checked;ui.cdelMsg="";render();return}
@@ -2611,6 +2639,7 @@ document.addEventListener("change",e=>{
   }
 });
 document.addEventListener("submit",e=>{
+  if(caseSaveGuard()){e.preventDefault();return}
   e.preventDefault();
   const f=e.target;
   if(f.id==="newForm"){

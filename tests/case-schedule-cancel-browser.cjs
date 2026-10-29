@@ -1,18 +1,16 @@
 /* Synthetic fixtures only; all external requests are blocked. */
 'use strict';
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
+const sheetReply=require('./helpers/case-sheet-mock.cjs');
 const root=path.resolve(__dirname,'..'),KEY='workhub_proto_v1';
-const hook='window.testHub={get db(){return DB},ui,go,emptyDB,CASE_DEFAULTS,save,render,genTodos,dataRows,roCase,roDetail,upgrade,ended,gSyncAll,authorize(){G.token="synthetic-token";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000;}};';
+const hook='window.testHub={get db(){return DB},ui,go,emptyDB,CASE_DEFAULTS,save,render,genTodos,dataRows,roCase,roDetail,upgrade,ended,gSyncAll,sheetWrite,vStats,get uncertain(){return caseSaveUncertain},authorize(){G.token="synthetic-token";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000;}};';
 let server,browser,origin;const results=[];
-async function setup(db,tz='Asia/Tokyo',width=390,network=null){
+async function setup(db,tz='Asia/Tokyo',width=390,network=null,baseline=false){
  const ctx=await browser.newContext({timezoneId:tz,locale:'ja-JP',viewport:{width,height:900}}),requests=[],errors=[];
- await ctx.route('**/*',r=>{const u=r.request().url();if(u===origin+'/')return r.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(root,'index.html'),'utf8').replace('corpKeepLoad();\nrender();',hook+'\ncorpKeepLoad();\nrender();')});if(u===origin+'/seed')return r.fulfill({contentType:'text/html',body:'<!doctype html>'});if(u.startsWith(origin+'/'))return r.continue();requests.push({url:u,method:r.request().method()});
+ await ctx.route('**/*',r=>{const u=r.request().url();if(u===origin+'/')return r.fulfill({contentType:'text/html',body:(baseline?require('node:child_process').execFileSync('git',['show','c8db9bd:index.html'],{cwd:root,encoding:'utf8'}):fs.readFileSync(path.join(root,'index.html'),'utf8')).replace('corpKeepLoad();\nrender();',hook+'\ncorpKeepLoad();\nrender();')});if(u===origin+'/seed')return r.fulfill({contentType:'text/html',body:'<!doctype html>'});if(u.startsWith(origin+'/'))return r.continue();requests.push({url:u,method:r.request().method()});
  if(network&&u.includes('/calendar/v3/users/me/calendarList'))return r.fulfill({contentType:'application/json',body:'{"items":[]}'});
  if(network&&u.startsWith('https://sheets.googleapis.com/v4/spreadsheets/synthetic-own')){
-  const req=r.request(),decoded=decodeURIComponent(new URL(u).pathname);let body={};
-  if(req.method()==='GET')body={sheets:['案件','入金','立替','情報','ToDo'].map(title=>({properties:{title}}))};
-  else if(req.method()==='PUT'){const tab=decoded.split('/values/')[1].split('!')[0].replace(/^'|'$/g,'');network.exports[tab]=req.postDataJSON().values;}
-  return r.fulfill({contentType:'application/json',body:JSON.stringify(body)});
+  const answer=sheetReply(network,r.request());return r.fulfill({status:answer.status||200,contentType:'application/json',body:JSON.stringify(answer.body)});
  }
  return r.fulfill({status:200,body:''});});
  const p=await ctx.newPage();p.on('pageerror',e=>errors.push(e.message));await p.clock.setFixedTime(new Date('2026-10-29T15:05:00Z'));await p.goto(origin+'/seed');if(db)await p.evaluate(({KEY,db})=>localStorage.setItem(KEY,JSON.stringify(db)),{KEY,db});await p.goto(origin+'/');await p.waitForFunction(()=>!!window.testHub);return {ctx,p,requests,errors};
@@ -59,7 +57,7 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
   for(const fault of ['quota','readback','concurrent','busy']){
    for(const action of ['cancel','plan']){
     const a=await setup(db),{p}=a;await open(p,action==='cancel'?'synthetic-won':'synthetic-emergency');if(action==='cancel'){await click(p,'woncancelask');await p.locator('#d_cancel_reason').fill('保持する理由');}else{await p.locator('#d_plan').fill('2026-11-11');await p.locator('#d_plan_time').fill('10:00');}
-    await p.evaluate(({KEY,fault})=>{if(fault==='busy'){testHub.ui.gsync={busy:true};return}if(fault==='concurrent'){const other=JSON.parse(localStorage.getItem(KEY));other.unknown.newer=true;localStorage.setItem(KEY,JSON.stringify(other));return}const original=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k===KEY){if(fault==='quota')throw new DOMException('quota','QuotaExceededError');return;}return original.call(this,k,v)};},{KEY,fault});const before=await read(p);await click(p,action==='cancel'?'woncancelsave':'plan');assert.deepEqual(await read(p),before);assert.equal(await p.evaluate(()=>testHub.db.cases[1].stage),'won');assert.equal(await p.evaluate(()=>testHub.db.cases[0].planDate),'');if(action==='cancel'){assert.equal(await p.locator('#d_cancel_reason').inputValue(),'保持する理由');assert.match(await p.locator('#wonCancelStatus').innerText(),/保存|処理中/);}await a.ctx.close();results.push(action+' failure '+fault+' preserves state and never reports success');
+    await p.evaluate(({KEY,fault})=>{if(fault==='busy'){testHub.ui.gsync={busy:true};return}if(fault==='concurrent'){const other=JSON.parse(localStorage.getItem(KEY));other.unknown.newer=true;localStorage.setItem(KEY,JSON.stringify(other));return}const original=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k===KEY){if(fault==='quota')throw new DOMException('quota','QuotaExceededError');return;}return original.call(this,k,v)};},{KEY,fault});const before=await read(p);await click(p,action==='cancel'?'woncancelsave':'plan');assert.deepEqual(await read(p),before);assert.equal(await p.evaluate(()=>testHub.db.cases[1].stage),'won');assert.equal(await p.evaluate(()=>testHub.db.cases[0].planDate),'');if(action==='cancel'){assert.equal(await p.locator('#d_cancel_reason').inputValue(),'保持する理由');assert.match(await p.locator('#wonCancelStatus').innerText(),/保存|処理中/);}assert.doesNotMatch(await p.locator('#toast').innerText(),/取消を記録しました|の予定を入れました/);await a.ctx.close();results.push(action+' failure '+fault+' preserves state and never reports success');
    }
   }
   {
@@ -79,7 +77,60 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
     assert.equal(network.exports.ToDo.some(r=>r[3]==='synthetic-won'&&r[6]!=='手入力'),false);
     assert.deepEqual((await read(p)).cases,before.cases);assert.deepEqual((await read(p)).todos,before.todos);
    }
-   await p.reload();assert.deepEqual((await read(p)).cases,before.cases);assert(a.requests.filter(r=>r.method!=='GET').every(r=>r.url.startsWith('https://sheets.googleapis.com/v4/spreadsheets/synthetic-own/')));assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('Repeated full mocked shared sync preserves schedule/cancellation and unrelated requests; no calendar writes');
+   await p.reload();assert.deepEqual((await read(p)).cases,before.cases);assert(a.requests.filter(r=>r.method!=='GET').every(r=>/^https:\/\/sheets.googleapis.com\/v4\/spreadsheets\/synthetic-own(?:\/|:batchUpdate)/.test(r.url)));assert.equal(network.grid.columnCount,32);assert.equal(network.caseClear,undefined);assert.equal(network.batches,2);assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('Repeated full mocked shared sync preserves schedule/cancellation and unrelated requests; no calendar writes');
+  }
+  for(const fault of ['read-throws','read-old','read-replaced'])for(const action of ['cancel','plan']){
+   const syncDb=structuredClone(db);syncDb.settings.data.sheetId='synthetic-own';const network={exports:{}},a=await setup(syncDb,'Asia/Tokyo',390,network),{p}=a;
+   await open(p,action==='cancel'?'synthetic-won':'synthetic-emergency');
+   if(action==='cancel'){await click(p,'woncancelask');await p.locator('#d_cancel_reason').fill('合成保存結果不明');}else{await p.locator('#d_plan').fill('2026-11-11');await p.locator('#d_plan_time').fill('00:05');}
+   await p.evaluate(({KEY,fault})=>{
+    const get=Storage.prototype.getItem,set=Storage.prototype.setItem,old=get.call(localStorage,KEY);let written=false;
+    window.keyWrites=0;window.actualRaw=()=>get.call(localStorage,KEY);window.restoreFault=()=>{Storage.prototype.getItem=get;Storage.prototype.setItem=set;};
+    const toast=document.getElementById('toast'),descriptor=Object.getOwnPropertyDescriptor(Node.prototype,'textContent');window.toastWrites=[];
+    Object.defineProperty(toast,'textContent',{get(){return descriptor.get.call(this)},set(v){toastWrites.push(String(v));descriptor.set.call(this,v)}});
+    Storage.prototype.setItem=function(k,v){if(k===KEY){keyWrites++;set.call(this,k,v);written=true;if(fault==='read-replaced'){const newer=JSON.parse(v);newer.unknown.concurrent='preserve-newer';set.call(this,k,JSON.stringify(newer));}return;}return set.call(this,k,v);};
+    Storage.prototype.getItem=function(k){if(k===KEY&&written){if(fault==='read-throws')throw Error('synthetic readback error after successful write');if(fault==='read-old')return old;}return get.call(this,k);};
+   },{KEY,fault});
+   await click(p,action==='cancel'?'woncancelsave':'plan');const saved=await p.evaluate(()=>JSON.parse(actualRaw()));
+   assert.equal(await p.evaluate(()=>keyWrites),1);assert.equal(await p.evaluate(()=>testHub.uncertain),true);assert.equal(await p.evaluate(()=>testHub.db.cases[1].stage),'won');assert.equal(await p.evaluate(()=>testHub.db.cases[0].planDate),'');
+   if(action==='cancel'){assert.equal(saved.cases[1].stage,'lost');assert.equal(await p.locator('#d_cancel_reason').inputValue(),'合成保存結果不明');}else{assert.equal(saved.cases[0].planTime,'00:05');assert.equal(await p.locator('#d_plan_time').inputValue(),'00:05');}
+   if(fault==='read-replaced')assert.equal(saved.unknown.concurrent,'preserve-newer');
+   const requestsBefore=a.requests.length;
+   await click(p,action==='cancel'?'woncancelsave':'plan');await stale(p,'rushwin');
+   assert.equal(await p.evaluate(()=>testHub.save()),false);
+   await p.evaluate(async()=>{testHub.authorize();await testHub.gSyncAll();});
+   assert.equal(a.requests.length,requestsBefore);assert.equal(await p.evaluate(()=>keyWrites),1);assert.deepEqual(await p.evaluate(()=>JSON.parse(actualRaw())),saved);
+   assert.doesNotMatch((await p.evaluate(()=>toastWrites)).join('\n'),/取消を記録しました|の予定を入れました|受注にしました/);
+   assert.match(await p.locator('#manualTodoStorageNotice').innerText(),/保存・共有を停止/);
+   await p.evaluate(()=>restoreFault());await p.reload();assert.equal(await p.evaluate(()=>testHub.uncertain),false);assert.deepEqual(await read(p),saved);
+   await open(p,action==='cancel'?'synthetic-won':'synthetic-emergency');
+   if(action==='cancel'){assert.match(await p.locator('#main').innerText(),/受注後取消済み/);await stale(p,'woncancelsave');assert.equal((await read(p)).cases[1].cancelledAt,saved.cases[1].cancelledAt);}else assert.equal(await p.locator('#d_plan_time').inputValue(),'00:05');
+   await p.evaluate(async()=>{testHub.authorize();await testHub.gSyncAll();});assert.equal(await p.evaluate(()=>testHub.ui.gsync.rows.every(r=>r.ok)),true);assert.deepEqual((await read(p)).cases,saved.cases);
+   const rows=network.exports['案件'],n=action==='cancel'?2:1,key=action==='cancel'?'受注後取消日時':'予定時刻（日本時間）';assert.equal(rows[n][rows[0].indexOf(key)],action==='cancel'?saved.cases[1].cancelledAt:'00:05');
+   assert.deepEqual(a.errors,[]);await a.ctx.close();results.push(action+' actual write then '+fault+': no success toast, retry/save/sync blocked, reload restores latest once');
+  }
+  {
+   const a=await setup(db),{p}=a;await open(p,'synthetic-won');const stats=await p.evaluate(()=>testHub.vStats());await click(p,'woncancelask');assert.match(await p.locator('#main').innerText(),/元の受注月の受注件数・受注額には残ります/);await p.locator('#d_cancel_reason').fill('合成集計確認');await click(p,'woncancelsave');assert.equal(await p.evaluate(()=>testHub.vStats()),stats);
+   const backup=await read(p);await p.evaluate(({KEY,backup})=>localStorage.setItem(KEY,JSON.stringify(testHub.upgrade(JSON.parse(JSON.stringify(backup))))),{KEY,backup});await p.reload();assert.deepEqual(await read(p),backup);await open(p,'synthetic-won');assert.match(await p.locator('#main').innerText(),/受注後取消済み/);await a.ctx.close();results.push('Cancellation keeps original order/loss statistics and survives explicit JSON backup restore');
+  }
+  {
+   const a=await setup(db),{p}=a;await open(p,'synthetic-emergency');const before=await read(p);await p.locator('#d_plan').fill('');await click(p,'plan');assert.match(await p.locator('#toast').innerText(),/予定日を入れて/);await p.locator('#d_plan_time').fill('10:00');await click(p,'plan');assert.deepEqual(await read(p),before);await p.locator('#d_plan').fill('2026-11-11');await click(p,'plan');const booked=await read(p);await p.locator('#d_plan').fill('');await p.locator('#d_plan_time').fill('');await click(p,'plan');assert.deepEqual(await read(p),booked);await p.reload();await open(p,'synthetic-emergency');assert.equal(await p.locator('#d_plan_time').inputValue(),'10:00');await a.ctx.close();results.push('Empty date, time-only and clearing fields do not save or silently remove an appointment');
+  }
+  for(const fault of [null,'metadata','missing-grid','batch','expand','values']){
+   const original=[['old header'],['old mirror']],network={exports:{'案件':structuredClone(original)},fault,grid:{sheetId:17,columnCount:29,rowCount:3}},a=await setup(db,'Asia/Tokyo',390,network),{p}=a;
+   const outcome=await p.evaluate(async()=>{testHub.authorize();try{await testHub.sheetWrite('synthetic-own','案件',testHub.dataRows().cases);return 'ok'}catch(e){return e.message}});
+   assert.equal(network.caseClear,undefined);
+   if(fault){assert.notEqual(outcome,'ok');assert.deepEqual(network.exports['案件'],original);assert.equal(network.grid.columnCount,29);assert.equal(network.grid.rowCount,3);if(['metadata','missing-grid'].includes(fault))assert.equal(network.calls.filter(r=>r.method!=='GET').length,0);}
+   else{assert.equal(outcome,'ok');assert.equal(network.grid.columnCount,32);assert.equal(network.grid.rowCount,db.cases.length+1);assert.equal(network.exports['案件'][0].length,32);const count=network.grid.rowCount;await p.evaluate(()=>testHub.sheetWrite('synthetic-own','案件',[testHub.dataRows().cases[0]]));assert.equal(network.grid.rowCount,count);assert.equal(network.grid.columnCount,32);assert.equal(network.exports['案件'].length,1);}
+   assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('29-column bounded mirror '+(fault||'grow/repeat/header-only')+': no preclear and no partial mutation');
+  }
+  {
+   const a=await setup(db),{p}=a;await open(p,'synthetic-emergency');await p.locator('#d_plan').fill('2026-11-11');await p.locator('#d_plan_time').fill('10:00');await click(p,'plan');await open(p,'synthetic-won');await click(p,'woncancelask');await p.locator('#d_cancel_reason').fill('合成旧版互換');await click(p,'woncancelsave');
+   const stored=await read(p),newRows=await p.evaluate(()=>testHub.dataRows().cases),old=await setup(stored,'Asia/Tokyo',390,null,true);
+   const result=await old.p.evaluate(rows=>{const r=Object.fromEntries(rows[0].map((k,i)=>[k,rows[2][i]])),c=testHub.roCase(r,{s:{name:'合成旧版'}});return {stage:c.stage,ended:testHub.ended(c),save:testHub.save(),rows:testHub.dataRows().cases};},newRows);
+   assert.equal(result.stage,'lost');assert.equal(result.ended,true);assert.equal(result.save,true);assert.deepEqual((await read(old.p)).cases,stored.cases);assert.equal(result.rows[0].length,29);
+   const restored=await p.evaluate(rows=>{const r=Object.fromEntries(rows[0].map((k,i)=>[k,rows[2][i]])),c=testHub.roCase(r,{s:{name:'合成旧共有'}});return {stage:c.stage,ended:testHub.ended(c),reason:c.cancelReason};},result.rows);
+   assert.equal(restored.stage,'lost');assert.equal(restored.ended,true);assert.equal(restored.reason,'');assert.deepEqual(old.errors,[]);await old.ctx.close();await a.ctx.close();results.push('Actual v1.45 reads new lost export and preserves unknown local fields on save; its 29-column re-export loses added detail but stays ended');
   }
   for(const r of results)console.log('PASS '+r);console.log(JSON.stringify({passed:results.length,liveData:false,liveGoogleWrites:false}));
  }finally{await browser.close();await new Promise(r=>server.close(r));}
