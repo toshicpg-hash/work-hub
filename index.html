@@ -140,6 +140,16 @@ ol.hist li{overflow-wrap:anywhere}
 .chip{font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:99px;background:var(--sunk);color:var(--muted);white-space:nowrap}
 .chip.boss{background:var(--amber-soft);color:var(--amber)}
 .card.boss{border-left:4px solid var(--amber)}
+/* 設定の欄の開け閉め */
+details.fold{display:block}
+details.fold[open]>summary.foldh~*+*{margin-top:10px}
+details.fold>summary.foldh{list-style:none;cursor:pointer;min-height:44px;display:flex;align-items:center;gap:8px;padding:6px 0;-webkit-tap-highlight-color:transparent}
+details.fold>summary.foldh::-webkit-details-marker{display:none}
+details.fold>summary.foldh::before{content:"▶";font-size:13px;color:var(--muted);width:16px;flex:none}
+details.fold[open]>summary.foldh::before{content:"▼"}
+details.fold>summary.foldh h2{margin:0;font-size:17px}
+details.fold[open]>summary.foldh{margin-bottom:8px}
+details.fold>.panel>h3:first-child{display:none}
 .chip.co{background:var(--accent-soft);color:var(--accent)}
 .chip.nco{background:transparent;color:var(--muted);font-weight:400;border:1px dashed var(--line)}
 .chip.ro{background:var(--sunk);color:var(--muted);font-size:10px;font-weight:400;padding:0 6px}
@@ -308,7 +318,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.46.5" title="使い方マニュアルを開く">v1.46.5・10/29更新</a></span><span class="proto" hidden>試作・架空データ</span>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.46.6" title="使い方マニュアルを開く">v1.46.6・10/29更新</a></span><span class="proto" hidden>試作・架空データ</span>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -447,10 +457,10 @@ function upgrade(db){
 function exSection(){
   const m=ui.exDone?'<p class="note" role="status" style="margin:0">'+h(ui.exDone)+'</p>':'';
   if(!hasExamples())return m?'<section class="sec">'+m+'</section>':'';
-  return '<section class="sec"><div class="sec-h"><h2>練習用の例（架空）</h2></div><div class="panel">'+m+
+  return foldSec("examples","練習用の例（架空）",'<div class="panel">'+m+
     '<p class="note" style="margin:0">本番の入力を始める前に、練習用の例を消してください。</p>'+
     (ui.exAsk?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><b>（架空）と付いた案件・ToDo・領収書を消します。自分で入力した内容は消えません。</b><div class="row"><button class="btn danger" type="button" data-act="exdo">消す</button><button class="btn" type="button" data-act="exno">やめる</button></div></div>'
-      :'<div class="row"><button class="btn danger" type="button" data-act="exask">練習用の例（架空）を消す</button></div>')+'</div></section>';
+      :'<div class="row"><button class="btn danger" type="button" data-act="exask">練習用の例（架空）を消す</button></div>')+'</div>',!!(ui.exAsk||ui.exDone));
 }
 /* A new device starts empty (the practice examples were removed before real use began) */
 const emptyDB=()=>({schemaVersion:SCHEMA_VERSION,seq:0,rseq:0,settings:SETTINGS_DEFAULTS(),todos:[],cases:[],receipts:[]});
@@ -510,7 +520,7 @@ function roCase(r,x){
     orderDate:d("受注日"),jobNo:v("仕事番号"),handedDate:d("引渡日"),builtDate:d("施工完了日"),billDate:d("請求日"),billAmount:num("請求額"),payDue:d("入金予定日"),payments:paid?[{date:d("入金日")||d("請求日"),amount:paid}]:[],paidDate:stage==="paid"?d("入金日"):""});
 }
 function roBuild(data){
-  const ok=corpByCo(data,ui.corpCo||"all").filter(x=>x.ok);
+  const ok=corpByCo(data,corpCoNow()).filter(x=>x.ok);
   ui.corpRO=ok.flatMap(x=>x.cases.filter(r=>r["受付番号"]).map(r=>roCase(r,x)));
   ui.corpTodo=ok.flatMap(x=>{
     const exported=(x.todo||[]).filter(r=>r["内容"]);
@@ -708,7 +718,7 @@ function vHome(){
   const un=all.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   const ord=todos.filter(x=>x.order), ordOver=ord.filter(x=>x.due&&x.due<t).length;
   return (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）と付いた案件は練習用の例です。入力した内容はこの端末のブラウザにだけ残ります。</div>':'')+
-  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.46.5">マニュアル</a>へ。</p></div>')+
+  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.46.6">マニュアル</a>へ。</p></div>')+
   '<section class="sec">'+gSyncPanel()+'</section>'+
   (ord.length?'<button type="button" class="banner" data-nav="todo" style="text-align:left;width:100%;cursor:pointer'+(ordOver?';border-color:var(--red)':'')+'"><b>タスクリクエスト '+ord.length+'件</b>'+(ordOver?'<span style="color:var(--red);font-weight:700">（期限切れ '+ordOver+'件）</span>':'')+'<div class="note">'+ord.slice(0,3).map(x=>h(x.title)).join("・")+'</div></button>':'')+
   (D().admin||D().viewListId?corpView():'')+
@@ -1520,9 +1530,21 @@ function statsCases(){
   const co=statsCo();
   return co==="all"?out:out.filter(c=>(COMPANIES.includes(c.company)?[c.company]:c._pco).includes(co));
 }
+/* 数字の画面の下の設定の欄（v1.46.6）：見出しを押すと開け閉めできる。初めは閉じる。開け閉めは端末ごとに別のキーで覚える。
+   保存後のメッセージやエラー・確認が出ている欄は開いたままにする */
+const FOLDKEY="workhub_fold_v1";
+const foldGet=()=>{try{const v=JSON.parse(localStorage.getItem(FOLDKEY)||"{}");return v&&typeof v==="object"?v:{}}catch(e){return {}}};
+function foldSet(k,open){try{const v=foldGet();v[k]=!!open;localStorage.setItem(FOLDKEY,JSON.stringify(v))}catch(e){}}
+function foldSec(key,title,body,force){
+  if(!body)return "";
+  const open=force||foldGet()[key];
+  return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
+}
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
+/* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
+const corpCoNow=()=>statsGmCo()||ui.corpCo||"all";
 function statsNote(){
   if(!D().admin&&!D().viewListId)return "";
   const c=ui.corp;
@@ -1568,7 +1590,7 @@ function vStats(){
     reasons.map(([r,n])=>'<div class="brk"><span>'+r+'</span><span class="bar"><i style="width:'+(n/maxR*100)+'%"></i></span><span class="num">'+n+'件</span></div>').join("")+'</div></section>'+
   '<section class="sec"><div class="sec-h"><h2>依頼の種類別</h2></div><div class="panel"><div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>種類</th><th>受注</th><th>失注</th></tr></thead><tbody>'+
     byType.map(([l,w,x])=>'<tr><td>'+l+'</td><td class="num">'+w+'件</td><td class="num">'+x+'件</td></tr>').join("")+'</tbody></table></div></div></section>'+
-  '<section class="sec"><div class="sec-h"><h2>ToDoの期限（仮）</h2></div><form id="setForm" class="panel">'+
+  foldSec("todoDays","ToDoの期限（仮）",'<form id="setForm" class="panel">'+
     '<p class="note" style="margin:0">自動で出るToDoの期限日数です。使いながら調整してください。</p>'+
     '<div class="form">'+
     '<label class="f">受付 → 日程調整まで（日）<input type="number" min="0" id="s_schedule" value="'+S.schedule+'"></label>'+
@@ -1580,19 +1602,19 @@ function vStats(){
     '<label class="f">入金予定日の初期値<select id="s_payRule">'+Object.entries(PAY_RULES).map(([k,l])=>'<option value="'+k+'"'+(S.payRule===k?' selected':'')+'>'+l+'</option>').join("")+'</select></label></div>'+
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
-    '</form></section>'+
+    '</form>')+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.46.5" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a></section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.46.6" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a></section>';
 }
 function gSettings(){
-  const head='<section class="sec"><div class="sec-h"><h2>Googleカレンダー連携</h2></div>';
-  if(!G.cals)return head+'<div class="panel">'+gSyncPanel()+'<p class="note" style="margin:0">「Googleとまとめて同期」でログインすると、表示するカレンダーと登録先を選べます。ログインはアプリを開くたびに必要です（PAPA HUBと同じ）。</p></div></section>';
+  const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
+  if(!G.cals)return F('<div class="panel">'+gSyncPanel()+'<p class="note" style="margin:0">「Googleとまとめて同期」でログインすると、表示するカレンダーと登録先を選べます。ログインはアプリを開くたびに必要です（PAPA HUBと同じ）。</p></div>');
   const show=new Set(gShowIds()), w=gWriteCal();
-  return head+'<form id="gsetForm" class="panel">'+
+  return F('<form id="gsetForm" class="panel">'+
     '<fieldset class="gcals" style="border:0;padding:0;margin:0"><legend class="note">予定画面に表示するカレンダー</legend>'+
     G.cals.map((c,i)=>!gReadable(c)?"":'<label><input type="checkbox" name="gshow" value="'+i+'"'+(show.has(c.id)?' checked':'')+'>'+h(c.name)+'</label>').join("")+'</fieldset><p class="note" style="margin:0">社長のマイカレンダーは、このアプリでは読み込みません。社員自身のカレンダーと共有のCPG HUBは表示できます。</p>'+
     '<label class="f">案件の日程を登録するカレンダー<select id="g_write">'+(gWritable().map(c=>'<option value="'+h(c.id)+'"'+(w&&w.id===c.id?' selected':'')+'>'+h(c.name)+'</option>').join("")||'<option value="">書き込めるカレンダーがありません</option>')+'</select></label>'+
-    '<div class="row"><button class="btn pri" type="submit">保存する</button></div></form></section>';
+    '<div class="row"><button class="btn pri" type="submit">保存する</button></div></form>');
 }
 
 
@@ -2343,7 +2365,7 @@ function corpTodos(x,k){
     orders+'<p class="fk" style="margin:10px 0 0">社員のToDo</p>'+todos+'</details>';
 }
 function corpView(){
-  const c0=ui.corp, co=ui.corpCo||"all";
+  const c0=ui.corp, co=corpCoNow(), gmCo=statsGmCo();
   const c=c0&&c0.data?Object.assign({},c0,{data:corpByCo(c0.data,co)}):c0; /* 会社の絞り込み */
   let body="";
   if(c&&c.data){
@@ -2373,7 +2395,7 @@ function corpView(){
     (gl?'<p class="note num" style="margin:0">'+h(gl)+'</p>':'')+
     '<button class="btn" type="button" data-act="corp"'+(c&&c.busy?' disabled':'')+'>'+(c&&c.busy?'読み込んでいます…':'社員の記録を読み込む'+(D().admin?'（'+D().staff.filter(s=>!s.removed).length+'人）':''))+'</button>'+
     (D().admin?'<div class="row"><button class="btn sm" type="button" data-act="dreload"'+(ui.dbusy?' disabled':'')+'>一覧を読み直す</button><span class="note">ほかの端末で追加した社員を出します</span></div>':'')+
-    (c&&c.data?'<div class="seg" role="group" aria-label="会社">'+[["all","全社"],...COMPANIES.map(x=>[x,x])].map(([k,l])=>'<button type="button" data-cco="'+k+'" aria-pressed="'+((ui.corpCo||"all")===k)+'">'+l+'</button>').join("")+'</div>':'')+
+    (c&&c.data?(gmCo?'<p class="note" style="margin:0">'+coChip(gmCo)+' GMの会社（'+h(gmCo)+'）の社員の分です</p>':'<div class="seg" role="group" aria-label="会社">'+[["all","全社"],...COMPANIES.map(x=>[x,x])].map(([k,l])=>'<button type="button" data-cco="'+k+'" aria-pressed="'+((ui.corpCo||"all")===k)+'">'+l+'</button>').join("")+'</div>'):'')+
     (ui.dview==="corp"?dMsgList():'')+
     (c&&c.err?'<p class="note" style="margin:0;color:var(--red)">'+h(c.err)+'</p>':'')+(c&&c.at?(c.kept?'<div class="banner" role="status">'+keptNote()+'</div>':'<p class="note" style="margin:0">'+md(ymd(new Date(c.at)))+' '+hm(new Date(c.at))+'に読み込み</p>'):'')+body+'</section>';
 }
@@ -2422,7 +2444,10 @@ function dSettings(){
      '<p class="note" style="margin:0">全社・GMの役割の人だけが使います。社長から届いた「見る人用のリンク」を貼り付けて「つなぐ」を押してください。</p>'+
      '<label class="f">見る人用のリンク<input type="url" id="d_view" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://docs.google.com/spreadsheets/d/…/edit"></label>'+
      '<div class="row"><button class="btn pri" type="button" data-act="dvlink">つなぐ</button></div>')+'</div>';
-  return '<section class="sec"><div class="sec-h"><h2>記録の送り先（Googleドライブ）</h2></div>'+msg+(d.admin?'':mine+view)+admin+'</section>';
+  const force=!!(msg||ui.dUnshare!=null||ui.dRole!=null||ui.dAsk||ui.dbusy);
+  return (msg?'<section class="sec">'+msg+'</section>':'')+
+    (d.admin?'':foldSec("dataSheet","記録の送り先（Googleドライブ）",mine,force)+foldSec("dataView","会社の動きを見る（管理者用）",view,force))+
+    foldSec("dataAdmin","管理（社長用）",admin,force);
 }
 
 const main=document.getElementById("main");
@@ -2472,6 +2497,7 @@ function rcvAsk(el,a,d,r){
 }
 const val=id=>{const el=document.getElementById(id);return el?el.value:""};
 
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.matches&&d.matches("details[data-fold]")&&!d.hasAttribute("data-forced"))foldSet(d.dataset.fold,d.open)},true);
 document.addEventListener("click",e=>{
   if(caseSaveGuard()){e.preventDefault();return}
   const el=e.target.closest("button,[data-open]");
