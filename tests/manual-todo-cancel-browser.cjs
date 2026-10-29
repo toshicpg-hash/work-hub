@@ -6,8 +6,9 @@ const hook='window.testHub={get db(){return DB},ui,go,emptyDB,CASE_DEFAULTS,save
 let server,browser,origin;
 const staleTitle='架空の古い社員リクエスト 1,000円',freshTitle='架空の新確認 1,800円・延期希望／合意と実入金未確認';
 function sheetsFixture(request,network){
- const u=new URL(request.url()),match=u.pathname.match(/^\/v4\/spreadsheets\/([^/]+)(.*)$/);if(!match)return null;const [,id,tail]=match;
+ const u=new URL(request.url()),match=u.pathname.match(/^\/v4\/spreadsheets\/([^/:]+)(.*)$/);if(!match)return null;const [,id,tail]=match;
  if(request.method()!=='GET'){
+  if(id==='own-sheet'&&tail===':batchUpdate')return {};
   const decoded=decodeURIComponent(tail);if(id==='own-sheet'&&decoded.startsWith('/values/')){if(request.method()==='PUT'){const tab=decoded.slice('/values/'.length).split('!')[0].replace(/^'|'$/g,'');network.exports[tab]=request.postDataJSON().values;}return {};}
   network.unexpected.push(request.url());return {};
  }
@@ -15,7 +16,7 @@ function sheetsFixture(request,network){
   'staff-list':{'社員':[['氏名','Gmail','シートID','シートのリンク','状態','追加日','最終同期','共有ID','会社','役割','GMの会社'],['架空の担当A','synthetic@example.invalid','employee-sheet','','共有中','2026-10-20','','','CP','社員','']]},
   'employee-sheet':{'案件':[['受付番号']],'入金':[['受付番号']],'立替':[['ID']],'情報':[['項目','値'],['最終同期','2026-10-27 12:00']],'ToDo':[['内容','期限','担当','受付番号','物件','部屋','種類','状態'],[staleTitle,'2026-10-26','架空の担当A','','','','リクエスト','期限切れ'],['別の架空手入力','2026-10-30','架空の担当A','','','','手入力','今後']],'指示':[['指示ID','内容','期限','指示日','状態','完了日','完了メモ'],['request-ledger-one',freshTitle,'2026-10-30','2026-10-25',network.requestState,'','']]}
  };
- if(!tail){const names=id==='own-sheet'?['案件','入金','立替','情報','ToDo']:Object.keys(tables[id]||{});return {sheets:names.map(title=>({properties:{title}}))};}
+ if(!tail){const names=id==='own-sheet'?['案件','入金','立替','情報','ToDo']:Object.keys(tables[id]||{});return {sheets:names.map((title,i)=>({properties:{title,sheetId:i,gridProperties:{rowCount:1000,columnCount:32}}}))};}
  if(tail==='/values:batchGet')return {valueRanges:u.searchParams.getAll('ranges').map(r=>{const name=r.replace(/^'|'$/g,'');return {range:r,values:tables[id]?.[name]||[]};})};
  network.unexpected.push(request.url());return {};
 }
@@ -64,7 +65,7 @@ async function cancel(p){await p.locator('#manualTodoCancelSave').click();await 
   }
   {
    const syncDb=structuredClone(db);Object.assign(syncDb.settings.data,{admin:true,sheetId:'own-sheet',folder:'synthetic-folder',listId:'staff-list',staff:[]});syncDb.todos=syncDb.todos.filter(t=>!t.order);const network={exports:{},requestState:'未完了',unexpected:[]},a=await setup(syncDb,390,network),{p}=a;await open(p);await cancel(p);const localCancelled=(await read(p)).todos[0];await p.evaluate(()=>testHub.gSyncAll());assert.equal(await p.evaluate(()=>testHub.ui.gsync.busy),false);assert.deepEqual(network.unexpected,[]);assert.equal(network.exports.ToDo.some(r=>r.includes('架空の旧確認 1,000円')),false);await todo(p);assert.equal(await p.locator('.card').filter({hasText:freshTitle}).count(),1);assert.equal(await p.locator('.card').filter({hasText:staleTitle}).count(),0);assert.equal(await p.evaluate(()=>testHub.ui.corpTodo.filter(t=>t.sourceRequestId==='request-ledger-one').length),1);assert.equal((await read(p)).todos[0].done,false);assert.equal((await read(p)).todos[0].cancelled,true);
-   network.requestState='取り消し';await p.evaluate(()=>testHub.gSyncAll());await todo(p);assert.equal(await p.locator('.card').filter({hasText:freshTitle}).count(),0);assert.equal(await p.locator('.card').filter({hasText:staleTitle}).count(),0);network.requestState='未完了';await p.evaluate(()=>testHub.gSyncAll());await todo(p);assert.equal(await p.locator('.card').filter({hasText:freshTitle}).count(),1);await p.reload();await todo(p);assert.equal(await p.locator('.card').filter({hasText:freshTitle}).count(),1);assert.deepEqual((await read(p)).todos[0],localCancelled);assert(a.requests.filter(r=>r.method!=='GET').every(r=>r.url.includes('/own-sheet/')));assert.deepEqual(network.unexpected,[]);assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('Full simulated sync exports no cancelled manual; restored master request displays once with latest amount/date, survives repeat sync/reload, and does not write employee/calendar data');
+   network.requestState='取り消し';await p.evaluate(()=>testHub.gSyncAll());await todo(p);assert.equal(await p.locator('.card').filter({hasText:freshTitle}).count(),0);assert.equal(await p.locator('.card').filter({hasText:staleTitle}).count(),0);network.requestState='未完了';await p.evaluate(()=>testHub.gSyncAll());await todo(p);assert.equal(await p.locator('.card').filter({hasText:freshTitle}).count(),1);await p.reload();await todo(p);assert.equal(await p.locator('.card').filter({hasText:freshTitle}).count(),1);assert.deepEqual((await read(p)).todos[0],localCancelled);assert(a.requests.filter(r=>r.method!=='GET').every(r=>(/\/own-sheet(?:\/|:batchUpdate)/.test(r.url))));assert.deepEqual(network.unexpected,[]);assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('Full simulated sync exports no cancelled manual; restored master request displays once with latest amount/date, survives repeat sync/reload, and does not write employee/calendar data');
   }
   const report={passed:true,scenarios:results,actualCompanyData:false,actualGoogleWrites:false,actualPhones:false};fs.writeFileSync(path.join(out,'manual-cancel-browser-results.json'),JSON.stringify(report,null,2));for(const r of results)console.log('PASS '+r);
  }finally{await browser.close();await new Promise(r=>server.close(r));}
