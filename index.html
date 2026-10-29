@@ -1517,19 +1517,22 @@ function statsCases(){
     for(const x of ui.corp.data)if(x.ok)for(const r of x.cases||[]){const no=String(r["受付番号"]||"");if(!no)continue;
       const k=no+"|"+flatName(x.s.name);if(seen.has(k))continue;seen.add(k);out.push(Object.assign(roCase(r,x),{_pco:coList(x.s)}))}
   }
-  const co=ui.sCo||"all";
+  const co=statsCo();
   return co==="all"?out:out.filter(c=>(COMPANIES.includes(c.company)?[c.company]:c._pco).includes(co));
 }
+/* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
+const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
+const statsCo=()=>statsGmCo()||ui.sCo||"all";
 function statsNote(){
   if(!D().admin&&!D().viewListId)return "";
   const c=ui.corp;
-  if(c&&Array.isArray(c.data))return '<p class="note" style="margin:0">社員の記録（'+corpAtText()+' 読み込み'+(c.kept?'・前回の内容':'')+'）を含めた会社全体の数字です。'+(c.kept?'最新にするには「Googleとまとめて同期」を押してください。':'')+'</p>'+(c.err?'<p class="note" style="margin:0;color:var(--red)">'+h(c.err)+'（数字は前回読み込んだ内容です）</p>':'');
+  if(c&&Array.isArray(c.data))return '<p class="note" style="margin:0">社員の記録（'+corpAtText()+' 読み込み'+(c.kept?'・前回の内容':'')+'）を含めた'+(statsGmCo()?h(statsGmCo())+'の':'会社全体の')+'数字です。'+(c.kept?'最新にするには「Googleとまとめて同期」を押してください。':'')+'</p>'+(c.err?'<p class="note" style="margin:0;color:var(--red)">'+h(c.err)+'（数字は前回読み込んだ内容です）</p>':'');
   return '<div class="banner" role="status"><b>社員の記録はまだ読み込んでいません。</b>下の数字は、この端末で入力した案件だけです（0件でも、社員の案件が無いとは限りません）。「Googleとまとめて同期」を押すと、社員の分も入ります。'+(c&&c.err?'<div style="color:var(--red)">'+h(c.err)+'</div>':'')+'</div>';
 }
 function vStats(){
   const now=new Date(), mk=now.getFullYear()+"-"+pad(now.getMonth()+1);
   const inM=s=>s&&s.startsWith(mk);
-  const all=statsCases(), sco=ui.sCo||"all";
+  const all=statsCases(), sco=statsCo(), gmCo=statsGmCo();
   const sent=all.filter(c=>inM(c.estSentDate));
   const won=all.filter(c=>inM(c.orderDate));
   const lost=all.filter(c=>inM(c.lossDate));
@@ -1546,7 +1549,7 @@ function vStats(){
   const byTanTbl=tans.length?'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>担当</th><th>見積提出</th><th>受注</th><th>受注額</th><th>未入金</th></tr></thead><tbody>'+
     tans.map(n=>{const w=won.filter(c=>tl(c)===n),u=un.filter(c=>tl(c)===n);
       return '<tr><td>'+personBadge(n)+'</td><td class="num">'+sent.filter(c=>tl(c)===n).length+'件</td><td class="num">'+w.length+'件</td><td class="num">'+yen(w.reduce((s,c)=>s+(Number(estOf(c))||0),0))+'</td><td class="num">'+u.length+'件 '+yen(u.reduce((s,c)=>s+remainOf(c),0))+'</td></tr>'}).join("")+'</tbody></table></div>':'<p class="note" style="margin:0">今月の見積・受注と未入金はありません</p>';
-  const coSegStats='<div class="seg" role="group" aria-label="会社">'+[["all","全社"],...COMPANIES.map(x=>[x,x])].map(([k,l])=>'<button type="button" data-sco="'+k+'" aria-pressed="'+(sco===k)+'">'+l+'</button>').join("")+'</div>';
+  const coSegStats=gmCo?'<p class="note" style="margin:0">'+coChip(gmCo)+' GMの会社（'+h(gmCo)+'）の数字です</p>':'<div class="seg" role="group" aria-label="会社">'+[["all","全社"],...COMPANIES.map(x=>[x,x])].map(([k,l])=>'<button type="button" data-sco="'+k+'" aria-pressed="'+(sco===k)+'">'+l+'</button>').join("")+'</div>';
   const group=key=>{const m=new Map();for(const c of un){const k=key(c);const g=m.get(k)||{n:0,sum:0,late:0};g.n++;g.sum+=remainOf(c);g.late=Math.max(g.late,lateDays(c));m.set(k,g)}return [...m.entries()].sort((a,b)=>b[1].late-a[1].late||b[1].sum-a[1].sum)};
   const row=([k,g])=>'<tr><td>'+h(k)+'</td><td class="num">'+g.n+'件</td><td class="num">'+yen(g.sum)+'</td><td class="num"'+(g.late?' style="color:var(--red);font-weight:700"':'')+'>'+(g.late?g.late+'日':'—')+'</td></tr>';
   const tbl=(head,rows)=>'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>'+head+'</th><th>件数</th><th>未入金</th><th>最長の遅れ</th></tr></thead><tbody>'+rows+'</tbody></table></div>';

@@ -78,6 +78,29 @@ async function main(){
   assert.equal((await sum(p))['見積提出'],'1件');
   assert.deepEqual(errors,[]);await c.close();
  });
+ await check('GMの端末：GMの会社に固定し、ほかの会社は選べない',async()=>{
+  const {c,p,errors}=await page(400,{admin:false});
+  await p.evaluate(({staff,data})=>{const d=ST.db.settings.data;d.viewListId='viewList0000000000000001';d.viewEmail='test-b@example.com';
+   ST.ui.viewList=[Object.assign({},staff[0],{role:'社員'}),Object.assign({},staff[1],{role:'GM',gmCo:'CPY'})];
+   const dd=JSON.parse(JSON.stringify(data));ST.ui.corp={data:dd,at:Date.now()};ST.ui.sCo='CP';ST.roBuild(dd);ST.go('stats')},{staff,data});
+  const t=await p.textContent('main');
+  assert.ok(t.includes('GMの会社（CPY）の数字です')&&t.includes('を含めたCPYの数字です'),t.slice(0,300));
+  assert.equal(await p.$$eval('[data-sco]',a=>a.length),0,'company buttons are not shown on a GM device');
+  const s=await sum(p);
+  assert.equal(s['見積提出'],'2件',JSON.stringify(s));assert.equal(s['受注'],'2件');assert.equal(await unpaidHead(p),'0件 0円');
+  assert.ok(await overflow(p)<=0);
+  assert.deepEqual(errors,[]);await c.close();
+ });
+ await check('全社の端末：社長と同じく全社から選べる',async()=>{
+  const {c,p,errors}=await page(400,{admin:false});
+  await p.evaluate(({staff,data})=>{const d=ST.db.settings.data;d.viewListId='viewList0000000000000001';d.viewEmail='test-z@example.com';
+   ST.ui.viewList=staff.concat([{name:'全社 太郎',email:'test-z@example.com',sheetId:'sheetZ00000000000000000009',company:'CP',role:'全社',gmCo:'CP'}]);
+   const dd=JSON.parse(JSON.stringify(data));ST.ui.corp={data:dd,at:Date.now()};ST.roBuild(dd);ST.go('stats')},{staff,data});
+  assert.deepEqual(await p.$$eval('[data-sco]',a=>a.map(x=>x.dataset.sco)),['all','CP','CPY','AT']);
+  assert.equal((await sum(p))['見積提出'],'5件');
+  assert.ok((await p.textContent('main')).includes('を含めた会社全体の数字です'));
+  assert.deepEqual(errors,[]);await c.close();
+ });
  await check('社員の端末は今まで通り自分の分だけ（注記なし）',async()=>{
   const {c,p,errors}=await page(400,{admin:false});
   const t=await p.textContent('main');
