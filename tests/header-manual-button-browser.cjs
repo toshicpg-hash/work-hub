@@ -19,10 +19,12 @@ async function main(){
    await p.goto(origin+'/');
    if(proto)await p.evaluate(()=>{document.querySelector('.proto').hidden=false});
    const r=await p.evaluate(()=>{const q=s=>document.querySelector(s).getBoundingClientRect(),m=q('.mbtn'),n=q('[data-act=new]'),v=q('.ver'),d=document.documentElement,t=document.querySelector('.top-in');
-    return {h:m.height,text:document.querySelector('.mbtn').textContent,href:document.querySelector('.mbtn').getAttribute('href'),
+    const pl=q('.mpill');
+    return {h:m.height,ph:pl.height,nh:n.height,emoji:/📖/.test(document.querySelector('.mbtn').textContent),text:document.querySelector('.mbtn').textContent,href:document.querySelector('.mbtn').getAttribute('href'),
      clearOfNew:m.right<=n.left,clearOfVer:v.right<=m.left&&v.width>0,sameRow:Math.abs((m.top+m.bottom)/2-(n.top+n.bottom)/2)<4,
      overflow:Math.max(d.scrollWidth-d.clientWidth,t.scrollWidth-t.clientWidth)}});
    assert.ok(r.h>=44,JSON.stringify(r));assert.ok(r.text.includes('使い方'));
+   assert.ok(r.ph<=30&&r.ph<r.nh,'looks smaller than 「＋ 受付」: '+JSON.stringify(r));assert.ok(!r.emoji);
    assert.equal(r.href,'./manual.html?v='+ver);
    assert.ok(r.clearOfNew&&r.clearOfVer&&r.sameRow,JSON.stringify(r));
    assert.ok(r.overflow<=0,JSON.stringify(r));
@@ -31,6 +33,18 @@ async function main(){
    assert.deepEqual(errors,[]);await c.close();
   });
  }
+ await check('社長の端末では「使い方」から管理者向けのマニュアルが開く',async()=>{
+  const c=await browser.newContext({viewport:{width:400,height:700},serviceWorkers:'block'});
+  await c.addInitScript(()=>{if(!sessionStorage.getItem('s')){localStorage.setItem('workhub_proto_v1',JSON.stringify({cases:[],todos:[],receipts:[],seq:0,settings:{data:{admin:true,staff:[]}}}));sessionStorage.setItem('s','1')}});
+  await c.route(/googleapis|accounts\.google|fonts\./,r=>r.fulfill({status:200,body:''}));
+  const p=await c.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));
+  await p.goto(origin+'/');
+  assert.equal(await p.getAttribute('.mbtn','href'),'./manual-admin.html?v='+ver);
+  await p.click('.mbtn');await p.waitForURL(/manual-admin\.html\?v=/);
+  assert.ok((await p.textContent('h1')).includes('管理者向け'));
+  assert.ok(await p.isVisible('a[href="./manual.html"]'),'link back to the employee manual');
+  assert.deepEqual(errors,[]);await c.close();
+ });
  console.log('ALL PASS',results.length);
 }
 main().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();if(server)server.close()});
