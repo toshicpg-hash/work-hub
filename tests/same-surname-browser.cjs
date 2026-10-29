@@ -3,7 +3,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
-const hook='window.SS={get db(){return DB},ui,go,render,roBuild,save};';
+const hook='window.SS={get db(){return DB},ui,go,render,roBuild,save,csvText,gDesc,tantouLabel,CASE_DEFAULTS};';
 const TODAY='2026-10-29';
 const staff=[
  {name:'黒木 試験一',email:'test-a@example.com',sheetId:'sheetA00000000000000000001',company:'CP',role:'全社',gmCo:'',lastSync:TODAY+' 08:10'},
@@ -90,22 +90,42 @@ async function main(){
   });
   assert.deepEqual(errors,[]);await c.close();
  }
- await check('同じ姓が1人だけなら今まで通り姓だけ',async()=>{
+ await check('HUBの担当と同じ姓（黒木）は1人でも姓＋名の1字、ほかの姓は1人なら姓だけ',async()=>{
+  const two=[staff[0],staff[2],{name:'例題 次郎',email:'test-d@example.com',sheetId:'sheetD00000000000000000004',company:'AT',role:'社員',lastSync:TODAY+' 09:00'}];
   const {c,p,errors}=await page(400,{staffList:[staff[0],staff[2]]});
   await p.evaluate(()=>SS.go('todo',{tPeriod:'all'}));
-  const tt=await p.$$eval('[data-tt]',a=>a.map(x=>x.dataset.tt));
-  assert.ok(tt.includes('黒木')&&!tt.includes('黒木試'),tt.join());
-  const bs=await p.$$eval('main .pbadge',a=>[...new Set(a.map(x=>x.textContent))]);
-  assert.ok(bs.includes('黒木')&&!bs.some(x=>x.startsWith('黒木試')),bs.join());
+  let tt=await p.$$eval('[data-tt]',a=>a.map(x=>x.dataset.tt));
+  assert.ok(tt.includes('黒木試')&&!tt.includes('黒木')&&tt.includes('例題'),tt.join());
+  await c.close();
+  const q=await page(400,{staffList:two});
+  await q.p.evaluate(()=>SS.go('todo',{tPeriod:'all'}));
+  tt=await q.p.$$eval('[data-tt]',a=>a.map(x=>x.dataset.tt));
+  assert.ok(tt.includes('例題花')&&tt.includes('例題次')&&!tt.includes('例題'),tt.join());
+  assert.deepEqual(errors,[]);assert.deepEqual(q.errors,[]);await q.c.close();
+ });
+ await check('受付の担当：HUBの担当は今までの値「黒木」で保存し、表示は区別した名前',async()=>{
+  const {c,p,errors}=await page(400);
+  await p.evaluate(()=>SS.go('new'));
+  const o=await p.$$eval('#n_tantou option',a=>a.map(x=>x.value+'='+x.textContent));
+  assert.ok(o.includes('黒木=黒木試')&&o.includes('黒木　見本二=黒木見')&&o.includes('トシ=トシ'),o.join());
   assert.deepEqual(errors,[]);await c.close();
  });
- await check('社員の端末：担当の選択肢に自分の氏名を足す',async()=>{
+ await check('社員の端末：自分の姓のHUBの担当は自分の区別した名前で出る',async()=>{
   const {c,p,errors}=await page(400,{admin:false,staffList:[],rsName:'黒木 見本二'});
   await p.evaluate(()=>SS.go('new'));
-  const o=await p.$$eval('#n_tantou option',a=>a.map(x=>x.textContent));
-  assert.ok(o.includes('黒木')&&o.includes('トシ')&&o.includes('黒木 見本二'),o.join());
+  const o=await p.$$eval('#n_tantou option',a=>a.map(x=>x.value+'='+x.textContent));
+  assert.ok(o.includes('黒木=黒木見')&&o.includes('トシ=トシ')&&o.length===2,o.join());
   const raw=await p.evaluate(()=>localStorage.getItem('workhub_proto_v1')||'');
-  assert.ok(!raw.includes('黒木試'),'labels are not written to saved data');
+  assert.ok(!raw.includes('黒木見'),'labels are not written to saved data');
+  assert.deepEqual(errors,[]);await c.close();
+ });
+ await check('帳票・外に出す名前はフルネーム（Access用CSV・カレンダーの説明）',async()=>{
+  const {c,p,errors}=await page(400,{admin:false,staffList:[],rsName:'黒木 見本二'});
+  const r=await p.evaluate(()=>{const c=Object.assign(SS.CASE_DEFAULTS(),{id:'U-0009',company:'CP',type:'taikyo',stage:'won',client:'試験管理',clientKind:'管理会社',property:'試験荘',room:'1',tantou:'黒木',receivedAt:'2026-10-20T00:00:00.000Z',orderDate:'2026-10-25'});
+   return {csv:SS.csvText([c]),desc:SS.gDesc(c),label:SS.tantouLabel('黒木')}});
+  assert.ok(r.csv.split('\n')[1].includes(',黒木 見本二,'),r.csv);
+  assert.ok(r.desc.includes('担当：黒木 見本二'),r.desc);
+  assert.equal(r.label,'黒木見');
   assert.deepEqual(errors,[]);await c.close();
  });
  console.log('ALL PASS',results.length);
