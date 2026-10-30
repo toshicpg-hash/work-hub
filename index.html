@@ -326,8 +326,8 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.47.0" title="使い方マニュアルを開く">v1.47.0・10/30更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.47.0" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.47.1" title="使い方マニュアルを開く">v1.47.1・10/30更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.47.1" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -386,6 +386,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 <script src="./receipt-files.js?v=1.43"></script>
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
+<script src="./request-box-employee.js?v=1.47.1"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -668,12 +669,13 @@ function genTodos(){
     if(lateDays(c))out.push(Object.assign({},base,{title:"入金を確認する（"+lateDays(c)+"日遅れ・残 "+yen(remainOf(c))+"）",due:c.payDue}));
   }
   for(const t of DB.todos)if(!t.done&&!t.cancelled)out.push(Object.assign({manual:true},t));
+  out.push(...requestBoxTasks());
   rcptNotices().forEach((title,i)=>out.push({id:"rc"+i,title,due:todayS(),tantou:RS().name||"自分",nav:"rcpt"}));
   return out.sort((a,b)=>(a.due||"9").localeCompare(b.due||"9"));
 }
-function dueLabel(due){
+function dueLabel(due,day=todayS()){
   if(!due)return '<span class="due">期限なし</span>';
-  const n=diffDays(due,todayS());
+  const n=diffDays(due,day);
   if(n<0)return '<span class="due over">'+(-n)+'日超過（期限'+md(due)+'）</span>';
   if(n===0)return '<span class="due today">今日まで</span>';
   return '<span class="due">'+md(due)+'まで（あと'+n+'日）</span>';
@@ -702,13 +704,14 @@ function caseCard(c){
 }
 /* Presentation only: every ToDo card has its own left-aligned deadline row. */
 function todoCardHeading(t,badge=""){
-  return '<div class="todo-title">'+badge+'<span class="ttl">'+h(t.title)+'</span></div><div class="todo-deadline">'+dueLabel(t.due)+'</div>';
+  return '<div class="todo-title">'+badge+'<span class="ttl">'+h(t.title)+'</span></div><div class="todo-deadline">'+dueLabel(t.due,isReqTodo(t)?requestTodayS():todayS())+'</div>';
 }
 function todoRow(t){
   const c=t.caseId?findCase(t.caseId):null;
   if(t.ro)return '<div class="card'+(isReqKind(t.kind)?' boss':'')+'" style="cursor:default">'+
     todoCardHeading(t,isReqKind(t.kind)?'<span class="chip boss">'+(t.from?h(t.from)+'から':'リクエスト')+'</span>':'')+
     '<div class="row note">'+personBadge(t.tantou)+(t.property?'<span>'+h(t.property)+' '+h(t.room)+'</span>':'')+roChip()+'<span class="sp"></span>'+(c?'<button class="btn sm" type="button" data-open="'+h(c.id)+'">案件を開く</button>':'')+'</div></div>';
+  if(t.boxRequest)return requestBoxRow(t);
   if(t.order)return '<div class="card boss" style="cursor:default">'+
     todoCardHeading(t,'<span class="chip boss">リクエスト</span>')+
     '<div class="row note">'+(t.orderedAt?'<span>リクエスト '+h(md(t.orderedAt))+'</span>':'')+'<span class="sp"></span><button class="btn sm" type="button" data-odone="'+h(t.id)+'">完了</button></div>'+
@@ -730,7 +733,7 @@ function vHome(){
   const un=all.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   const ord=todos.filter(x=>x.order), ordOver=ord.filter(x=>x.due&&x.due<t).length;
   return (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）と付いた案件は練習用の例です。入力した内容はこの端末のブラウザにだけ残ります。</div>':'')+
-  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.47.0">マニュアル</a>へ。</p></div>')+
+  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.47.1">マニュアル</a>へ。</p></div>')+
   '<section class="sec">'+gSyncPanel()+'</section>'+
   (ord.length?'<button type="button" class="banner" data-nav="todo" style="text-align:left;width:100%;cursor:pointer'+(ordOver?';border-color:var(--red)':'')+'"><b>タスクリクエスト '+ord.length+'件</b>'+(ordOver?'<span style="color:var(--red);font-weight:700">（期限切れ '+ordOver+'件）</span>':'')+'<div class="note">'+ord.slice(0,3).map(x=>h(x.title)).join("・")+'</div></button>':'')+
   (D().admin||D().viewListId?corpView():'')+
@@ -1035,20 +1038,22 @@ function caseDelete(c){
 function vTodo(){
   const t=todayS(), wk=addDays(t,7);
   const ro=roTodos(), lab=x=>x.ro?x.tantou:tantouLabel(x.tantou), tans=[...new Set(tantouOptions().map(o=>o.l).concat(DB.todos.map(x=>x.tantou).filter(Boolean).map(tantouLabel),ro.map(x=>x.tantou)))];
-  /* タスクリクエスト（v1.46.9）：未完了のリクエストは期限に関係なく一番上にまとめる（期間の絞り込みでは隠さない。担当の絞り込みは効かせる）。
+  /* タスクリクエスト：JSTの今日+5日までと期限なしを表示し、+6日以降は折りたたむ。すべてでは全件。担当の絞り込みは維持。
      自分のリクエスト（order）と、読み込んだ社員のリクエスト（ro・種類「リクエスト」）の両方。取消・完了は genTodos／roBuild の時点で入らない */
   const base=genTodos().concat(ro).filter(x=>ui.tTantou==="all"||lab(x)===ui.tTantou);
   const reqs=base.filter(isReqTodo).sort((a,b)=>(a.due||"9").localeCompare(b.due||"9"));
   let list=base.filter(x=>!isReqTodo(x));
   if(ui.tPeriod==="today")list=list.filter(x=>x.due&&x.due<=t);
   if(ui.tPeriod==="week")list=list.filter(x=>x.due&&x.due<=wk);
-  const reqOver=reqs.filter(x=>x.due&&x.due<t).length;
+  const requestToday=requestTodayS(), requestLimit=addDays(requestToday,5);
+  const far=ui.tPeriod==='all'?[]:reqs.filter(x=>x.due&&x.due>requestLimit), near=reqs.filter(x=>!far.includes(x));
+  const reqOver=reqs.filter(x=>x.due&&x.due<requestToday).length;
   const seg=(id,cur,opts)=>'<div class="seg" role="group">'+opts.map(([k,l])=>'<button type="button" data-'+id+'="'+h(k)+'" aria-pressed="'+(cur===k)+'">'+h(l)+'</button>').join("")+'</div>';
   return '<section class="sec"><div class="sec-h"><h2>ToDo</h2><span class="note num">'+(reqs.length+list.length)+'件</span></div>'+
   seg("tp",ui.tPeriod,[["today","今日まで"],["week","1週間以内"],["all","すべて"]])+
-  seg("tt",ui.tTantou,[["all","全員"],...tans.map(s=>[s,s])])+roNote()+
+  seg("tt",ui.tTantou,[["all","全員"],...tans.map(s=>[s,s])])+roNote()+requestBoxNotice()+
   (reqs.length?'<div class="reqbox"><div class="sec-h"><h3>タスクリクエスト</h3><span class="note num">'+reqs.length+'件'+(reqOver?'<b style="color:var(--red)">（期限切れ '+reqOver+'件）</b>':'')+'</span></div>'+
-    '<div class="list">'+reqs.map(todoRow).join("")+'</div></div>':'')+
+    '<div class="list">'+near.map(todoRow).join("")+'</div>'+(far.length?'<details class="request-future"'+(far.some(x=>x.boxRequest?x.requestId===ui.bDone?.id:x.id===ui.oDone)?' open':'')+'><summary>ほか'+far.length+'件（期限が6日以上先）</summary><div class="list">'+far.map(todoRow).join("")+'</div></details>':'')+'</div>':'')+
   '<p class="note" style="margin:0">案件のToDoは段階に合わせて自動で出ます。案件を進めると消えます。</p>'+
   '<div class="list">'+(list.map(todoRow).join("")||'<div class="empty">この条件のToDoはありません</div>')+'</div></section>'+
   completedManualTodos()+cancelledManualTodos()+
@@ -1560,7 +1565,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.47.0";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.47.1";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -1624,7 +1629,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.47.0" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.47.0" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.47.1" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.47.1" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -2078,7 +2083,7 @@ const fake=x=>String(x||"").includes("（架空）");
 const CASE_COLS=["受付番号","種類","段階","物件","部屋","依頼元","担当","受付日","予定日","実施日","見積額","受注日","仕事番号","施工完了日","請求日","請求額","入金予定日","入金済額","残額","遅れ日数","最終の動き","見積提出日","保留日","失注日","引渡日","入金日","段階キー","受付日時","会社","予定時刻（日本時間）","受注後取消日時","受注後取消理由"];
 const PAY_COLS=["受付番号","物件","部屋","担当","日付","種類","金額","区分"];
 const TODO_COLS=["内容","期限","担当","受付番号","物件","部屋","種類","状態"];
-const todoState=due=>{if(!due)return "期限なし";const n=diffDays(due,todayS());return n<0?"期限切れ":n===0?"今日":"今後"};
+const todoState=(due,day=todayS())=>{if(!due)return "期限なし";const n=diffDays(due,day);return n<0?"期限切れ":n===0?"今日":"今後"};
 const RC_COLS=["受付ID","日付","支払先","内容","区分","金額","会社","現場","仕事番号","状態","精算書番号","写真リンク","支払い方法","提出者"];
 /* 最終の動き（v1.46.3）：実際に起きたことの日付のうち、今日以前で一番新しい日。予定日・入金予定日など、これからの予定は含めない */
 const jstDay=iso=>{const t=iso?new Date(iso).getTime():NaN;return isNaN(t)?"":new Date(t+9*3600e3).toISOString().slice(0,10)};
@@ -2102,10 +2107,10 @@ function dataRows(){
   const S=RS();
   const rc=[RC_COLS,...DB.receipts.filter(r=>!fake(r.payee)).map(r=>[r.id,r.date,r.payee,r.item,r.cat,Number(r.amount)||0,r.company,receiptSiteLabel(r),r.jobNo,r.method==="立替"?r.status:(r.closeNo?"締め済み":"締め前"),r.claimNo||r.closeNo,r.photos.map(k=>(r.drive||{})[k]&&r.drive[k].link).filter(Boolean).join(" "),r.method,S.name])];
   /* ToDo: what genTodos() shows on this device (case ToDos and hand-added ones; done ones are not in it). Receipt notices and the examples are left out */
-  const todo=[TODO_COLS,...genTodos().filter(t=>t.auto||t.manual).flatMap(t=>{
+  const todo=[TODO_COLS,...genTodos().filter(t=>t.auto||t.manual||t.boxRequest).flatMap(t=>{
     const c=t.caseId&&DB.cases.find(x=>x.id===t.caseId);
     if(c&&(fake(c.client)||fake(c.property))||t.manual&&exTodo(t))return [];
-    return [[t.title,t.due||"",t.tantou||"",c?c.id:"",c?c.property:"",c?c.room:"",t.order?"リクエスト":t.auto?"自動":"手入力",todoState(t.due)]]})];
+    return [[t.title,t.due||"",t.tantou||"",c?c.id:"",c?c.property:"",c?c.room:"",t.order?"リクエスト":t.auto?"自動":"手入力",todoState(t.due,t.order?requestTodayS():todayS())]]})];
   return {cases,pay,rc,todo};
 }
 /* Receipt photos go to the person's own Drive folder 「CPG HUB 領収書」, shared read-only with the 社長 once */
@@ -2131,14 +2136,17 @@ async function dataSync(step){
   catch(err){step("領収書の写真の控え",false,dMsg(err))}
   const d=dataRows();
   /* sheets made before v1.29 have no 「ToDo」 tab: add it first. 「指示」 is made by the 社長 when the first order is sent */
-  let tabs=[];
-  try{tabs=await sheetTabNames(id);
+  let tabs=[],tabsKnown=false;
+  try{tabs=await sheetTabNames(id);tabsKnown=true;
     if(!tabs.includes("ToDo"))await gReq(SHEETS+"/"+encodeURIComponent(id)+":batchUpdate",{method:"POST",body:{requests:[{addSheet:{properties:{title:"ToDo"}}}]}})}
   catch(err){if(err.message==="signin")throw err}
   if(tabs.includes("指示")){
     try{const r=await ordersSync(id);step("タスクリクエスト",true,"未完了 "+r.open+"件"+(r.reported?"・完了の報告 "+r.reported+"件":"")+(r.removed?"・取り消し "+r.removed+"件":""));d.todo=dataRows().todo}
     catch(err){if(err.message==="signin")throw err;step("タスクリクエスト",false,dMsg(err))}
   }
+  try{if(!tabsKnown||tabs.includes("連絡")||DB.requestBoxEmployee){const r=await requestBoxSync(id);step("指示箱（GM・全社）",true,"未完了 "+r.open+"件・完了報告 "+r.sent+"件");}}
+  catch(err){if(err.message==="signin"||err.requestBoxStopped||caseSaveUncertain)throw err;step("指示箱（GM・全社）",false,err.message||dMsg(err));}
+  d.todo=dataRows().todo;
   for(const [tab,rows] of [["案件",d.cases],["入金",d.pay],["立替",d.rc],["ToDo",d.todo]]){
     try{await sheetWrite(id,tab,rows);step("記録シート「"+tab+"」",true,(rows.length-1)+"行")}catch(err){step("記録シート「"+tab+"」",false,dMsg(err))}
   }
@@ -2147,6 +2155,29 @@ async function dataSync(step){
   catch(err){step("記録シート「情報」",false,dMsg(err))}
 }
 const sheetTabNames=async id=>{const v=await gReq(SHEETS+"/"+encodeURIComponent(id)+"?fields=sheets.properties.title");return ((v&&v.sheets)||[]).map(x=>x.properties&&x.properties.title)};
+/* PR-B only. Box and 連絡 are read-only; all report writes target this employee sheet. */
+const requestBoxApi=()=>globalThis.WorkHubRequestBoxEmployee;
+const requestTodayS=()=>requestBoxApi()?.day(new Date().toISOString())||todayS();
+function requestBoxTasks(){try{return (requestBoxApi()?.tasks(DB.requestBoxEmployee,D().sheetId)||[]).map(t=>({...t,id:"box:"+t.id,requestId:t.id,order:true,boxRequest:true,orderedAt:t.at,tantou:RS().name||"自分"}));}catch{return [];}}
+function requestBoxNotice(){
+  let src,waiting;try{src=requestBoxApi()?.source(DB.requestBoxEmployee,D().sheetId);waiting=requestBoxApi()?.pending(DB.requestBoxEmployee,D().sheetId)||[];}catch{return '<p class="note" role="status">指示箱の端末記録を確認できません。元の記録を保持しています。</p>';}
+  return (src?.error?'<p class="note" role="status">指示箱：'+h(src.error)+' 前回の記録です。最新の同期ができるまで完了操作を止めています。</p>':'')+
+    (waiting.length?'<section class="panel"><h3>指示箱の完了報告</h3>'+waiting.map(p=>'<p class="note">'+h(p.title)+'：'+(p.cancelled?'取り消し済み（完了報告は送信しません）':p.blocked?'参照先変更のため送信停止':'完了報告は未送信です。次の同期で送信・確認します。')+'</p>').join('')+'</section>':'');
+}
+function requestBoxRow(t){return '<div class="card boss">'+todoCardHeading(t,'<span class="chip boss">リクエスト</span>')+
+ '<p class="note">'+h(t.sender||"出した人未確認")+'から</p><button class="btn sm" type="button" data-bdone="'+h(t.requestId)+'"'+(t.stale?' disabled':'')+'>完了を報告</button>'+
+ (ui.bDone?.id===t.requestId?'<div class="ro" role="alert"><p>'+h(t.title)+'を完了として報告しますか？</p><label class="f">完了メモ（なくてもよい）<textarea id="bd_memo" maxlength="2000"></textarea></label><div class="row"><button class="btn pri" type="button" data-act="bdonedo">完了報告を保存</button><button class="btn" type="button" data-act="bdoneno">やめる</button></div><p class="note" id="bd_status" role="status">端末に保存後、次の同期で送信します。</p></div>':'')+'</div>';}
+function requestBoxCommit(next){if(!saveCaseChange(DB,{requestBoxEmployee:next}))throw Error("完了報告の端末保存を確認できません。入力を控え、再読み込みしてください。");}
+async function requestBoxSync(own){
+ const api=requestBoxApi();if(!api)throw Error("指示箱の機能を読み込めません。再読み込みしてください。");
+ const epoch=G.readEpoch,token=G.token;
+ const check=()=>{if(caseSaveUncertain||D().sheetId!==own||G.readEpoch!==epoch||G.token!==token||localStorage.getItem(KEY)!==dbPersistedRaw)throw Object.assign(Error("接続先または端末記録が変わったため、指示箱の報告を止めました。"),{requestBoxStopped:true});};
+ return api.sync({own,state:DB.requestBoxEmployee,check,commit:requestBoxCommit,tabs:sheetTabNames,
+ read:async(id,tab)=>(await sheetRead(id,[tab]))[tab]||[],
+ addReportTab:()=>gReq(SHEETS+"/"+encodeURIComponent(own)+":batchUpdate",{method:"POST",body:{requests:[{addSheet:{properties:{title:"指示の報告"}}}]}}),
+ initReportHeader:()=>gReq(SHEETS+"/"+encodeURIComponent(own)+"/values/"+encodeURIComponent(A1("指示の報告")+"!A1:E1")+"?valueInputOption=RAW",{method:"PUT",body:{values:[api.REPORT]}}),
+ appendReport:rows=>gReq(SHEETS+"/"+encodeURIComponent(own)+"/values/"+encodeURIComponent(A1("指示の報告")+"!A:E")+":append?valueInputOption=RAW&insertDataOption=INSERT_ROWS",{method:"POST",body:{values:rows}})});
+}
 /* タスクリクエスト（代表から）: the 「指示」 tab (the tab and column names stay as they are) of the person's sheet. The 社長 only appends rows and sets 状態＝取り消し on them;
    the person's device only fills 状態＝完了・完了日・完了メモ (columns E:G) of the row. Rows are never deleted or moved */
 /* the ToDo tab's 種類 was 「社長から」 in v1.29 */
@@ -2598,6 +2629,7 @@ function render(){
   }
 }
 function go(view,extra){
+  ui.bDone=null;
   if(receiptSaving||receiptSelecting||receiptSending||ui.rSaveUncertain){toast("領収書の保存状況を確認してから移動してください。入力は残しています。",5000);return;}
   if(view==="rcpt"&&ui.view!=="rcpt"&&!extra?.rScope)ui.rScope=ui.view==="rform"?"own":D().admin?"shared":"own";
   if(view==="rform"){
@@ -2675,6 +2707,7 @@ document.addEventListener("click",e=>{
   if(el.dataset.sco){ui.sCo=el.dataset.sco;render();return}
   if(el.dataset.cco){ui.corpCo=el.dataset.cco;if(ui.corp&&ui.corp.data)roBuild(ui.corp.data);render();return}
   if(el.dataset.drole!=null){ui.dRole=Number(el.dataset.drole);render();return}
+  if(el.dataset.bdone){if(manualTodoBusy())return toast("同期などの処理が終わってから操作してください");const t=requestBoxTasks().find(t=>t.requestId===el.dataset.bdone);if(!t||t.stale)return;ui.bDone={id:t.requestId,own:D().sheetId,box:t.boxId};render();document.getElementById("bd_memo")?.focus();return;}
   if(el.dataset.odone){ui.oDone=el.dataset.odone;render();showAlert();const m=document.getElementById("od_memo");if(m)m.focus();return}
   if(el.dataset.bcancel){ui.bCancel=el.dataset.bcancel;render();showAlert();return}
   if(el.dataset.badd!=null){if(ui.bBusy)return;const k=Number(el.dataset.badd),x=ui.corp&&ui.corp.data&&ui.corp.data[k];if(!x)return;
@@ -2758,6 +2791,13 @@ document.addEventListener("click",e=>{
   if(a==="dunshareno"){ui.dUnshare=null;render();return}
   if(a==="dunsharedo"){const s=D().staff[ui.dUnshare];ui.dUnshare=null;if(!s)return;
     adminRemove(s).then(()=>{ui.dmsg=[{ok:true,text:s.name+"さんの共有を外しました（シートは残っています）"}]},err=>{ui.dmsg=[{ok:false,text:"共有を外せませんでした："+dMsg(err)}]}).then(render);return}
+  if(a==="bdoneno"){ui.bDone=null;render();return;}
+  if(a==="bdonedo"){
+    const session=ui.bDone,status=document.getElementById("bd_status");
+    try{if(manualTodoBusy())throw Error("同期などの処理が終わってから保存してください。");if(!session||session.own!==D().sheetId||session.box!==requestBoxApi().source(DB.requestBoxEmployee,D().sheetId)?.boxId)throw Error("接続先が変わりました。最新の指示箱を同期してください。");
+      requestBoxCommit(requestBoxApi().complete(DB.requestBoxEmployee,D().sheetId,session.id,val("bd_memo"),new Date().toISOString()));ui.bDone=null;render();toast("端末に保存しました。完了報告はまだ未送信です。");
+    }catch(err){if(status)status.textContent=err.message;}return;
+  }
   if(a==="odoneno"){ui.oDone=null;render();return}
   if(a==="odonedo"){const t=DB.todos.find(x=>x.order&&x.id===ui.oDone);ui.oDone=null;
     if(t){Object.assign(t,{done:true,doneDate:todayS(),doneMemo:val("od_memo").trim(),synced:false});save();toast("完了にしました。次の「Googleとまとめて同期」で社長に届きます",4000)}render();return}
