@@ -36,7 +36,7 @@ const adminSetup=()=>{const d=RT.db.settings.data;d.admin=true;
  RT.ui.corp={data,at:Date.now()};RT.roBuild(data);RT.go('todo',{tPeriod:'today',tTantou:'all'})};
 const top=p=>p.evaluate(()=>{const box=document.querySelector('.reqbox'),lists=[...document.querySelectorAll('main .list')];
  return {box:!!box,first:box&&lists[0]&&box.contains(lists[0]),head:box?box.querySelector('.sec-h').textContent:'',
-  reqs:box?[...box.querySelectorAll('.card')].map(c=>({t:c.querySelector('.ttl').textContent,boss:c.classList.contains('boss'),chip:!!c.querySelector('.chip.boss'),badge:(c.querySelector('.pbadge')||{}).textContent||'',over:!!c.querySelector('.due.over'),line:getComputedStyle(c).borderLeftWidth})):[],
+  reqs:box?[...box.querySelectorAll('.card')].map(c=>({t:c.querySelector('.ttl').textContent,boss:c.classList.contains('boss'),chip:!!c.querySelector('.chip.boss'),badge:(c.querySelector('.pbadge')||{}).textContent||'',over:!!c.querySelector('.due.over'),line:getComputedStyle(c.closest('.request-compact')||c).borderLeftWidth})):[],
   rest:lists.filter(l=>!box?.contains(l)).flatMap(l=>[...l.querySelectorAll('.card .ttl')].map(x=>x.textContent))}});
 const overflow=p=>p.evaluate(()=>{const d=document.documentElement;return Math.max(d.scrollWidth-d.clientWidth,...[...document.querySelectorAll('.panel,section,.row,.card,.reqbox,.seg')].map(x=>x.scrollWidth-x.clientWidth))});
 async function main(){
@@ -48,28 +48,28 @@ async function main(){
   await check('社員の端末：期限切れの自動ToDoが多くても、リクエストが一番上に期限の早い順で出る '+width+'px',async()=>{
    const r=await top(p);
    assert.ok(r.box&&r.first,JSON.stringify(r));
-   assert.deepEqual(r.reqs.map(x=>x.t),['期限切れのリクエスト（テスト）','期限なしのリクエスト（テスト）','来月のリクエスト（テスト）']);
-   assert.ok(r.head.includes('3件')&&r.head.includes('期限切れ 1件'),r.head);
-   assert.ok(r.reqs.every(x=>x.boss&&x.chip&&parseFloat(x.line)>=6),JSON.stringify(r.reqs));
-   assert.ok(r.reqs[0].over&&!r.reqs[1].over);
+   assert.deepEqual(r.reqs.map(x=>x.t),['期限切れのリクエスト（テスト）']);
+   assert.ok(r.head.includes('1件')&&r.head.includes('期限切れ 1件'),r.head);
+   assert.ok(r.reqs.every(x=>x.boss&&x.chip&&parseFloat(x.line)>=4),JSON.stringify(r.reqs));
+   assert.ok(r.reqs[0].over);
    assert.ok(r.rest.filter(t=>t.includes('受注か失注か')).length===6,'automatic ToDos stay below: '+r.rest.join('|'));
    assert.ok(!r.rest.some(t=>t.includes('リクエスト')));
    assert.ok(!JSON.stringify(r).includes('済んだリクエスト'));
    assert.ok(await overflow(p)<=0);
   });
   await check('期間の絞り込みでもリクエストは消えず、担当の絞り込みは効く '+width+'px',async()=>{
-   for(const k of ['today','week','all']){await p.click('[data-tp="'+k+'"]');assert.equal((await top(p)).reqs.length,3,k);assert.equal(await p.locator('.request-future').count(),k==='all'?0:1);if(k!=='all')assert.equal(await p.locator('.request-future .card').first().isVisible(),false)}
+   for(const k of ['today','week','all']){await p.click('[data-tp="'+k+'"]');assert.equal((await top(p)).reqs.length,1,k);assert.equal(await p.locator('.request-future').count(),0)}
    const tt=await p.$$eval('[data-tt]',a=>a.map(x=>x.dataset.tt));
    const other=tt.find(x=>x!=='all'&&x!=='見本');
-   await p.click('[data-tt="'+other+'"]');assert.equal((await top(p)).box,false,'requests of another person are filtered out');
-   await p.click('[data-tt="all"]');assert.equal((await top(p)).reqs.length,3);
+   await p.click('[data-tt="'+other+'"]');assert.equal((await top(p)).reqs.length,0,'requests of another person are filtered out');
+   await p.click('[data-tt="all"]');assert.equal((await top(p)).reqs.length,1);
   });
   assert.deepEqual(errors,[]);await c.close();
   const a=await page(width,adminSetup);
   await check('社長の端末：読み込んだ社員のリクエストが一番上に担当のバッジ付きで出て、取消・完了は出ない '+width+'px',async()=>{
    const r=await top(a.p);
    assert.ok(r.box&&r.first,JSON.stringify(r));
-   assert.deepEqual(r.reqs.map(x=>x.t),['社員への期限切れのリクエスト（テスト）','社員への未来のリクエスト（テスト）']);
+   assert.deepEqual(r.reqs.map(x=>x.t),['社員への期限切れのリクエスト（テスト）']);
    assert.ok(r.reqs.every(x=>x.boss&&x.chip&&x.badge==='見本'),JSON.stringify(r.reqs));
    assert.ok(r.reqs[0].over);
    assert.ok(!JSON.stringify(r).includes('取り消した')&&!JSON.stringify(r).includes('完了した')&&!JSON.stringify(r).includes('古い書き出し'));

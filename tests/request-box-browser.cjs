@@ -146,7 +146,7 @@ async function main(){
   assert.deepEqual([row[2],row[4],row[5],row[6]],['','未完了',ZEN,'見本']);
   assert.deepEqual(z.errors,[]);await z.c.close();
  });
- await check('社長の端末：全部の指示を出した人の表示付きで見られ、未完了はToDoの一番上に「○○から」で出る',async()=>{
+ await check('社長の端末：全部の指示を出した人の表示付きで見られ、期限なしは指示一覧に「○○から」で残る',async()=>{
   await A.p.evaluate(async()=>{await RB.corpRun();RB.go('home')});
   const t=await A.p.textContent('main');
   assert.ok(t.includes('タスクリクエスト（GM・全社から）')&&t.includes('GM 進藤から')&&t.includes('見本から'));
@@ -154,7 +154,10 @@ async function main(){
   assert.ok((await A.p.$$('[data-bcancel]')).length>=1,'the 社長 can cancel open ones');
   await A.p.evaluate(()=>RB.go('todo',{tPeriod:'today',tTantou:'all'}));
   const reqs=await A.p.$$eval('.reqbox .card',a=>a.map(x=>x.textContent));
-  assert.ok(reqs.some(x=>x.includes('見本から')&&x.includes('書類を出す（全社テスト）')),reqs.join('|'));
+  assert.ok(!reqs.some(x=>x.includes('書類を出す（全社テスト）')),'no-date request stays out of ToDo');
+  await A.p.click('[data-nav=requests]');
+  const all=await A.p.$$eval('.request-compact .card',a=>a.map(x=>x.textContent));
+  assert.ok(all.some(x=>x.includes('見本から')&&x.includes('書類を出す（全社テスト）')),all.join('|'));
   assert.ok(!reqs.some(x=>x.includes('見積を出す（テスト')),'done / cancelled are not in the ToDo block');
  });
  await check('社員は自分あての指示箱だけ読め、ほかの人の指示箱は読めない',async()=>{
