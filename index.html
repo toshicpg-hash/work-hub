@@ -323,11 +323,24 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 .gtoday{position:absolute;top:0;bottom:0;width:2px;background:var(--red);opacity:.55;z-index:1}
 .back{border:0;background:none;color:var(--accent);font-weight:700;cursor:pointer;padding:0;align-self:flex-start}
 @media (prefers-reduced-motion:no-preference){.card,.tile,.btn{transition:border-color .15s}}
+
+/* Request display prototype: compact summary, original detail and actions. */
+.request-compact{border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:10px;background:var(--surface);overflow:hidden}
+.request-compact>summary{cursor:pointer;list-style:none;display:grid;grid-template-columns:76px minmax(0,1fr) 16px;gap:2px 8px;min-height:48px;padding:7px 10px;align-items:center}
+.request-compact>summary::-webkit-details-marker{display:none}
+.request-compact>summary::after{content:'⌄';grid-column:3;grid-row:1/3;color:var(--muted)}
+.request-compact[open]>summary::after{content:'⌃'}
+.request-compact>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.request-date{font-size:12px;font-weight:700;white-space:nowrap}.request-date.is-late{color:var(--red)}
+.request-short{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.request-person{grid-column:2;font-size:11px;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.request-detail{border-top:1px solid var(--line);padding:8px}.request-detail>.card{border:0;padding:0 4px;background:transparent}
+.request-detail .ttl{white-space:pre-wrap;overflow-wrap:anywhere}.request-list-link{font-size:12px;min-height:36px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.47.1" title="使い方マニュアルを開く">v1.47.1・10/30更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.47.1" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.47.2" title="使い方マニュアルを開く">v1.47.2・10/30試作（未公開）</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.47.2" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -706,7 +719,18 @@ function caseCard(c){
 function todoCardHeading(t,badge=""){
   return '<div class="todo-title">'+badge+'<span class="ttl">'+h(t.title)+'</span></div><div class="todo-deadline">'+dueLabel(t.due,isReqTodo(t)?requestTodayS():todayS())+'</div>';
 }
-function todoRow(t){
+const requestDueNow=t=>!!t.due&&t.due<=addDays(requestTodayS(),5);
+function requestShortTitle(title){const first=String(title||'').split(/\r?\n/)[0],lead=first.split('【')[0].trim()||first.trim()||'指示の詳細';const chars=Array.from(lead);return chars.slice(0,26).join('')+(chars.length>26?'…':'');}
+function compactRequestRow(t){
+ const today=requestTodayS(),late=!!t.due&&t.due<today,date=t.due?md(t.due)+(late?' 超過':t.due===today?' 今日':''):'期限なし';
+ const open=t.boxRequest?ui.bDone?.id===t.requestId:!t.ro&&ui.oDone===t.id;
+ return '<details class="request-compact"'+(open?' open':'')+'><summary><span class="request-date'+(late?' is-late':'')+'">'+h(date)+'</span><span class="request-short">'+h(requestShortTitle(t.title))+'</span><span class="request-person">担当 '+h(t.ro?t.tantou:tantouLabel(t.tantou))+'</span></summary><div class="request-detail">'+todoRow(t,true)+'</div></details>';
+}
+function vRequests(){const list=genTodos().concat(roTodos()).filter(isReqTodo).sort((a,b)=>(a.due||'9').localeCompare(b.due||'9'));
+ return '<section class="sec"><div class="sec-h"><h2>指示一覧</h2><span class="note">未完了 '+list.length+'件</span></div><button class="btn sm" data-nav="todo">ToDoに戻る</button><p class="note">6日以上先・期限なしも含む未完了の指示です。タップで全文を確認できます。</p>'+roNote()+requestBoxNotice()+'<div class="list">'+(list.map(todoRow).join('')||'<p class="empty">未完了の指示はありません</p>')+'</div></section>';
+}
+function todoRow(t,expanded=false){
+  if(isReqTodo(t)&&expanded!==true)return compactRequestRow(t);
   const c=t.caseId?findCase(t.caseId):null;
   if(t.ro)return '<div class="card'+(isReqKind(t.kind)?' boss':'')+'" style="cursor:default">'+
     todoCardHeading(t,isReqKind(t.kind)?'<span class="chip boss">'+(t.from?h(t.from)+'から':'リクエスト')+'</span>':'')+
@@ -733,7 +757,7 @@ function vHome(){
   const un=all.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   const ord=todos.filter(x=>x.order), ordOver=ord.filter(x=>x.due&&x.due<t).length;
   return (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）と付いた案件は練習用の例です。入力した内容はこの端末のブラウザにだけ残ります。</div>':'')+
-  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.47.1">マニュアル</a>へ。</p></div>')+
+  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.47.2">マニュアル</a>へ。</p></div>')+
   '<section class="sec">'+gSyncPanel()+'</section>'+
   (ord.length?'<button type="button" class="banner" data-nav="todo" style="text-align:left;width:100%;cursor:pointer'+(ordOver?';border-color:var(--red)':'')+'"><b>タスクリクエスト '+ord.length+'件</b>'+(ordOver?'<span style="color:var(--red);font-weight:700">（期限切れ '+ordOver+'件）</span>':'')+'<div class="note">'+ord.slice(0,3).map(x=>h(x.title)).join("・")+'</div></button>':'')+
   (D().admin||D().viewListId?corpView():'')+
@@ -751,7 +775,7 @@ function vHome(){
   '</div></section>'+
   (urgent.length?'<section class="sec"><div class="sec-h"><h2>緊急対応</h2><span class="note">受付からの経過時間</span></div><div class="list">'+urgent.map(caseCard).join("")+'</div></section>':'')+
   '<section class="sec"><div class="sec-h"><h2>期限切れ・今日のToDo</h2><span class="sp"></span><button class="btn sm" type="button" data-nav="todo">すべて見る</button></div><div class="list">'+
-    ([...over,...todayT].slice(0,6).map(todoRow).join("")||'<div class="empty">期限切れと今日までのToDoはありません</div>')+'</div></section>'+
+    ([...over,...todayT].sort((a,b)=>Number(isReqTodo(b))-Number(isReqTodo(a))).slice(0,6).map(todoRow).join("")||'<div class="empty">期限切れと今日までのToDoはありません</div>')+'</div></section>'+
   '<section class="sec"><div class="sec-h"><h2>Accessへの引渡待ち</h2><span class="note">受注済み・仕事番号の記録待ち</span></div><div class="list">'+
     (waiting.map(caseCard).join("")||'<div class="empty">引渡待ちの案件はありません</div>')+'</div></section>');
 }
@@ -1038,22 +1062,20 @@ function caseDelete(c){
 function vTodo(){
   const t=todayS(), wk=addDays(t,7);
   const ro=roTodos(), lab=x=>x.ro?x.tantou:tantouLabel(x.tantou), tans=[...new Set(tantouOptions().map(o=>o.l).concat(DB.todos.map(x=>x.tantou).filter(Boolean).map(tantouLabel),ro.map(x=>x.tantou)))];
-  /* タスクリクエスト：JSTの今日+5日までと期限なしを表示し、+6日以降は折りたたむ。すべてでは全件。担当の絞り込みは維持。
+  /* タスクリクエスト：全期間でJSTの期限切れ〜今日+5日だけ。先の期限・期限なしは別の指示一覧で表示。
      自分のリクエスト（order）と、読み込んだ社員のリクエスト（ro・種類「リクエスト」）の両方。取消・完了は genTodos／roBuild の時点で入らない */
   const base=genTodos().concat(ro).filter(x=>ui.tTantou==="all"||lab(x)===ui.tTantou);
-  const reqs=base.filter(isReqTodo).sort((a,b)=>(a.due||"9").localeCompare(b.due||"9"));
+  const reqs=base.filter(isReqTodo).filter(requestDueNow).sort((a,b)=>(a.due||"9").localeCompare(b.due||"9"));
   let list=base.filter(x=>!isReqTodo(x));
   if(ui.tPeriod==="today")list=list.filter(x=>x.due&&x.due<=t);
   if(ui.tPeriod==="week")list=list.filter(x=>x.due&&x.due<=wk);
-  const requestToday=requestTodayS(), requestLimit=addDays(requestToday,5);
-  const far=ui.tPeriod==='all'?[]:reqs.filter(x=>x.due&&x.due>requestLimit), near=reqs.filter(x=>!far.includes(x));
+  const requestToday=requestTodayS();
   const reqOver=reqs.filter(x=>x.due&&x.due<requestToday).length;
   const seg=(id,cur,opts)=>'<div class="seg" role="group">'+opts.map(([k,l])=>'<button type="button" data-'+id+'="'+h(k)+'" aria-pressed="'+(cur===k)+'">'+h(l)+'</button>').join("")+'</div>';
   return '<section class="sec"><div class="sec-h"><h2>ToDo</h2><span class="note num">'+(reqs.length+list.length)+'件</span></div>'+
   seg("tp",ui.tPeriod,[["today","今日まで"],["week","1週間以内"],["all","すべて"]])+
   seg("tt",ui.tTantou,[["all","全員"],...tans.map(s=>[s,s])])+roNote()+requestBoxNotice()+
-  (reqs.length?'<div class="reqbox"><div class="sec-h"><h3>タスクリクエスト</h3><span class="note num">'+reqs.length+'件'+(reqOver?'<b style="color:var(--red)">（期限切れ '+reqOver+'件）</b>':'')+'</span></div>'+
-    '<div class="list">'+near.map(todoRow).join("")+'</div>'+(far.length?'<details class="request-future"'+(far.some(x=>x.boxRequest?x.requestId===ui.bDone?.id:x.id===ui.oDone)?' open':'')+'><summary>ほか'+far.length+'件（期限が6日以上先）</summary><div class="list">'+far.map(todoRow).join("")+'</div></details>':'')+'</div>':'')+
+  '<div class="reqbox"><div class="sec-h"><h3>タスクリクエスト</h3><span class="note num">'+reqs.length+'件'+(reqOver?'・期限切れ '+reqOver+'件':'')+'</span><span class="sp"></span><button class="btn sm request-list-link" type="button" data-nav="requests">指示一覧</button></div><div class="list">'+(reqs.map(t=>todoRow(t)).join('')||'<p class="note">期限が近い未完了の指示はありません</p>')+'</div></div>'+
   '<p class="note" style="margin:0">案件のToDoは段階に合わせて自動で出ます。案件を進めると消えます。</p>'+
   '<div class="list">'+(list.map(todoRow).join("")||'<div class="empty">この条件のToDoはありません</div>')+'</div></section>'+
   completedManualTodos()+cancelledManualTodos()+
@@ -1565,7 +1587,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.47.1";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.47.2";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -1629,7 +1651,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.47.1" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.47.1" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.47.2" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.47.2" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -2610,11 +2632,11 @@ function render(){
   if(ui.view==="rform"&&(receiptSaving||receiptSelecting))return;
   if(ui.view==="rform"&&document.getElementById("rForm")){const ids={date:"r_date",payee:"r_payee",item:"r_item",amount:"r_amount",company:"r_co",method:"r_method",cardId:"r_card",cat:"r_cat",caseId:"r_case",site:"r_site",room:"r_room",jobNo:"r_job",note:"r_note"};ui.rDraft=Object.fromEntries(Object.entries(ids).map(([k,id])=>[k,val(id)]));}
   receiptReleaseURLs();
-  const v={home:vHome,cases:vCases,new:vNew,detail:vDetail,todo:vTodo,cal:vCal,gantt:vGantt,stats:vStats,rcpt:vRcpt,rform:vRform}[ui.view]||vHome;
+  const v={home:vHome,cases:vCases,new:vNew,detail:vDetail,todo:vTodo,requests:vRequests,cal:vCal,gantt:vGantt,stats:vStats,rcpt:vRcpt,rform:vRform}[ui.view]||vHome;
   main.innerHTML=v();
   document.querySelector(".proto").hidden=!hasExamples();
   const ml=document.getElementById("manualLink");if(ml)ml.setAttribute("href",manualHref()); /* 社長・全社・GMの端末は管理者向けのマニュアル */
-  const navKey=ui.view==="new"||ui.view==="detail"?"cases":ui.view==="rform"?"rcpt":ui.view;
+  const navKey=ui.view==="new"||ui.view==="detail"?"cases":ui.view==="rform"?"rcpt":ui.view==="requests"?"todo":ui.view;
   if(ui.view==="rcpt"||ui.view==="rform")fillPhotos();
   if(ui.view==="rform")receiptRefreshSuggestions();
   if(ui.view==="rform"&&ui.rSaveUncertain){receiptControls(true);const button=main.querySelector('#rForm button[type="submit"]');if(button){button.disabled=false;button.textContent="保存状況を確認";}}
