@@ -1,7 +1,7 @@
-# リクエスト表示試作 v1.47.2（未公開）
+# リクエスト表示試作 v1.47.2（PR #61公開済み）
 
 2026-10-30 JST。基準main: `22570158b25939fb04bb350e62bc4432fcea8ddf`（公開済みv1.47.1）。
-branch: `codex/request-compact-preview`。Draft PRでスマホ幅を確認する試作。merge・公開は未承認。
+branch: `codex/request-compact-preview`。試作画像確認後に本人が公開承認。PR #61をmergeし、2026-10-31 06:34 JSTにPages成功（main `2305c4e`、run `41131986428`）。下の画像は承認時の合成プレビュー記録で、画像内の「未公開」は当時の表記。実アプリ・manualの公開ラベルだけ別の最小修正で整える。
 
 ## 表示と保存の境界
 
@@ -33,4 +33,4 @@ branch: `codex/request-compact-preview`。Draft PRでスマホ幅を確認する
 - 360pxで期限の文字切れ／横はみ出しなし、全文表示。320pxの文字拡大／125%zoom／キーボード開閉、米国タイムゾーンでJST日跨ぎを検証。
 - 既存テストの折りたたみ・期限なし表示の期待値を今回仕様へ更新。完了報告・確認中止・戻る・reload・busy・保存/readback失敗・同期API制限のassertは保持し、新しいsummaryを開いてから既存操作を試す。
 - 全 `tests/*.cjs`（既存26＋新規1）を `node` で実行。aggregateのcalendar-privacy／takeoverを含む。最終27本すべてexit 0（失敗0）。`git diff --check`を実行。
-- 画像8枚を実際に目視。Chromiumのスマホ／タッチエミュレーションのみ。Fold8・Flip／Android実機、実Google、公開ページ反映は未検証。実データ・権限・他PRには操作しない。
+- 画像8枚を実際に目視。Chromiumのスマホ／タッチエミュレーションのみ。Fold8・Flip／Android実機、実Google、公開HTMLの直接取得は環境制限により未確認。GitHub Pagesの終端成功は上記のとおり確認済み。実データ・権限・他PRには操作しない。
