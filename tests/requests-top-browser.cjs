@@ -37,7 +37,7 @@ const adminSetup=()=>{const d=RT.db.settings.data;d.admin=true;
 const top=p=>p.evaluate(()=>{const box=document.querySelector('.reqbox'),lists=[...document.querySelectorAll('main .list')];
  return {box:!!box,first:box&&lists[0]&&box.contains(lists[0]),head:box?box.querySelector('.sec-h').textContent:'',
   reqs:box?[...box.querySelectorAll('.card')].map(c=>({t:c.querySelector('.ttl').textContent,boss:c.classList.contains('boss'),chip:!!c.querySelector('.chip.boss'),badge:(c.querySelector('.pbadge')||{}).textContent||'',over:!!c.querySelector('.due.over'),line:getComputedStyle(c).borderLeftWidth})):[],
-  rest:lists.slice(1).flatMap(l=>[...l.querySelectorAll('.card .ttl')].map(x=>x.textContent))}});
+  rest:lists.filter(l=>!box?.contains(l)).flatMap(l=>[...l.querySelectorAll('.card .ttl')].map(x=>x.textContent))}});
 const overflow=p=>p.evaluate(()=>{const d=document.documentElement;return Math.max(d.scrollWidth-d.clientWidth,...[...document.querySelectorAll('.panel,section,.row,.card,.reqbox,.seg')].map(x=>x.scrollWidth-x.clientWidth))});
 async function main(){
  server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0]));if(!f.startsWith(root+path.sep)){res.writeHead(403).end();return}try{res.end(fs.readFileSync(f))}catch{res.writeHead(404).end()}}).listen(0,'127.0.0.1');
@@ -48,7 +48,7 @@ async function main(){
   await check('社員の端末：期限切れの自動ToDoが多くても、リクエストが一番上に期限の早い順で出る '+width+'px',async()=>{
    const r=await top(p);
    assert.ok(r.box&&r.first,JSON.stringify(r));
-   assert.deepEqual(r.reqs.map(x=>x.t),['期限切れのリクエスト（テスト）','来月のリクエスト（テスト）','期限なしのリクエスト（テスト）']);
+   assert.deepEqual(r.reqs.map(x=>x.t),['期限切れのリクエスト（テスト）','期限なしのリクエスト（テスト）','来月のリクエスト（テスト）']);
    assert.ok(r.head.includes('3件')&&r.head.includes('期限切れ 1件'),r.head);
    assert.ok(r.reqs.every(x=>x.boss&&x.chip&&parseFloat(x.line)>=6),JSON.stringify(r.reqs));
    assert.ok(r.reqs[0].over&&!r.reqs[1].over);
@@ -58,7 +58,7 @@ async function main(){
    assert.ok(await overflow(p)<=0);
   });
   await check('期間の絞り込みでもリクエストは消えず、担当の絞り込みは効く '+width+'px',async()=>{
-   for(const k of ['today','week','all']){await p.click('[data-tp="'+k+'"]');assert.equal((await top(p)).reqs.length,3,k)}
+   for(const k of ['today','week','all']){await p.click('[data-tp="'+k+'"]');assert.equal((await top(p)).reqs.length,3,k);assert.equal(await p.locator('.request-future').count(),k==='all'?0:1);if(k!=='all')assert.equal(await p.locator('.request-future .card').first().isVisible(),false)}
    const tt=await p.$$eval('[data-tt]',a=>a.map(x=>x.dataset.tt));
    const other=tt.find(x=>x!=='all'&&x!=='見本');
    await p.click('[data-tt="'+other+'"]');assert.equal((await top(p)).box,false,'requests of another person are filtered out');
