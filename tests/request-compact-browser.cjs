@@ -30,9 +30,9 @@ async function setup(role,width=390,tz='Asia/Tokyo'){
   const visible=async()=>normal.evaluate(e=>{const r=e.closest('.card').getBoundingClientRect(),nav=document.querySelector('nav').getBoundingClientRect();return {top:r.top,bottom:r.bottom,limit:nav.top,scroll:scrollY}});
   let g=await visible();assert.equal(g.scroll,0);assert(g.top>=0&&g.bottom<=g.limit,JSON.stringify(g));console.log('WIDE_CLOSED_GEOMETRY',role,JSON.stringify(g));
   await p.screenshot({path:root+'/docs/preview/'+role+'-wide-closed.png'});
-  await p.locator('.request-compact summary').first().tap();g=await visible();assert.equal(g.scroll,0);assert(g.top>=0&&g.top+24<=g.limit,JSON.stringify(g));console.log('WIDE_OPEN_GEOMETRY',role,JSON.stringify(g));
+  await p.locator('.request-compact summary').first().tap();g=await visible();assert.equal(g.scroll,0);assert(g.top>=0&&g.bottom<=g.limit,JSON.stringify(g));console.log('WIDE_OPEN_GEOMETRY',role,JSON.stringify(g));
   await p.screenshot({path:root+'/docs/preview/'+role+'-wide-open.png'});
-  assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);await c.close();results.push(role+': 820x900 reference fold viewport, first ordinary ToDo card fully visible closed; title visible open without scroll');
+  assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);await c.close();results.push(role+': 820x900 reference fold viewport, first ordinary ToDo card fully visible closed; card fully visible open without scroll');
  }
  for(const role of ['employee','company']){
   const {c,p}=await setup(role,360);assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
