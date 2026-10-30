@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a3a40">
+<meta name="referrer" content="no-referrer">
+<title>CPG HUB 管理者向けマニュアル</title>
+<link rel="icon" type="image/png" sizes="192x192" href="./work-hub-icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap">
+<style>
+:root{
+  --bg:#f3f6f6; --surface:#ffffff; --sunk:#e8eeee; --line:#d3dcdc;
+  --fg:#15232b; --muted:#5a6a71; --accent:#0b6b72; --accent-fg:#ffffff; --accent-soft:#dcefef;
+  --red:#b93a26; --red-soft:#fbe6e1; --amber:#9a6412; --amber-soft:#f8ecd6; --green:#2d7449; --green-soft:#e0f0e5; --blue:#1d5fb8;
+  --f-display:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1719; --surface:#172225; --sunk:#1e2c30; --line:#2c3d42;
+  --fg:#e3ecee; --muted:#93a6ac; --accent:#4fb8bf; --accent-fg:#06272a; --accent-soft:#163a3d;
+  --red:#ef8a76; --red-soft:#3a1d18; --amber:#e3b45f; --amber-soft:#35290f; --green:#7cc896; --green-soft:#16301f; --blue:#86b4f5;
+  color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15.5px;line-height:1.75}
+header{position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:1px solid var(--line)}
+.top{max-width:720px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:10px 16px}
+.brand{font-family:var(--f-display);font-weight:900;font-size:18px}
+.top .sp{flex:1}
+.back{color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap}
+main{max-width:720px;margin:0 auto;padding:16px 16px 60px;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.4;margin:0;text-wrap:balance}
+h1{font-size:22px}
+h2{font-size:19px;padding-top:6px;border-top:3px solid var(--accent)}
+h3{font-size:16px;margin-top:6px}
+p{margin:0}
+section{display:flex;flex-direction:column;gap:10px;scroll-margin-top:60px}
+h3[id]{scroll-margin-top:72px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+#ask{scroll-margin-top:72px}
+.mailex{display:block;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;font-size:14px;line-height:1.7;-webkit-user-select:text;user-select:text}
+.meta{font-size:13.5px;color:var(--muted)}
+.ver{display:inline-block;background:var(--accent-soft);color:var(--accent);font-weight:700;border-radius:99px;padding:1px 10px;font-size:13px}
+ol,ul{margin:0;padding-left:1.5em;display:flex;flex-direction:column;gap:4px}
+li{overflow-wrap:anywhere}
+.btn{display:inline-block;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:0 6px;font-weight:700;font-size:.92em;white-space:nowrap}
+.blue{display:inline-block;background:#2563eb;color:#fff;border-radius:8px;padding:0 8px;font-weight:700;font-size:.92em}
+.note{background:var(--amber-soft);border-radius:12px;padding:10px 14px;font-size:14.5px}
+.note b{color:var(--amber)}
+.warn{background:var(--red-soft);border-radius:12px;padding:10px 14px;font-size:14.5px}
+.warn b{color:var(--red)}
+.flow{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:13.5px;font-weight:700}
+.flow span{background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:2px 8px}
+.flow span.end{background:var(--green-soft);color:var(--green)}
+.toc{columns:2;column-gap:16px;padding-left:1.4em}
+.toc li{break-inside:avoid}
+a{color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:6px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+th{color:var(--muted);font-size:13px}
+.hist td:first-child{white-space:nowrap;font-weight:700}
+@media (max-width:420px){.toc{columns:1}}
+</style>
+</head>
+<body>
+<header><div class="top"><span class="brand">CPG HUB</span><span class="sp"></span><a class="back" href="./">‹ アプリに戻る</a></div></header>
+<main>
+
+<section>
+  <h1>CPG HUB 管理者向けマニュアル（社長・全社・GM）</h1>
+  <p class="note">v1.47.3は未公開候補です。現在公開中の版はv1.47.2です。</p>
+  <p class="meta"><span class="ver">このマニュアルは v1.47.3用</span>　最終改訂日：2026年10月31日</p>
+  <p class="note">v1.47.3では「数字」の自動ToDoの期限設定（目安）の説明だけを変更します。詳細は<a href="./manual.html#todo-days">社員向け説明</a>へ。</p>
+  <p class="note">v1.47.2の表示改善は公開済みです。ToDoでは未完了の期限切れ〜日本時間の今日＋5日までを通常ToDoの上に小さく表示します。押すと全文・金額などが開き、再度押すと閉じます。6日以上先と期限なしは「指示一覧」で確認できます。既存の指示箱の一覧・閲覧制限・同期は変わりません。</p>
+  <p class="note">v1.47.1では社員の指示箱受信・完了報告に対応しています。操作と未送信時の確認は<a href="./manual.html#sheet">社員向けの同期・リクエスト説明</a>へ。</p>
+  <p class="meta">社員の毎日の使い方（受付・案件・ToDo・予定・ガント・領収書・同期・困ったとき）は、<a href="./manual.html">社員向けの使い方マニュアル</a>にあります。改訂履歴も、社員向けのマニュアルの最後にあります（<a href="./manual.html#history">改訂履歴</a>）。</p>
+  <div class="card"><b>もくじ</b>
+    <ol class="toc">
+      <li><a href="#boss">社長用（管理）</a></li>
+      <li><a href="#viewer">会社の動きを見る人用（全社・GM）</a>（<a href="#boxreq">タスクリクエストを出す</a>）</li>
+    </ol>
+  </div>
+</section>
+
+<section id="boss">
+  <h2>社長用（管理）</h2>
+  <p class="meta">社長のアカウントでログインしたときだけ使えます。詳しい手順は <a href="./docs/data-setup.md">記録を集める設定（data-setup.md）</a> にあります。</p>
+  <h3>社員を追加する</h3>
+  <ol>
+    <li>先に、Google Cloud の「対象」で、その社員をテストユーザーに追加する</li>
+    <li>CPG HUB の <b>数字</b> → 一番下の「管理（社長用）」の見出しを押して開き、氏名とGmailを入れて <span class="btn">社員を追加</span></li>
+    <li>その人に共有メールが届きます。「記録シートにつなぐ」をしてもらう</li>
+    <li>ホームの「会社の動き」で <span class="btn">社員の記録を読み込む</span> を押すと、みんなの様子が見られます（今日まだ同期していない人は赤で出ます。社員は1日3回同期する決まりです。専務はいつも「黒木秀」、同じ名字の人は「黒木祐」のように名の1字を付けて区別します）</li>
+    <li>「ToDo」の欄では、社員ごとに <b>期限切れ</b>（赤）→ 今日 → 今後7日 の順にToDoが出ます。期限切れがある人は名前が赤になります。8日以降と期限なしは件数だけです。「ToDoはまだ届いていません」と出る人は、その人のCPG HUBを v1.29 以降にして「Googleとまとめて同期」を押してもらうと届きます</li>
+  </ol>
+  <h3>タスクリクエストを出す</h3>
+  <p class="meta">v1.47.0 から、GM（その会社の社員あて）と全社の人（全員あて）もタスクリクエストを出せます。社長の画面の「タスクリクエスト（GM・全社から）」に、出した人の表示付きで全部出て、社長はどれでも取り消せます。GM・全社の人には、社員ごとの「指示箱」（社長のドライブの「CPG HUB データ」の「CPG HUB_指示箱_氏名」）が、会社・役割を保存したときに編集者で共有されます。社員の記録シートは見るだけのままです。GMを外したり入れ替えたりしても、その人が出した未完了のリクエストは残ります（社長が取り消せます）。</p>
+  <p class="note"><b>タスクリクエストは代表からの必ずやる依頼です。</b>社員のToDoの画面では、期限に関係なく一番上の「タスクリクエスト」の欄に出ます。社長・全社・GMの端末のToDoの画面でも、読み込んだ社員のリクエストが一番上に、担当のバッジ付きで出ます（取り消した・完了したリクエストは出ません）。</p>
+  <ol>
+    <li>ホームの「会社の動き」で <span class="btn">社員の記録を読み込む</span> を押す</li>
+    <li>「ToDo」の欄で、「タスクリクエスト（代表から）」に、その社員への「リクエストの内容」と「期限」を入れて <span class="btn">リクエストする</span></li>
+    <li>「○○さんが同期すると届きます。急ぎならLINEでも伝えてください」と出ます。<b>社員が同期するまで届かない</b>ので、急ぐときはLINEでも伝えてください</li>
+    <li>社員の名前の横に「リクエスト 未完了 ○・期限切れ ○」が出ます。未完了は期限の近い順で、期限切れは赤です。社員が完了にして同期すると「最近7日の完了」に完了日と完了メモが出ます（もう一度「社員の記録を読み込む」を押すと最新になります）</li>
+    <li>やめたリクエストは <span class="btn">取り消す</span> → 確認で <span class="btn">取り消す</span>。社員の次の同期で、社員のToDoから消えます</li>
+    <li>「社員のToDo」には、社員が自分で持っているToDo（案件の自動のToDoと手入力のToDo）が出ます</li>
+  </ol>
+  <h3>会社全体を見る（案件・ガント・予定・ToDo）</h3>
+  <ol>
+    <li>ホームの「会社の動き」で <span class="btn">社員の記録を読み込む</span> を押す</li>
+    <li>読み込んだ社員の案件とToDoが、<b>案件</b>・<b>ガント</b>・<b>ToDo</b>（予定は今日以前が期限の未完了ToDoのみ）と、ホームの数字（期限切れ・今日・緊急・動いている案件・未入金）にも出ます。ホームの数字は会社全体になります</li>
+    <li>社員の分には <b>社員の記録・見るだけ</b> の印が付きます。押すと詳細が見られますが、直したり消したりはできません。直すときは担当の社員に頼んでください</li>
+    <li>ガントとToDoは、担当で絞り込めます</li>
+    <li><b>数字</b> の画面（今月の見積提出・受注・失注・決定率・受注額、失注の理由、種類別、未入金）も、社員の案件を含めた会社全体の数字になります。上の <b>全社／CP／CPY／AT</b> で会社ごとに絞り込め（案件の会社で分け、未設定なら担当者の所属の会社）、「担当別」の表で担当ごとの見積提出・受注・受注額・未入金が見られます。画面の上に「社員の記録（月/日 時:分 読み込み）を含めた会社全体の数字です」と出ます。「社員の記録はまだ読み込んでいません」と出ているときは、この端末で入力した分だけの数字なので、「Googleとまとめて同期」を押してください。<b>GMの端末</b>では、数字はGMを務める会社の分だけで、会社の絞り込みはその会社に固定です（「会社の動き」の絞り込みも同じで、GMの会社に固定です。全社の役割の人は、社長と同じく全社から選べます）</li>
+    <li>「会社の動き」の <b>CP／CPY／AT</b> で、会社ごとに絞り込めます。案件は案件の「会社」で分けます（会社が未設定の古い案件は、担当者の所属の会社で分けます）。同期の状況は、いつも全員分が出ます</li>
+    <li>社員がHUBからGoogleカレンダーに入れた予定は、Googleの予定として表示します。案件の進捗印は足しません。社員のToDoも、期限が今日以前のものだけ今日の欄にも出ます</li>
+<li>最後に読み込んだ内容はこの端末に残り、アプリを開き直しても「前回の読み込み（月/日 時:分）の内容です」と出て、そのまま見られます（30日まで。ログイン情報は残しません）。最新にするときは <span class="blue">Googleとまとめて同期</span> を押すと、カレンダーに続けて社員の記録も読み込みます（結果に「社員の記録：○人・案件○件」の行が出ます）</li>
+    <li>社員の同期が古いと、古いままの内容が出ます（「同期の状況」で最終同期を確かめてください）。v1.29 以前で同期した社員の案件は、見積提出・保留などの日付が届いていないので、ガントの帯が一部だけになります</li>
+  </ol>
+  <h3>会社・役割（全社・GM）を決める</h3>
+  <ol>
+    <li><b>数字</b> → 「管理（社長用）」で、社員を追加するときに「会社（複数可）」「役割」「GMを務める会社」を選ぶ。あとから変えるときは、その人の <span class="btn">会社・役割</span> → 選んで <span class="btn">保存する</span></li>
+    <li>役割：<b>社員</b>＝自分の記録だけ。<b>GM</b>＝GMを務める会社の社員の記録を見る。<b>全社</b>＝全員の記録を見る（例：専務）。全社の人がある会社のGMも務めるときは、役割を「全社」にして「GMを務める会社」を選びます（見る範囲は全社が優先です）</li>
+    <li>GMは各社1人です。同じ会社に2人目を選ぶと「○○のGMはすでに○○さんです。入れ替えますか？」と出ます。<span class="btn">入れ替える</span> を押すと、前の人はGMから外れ（役割がGMなら「社員」に戻ります）、その閲覧の共有も外れます</li>
+    <li>保存すると、見る人に、見てよい社員のシートを <b>閲覧者</b> で共有します。役割を外したり会社を変えたりすると、その分の閲覧の共有を外します（本人の編集者の共有は変えません）</li>
+    <li>見る人がいると「見る人用のリンク」が出ます。<span class="btn">リンクをコピー</span> して、見る人に送ってください（LINEなど）</li>
+  </ol>
+  <h3>2台目の端末で使う（スマホとPCなど）</h3>
+  <ol>
+    <li>2台目の端末でも、社長のアカウントでログインして <b>数字</b> → <span class="btn">管理をはじめる</span></li>
+    <li>1台目で作ったフォルダ「CPG HUB データ」と「CPG HUB_社員一覧」を見つけて使います。「既存の管理データを読み込みました（社員○人）」と出ればOK。新しいフォルダは作りません</li>
+    <li>「同じ名前のフォルダが○つあります」と出たときは、一番古いフォルダを使っています。社長のドライブで中身を確かめてください</li>
+    <li>ほかの端末で社員を追加したり共有を外したりしたあとは、<span class="btn">一覧を読み直す</span> を押すと、この端末の一覧も最新になります（「社員の記録を読み込む」のときにも読み直します）</li>
+    <li>同じGmailの社員がもう一覧にあるときは、追加できません（「○○さんはすでに追加されています」と出ます）</li>
+  </ol>
+  <h3>共有を外す（退職のときなど）</h3>
+  <ol>
+    <li>「管理（社長用）」の一覧で、その人の <span class="btn">共有を外す</span> → 確認で <span class="btn">共有を外す</span></li>
+    <li>シートは消えずに、社長のドライブに残ります</li>
+  </ol>
+</section>
+
+<section id="viewer">
+  <h2>会社の動きを見る人用（全社・GM）</h2>
+  <p class="meta">社長から役割を「全社」か「GM」にしてもらった人だけが使えます。社員の記録は見るだけで、直すことはできません。<b>タスクリクエストは出せます</b>（v1.47.0 から。下の「GM・全社からタスクリクエストを出す」）。</p>
+  <ol>
+    <li>社長から届いた「見る人用のリンク」を<b>コピー</b>する</li>
+    <li>CPG HUB の <b>数字</b> → 「会社の動きを見る（管理者用）」に貼り付けて <span class="btn">つなぐ</span>（Googleの画面が出たら<b>許可</b>）</li>
+    <li>ホームに「会社の動き（見るだけ）」が出ます。<span class="btn">社員の記録を読み込む</span> を押すと、見てよい社員の同期の状況・案件・ToDo・未入金・立替が出ます。上のボタンで会社ごとに絞り込めます</li>
+    <li>読み込んだあとは、案件・ガント・ToDo の画面にも「社員の記録・見るだけ」で出ます（予定には今日以前が期限の未完了ToDoのみ）。最後に読み込んだ内容は端末に残り、開き直しても見られます（30日まで）。最新にするときは <span class="blue">Googleとまとめて同期</span> を押してください。役割や共有が外れると、残した内容は消えます</li>
+    <li>GMは、自分の会社の社員の分だけが出ます（ほかの会社のシートは共有されていないので出ません）</li>
+  </ol>
+  <h3 id="boxreq">GM・全社からタスクリクエストを出す</h3>
+  <ol>
+    <li>ホームの「会社の動き」で <span class="btn">社員の記録を読み込む</span>（または <span class="blue">Googleとまとめて同期</span>）</li>
+    <li>出せる相手の欄に「リクエストの内容」と「期限」が出ます。<b>GMは自分の会社の社員</b>、<b>全社の人は全員</b>に出せます（自分あては出せません）。入れて <span class="btn">リクエストする</span></li>
+    <li>「○○さんが v1.47.1 以降の CPG HUB で同期すると届きます。急ぎならLINEでも伝えてください」と出ます。社員が同期するまで届きません</li>
+    <li>「あなたが出したタスクリクエスト」に、未完了（期限切れは赤）・完了（完了日と完了メモ）・取り消しが出ます。社員が完了にして同期すると、次の読み込みで「完了」になります</li>
+    <li>やめたリクエストは <span class="btn">取り消す</span> → 確認で <span class="btn">取り消す</span>。取り消しは完了にはなりません。取り消せるのは自分が出したものだけです（社長はどれでも取り消せます）</li>
+    <li>社員の記録シートには書き込めません（見るだけのまま）。リクエストは、社員ごとの「指示箱」に入ります</li>
+  </ol>
+  <p class="note"><b>指示箱がまだありません</b>と出たときは、社長の端末で、その人の会社・役割をもう一度保存してもらってください（指示箱はそのときに作られます）。</p>
+</section>
+
+<p class="meta"><a href="./manual.html">‹ 社員向けの使い方マニュアル</a>　<a href="./">‹ CPG HUB に戻る</a></p>
+</main>
+</body>
+</html>
+
