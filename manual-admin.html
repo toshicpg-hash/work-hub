@@ -37,6 +37,7 @@ h2{font-size:19px;padding-top:6px;border-top:3px solid var(--accent)}
 h3{font-size:16px;margin-top:6px}
 p{margin:0}
 section{display:flex;flex-direction:column;gap:10px;scroll-margin-top:60px}
+h3[id]{scroll-margin-top:72px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
 #ask{scroll-margin-top:72px}
 .mailex{display:block;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;font-size:14px;line-height:1.7;-webkit-user-select:text;user-select:text}
@@ -75,7 +76,7 @@ th{color:var(--muted);font-size:13px}
   <div class="card"><b>もくじ</b>
     <ol class="toc">
       <li><a href="#boss">社長用（管理）</a></li>
-      <li><a href="#viewer">会社の動きを見る人用（全社・GM）</a></li>
+      <li><a href="#viewer">会社の動きを見る人用（全社・GM）</a>（<a href="#boxreq">タスクリクエストを出す</a>）</li>
     </ol>
   </div>
 </section>
@@ -92,6 +93,7 @@ th{color:var(--muted);font-size:13px}
     <li>「ToDo」の欄では、社員ごとに <b>期限切れ</b>（赤）→ 今日 → 今後7日 の順にToDoが出ます。期限切れがある人は名前が赤になります。8日以降と期限なしは件数だけです。「ToDoはまだ届いていません」と出る人は、その人のCPG HUBを v1.29 以降にして「Googleとまとめて同期」を押してもらうと届きます</li>
   </ol>
   <h3>タスクリクエストを出す</h3>
+  <p class="meta">v1.47.0 から、GM（その会社の社員あて）と全社の人（全員あて）もタスクリクエストを出せます。社長の画面の「タスクリクエスト（GM・全社から）」に、出した人の表示付きで全部出て、社長はどれでも取り消せます。GM・全社の人には、社員ごとの「指示箱」（社長のドライブの「CPG HUB データ」の「CPG HUB_指示箱_氏名」）が、会社・役割を保存したときに編集者で共有されます。社員の記録シートは見るだけのままです。GMを外したり入れ替えたりしても、その人が出した未完了のリクエストは残ります（社長が取り消せます）。</p>
   <p class="note"><b>タスクリクエストは代表からの必ずやる依頼です。</b>社員のToDoの画面では、期限に関係なく一番上の「タスクリクエスト」の欄に出ます。社長・全社・GMの端末のToDoの画面でも、読み込んだ社員のリクエストが一番上に、担当のバッジ付きで出ます（取り消した・完了したリクエストは出ません）。</p>
   <ol>
     <li>ホームの「会社の動き」で <span class="btn">社員の記録を読み込む</span> を押す</li>
@@ -138,7 +140,7 @@ th{color:var(--muted);font-size:13px}
 
 <section id="viewer">
   <h2>会社の動きを見る人用（全社・GM）</h2>
-  <p class="meta">社長から役割を「全社」か「GM」にしてもらった人だけが使えます。見るだけで、直したりタスクリクエストを出したりはできません。</p>
+  <p class="meta">社長から役割を「全社」か「GM」にしてもらった人だけが使えます。社員の記録は見るだけで、直すことはできません。<b>タスクリクエストは出せます</b>（v1.47.0 から。下の「GM・全社からタスクリクエストを出す」）。</p>
   <ol>
     <li>社長から届いた「見る人用のリンク」を<b>コピー</b>する</li>
     <li>CPG HUB の <b>数字</b> → 「会社の動きを見る（管理者用）」に貼り付けて <span class="btn">つなぐ</span>（Googleの画面が出たら<b>許可</b>）</li>
@@ -146,6 +148,16 @@ th{color:var(--muted);font-size:13px}
     <li>読み込んだあとは、案件・ガント・ToDo の画面にも「社員の記録・見るだけ」で出ます（予定には今日以前が期限の未完了ToDoのみ）。最後に読み込んだ内容は端末に残り、開き直しても見られます（30日まで）。最新にするときは <span class="blue">Googleとまとめて同期</span> を押してください。役割や共有が外れると、残した内容は消えます</li>
     <li>GMは、自分の会社の社員の分だけが出ます（ほかの会社のシートは共有されていないので出ません）</li>
   </ol>
+  <h3 id="boxreq">GM・全社からタスクリクエストを出す</h3>
+  <ol>
+    <li>ホームの「会社の動き」で <span class="btn">社員の記録を読み込む</span>（または <span class="blue">Googleとまとめて同期</span>）</li>
+    <li>出せる相手の欄に「リクエストの内容」と「期限」が出ます。<b>GMは自分の会社の社員</b>、<b>全社の人は全員</b>に出せます（自分あては出せません）。入れて <span class="btn">リクエストする</span></li>
+    <li>「○○さんが v1.47.1 以降の CPG HUB で同期すると届きます。急ぎならLINEでも伝えてください」と出ます。社員が同期するまで届きません</li>
+    <li>「あなたが出したタスクリクエスト」に、未完了（期限切れは赤）・完了（完了日と完了メモ）・取り消しが出ます。社員が完了にして同期すると、次の読み込みで「完了」になります</li>
+    <li>やめたリクエストは <span class="btn">取り消す</span> → 確認で <span class="btn">取り消す</span>。取り消しは完了にはなりません。取り消せるのは自分が出したものだけです（社長はどれでも取り消せます）</li>
+    <li>社員の記録シートには書き込めません（見るだけのまま）。リクエストは、社員ごとの「指示箱」に入ります</li>
+  </ol>
+  <p class="note"><b>指示箱がまだありません</b>と出たときは、社長の端末で、その人の会社・役割をもう一度保存してもらってください（指示箱はそのときに作られます）。</p>
 </section>
 
 <p class="meta"><a href="./manual.html">‹ 社員向けの使い方マニュアル</a>　<a href="./">‹ CPG HUB に戻る</a></p>

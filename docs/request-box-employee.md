@@ -5,8 +5,8 @@
 ## 基準と契約
 
 - 最新mainからの基準：`29a0d3bae3f7a587f127566f10dcdfc4d34643bc`、v1.46.9。独立branch `codex/request-box-employee`。
-- 固定契約：`claude/cpg-hub-request-box-admin` の `b7fa934ce3dbdd6926221fca6b067c064d008e33:docs/指示箱.md`、blob `df404193728fec813f4a40c3455f98a59ec03e5e` を全文読取。契約をコピー・改変せず、管理者実装も取り込んでいない。
-- PR-A #59は未merge。merge通知後に最新mainと契約を再読し、統合・全試験してから提出する。今はローカルのみ、push・PR・merge・公開なし。PR49は変更しない。
+- 固定契約：`claude/cpg-hub-request-box-admin` の `b7fa934ce3dbdd6926221fca6b067c064d008e33:docs/指示箱.md`、blob `df404193728fec813f4a40c3455f98a59ec03e5e` を全文読取。着手時は読取参照のみ。統合時にmainの同一契約と管理者実装を改変せず保持した。
+- PR-A #59のmerge `ab9f0b5ce19dd078e8c49ddc1f2ca8cc0caf3642` を最新origin/mainから同じbranchへ統合済み。契約blobは不変。PR-Aの実装とv1.47.0履歴を保持し、PR49は変更しない。PR-BはDraft提出用・未公開、merge／公開は別承認。
 
 ## 動作と保存先
 
@@ -27,7 +27,7 @@ ToDoのタスクリクエスト欄はI/Bとも「今日まで」「1週間以内
 - 取消は送信直前と送信後にも再読する。ただし遠隔取消との原子的なトランザクションはGoogle Sheets契約にない。直前再読後に取消が起きても取消が最終優先、報告行は履歴として残る。
 - 同時に複数端末が同じ報告を追記する競合や、空タブへのヘッダー追記競合は原子的には抑止しない。重複報告は契約どおり最新日時を採用。壊れたヘッダー／未知状態／不正ID・日付は送信停止し、消去して作り直さない。
 - 旧版はBを受信・送信しない。旧版の保存・I同期で新ローカル領域を保持する合成検証を行う。旧版がToDo共有鏡を書けばB表示が消え得るが、箱と報告の正本は変えない。全送信端末・旧タブを新版にして運用する。保存キー・manifest・アイコンは維持、サイトデータ削除・再インストール不要。
-- 公開前はPR-A統合・再試験・管理者manual参照の再確認が必要。実Google、実Android、実際の権限・共有設定は未検証。実データは操作していない。
+- PR-A統合と管理者manual参照の整合は実施済み。公開前に具体PRの承認が必要。実Google、実Android、実際の権限・共有設定は未検証。実データは操作していない。
 
 ## 検証方法
 
@@ -43,3 +43,11 @@ ToDoのタスクリクエスト欄はI/Bとも「今日まで」「1週間以内
 - manual-pagesは版参照の最終修正後にも再実行しexit 0。`node --check request-box-employee.js` と `git diff --check` はexit 0。
 - 基準mainとの文字列比較でI系 `ordersSync`／既存管理者の指示追加・取消、保存キー、DSCOPE/GSCOPE、案件共有列が一致。契約blobも固定値と一致。
 - この結果はローカルの合成試験。PR-A統合後の結果、実Google、実Androidの確認を代替しない。
+
+### PR-A統合後の検証
+
+追加したブラウザ2項目：実際の社員dataSync全体をAPI履歴付きモックで実行し、連絡・箱・既存報告の保持、PR-AのBOX_COLS/REPORT_COLSとの完全一致を確認。PR-AのroBuildから作る管理者read-onlyのI/Bリクエストについて、JST日跨ぎ・期限ラベル・＋5/＋6・期限なし・担当／期間フィルターを確認。新規ブラウザは合計11項目。社員の追記結果をPR-AのboxStateへ渡して「完了」と認識することも確認。
+
+統合後の最終状態で `tests/*.cjs` 全26本が各exit 0、FAIL 0。PR-A既存10項目、新規単体23項目、新規ブラウザ11項目、既存aggregateを含む。`git diff --check`成功。契約blob・PR-AのroBuild／管理側処理・既存I処理を基準mainと比較して一致、v1.47.0改訂履歴の保持も確認。
+
+未実施：実Google・実Android、PR-Bのmerge／公開。箱IDなし報告の契約制約と複数端末競合の限界は上記のまま。

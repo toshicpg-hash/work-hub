@@ -37,6 +37,7 @@ h2{font-size:19px;padding-top:6px;border-top:3px solid var(--accent)}
 h3{font-size:16px;margin-top:6px}
 p{margin:0}
 section{display:flex;flex-direction:column;gap:10px;scroll-margin-top:60px}
+h3[id]{scroll-margin-top:72px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
 #ask{scroll-margin-top:72px}
 .mailex{display:block;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;font-size:14px;line-height:1.7;-webkit-user-select:text;user-select:text}
@@ -287,6 +288,7 @@ th{color:var(--muted);font-size:13px}
     <li>あとは <span class="blue">Googleとまとめて同期</span> のたびに、案件・入金・立替・ToDoの要点と領収書の写真の控えが送られます（メモや住所の細かいところは送りません）</li>
   </ol>
   <h3>タスクリクエスト（社員用）</h3>
+  <p class="meta">v1.47.0 から、社長のほかにGMと全社の人もタスクリクエストを出せるようになります。GM・全社からのリクエストがToDoに届くのは、次の版（v1.47.1）からです。</p>
   <ol>
     <li>代表からタスクリクエストが来ると、次の <span class="blue">Googleとまとめて同期</span> で届きます。ホームに「タスクリクエスト ○件」と出て、ToDoには <b>リクエスト</b> の印が付きます（期限切れは赤）。<b>タスクリクエストは代表からの必ずやる依頼です。</b>ToDoの一番上の「タスクリクエスト」に出ます。「今日まで」「1週間以内」では、期限切れから日本時間の今日＋5日までと期限なしを表示します。6日以上先は「ほか○件（期限が6日以上先）」を押すと開きます。「すべて」では全部表示します。代表・GM・全社の依頼を同じ扱いにします（他のToDoの期間は変えません）</li>
     <li>済んだら、そのToDoの <span class="btn">完了</span> を押す。必要なら「完了メモ」に一言書いて <span class="btn">完了にする</span></li>
@@ -339,6 +341,7 @@ th{color:var(--muted);font-size:13px}
   <div class="card"><table class="hist">
     <tr><th>版</th><th>できるようになったこと</th></tr>
     <tr><td>v1.47.1<br><span class="meta">10/30・未公開</span></td><td>社員の指示箱受信と完了報告を追加。完了は端末に保留し、同期で追記・読み戻し確認します。タスクリクエストの今日＋6日以降を折りたたみ、期限なしを表示します。未公開の検証候補です。</td></tr>
+    <tr><td>v1.47.0<br><span class="meta">10/30</span></td><td>GM（自分の会社の社員あて）と全社の人（全員あて）も、「会社の動き」からタスクリクエストを出せるようにしました。出した人は、自分のリクエストの未完了・完了（完了メモ）・期限切れを見て、取り消せます。社長は全部を見られます。社員の画面に届くのは次の版（v1.47.1）からです。詳しくは<a href="./manual-admin.html#boxreq">管理者向けマニュアル</a>。</td></tr>
     <tr><td>v1.46.9<br><span class="meta">10/30</span></td><td>ToDoの画面の一番上に「タスクリクエスト」の欄を作り、まだ済んでいないリクエストを、期限に関係なく期限の早い順にまとめて出すようにしました（期間の絞り込みでも消えません。担当の絞り込みは効きます）。期限切れの自動ToDoが多くても、リクエストが埋もれません。社長・全社・GMの端末でも、読み込んだ社員のリクエストが同じ形で出ます。</td></tr>
     <tr><td>v1.46.8<br><span class="meta">10/29</span></td><td>左上の「使い方」ボタンを、小さく控えめな見た目にしました（押せる広さは同じ）。マニュアルを、社員向け（この画面）と<a href="./manual-admin.html">管理者向け</a>（社長・全社・GM）に分けました。社員向けは、毎日使う内容を前に並べ、改訂履歴を最後にまとめました。社長・全社・GMの端末では、「使い方」ボタンから管理者向けが開きます。「ガント」の説明を足しました。</td></tr>
     <tr><td>v1.46.7<br><span class="meta">10/29</span></td><td>アプリの左上（CPG HUB の横）に <b>📖 使い方</b> ボタンを置き、このマニュアルをすぐ開けるようにしました。「試作・架空データ」の印は、版の表示の下に小さく出るようにしました。</td></tr>
