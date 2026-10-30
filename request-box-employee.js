@@ -1,5 +1,5 @@
 /* Employee-only request box reader/reporter. Contract pinned to b7fa934:docs/指示箱.md.
-   No writes to the box or 連絡. Reports are append-only on the employee sheet. */
+   No writes to the box or 連絡. Report rows are append-only; only the initial header uses fixed A1:E1. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.WorkHubRequestBoxEmployee=api;})(typeof globalThis==='object'?globalThis:this,function(){
 'use strict';
 const BOX=['指示ID','内容','期限','指示日','状態','出した人Gmail','出した人の表示','取消日時','取消した人'];
@@ -41,7 +41,8 @@ async function sync(io){const own=io.own;let state=clone(io.state||{version:1,so
    if(!ref.tabs.includes('指示の報告')){try{await call(()=>io.addReportTab());}catch(e){check();if(!(await call(()=>io.tabs(own))).includes('指示の報告'))throw e;}}
    const rr=await read(own,'指示の報告');
    if(rr.length){reports(rr);if(rr.slice(1).some(r=>r[0]===p.id&&r[4]===p.at&&r[1]==='完了'&&r[2]===p.date&&String(r[3]||'')===p.memo)){delete s.pending[p.id];s.reports=reports(rr);commit();sent++;continue;}}
-   if(!rr.length){await call(()=>io.appendReport([REPORT]));const header=await read(own,'指示の報告');table(header,REPORT);}else reports(rr);
+   // Both devices may have read empty: fixed A1:E1 initialization cannot append a second header or touch report rows.
+   if(!rr.length){await call(()=>io.initReportHeader());const header=await read(own,'指示の報告');table(header,REPORT);}else reports(rr);
    // Verify source again after tab setup, before writing. Never redirect a pending report.
    const last=await reference();if(last.box!==s.boxId){s.blocked=true;fail('指示箱の参照先が変わったため報告を止めました。');}
    const fresh=boxes(await read(s.boxId,'指示'));const current=fresh.find(t=>t.id===p.id);if(!current)fail('報告先の指示が見つかりません。');if(current.status==='取り消し'){s.cancelled[p.id]={at:current.cancelledAt,by:current.cancelledBy};commit();continue;}

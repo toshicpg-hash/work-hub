@@ -24,6 +24,7 @@ async function setup({width=390,tz='Asia/Tokyo',baseline=false,db=null,fullSync=
   if(method==='POST'&&tail===':batchUpdate'&&body.requests[0].updateCells){assert.equal(body.requests.length,1);const q=body.requests[0].updateCells;assert.deepEqual(q.range,{sheetId:Object.keys(sheets[id]).indexOf('案件')});assert.equal(q.fields,'userEnteredValue');sheets[id]['案件']=q.rows.map(r=>r.values.map(c=>Object.values(c.userEnteredValue||{})[0]??''));return json({});}
  }
  if(method==='POST'&&tail===':batchUpdate'){assert.deepEqual(body,{requests:[{addSheet:{properties:{title:'指示の報告'}}}]});sheets[id]['指示の報告']=[];return json({});}
+ if(method==='PUT'&&decodeURIComponent(tail)==="/values/'指示の報告'!A1:E1"){assert.deepEqual(body.values,[api.REPORT]);sheets[id]['指示の報告'][0]=structuredClone(api.REPORT);return json({});}
  if(method==='POST'&&decodeURIComponent(tail)==="/values/'指示の報告'!A:E:append"){sheets[id]['指示の報告'].push(...body.values);return json({updates:{updatedRows:body.values.length}});}
  if(method==='PUT'&&decodeURIComponent(tail)==="/values/'指示'!E2:G2"){sheets[id]['指示'][1].splice(4,3,...body.values[0]);return json({});}
  throw Error('FORBIDDEN WRITE '+u);
