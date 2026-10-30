@@ -145,7 +145,9 @@ ol.hist li{overflow-wrap:anywhere}
 .todo-title{display:flex;align-items:flex-start;gap:8px;min-width:0}.todo-title>.ttl{flex:1}.todo-deadline{display:flex;justify-content:flex-start;min-width:0;text-align:left}
 .chip{font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:99px;background:var(--sunk);color:var(--muted);white-space:nowrap}
 .chip.boss{background:var(--amber-soft);color:var(--amber)}
-.card.boss{border-left:4px solid var(--amber)}
+.card.boss{border-left:6px solid var(--amber)}
+.reqbox{display:flex;flex-direction:column;gap:8px;padding:10px 0 4px;border-bottom:1px dashed var(--line)}
+.reqbox h3{margin:0;font-size:16px;color:var(--amber)}
 /* 設定の欄の開け閉め */
 details.fold{display:block}
 details.fold[open]>summary.foldh~*+*{margin-top:10px}
@@ -324,8 +326,8 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.46.8" title="使い方マニュアルを開く">v1.46.8・10/29更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.46.8" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.46.9" title="使い方マニュアルを開く">v1.46.9・10/30更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.46.9" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -701,7 +703,7 @@ function todoCardHeading(t,badge=""){
 }
 function todoRow(t){
   const c=t.caseId?findCase(t.caseId):null;
-  if(t.ro)return '<div class="card" style="cursor:default">'+
+  if(t.ro)return '<div class="card'+(isReqKind(t.kind)?' boss':'')+'" style="cursor:default">'+
     todoCardHeading(t,isReqKind(t.kind)?'<span class="chip boss">リクエスト</span>':'')+
     '<div class="row note">'+personBadge(t.tantou)+(t.property?'<span>'+h(t.property)+' '+h(t.room)+'</span>':'')+roChip()+'<span class="sp"></span>'+(c?'<button class="btn sm" type="button" data-open="'+h(c.id)+'">案件を開く</button>':'')+'</div></div>';
   if(t.order)return '<div class="card boss" style="cursor:default">'+
@@ -725,7 +727,7 @@ function vHome(){
   const un=all.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   const ord=todos.filter(x=>x.order), ordOver=ord.filter(x=>x.due&&x.due<t).length;
   return (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）と付いた案件は練習用の例です。入力した内容はこの端末のブラウザにだけ残ります。</div>':'')+
-  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.46.8">マニュアル</a>へ。</p></div>')+
+  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.46.9">マニュアル</a>へ。</p></div>')+
   '<section class="sec">'+gSyncPanel()+'</section>'+
   (ord.length?'<button type="button" class="banner" data-nav="todo" style="text-align:left;width:100%;cursor:pointer'+(ordOver?';border-color:var(--red)':'')+'"><b>タスクリクエスト '+ord.length+'件</b>'+(ordOver?'<span style="color:var(--red);font-weight:700">（期限切れ '+ordOver+'件）</span>':'')+'<div class="note">'+ord.slice(0,3).map(x=>h(x.title)).join("・")+'</div></button>':'')+
   (D().admin||D().viewListId?corpView():'')+
@@ -1030,13 +1032,20 @@ function caseDelete(c){
 function vTodo(){
   const t=todayS(), wk=addDays(t,7);
   const ro=roTodos(), lab=x=>x.ro?x.tantou:tantouLabel(x.tantou), tans=[...new Set(tantouOptions().map(o=>o.l).concat(DB.todos.map(x=>x.tantou).filter(Boolean).map(tantouLabel),ro.map(x=>x.tantou)))];
-  let list=genTodos().concat(ro).filter(x=>x.order||ui.tTantou==="all"||lab(x)===ui.tTantou); /* タスクリクエスト is always shown */
-  if(ui.tPeriod==="today")list=list.filter(x=>x.order||x.due&&x.due<=t);
-  if(ui.tPeriod==="week")list=list.filter(x=>x.order||x.due&&x.due<=wk);
+  /* タスクリクエスト（v1.46.9）：未完了のリクエストは期限に関係なく一番上にまとめる（期間の絞り込みでは隠さない。担当の絞り込みは効かせる）。
+     自分のリクエスト（order）と、読み込んだ社員のリクエスト（ro・種類「リクエスト」）の両方。取消・完了は genTodos／roBuild の時点で入らない */
+  const base=genTodos().concat(ro).filter(x=>ui.tTantou==="all"||lab(x)===ui.tTantou);
+  const reqs=base.filter(isReqTodo).sort((a,b)=>(a.due||"9").localeCompare(b.due||"9"));
+  let list=base.filter(x=>!isReqTodo(x));
+  if(ui.tPeriod==="today")list=list.filter(x=>x.due&&x.due<=t);
+  if(ui.tPeriod==="week")list=list.filter(x=>x.due&&x.due<=wk);
+  const reqOver=reqs.filter(x=>x.due&&x.due<t).length;
   const seg=(id,cur,opts)=>'<div class="seg" role="group">'+opts.map(([k,l])=>'<button type="button" data-'+id+'="'+h(k)+'" aria-pressed="'+(cur===k)+'">'+h(l)+'</button>').join("")+'</div>';
-  return '<section class="sec"><div class="sec-h"><h2>ToDo</h2><span class="note num">'+list.length+'件</span></div>'+
+  return '<section class="sec"><div class="sec-h"><h2>ToDo</h2><span class="note num">'+(reqs.length+list.length)+'件</span></div>'+
   seg("tp",ui.tPeriod,[["today","今日まで"],["week","1週間以内"],["all","すべて"]])+
   seg("tt",ui.tTantou,[["all","全員"],...tans.map(s=>[s,s])])+roNote()+
+  (reqs.length?'<div class="reqbox"><div class="sec-h"><h3>タスクリクエスト</h3><span class="note num">'+reqs.length+'件'+(reqOver?'<b style="color:var(--red)">（期限切れ '+reqOver+'件）</b>':'')+'</span></div>'+
+    '<div class="list">'+reqs.map(todoRow).join("")+'</div></div>':'')+
   '<p class="note" style="margin:0">案件のToDoは段階に合わせて自動で出ます。案件を進めると消えます。</p>'+
   '<div class="list">'+(list.map(todoRow).join("")||'<div class="empty">この条件のToDoはありません</div>')+'</div></section>'+
   completedManualTodos()+cancelledManualTodos()+
@@ -1548,7 +1557,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.46.8";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.46.9";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -1612,7 +1621,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.46.8" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.46.8" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.46.9" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.46.9" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -2139,6 +2148,7 @@ const sheetTabNames=async id=>{const v=await gReq(SHEETS+"/"+encodeURIComponent(
    the person's device only fills 状態＝完了・完了日・完了メモ (columns E:G) of the row. Rows are never deleted or moved */
 /* the ToDo tab's 種類 was 「社長から」 in v1.29 */
 const isReqKind=k=>k==="リクエスト"||k==="社長から";
+const isReqTodo=x=>!!(x&&(x.order||x.ro&&isReqKind(x.kind)));
 const ORDER_COLS=["指示ID","内容","期限","指示日","状態","完了日","完了メモ"];
 const cellDate=v=>String(v==null?"":v).slice(0,10);
 async function ordersSync(id){
