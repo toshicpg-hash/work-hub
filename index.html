@@ -339,8 +339,8 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.47.6" title="使い方マニュアルを開く">v1.47.6・10/31更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.47.6" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.47.7" title="使い方マニュアルを開く">v1.47.7・10/31更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.47.7" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -757,8 +757,8 @@ function vHome(){
   const un=all.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   const ord=todos.filter(x=>x.order), ordOver=ord.filter(x=>x.due&&x.due<t).length;
   return (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）と付いた案件は練習用の例です。入力した内容はこの端末のブラウザにだけ残ります。</div>':'')+
-  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.47.6">マニュアル</a>へ。</p></div>')+
-  '<section class="sec">'+gSyncPanel()+'</section>'+
+  (DB.cases.length||D().admin?'':'<div class="panel"><h3>まだ案件がありません</h3><p style="margin:0">右上の <b>＋ 受付</b> から始めましょう。使い方は<a href="./manual.html?v=1.47.7">マニュアル</a>へ。</p></div>')+
+  '<section class="sec">'+gSyncPanel(true)+'</section>'+
   (ord.length?'<button type="button" class="banner" data-nav="todo" style="text-align:left;width:100%;cursor:pointer'+(ordOver?';border-color:var(--red)':'')+'"><b>タスクリクエスト '+ord.length+'件</b>'+(ordOver?'<span style="color:var(--red);font-weight:700">（期限切れ '+ordOver+'件）</span>':'')+'<div class="note">'+ord.slice(0,3).map(x=>h(x.title)).join("・")+'</div></button>':'')+
   (D().admin||D().viewListId?corpView():'')+
   /* 社長の管理端末で自分の入力が無いときは、0件ばかりの自分用の欄を出さない（会社の動きだけを見る） */
@@ -1439,6 +1439,7 @@ async function gSyncAll(){
 async function gSyncAllRun(){
   const rows=[], step=(name,ok,msg)=>rows.push({name,ok,msg});
   ui.gsync={busy:true,rows};render();
+  let complete=false; // Presentation only: early return/throw must not look like completed success.
   try{
     try{await gAuthorize(dataOn());step("Googleにログイン",true,"できました")}catch(err){step("Googleにログイン",false,gMsg(err));return}
     try{const cs=await gLoadCalendars();step("カレンダー一覧",true,cs.length+"件")}catch(err){step("カレンダー一覧",false,gMsg(err));return}
@@ -1455,12 +1456,29 @@ async function gSyncAllRun(){
         step("社員の記録",!bad,ok.length+"人・案件"+ok.reduce((n,x)=>n+x.cases.filter(r=>r["受付番号"]).length,0)+"件"+(bad?"。読めなかった人が"+bad+"人います（会社の動きで確かめてください）":""))}
       catch(err){if(err.message==="signin")throw err;step("社員の記録",false,corpErr(err))}
     }
-  }finally{ui.gsync={busy:false,at:Date.now(),rows};render()}
+    complete=true;
+  }finally{ui.gsync={busy:false,at:Date.now(),rows,complete};render()}
 }
-function gSyncPanel(){
-  const r=ui.gsync;
+function homeSyncAttention(){
+  const day=jstDay(new Date().toISOString()),ownOld=!!D().sheetId&&jstDay(D().lastSync)!==day;
+  const report=requestBoxNotice(),unsent=DB.todos.some(t=>t.order&&t.done&&!t.synced);
+  const storage=document.getElementById('manualTodoStorageNotice');
+  return {blocked:ownOld||!!report||unsent||caseSaveUncertain||ui.rSaveUncertain||!!(storage&&!storage.hidden),html:
+    (ownOld?'<p class="banner" role="status">今日まだ同期していません。Googleとまとめて同期してください。</p>':'')+
+    report+(unsent?'<p class="banner" role="status">タスクリクエストの完了報告が未送信です。Googleとまとめて同期してください。</p>':'')};
+}
+function gSyncPanel(home=false){
+  const r=ui.gsync,attention=home?homeSyncAttention():{blocked:false,html:''};
+  const companyRow=x=>!!(D().admin||D().viewListId)&&x.name==='社員の記録';
+  const resultList=rows=>rows?.length?'<ul class="gres" role="status">'+rows.map(x=>'<li class="'+(x.ok?'ok':'ng')+'">'+(x.ok?'✓ ':'× ')+h(x.name)+'：'+h(x.msg)+'</li>').join("")+'</ul>':'';
+  const known=['Googleにログイン','カレンダー一覧','予定の読み込み','領収書の写真の控え','タスクリクエスト','指示箱（GM・全社）','社員の記録',...['案件','入金','立替','ToDo','情報'].map(t=>'記録シート「'+t+'」')];
+  const success=home&&r?.complete===true&&r.busy===false&&Number.isFinite(r.at)&&r.rows?.length>0&&!attention.blocked&&r.rows.some(x=>!companyRow(x))&&r.rows.every(x=>(x.ok===true||(companyRow(x)&&x.ok===false))&&known.includes(x.name)&&Object.keys(x).every(k=>['name','ok','msg'].includes(k)));
+  const companyErrors=success?r.rows.filter(x=>companyRow(x)&&x.ok===false):[];
+  const list=resultList(success?r.rows.filter(x=>!companyErrors.includes(x)):r?.rows);
+  const stamp=success?new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(r.at)):'';
   return '<div class="gsync"><button type="button" class="gsyncbtn" data-act="gsync"'+(r&&r.busy?' disabled':'')+'>'+(r&&r.busy?'同期しています…':'Googleとまとめて同期')+'</button>'+
-    (r&&r.rows&&r.rows.length?'<ul class="gres" role="status">'+r.rows.map(x=>'<li class="'+(x.ok?'ok':'ng')+'">'+(x.ok?'✓ ':'× ')+h(x.name)+'：'+h(x.msg)+'</li>').join("")+'</ul>':'')+'</div>';
+    (home&&r?.busy===false&&r.complete!==true&&r.rows?.length&&r.rows.every(x=>x.ok===true)?'<p class="banner" role="alert">同期の完了を確認できません。結果を確認して、もう一度同期してください。</p>':'')+
+    (success?'<details class="sync-result"><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer">✅ 同期済み '+h(stamp)+'</summary>'+list+'</details>':list)+resultList(companyErrors)+attention.html+'</div>';
 }
 /* Register / update the case's planned date on the chosen Google calendar.
    The event id is saved on the case before it is sent, so a retry updates the same event instead of making a second one. */
@@ -1629,7 +1647,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.47.6";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.47.7";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -1694,7 +1712,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.47.6" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.47.6" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.47.7" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.47.7" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
