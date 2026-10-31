@@ -79,7 +79,7 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
     assert.equal(network.exports.ToDo.some(r=>r[3]==='synthetic-won'&&r[6]!=='手入力'),false);
     assert.deepEqual((await read(p)).cases,before.cases);assert.deepEqual((await read(p)).todos,before.todos);
    }
-   await p.reload();assert.deepEqual((await read(p)).cases,before.cases);assert(a.requests.filter(r=>r.method!=='GET').every(r=>/^https:\/\/sheets.googleapis.com\/v4\/spreadsheets\/synthetic-own(?:\/|:batchUpdate)/.test(r.url)));assert.equal(network.grid.columnCount,32);assert.equal(network.caseClear,undefined);assert.equal(network.batches,2);assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('Repeated full mocked shared sync preserves schedule/cancellation and unrelated requests; no calendar writes');
+   await p.reload();assert.deepEqual((await read(p)).cases,before.cases);assert(a.requests.filter(r=>r.method!=='GET').every(r=>/^https:\/\/sheets.googleapis.com\/v4\/spreadsheets\/synthetic-own(?:\/|:batchUpdate)/.test(r.url)));assert.equal(network.grid.columnCount,33);assert.equal(network.caseClear,undefined);assert.equal(network.batches,2);assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('Repeated full mocked shared sync preserves schedule/cancellation and unrelated requests; no calendar writes');
   }
   for(const fault of ['read-throws','read-old','read-replaced'])for(const action of ['cancel','plan']){
    const syncDb=structuredClone(db);syncDb.settings.data.sheetId='synthetic-own';const network={exports:{}},a=await setup(syncDb,'Asia/Tokyo',390,network),{p}=a;
@@ -123,7 +123,7 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
    const outcome=await p.evaluate(async()=>{testHub.authorize();try{await testHub.sheetWrite('synthetic-own','案件',testHub.dataRows().cases);return 'ok'}catch(e){return e.message}});
    assert.equal(network.caseClear,undefined);
    if(fault){assert.notEqual(outcome,'ok');assert.deepEqual(network.exports['案件'],original);assert.equal(network.grid.columnCount,29);assert.equal(network.grid.rowCount,3);if(['metadata','missing-grid'].includes(fault))assert.equal(network.calls.filter(r=>r.method!=='GET').length,0);}
-   else{assert.equal(outcome,'ok');assert.equal(network.grid.columnCount,32);assert.equal(network.grid.rowCount,db.cases.length+1);assert.equal(network.exports['案件'][0].length,32);const count=network.grid.rowCount;await p.evaluate(()=>testHub.sheetWrite('synthetic-own','案件',[testHub.dataRows().cases[0]]));assert.equal(network.grid.rowCount,count);assert.equal(network.grid.columnCount,32);assert.equal(network.exports['案件'].length,1);}
+   else{assert.equal(outcome,'ok');assert.equal(network.grid.columnCount,33);assert.equal(network.grid.rowCount,db.cases.length+1);assert.equal(network.exports['案件'][0].length,33);const count=network.grid.rowCount;await p.evaluate(()=>testHub.sheetWrite('synthetic-own','案件',[testHub.dataRows().cases[0]]));assert.equal(network.grid.rowCount,count);assert.equal(network.grid.columnCount,33);assert.equal(network.exports['案件'].length,1);}
    assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('29-column bounded mirror '+(fault||'grow/repeat/header-only')+': no preclear and no partial mutation');
   }
   {
