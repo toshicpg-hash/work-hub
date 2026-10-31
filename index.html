@@ -1462,21 +1462,23 @@ async function gSyncAllRun(){
 function homeSyncAttention(){
   const day=jstDay(new Date().toISOString()),ownOld=!!D().sheetId&&jstDay(D().lastSync)!==day;
   const report=requestBoxNotice(),unsent=DB.todos.some(t=>t.order&&t.done&&!t.synced);
-  const corp=ui.corp,corpAttention=!!((D().admin||D().viewListId)&&(corp?.err||corp?.kept||(corp?.data||[]).some(x=>!x.ok||!x.s.lastSync||String(x.s.lastSync).slice(0,10)!==day||x.receiptRead?.state==='invalid')));
   const storage=document.getElementById('manualTodoStorageNotice');
-  return {blocked:ownOld||!!report||unsent||corpAttention||caseSaveUncertain||ui.rSaveUncertain||!!(storage&&!storage.hidden),html:
+  return {blocked:ownOld||!!report||unsent||caseSaveUncertain||ui.rSaveUncertain||!!(storage&&!storage.hidden),html:
     (ownOld?'<p class="banner" role="status">今日まだ同期していません。Googleとまとめて同期してください。</p>':'')+
     report+(unsent?'<p class="banner" role="status">タスクリクエストの完了報告が未送信です。Googleとまとめて同期してください。</p>':'')};
 }
 function gSyncPanel(home=false){
   const r=ui.gsync,attention=home?homeSyncAttention():{blocked:false,html:''};
-  const list=r&&r.rows&&r.rows.length?'<ul class="gres" role="status">'+r.rows.map(x=>'<li class="'+(x.ok?'ok':'ng')+'">'+(x.ok?'✓ ':'× ')+h(x.name)+'：'+h(x.msg)+'</li>').join("")+'</ul>':'';
+  const companyRow=x=>!!(D().admin||D().viewListId)&&x.name==='社員の記録';
+  const resultList=rows=>rows?.length?'<ul class="gres" role="status">'+rows.map(x=>'<li class="'+(x.ok?'ok':'ng')+'">'+(x.ok?'✓ ':'× ')+h(x.name)+'：'+h(x.msg)+'</li>').join("")+'</ul>':'';
   const known=['Googleにログイン','カレンダー一覧','予定の読み込み','領収書の写真の控え','タスクリクエスト','指示箱（GM・全社）','社員の記録',...['案件','入金','立替','ToDo','情報'].map(t=>'記録シート「'+t+'」')];
-  const success=home&&r?.complete===true&&r.busy===false&&Number.isFinite(r.at)&&r.rows?.length>0&&!attention.blocked&&r.rows.every(x=>x.ok===true&&known.includes(x.name)&&Object.keys(x).every(k=>['name','ok','msg'].includes(k)));
+  const success=home&&r?.complete===true&&r.busy===false&&Number.isFinite(r.at)&&r.rows?.length>0&&!attention.blocked&&r.rows.some(x=>!companyRow(x))&&r.rows.every(x=>(x.ok===true||(companyRow(x)&&x.ok===false))&&known.includes(x.name)&&Object.keys(x).every(k=>['name','ok','msg'].includes(k)));
+  const companyErrors=success?r.rows.filter(x=>companyRow(x)&&x.ok===false):[];
+  const list=resultList(success?r.rows.filter(x=>!companyErrors.includes(x)):r?.rows);
   const stamp=success?new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(r.at)):'';
   return '<div class="gsync"><button type="button" class="gsyncbtn" data-act="gsync"'+(r&&r.busy?' disabled':'')+'>'+(r&&r.busy?'同期しています…':'Googleとまとめて同期')+'</button>'+
     (home&&r?.busy===false&&r.complete!==true&&r.rows?.length&&r.rows.every(x=>x.ok===true)?'<p class="banner" role="alert">同期の完了を確認できません。結果を確認して、もう一度同期してください。</p>':'')+
-    (success?'<details class="sync-result"><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer">✅ 同期済み '+h(stamp)+'</summary>'+list+'</details>':list)+attention.html+'</div>';
+    (success?'<details class="sync-result"><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer">✅ 同期済み '+h(stamp)+'</summary>'+list+'</details>':list)+resultList(companyErrors)+attention.html+'</div>';
 }
 /* Register / update the case's planned date on the chosen Google calendar.
    The event id is saved on the case before it is sent, so a retry updates the same event instead of making a second one. */
