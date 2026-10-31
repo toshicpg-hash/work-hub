@@ -11,7 +11,7 @@ async function setup({width=390,tz='Asia/Tokyo',baseline=false,db=null,fullSync=
  if(u.hostname==='sheets.googleapis.com'){
  const match=u.pathname.match(/^\/v4\/spreadsheets\/([^/:]+)(.*)$/),id=match?.[1],tail=match?.[2];if(!sheets[id])return r.fulfill({status:403,body:'{}'});
  const method=r.request().method(),json=body=>r.fulfill({contentType:'application/json',body:JSON.stringify(body)});
- if(method==='GET'&&!tail)return json({sheets:Object.keys(sheets[id]).map((title,sheetId)=>({properties:{title,sheetId,gridProperties:{rowCount:100,columnCount:32}}}))});
+ if(method==='GET'&&!tail)return json({sheets:Object.keys(sheets[id]).map((title,sheetId)=>({properties:{title,sheetId,gridProperties:{rowCount:100,columnCount:33}}}))});
  if(method==='GET'&&tail==='/values:batchGet'){const tabs=u.searchParams.getAll('ranges').map(t=>t.replace(/^'|'$/g,''));if(failReadback&&tabs.includes('指示の報告')&&sheets[id]['指示の報告']?.length>1)return r.fulfill({status:403,body:'{}'});return json({valueRanges:tabs.map(t=>({values:sheets[id][t]||[]}))});}
  if(id!==OWN)throw Error('FORBIDDEN BOX WRITE '+u);
  const body=r.request().postDataJSON();writes.push({method,tail,body});
