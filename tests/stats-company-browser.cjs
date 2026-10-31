@@ -55,9 +55,9 @@ async function main(){
   });
   await check('担当別の表 '+width+'px',async()=>{
    const rows=await p.$$eval('h2:text-matches("月の担当別")+* tbody tr, .sec:has(h2:text-matches("月の担当別")) tbody tr',a=>[...new Set(a.map(x=>[...x.cells].map(c=>c.textContent).join('|')))]);
-   assert.ok(rows.includes('見本|3件|1件|100,000円|1件 50,000円'),rows.join(' / '));
-   assert.ok(rows.includes('例題|1件|1件|200,000円|0件 0円'),rows.join(' / '));
-   assert.ok(rows.includes('トシ|1件|0件|0円|0件 0円'),rows.join(' / '));
+   assert.ok(rows.includes('見本|3件|1件|1件|100,000円|1件 50,000円'),rows.join(' / '));
+   assert.ok(rows.includes('例題|1件|1件|0件|200,000円|0件 0円'),rows.join(' / '));
+   assert.ok(rows.includes('トシ|1件|0件|0件|0円|0件 0円'),rows.join(' / '));
   });
   await check('会社の絞り込み（案件の会社・空なら人の会社） '+width+'px',async()=>{
    await p.click('[data-sco="CP"]');let s=await sum(p);
@@ -90,7 +90,7 @@ async function main(){
   assert.equal(s['見積提出'],'2件',JSON.stringify(s));assert.equal(s['受注'],'2件');assert.equal(await unpaidHead(p),'0件 0円');
   assert.ok(await overflow(p)<=0);
   const rows=await p.$$eval('.sec:has(h2:text-matches("月の担当別")) tbody tr',a=>a.map(x=>[...x.cells].map(c=>c.textContent).join('|')));
-  assert.deepEqual(rows.sort(),['例題|1件|1件|200,000円|0件 0円','見本|1件|1件|100,000円|0件 0円'].sort(),rows.join(' / '));
+  assert.deepEqual(rows.sort(),['例題|1件|1件|0件|200,000円|0件 0円','見本|1件|1件|0件|100,000円|0件 0円'].sort(),rows.join(' / '));
   /* 会社の動きも GMの会社に固定 */
   await p.evaluate(()=>{ST.ui.corpCo='AT';ST.roBuild(ST.ui.corp.data);ST.go('home')});
   assert.equal(await p.$$eval('[data-cco]',a=>a.length),0,'no company buttons in 会社の動き on a GM device');
