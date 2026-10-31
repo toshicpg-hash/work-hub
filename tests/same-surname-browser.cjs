@@ -68,7 +68,7 @@ async function main(){
    assert.ok(await overflow(p)<=0);
   });
   await check('会社の動き：担当別のまとめと同期の状況 '+width+'px',async()=>{
-   await p.evaluate(()=>SS.go('home'));
+   await p.evaluate(()=>SS.go('company'));
    const sums=await p.$$eval('.panel:has(h3:text-matches("動いている案件")) details > summary',a=>a.map(x=>x.textContent));
    assert.ok(sums.some(x=>x.startsWith('黒木試（1件）'))&&sums.some(x=>x.startsWith('黒木見（1件）')),sums.join('|'));
    const li=await p.$$eval('h3:text("同期の状況")+ul li',a=>a.map(x=>({t:x.textContent,c:getComputedStyle(x).color})));

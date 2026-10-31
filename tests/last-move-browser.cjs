@@ -57,7 +57,7 @@ async function main(){
     row('U-0001','試験荘未来',{'受付日':'2026-10-26','予定日':'2026-11-11','最終の動き':'2026-11-11'}),
     row('U-0002','試験荘実施',{'受付日':'2026-10-20','実施日':'2026-10-28','段階キー':'site','段階':'現地確認済','最終の動き':'2026-10-28'}),
     row('U-0003','試験荘予定のみ',{'受付日':'','予定日':'2026-11-20','最終の動き':'2026-11-20'})]}]};
-   LM.roBuild(LM.ui.corp.data);LM.go('home')});
+   LM.roBuild(LM.ui.corp.data);LM.go('company')});
   const cards=await p.$$eval('.panel:has(h3:text-matches("動いている案件")) .card',a=>a.map(x=>({t:x.querySelector('.ttl').textContent.trim(),n:(x.querySelector(':scope > .note')||{}).textContent||''})));
   assert.deepEqual(cards.map(x=>x.t.split(' ')[0]),['試験荘実施','試験荘未来','試験荘予定のみ']);
   assert.ok(cards[0].n.includes('最終の動き 10/28'),JSON.stringify(cards));
