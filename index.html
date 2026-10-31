@@ -749,11 +749,12 @@ function todoRow(t,expanded=false){
     (c?'<button class="btn sm" type="button" data-open="'+h(c.id)+'">案件を開く</button>':t.nav?'<button class="btn sm" type="button" data-nav="'+t.nav+'">領収書を開く</button>':(manualTodoEditable(t)?'<button class="btn sm" type="button" data-mtdedit="'+h(t.id)+'">編集</button>'+(!t.done&&!t.cancelled?'<button class="btn sm" type="button" data-mtdcancel="'+h(t.id)+'">取消</button>':''):'')+(t.done?'<span class="chip">完了済み</span>':'<button class="btn sm" type="button" data-done="'+h(t.id)+'">完了</button>'))+'</div></div>';
 }
 
+const accessWaiting=c=>c.stage==="won"&&!c.cancelledAt&&!String(c.jobNo??"").trim();
 function vHome(){
   const todos=genTodos(), t=todayS(), all=allCases(), tdAll=todos.concat(roTodos()); /* 社長の管理端末では、読み込んだ社員の分も含めた会社全体の数字 */
   const over=tdAll.filter(x=>x.due&&x.due<t), todayT=tdAll.filter(x=>x.due===t);
   const urgent=all.filter(c=>c.type==="kinkyu"&&(c.stage==="new"||c.stage==="site"));
-  const active=all.filter(c=>!ended(c));
+  const active=all.filter(c=>!ended(c)), waiting=all.filter(accessWaiting);
   const rp=rPending(), rsub=rSubmitted(), rnotes=rcptNotices();
   const un=all.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   const ord=todos.filter(x=>x.order), ordOver=ord.filter(x=>x.due&&x.due<t).length;
@@ -764,6 +765,7 @@ function vHome(){
     '<button type="button" class="tile" data-nav="todo"><span class="k">今日までのToDo</span><span class="v">'+todayT.length+'</span></button>'+
     '<button type="button" class="tile'+(urgent.length?" alert":"")+'" data-nav="cases" data-type="kinkyu"><span class="k">対応中の緊急</span><span class="v">'+urgent.length+'</span></button>'+
     '<button type="button" class="tile" data-nav="cases"><span class="k">動いている案件</span><span class="v">'+active.length+'</span></button>'+
+    '<button type="button" id="home-access" class="tile'+(waiting.length?' alert':'')+'" data-nav="cases" data-handoff="1"><span class="k">Access引渡待ち</span><span class="v">'+waiting.length+'件</span><span class="s">受注済み・仕事番号待ち</span></button>'+
     '<button type="button" class="tile wide'+(unLate?" alert":"")+'" data-nav="stats" data-jump="stats-unpaid"><span class="k">未入金（請求済みで入金待ち）</span><span class="v num">'+un.length+'件 '+yen(unSum)+'</span><span class="s">'+(unLate?'<b>入金予定日を過ぎたもの '+unLate+'件</b>':'遅れはありません')+'</span></button>'+
     '<button type="button" class="tile'+(rnotes.length?" alert":"")+'" data-nav="rcpt"><span class="k">立替 未提出</span><span class="v num">'+rp.length+'件</span><span class="s num">'+yen(rSum(rp))+'</span></button>'+
     '<button type="button" class="tile" data-nav="rcpt" data-rtab2="claims"><span class="k">提出済・未精算</span><span class="v num">'+rsub.length+'件</span><span class="s num">'+yen(rSum(rsub))+'</span></button>'+
@@ -794,7 +796,7 @@ function vCompany(){
 function vCases(){
   const q=ui.q.trim();
   const cf=ui.cCo||"all";
-  let list=allCases().filter(c=>(ui.showEnded||!ended(c))&&(ui.type==="all"||c.type===ui.type)&&(!ui.payOnly||unpaid(c))&&(cf==="all"||(cf==="none"?!COMPANIES.includes(c.company):c.company===cf)));
+  let list=allCases().filter(c=>(!ui.handoffOnly||accessWaiting(c))&&(ui.showEnded||!ended(c))&&(ui.type==="all"||c.type===ui.type)&&(!ui.payOnly||unpaid(c))&&(cf==="all"||(cf==="none"?!COMPANIES.includes(c.company):c.company===cf)));
   const noCo=DB.cases.filter(c=>!ended(c)&&!exCase(c)&&!COMPANIES.includes(c.company)).length;
   if(q)list=list.filter(c=>[c.id,c.client,c.property,c.room,c.addr,c.note,c.jobNo,c.symptom].join(" ").includes(q));
   const order={new:0,site:1,quoted:2,hold:3,won:4,handed:5,working:5,built:6,billed:7,paid:8,lost:9};
@@ -809,6 +811,7 @@ function vCases(){
     (noCo?'<p class="note" style="margin:0">会社が未設定の案件が '+noCo+'件あります。案件を開いて「会社」の <b>選ぶ</b> で CP・CPY・AT を選んでください。</p>':'')+
     '<div class="seg" role="group" aria-label="依頼の種類">'+[["all","すべて"],...Object.entries(TYPES).map(([k,v])=>[k,v.label])].map(([k,l])=>'<button type="button" data-type="'+k+'" aria-pressed="'+(ui.type===k)+'">'+l+'</button>').join("")+'</div>'+
     '<div class="row note"><label class="row"><input type="checkbox" id="payOnly"'+(ui.payOnly?" checked":"")+'> 入金待ちだけ</label><label class="row"><input type="checkbox" id="showEnded"'+(ui.showEnded?" checked":"")+'> 失注・受注後取消・入金済も表示</label></div>'+
+    '<label class="row note"><input type="checkbox" id="handoffOnly"'+(ui.handoffOnly?' checked':'')+'> Access引渡待ちだけ（受注済み・仕事番号待ち）</label>'+
     (ui.payOnly?acctPanel():'')+
     '<div class="list">'+(list.map(caseCard).join("")||'<div class="empty">該当する案件はありません</div>')+'</div></section>';
 }
@@ -2782,7 +2785,7 @@ document.addEventListener("click",e=>{
   if(el.dataset.act==="mtdclose"){manualTodoClose();return}
   if(el.dataset.act==="mtdbackup"||el.dataset.act==="mtddraft"){manualTodoDownload(el.dataset.act==="mtddraft");return}
   if(el.dataset.open){go("detail",{caseId:el.dataset.open});return}
-  if(el.dataset.nav){const ex={csv:false};if(el.closest("#home-summary")&&el.dataset.nav==="cases"){ex.q="";ex.cCo="all";ex.showEnded=false;}if(el.dataset.sharedReceipts)ex.rScope="shared";if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";if(el.dataset.nav==="cases")ex.payOnly=!!el.dataset.pay;if(el.dataset.nav==="rcpt"&&el.closest(".tile")){ex.rTab=el.dataset.rtab2||"list";ex.rScope="own";}go(el.dataset.nav,ex);if(el.dataset.jump&&ui.view===el.dataset.nav)document.getElementById(el.dataset.jump)?.scrollIntoView();return}
+  if(el.dataset.nav){const ex={csv:false};if(el.closest("#home-summary")&&el.dataset.nav==="cases"){ex.q="";ex.cCo="all";ex.showEnded=false;}if(el.dataset.sharedReceipts)ex.rScope="shared";if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";if(el.dataset.nav==="cases"){ex.payOnly=!!el.dataset.pay;ex.handoffOnly=!!el.dataset.handoff;}if(el.dataset.nav==="rcpt"&&el.closest(".tile")){ex.rTab=el.dataset.rtab2||"list";ex.rScope="own";}go(el.dataset.nav,ex);if(el.dataset.jump&&ui.view===el.dataset.nav)document.getElementById(el.dataset.jump)?.scrollIntoView();return}
   if(el.dataset.rscope){ui.rScope=el.dataset.rscope;rClearDl();render();return;}
   if(el.dataset.rtab){ui.rTab=el.dataset.rtab;rClearDl();ui.rcCancel=null;render();return}
   if(el.dataset.ropen){rFormClear();go("rform",{rId:el.dataset.ropen});return}
@@ -3016,6 +3019,7 @@ document.addEventListener("change",e=>{
   if(t.id==="r_case"){receiptCaseChanged(t.value);return;}
   if(t.id==="r_method"||t.id==="r_co"){const card=val("r_method")==="法人カード",w=document.getElementById("r_cardWrap"),sel=document.getElementById("r_card");if(w)w.hidden=!card;
     if(sel){const ks=RS().cards.filter(k=>k.company===val("r_co"));sel.innerHTML=ks.map(k=>'<option value="'+h(k.id)+'">'+h(k.name)+'</option>').join("")||'<option value="">この会社のカードがありません</option>'}return}
+  if(t.id==="handoffOnly"){ui.handoffOnly=t.checked;render();return}
   if(t.id==="payOnly"){ui.payOnly=t.checked;render();return}
   if(t.dataset.item!=null&&c){const it=c.items[Number(t.dataset.item)];if(it){it[t.dataset.f]=t.dataset.f==="amount"?(t.value===""?"":Number(t.value)):t.value;save();refreshItemTotals(c)}return}
   if(t.id==="d_billing"&&c){c.billingTenant=t.value;save();return}
