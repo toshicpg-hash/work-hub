@@ -970,6 +970,46 @@ function emergencyTimeFields(value){
     (value&&!valid?'<p class="note" role="status">保存済みの時刻を選択欄に表示できません。記録は変更していません。予定時刻を確認して時・分を選んでください。</p>':'');
 }
 function caseDateWarning(c){return c.orderDate&&(c.lossDate||c.stage==='lost')?'<div class="banner case-date-warning" role="status"><b>受注日・失注日の確認が必要です。</b>受注日と失注日が両方あるか、失注の段階に受注日が残っています。元の記録を確認してください。保存は止めず、日付を自動変更しません。</div>':'';}
+
+/* Explicit local corrections; history travels in the existing JSON backup, not the shared mirror. */
+const caseDateFields=c=>Object.fromEntries(['orderDate','lossDate','lossReason','stage','cancelledAt','cancelReason'].map(k=>[k,c[k]??'']));
+function caseDateEditable(c){return !!(c&&!c.ro&&['new','site','quoted','hold','won','lost'].includes(c.stage)&&DB.cases.filter(x=>x.id===c.id).length===1&&DB.cases.find(x=>x.id===c.id)===c);}
+function caseDateHistory(c){return Array.isArray(c.dateCorrections)&&c.dateCorrections.length?'<details class="panel"><summary>受注・失注の訂正履歴（この端末）</summary>'+c.dateCorrections.map(r=>'<div class="manual-history"><b>'+h(japanStamp(r.at))+'</b><p>'+h(r.kind==='cancel-to-lost'?'受注後取消から失注へ訂正':'日付・理由を訂正')+'</p><p>変更前：'+h(caseDateText(r.before||{}))+'</p><p>変更後：'+h(caseDateText(r.after||{}))+'</p></div>').join('')+'</details>':'';}
+function caseDateText(v){return '受注日 '+(v.orderDate||'なし')+' ／ 失注日 '+(v.lossDate||'なし')+' ／ 理由 '+(v.lossReason||'なし')+' ／ 段階 '+(STAGES[v.stage]||v.stage||'なし')+' ／ 取消日時 '+(v.cancelledAt?japanStamp(v.cancelledAt):'なし')+' ／ 取消理由 '+(v.cancelReason||'なし');}
+let caseDateSession=null;
+function caseDateClose(){document.getElementById('caseDateEditor')?.close();caseDateSession=null;}
+function caseDateOpen(id,convert){
+ const c=DB.cases.find(x=>x.id===id);
+ if(caseSaveGuard()||!caseDateEditable(c)||manualTodoCancelBusy())return toast('この案件は訂正できないか、ほかの処理中です');
+ if(convert&&!(c.stage==='lost'&&c.cancelledAt))return;
+ if(c.dateCorrections!==undefined&&!Array.isArray(c.dateCorrections))return toast('訂正履歴を読み取れないため変更できません');
+ let dlg=document.getElementById('caseDateEditor');
+ if(!dlg){dlg=document.createElement('dialog');dlg.id='caseDateEditor';dlg.style.cssText='width:min(94vw,680px);max-height:90dvh;overflow:auto;border:0;border-radius:18px;padding:18px';document.body.append(dlg);dlg.addEventListener('cancel',()=>{caseDateSession=null});}
+ caseDateSession={id,convert:!!convert,raw:JSON.stringify(c)};
+ dlg.innerHTML='<h2 style="font-size:20px">'+(convert?'失注（受注していなかった）に直す':'受注日・失注日・理由を直す')+'</h2><p>'+h(c.id)+' ／ '+h(c.property)+' '+h(c.room)+'</p>'+
+ (convert?'<p>誤って受注・取消にした場合だけ使います。受注日と取消情報を現在の欄から外し、変更前の値を訂正履歴に残します。正しい受注後取消には使わないでください。</p>':'<p>日付と理由だけを直します。段階・金額・取消の状態は変わりません。</p>')+
+ '<div class="form">'+(convert?'':'<label class="f">受注日（空欄で消す）<input type="date" id="cd_order" value="'+h(c.orderDate)+'"></label>')+
+ '<label class="f">失注日'+(convert?'（必須）':'')+'<input type="date" id="cd_loss" value="'+h(c.lossDate)+'"></label><label class="f">失注の理由'+(convert?'（必須）':'')+'<select id="cd_reason">'+['',...LOSS,...(c.lossReason&&!LOSS.includes(c.lossReason)?[c.lossReason]:[])].map(v=>'<option value="'+h(v)+'"'+(v===(c.lossReason||'')?' selected':'')+'>'+h(v||'選んでください')+'</option>').join('')+'</select></label></div><p class="note">確認して保存したときだけ変更します。訂正履歴はこの端末とJSONバックアップに残ります。共有シートには現在の値だけが届きます。</p><p id="cd_status" role="status"></p><div class="row"><button type="button" class="btn pri" data-act="cddatesave">内容を確認して保存</button><button type="button" class="btn" data-act="cddateclose">やめる</button></div>';
+ dlg.showModal();
+}
+function caseDateSave(){
+ const session=caseDateSession,c=session&&DB.cases.find(x=>x.id===session.id),status=document.getElementById('cd_status');
+ if(!status)return;
+ if(caseSaveGuard()||!caseDateEditable(c)||manualTodoCancelBusy()){status.textContent='この案件は訂正できないか、ほかの処理中です';return;}
+ if(JSON.stringify(c)!==session.raw){status.textContent='記録が変わりました。閉じて最新の内容を開き直してください';return;}
+ if(session.convert&&!(c.stage==='lost'&&c.cancelledAt))return;
+ const orderDate=session.convert?'':val('cd_order'),lossDate=val('cd_loss'),lossReason=val('cd_reason');
+ const valid=d=>!d||(/^\d{4}-\d{2}-\d{2}$/.test(d)&&!isNaN(Date.parse(d+'T00:00:00Z'))&&new Date(d+'T00:00:00Z').toISOString().slice(0,10)===d);
+ if(!valid(orderDate)||!valid(lossDate)||(session.convert&&(!lossDate||!lossReason))){status.textContent='正しい日付を入力してください。取消から失注への訂正には失注日と理由が必要です';return;}
+ const before=caseDateFields(c),after={...before,orderDate,lossDate,lossReason,...(session.convert?{stage:'lost',cancelledAt:'',cancelReason:''}:{})};
+ if(JSON.stringify(before)===JSON.stringify(after)){status.textContent='変更はありません';return;}
+ if(!confirm(c.id+' ／ '+c.property+' '+c.room+'\n'+(session.convert?'受注していなかった失注に訂正しますか？':'日付・理由を訂正しますか？')+'\n変更前：'+caseDateText(before)+'\n変更後：'+caseDateText(after)+'\n変更前の値は履歴に残ります。'))return;
+ if(caseDateSession!==session||!caseDateEditable(c)||manualTodoCancelBusy()||JSON.stringify(c)!==session.raw){status.textContent='状態が変わったため保存しません。開き直してください';return;}
+ const history=[...(c.dateCorrections||[]),{id:crypto.randomUUID(),at:new Date().toISOString(),kind:session.convert?'cancel-to-lost':'dates',before,after}];
+ if(!saveCaseChange(c,{...after,dateCorrections:history})){status.textContent=CASE_SAVE_NOTICE;return;}
+ caseDateClose();render();toast('訂正と変更前の履歴を保存し、読み戻して確認しました');
+}
+
 function vDetail(){
   const c=findCase(ui.caseId);
   if(!c)return '<div class="empty">案件が見つかりません</div>'+roNote();
@@ -1017,6 +1057,7 @@ function vDetail(){
   (caseIdentityEditable(c)?'<div class="row"><button class="btn" type="button" data-caseidentity="'+h(c.id)+'">物件名・号室を直す</button></div>':'')+
   stepBar(c)+'</section>'+
   caseDateWarning(c)+act+
+  (caseDateEditable(c)?'<div class="row"><button class="btn" type="button" data-cddate="'+h(c.id)+'">受注日・失注日・理由を直す</button>'+(c.stage==='lost'&&c.cancelledAt?'<button class="btn" type="button" data-cdconvert="'+h(c.id)+'">失注（受注していなかった）に直す</button>':'')+'</div>':'')+caseDateHistory(c)+
   '<div class="panel"><h3>受付内容</h3><dl class="kv">'+
     '<dt>住所</dt><dd>'+(c.addr?h(c.addr)+' <a class="btn sm" style="display:inline-flex;align-items:center;text-decoration:none;margin-left:4px" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(c.addr)+'">地図を開く</a>':'—')+'</dd>'+
     '<dt>会社</dt><dd>'+(ui.coEdit?coSeg("data-cset",c.company)+'<div class="row" style="margin-top:6px"><button class="btn" type="button" data-act="coeditno">やめる</button></div>':coChip(c.company)+' <button class="btn sm" type="button" data-act="coedit">'+(c.company?'直す':'選ぶ')+'</button>')+'</dd>'+
@@ -1605,9 +1646,9 @@ function vStats(){
   const all=statsCases(), sco=statsCo(), gmCo=statsGmCo();
   const sent=all.filter(c=>inM(c.estSentDate));
   const won=all.filter(c=>(c.stage!=="lost"||c.cancelledAt)&&inM(c.orderDate));
-  const lost=all.filter(c=>c.stage==="lost"&&!c.cancelledAt&&(!c.lossDate||inM(c.lossDate)));
-  const undatedLost=lost.filter(c=>!c.lossDate), datedLost=lost.filter(c=>inM(c.lossDate));
-  const dec=won.length+datedLost.length, rate=dec?Math.round(won.length/dec*100):null;
+  const lost=all.filter(c=>c.stage==="lost"&&!c.cancelledAt&&inM(c.lossDate));
+  const undatedLost=all.filter(c=>c.stage==="lost"&&!c.cancelledAt&&!c.lossDate);
+  const dec=won.length+lost.length, rate=dec?Math.round(won.length/dec*100):null;
   const wonAmt=won.reduce((s,c)=>s+(Number(estOf(c))||0),0);
   const reasons=LOSS.map(r=>[r,lost.filter(c=>c.lossReason===r).length]).concat(lost.some(c=>!LOSS.includes(c.lossReason))?[["理由が届いていない（社員の記録）",lost.filter(c=>!LOSS.includes(c.lossReason)).length]]:[]);
   const maxR=Math.max(1,...reasons.map(r=>r[1]));
@@ -1630,7 +1671,7 @@ function vStats(){
       :'<div class="empty">未入金の案件はありません</div>')+'</section>';
   return (hasExamples()?'<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>':'')+
   '<section class="sec">'+statsNote()+coSegStats+'</section>'+unpaidSec+
-  '<section class="sec"><p class="note stats-loss-note">通常の失注は段階を優先し、受注件数・受注額に含めません。受注後取消は従来どおり受注実績を保持します。失注は今月の失注日がある案件と、失注日未入力 '+undatedLost.length+'件（月不明）を表示します。担当別・種類別・理由も同じ範囲です。見積決定率は日付のある今月分だけで計算します。日付は推定・補正しません。</p><div class="sec-h"><h2>'+(now.getMonth()+1)+'月の見積と受注</h2></div>'+
+  '<section class="sec"><p class="note stats-loss-note">失注にした案件は、受注日が残っていても受注には数えません。受注後取消は従来どおり受注実績を保持します。失注は今月の失注日がある案件だけを数えます。</p><p class="banner stats-undated">失注日が未入力の案件 '+undatedLost.length+'件（案件を開いて日付を入れてください）</p><div class="sec-h"><h2>'+(now.getMonth()+1)+'月の見積と受注</h2></div>'+
   '<div class="panel"><div class="row" style="align-items:flex-end;gap:18px"><div><div class="note">見積決定率（受注 ÷ 結論が出た件数）</div><div class="big">'+(rate==null?"—":rate+"%")+'</div></div>'+
   '<div class="note num">受注 '+won.length+'件 ／ 失注 '+lost.length+'件</div></div>'+
   '<div class="sum"><div><div class="k">見積提出</div><div class="v">'+sent.length+'件</div></div><div><div class="k">受注</div><div class="v">'+won.length+'件</div></div><div><div class="k">受注額（見積額）</div><div class="v">'+yen(wonAmt)+'</div></div></div></div></section>'+
@@ -2687,6 +2728,10 @@ document.addEventListener("click",e=>{
   if(ui.rSaveUncertain&&el.closest("#rForm")&&!el.matches('button[type="submit"]'))return;
   if(el.dataset.receiptSuggestion){const id=el.dataset.receiptSuggestion==="payee"?"r_payee":"r_item",input=document.getElementById(id);if(input){input.value=el.dataset.value;receiptRefreshSuggestions();input.focus({preventScroll:true});}return;}
   const c=ui.caseId?editCase(ui.caseId):null;
+  if(el.dataset.cddate){caseDateOpen(el.dataset.cddate,false);return}
+  if(el.dataset.cdconvert){caseDateOpen(el.dataset.cdconvert,true);return}
+  if(el.dataset.act==='cddatesave'){caseDateSave();return}
+  if(el.dataset.act==='cddateclose'){caseDateClose();return}
   if(el.dataset.caseidentity){caseIdentityOpen(el.dataset.caseidentity);return}
   if(el.dataset.caseprevious!=null){try{caseIdentityFill(caseIdentityApi().previousFields(caseIdentityHistoryRows[Number(el.dataset.caseprevious)],caseIdentitySession.id));document.getElementById("caseIdentityStatus").textContent="以前の物件名・号室を編集欄に戻しました。保存すると新しい履歴を残します。進捗は変わりません。";}catch(error){toast(error.message,5000)}return}
   if(el.dataset.act==="caseidentityclose"){caseIdentityClose();return}
