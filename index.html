@@ -338,11 +338,28 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 .request-person{grid-column:2;font-size:11px;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .request-detail{border-top:1px solid var(--line);padding:8px}.request-detail>.card{border:0;padding:0 4px;background:transparent}
 .request-detail .ttl{white-space:pre-wrap;overflow-wrap:anywhere}.request-list-link{font-size:12px;min-height:36px}
+
+.sum{grid-template-columns:repeat(3,minmax(0,1fr))}.sum div{min-width:0;overflow-wrap:anywhere}
+/* Text enlargement: wrap text rather than clipping it; wide tables scroll locally. */
+main,main>*,.panel,.sec,.card,.tile,.gsync,.gres,.reqbox,.row>*,.top-in>*,.form>*,.kv dd{min-width:0;max-width:100%}
+body,button,a,summary,label,li,dd,th,td{overflow-wrap:anywhere}
+button,.btn,.gsyncbtn,.tile,.mpill,.nav-in button{white-space:normal;height:auto}
+.top-in,.sec-h,.row{flex-wrap:wrap}
+input,select,textarea{min-width:0;max-width:100%}
+.tbl-wrap{width:100%;max-width:100%;min-width:0;overflow-x:auto}
+.gres li,.calendar-drift,.drift-case{white-space:normal;overflow-wrap:anywhere}
+.chip,.pbadge,.pill,.steps span,.seg.cv.rtabs button{white-space:normal;overflow-wrap:anywhere}
+.request-compact,.request-short,.request-person,.cal .d,.cal .hn,.ev,.wkev .t,.glab,.glab b{overflow:visible;text-overflow:clip;white-space:normal;overflow-wrap:anywhere}
+.drift-case{text-align:left;width:100%}.calendar-drift ul{padding-left:18px}
+.calendar-drift{color:var(--amber)}
+.request-compact summary{min-width:0}.request-short,.request-person,.request-date{min-width:0;overflow-wrap:anywhere;white-space:normal}
+main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
+.nav-in{height:auto;min-height:var(--nav-h)}.nav-in button{padding:6px 1px}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.48.1" title="使い方マニュアルを開く">v1.48.1・11/1更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.48.1" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.48.2" title="使い方マニュアルを開く">v1.48.2・11/1更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.48.2" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -814,11 +831,16 @@ function vHome(){
   (rnotes.length?'<button type="button" class="tile alert" data-nav="rcpt"><span class="v">領収書の注意 '+rnotes.length+'件</span><span class="s">'+rnotes.map(h).join('・')+'</span></button>':'')+
   ((D().admin||D().viewListId)?homeCorpTile():'');
 }
+const calendarDriftCases=()=>DB.cases.filter(c=>c.gcal&&c.gcal.id&&c.gcal.date&&c.planDate&&c.gcal.date!==c.planDate&&!ended(c));
+function calendarDriftList(){
+ const cases=calendarDriftCases(),row=c=>'<li><button class="btn drift-case" type="button" data-drift="'+h(c.id)+'">'+h([c.id,c.property,c.room].filter(Boolean).join(" "))+'（HUB '+h(mdh(c.planDate))+'／カレンダー '+h(mdh(c.gcal.date))+'）</button></li>';
+ return '<p>要確認：日付のずれ '+cases.length+'件。カレンダーに登録した日付との比較です。更新は案件の画面で行ってください。</p><ul>'+cases.slice(0,5).map(row).join('')+'</ul>'+(cases.length>5?'<details><summary>ほか'+(cases.length-5)+'件</summary><ul>'+cases.slice(5).map(row).join('')+'</ul></details>':'');
+}
 function homeSyncNotice(){
-  const r=ui.gsync,own=(r?.rows||[]).filter(x=>!((D().admin||D().viewListId)&&x.name==='社員の記録')),bad=own.filter(x=>x.ok!==true).length;
+  const r=ui.gsync,own=(r?.rows||[]).filter(x=>!((D().admin||D().viewListId)&&x.name==='社員の記録')),bad=own.filter(x=>x.ok!==true&&x.name!=='日付の変わった案件').length,drift=own.some(x=>x.name==='日付の変わった案件')?calendarDriftCases().length:0;
   const incomplete=!!r&&r.busy===false&&r.complete!==true,old=!!D().sheetId&&jstDay(D().lastSync)!==jstDay(new Date().toISOString());
   const pending=DB.todos.filter(t=>t.order&&t.done&&!t.synced).length,box=!!requestBoxNotice(),uncertain=caseSaveUncertain||ui.rSaveUncertain||!!(document.getElementById('manualTodoStorageNotice')&&!document.getElementById('manualTodoStorageNotice').hidden);
-  const labels=[bad?'同期エラー '+bad+'件':'',incomplete?'同期未完了 1件':'',old?'今日未同期 1件':'',pending?'未送信の完了報告 '+pending+'件':'',box?'指示箱の注意 1件':'',uncertain?'保存未確認 1件':''].filter(Boolean);
+  const labels=[drift?'日付のずれ '+drift+'件（要確認）':'',bad?'同期エラー '+bad+'件':'',incomplete?'同期未完了 1件':'',old?'今日未同期 1件':'',pending?'未送信の完了報告 '+pending+'件':'',box?'指示箱の注意 1件':'',uncertain?'保存未確認 1件':''].filter(Boolean);
   return labels.length?'<div class="tile alert" role="status"><span class="k">この端末の同期の注意</span><span class="s" style="color:var(--red)">'+labels.map(h).join('・')+'</span></div>':'';
 }
 function homeCorpTile(){
@@ -938,7 +960,7 @@ function gcalPreview(c){
   else if(!g||!g.date){st='まだ登録していません（登録先：'+h(where)+'）。';btn='<button class="btn pri" type="button" data-act="greg">Googleカレンダーに登録</button>'}
   else if(g.date!==c.planDate){st='<b style="color:var(--red)">登録済みの日付（'+mdh(g.date)+'）と予定日が違います。</b>';btn='<button class="btn pri" type="button" data-act="greg">カレンダーの予定を更新</button>'}
   else st='登録済み：'+h(where)+'（'+mdh(g.date)+'）'+(g.link&&/^https:\/\/www\.google\.com\/calendar\//.test(g.link)?' <a href="'+h(g.link)+'" target="_blank" rel="noopener noreferrer">Googleで開く</a>':'');
-  return '<div class="panel"><h3>Googleカレンダー</h3>'+
+  return '<div class="panel" id="case-google-calendar" style="scroll-margin-top:110px"><h3>Googleカレンダー</h3>'+
   '<p style="margin:0">'+st+'</p>'+(btn?'<div class="row">'+btn+'</div>':'')+
   '<dl class="kv"><dt>件名</dt><dd>'+h(gTitle(c))+'</dd>'+
   '<dt>日付</dt><dd class="num">'+(c.planDate?mdh(c.planDate)+' '+s+'（終日）':'日程を決めると入ります')+'</dd>'+
@@ -1129,7 +1151,7 @@ function vDetail(){
     (c.billDate?'<dt>請求</dt><dd class="num">'+md(c.billDate)+'・'+yen(c.billAmount)+'</dd><dt>請求先</dt><dd>'+h(c.billTo)+'</dd><dt>入金予定</dt><dd class="num">'+mdh(c.payDue)+'</dd>':'')+
     (c.paidDate?'<dt>入金済</dt><dd class="num">'+md(c.paidDate)+'</dd>':'')+
     '<dt>メモ</dt><dd>'+(h(c.note)||"—")+'</dd></dl></div>'+
-  (c.stage==="new"&&c.type!=="kinkyu"&&!isEizen(c)?gcalPreview(c):'')+
+  ((c.stage==="new"&&c.type!=="kinkyu"&&!isEizen(c)||calendarDriftCases().includes(c))?gcalPreview(c):'')+
   (isTaikyo(c)?itemsPanel(c,ro||lockEst&&c.stage!=="new"):'')+
   '<div class="panel"><h3>写真</h3>'+
     (ph.length?'<div class="photos">'+ph.map(src=>'<img alt="現地写真" src="'+src+'">').join("")+'</div>':'<p class="note" style="margin:0">まだ写真がありません。</p>')+
@@ -1501,7 +1523,7 @@ async function gSyncAllRun(){
     try{const j=await gReadRange(f,t);if(epoch!==G.readEpoch)throw new Error("stale");gcalCache[ids+"|"+f+"|"+t]={state:"ok",at:Date.now(),data:j,ids,from:f,to:t};gKeepSave(gcalCache[ids+"|"+f+"|"+t]);
       step("予定の読み込み",!j.missing,j.events.length+"件・前後の月も含む（"+(j.calendars.join("・")||"表示するカレンダーなし")+"）"+(j.missing?"。読めないカレンダーが"+j.missing+"つあります":""))}
     catch(err){step("予定の読み込み",false,gMsg(err))}
-    const moved=DB.cases.filter(c=>c.gcal&&c.gcal.id&&c.gcal.date&&c.planDate&&c.gcal.date!==c.planDate&&!ended(c));
+    const moved=calendarDriftCases();
     if(moved.length)step("日付の変わった案件",false,moved.length+"件がGoogleカレンダーと違います（案件の画面で「カレンダーの予定を更新」を押してください）");
     if(D().sheetId)await dataSync(step);
     if(D().admin||D().viewListId){
@@ -1523,7 +1545,7 @@ function homeSyncAttention(){
 function gSyncPanel(home=false){
   const r=ui.gsync,attention=home?homeSyncAttention():{blocked:false,html:''};
   const companyRow=x=>!!(D().admin||D().viewListId)&&x.name==='社員の記録';
-  const resultList=rows=>rows?.length?'<ul class="gres" role="status">'+rows.map(x=>'<li class="'+(x.ok?'ok':'ng')+'">'+(x.ok?'✓ ':'× ')+h(x.name)+'：'+h(x.msg)+'</li>').join("")+'</ul>':'';
+  const resultList=rows=>rows?.length?'<ul class="gres" role="status">'+rows.map(x=>x.name==='日付の変わった案件'?'<li class="calendar-drift">'+calendarDriftList()+'</li>':'<li class="'+(x.ok?'ok':'ng')+'">'+(x.ok?'✓ ':'× ')+h(x.name)+'：'+h(x.msg)+'</li>').join("")+'</ul>':'';
   const known=['Googleにログイン','カレンダー一覧','予定の読み込み','領収書の写真の控え','タスクリクエスト','指示箱（GM・全社）','社員の記録',...['案件','入金','立替','ToDo','情報'].map(t=>'記録シート「'+t+'」')];
   const success=home&&r?.complete===true&&r.busy===false&&Number.isFinite(r.at)&&r.rows?.length>0&&!attention.blocked&&r.rows.some(x=>!companyRow(x))&&r.rows.every(x=>(x.ok===true||(companyRow(x)&&x.ok===false))&&known.includes(x.name)&&Object.keys(x).every(k=>['name','ok','msg'].includes(k)));
   const companyErrors=success?r.rows.filter(x=>companyRow(x)&&x.ok===false):[];
@@ -1700,7 +1722,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.48.1";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.48.2";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -1765,7 +1787,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.48.1" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.48.1" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.48.2" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.48.2" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -2823,6 +2845,7 @@ document.addEventListener("click",e=>{
   if(el.dataset.mtdprevious!=null){const record=manualTodoHistoryRows[Number(el.dataset.mtdprevious)];try{manualTodoFill(manualTodoApi().previousFields(record,manualTodoSession.id));document.getElementById("manualTodoStatus").textContent="以前の内容を編集欄へ戻しました。保存すると新しい履歴を残します。完了状態は変わりません。";}catch(error){toast(error.message,5000)}return}
   if(el.dataset.act==="mtdclose"){manualTodoClose();return}
   if(el.dataset.act==="mtdbackup"||el.dataset.act==="mtddraft"){manualTodoDownload(el.dataset.act==="mtddraft");return}
+  if(el.dataset.drift){const c=DB.cases.find(c=>c.id===el.dataset.drift);if(c&&calendarDriftCases().includes(c)){go("detail",{caseId:c.id});const panel=document.getElementById("case-google-calendar");if(panel){panel.style.scrollMarginTop=(document.querySelector("header.top").getBoundingClientRect().height+12)+"px";panel.scrollIntoView({block:"start"});}}return}
   if(el.dataset.open){go("detail",{caseId:el.dataset.open});return}
   if(el.dataset.nav){const ex={csv:false};if(el.dataset.nav==="requests"){ex.sentRequests=!!el.dataset.sent;ex.sentAuthor="all";}if(el.closest("#home-summary")&&el.dataset.nav==="cases"){ex.q="";ex.cCo="all";ex.showEnded=false;}if(el.dataset.sharedReceipts)ex.rScope="shared";if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";if(el.dataset.nav==="cases"){ex.payOnly=!!el.dataset.pay;ex.handoffOnly=!!el.dataset.handoff;}if(el.dataset.nav==="rcpt"&&el.closest(".tile")){ex.rTab=el.dataset.rtab2||"list";ex.rScope="own";}go(el.dataset.nav,ex);if(el.dataset.jump&&ui.view===el.dataset.nav)document.getElementById(el.dataset.jump)?.scrollIntoView();return}
   if(el.dataset.rscope){ui.rScope=el.dataset.rscope;rClearDl();render();return;}
