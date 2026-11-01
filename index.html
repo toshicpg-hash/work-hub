@@ -358,8 +358,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.48.3" title="使い方マニュアルを開く">v1.48.3・11/1更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.48.3" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.48.4" title="使い方マニュアルを開く">v1.48.4・11/1更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.48.4" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -814,7 +814,8 @@ function vHome(){
   const rp=rPending(), rsub=rSubmitted(), rnotes=rcptNotices();
   const un=all.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   const ord=todos.filter(x=>x.order), ordOver=ord.filter(x=>x.due&&x.due<t).length;
-  return (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）のサンプルを含みます。</div>':'')+
+  return '<section class="sec" id="home-sync">'+homeSyncNotice()+gSyncPanel(true)+'</section>'+
+  (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）のサンプルを含みます。</div>':'')+
   '<section class="sec" id="home-summary"><div class="sec-h"><h2>今日のまとめ</h2></div><div class="tiles">'+
 
     '<button type="button" class="tile'+(over.length?" alert":"")+'" data-nav="todo"><span class="k">期限切れのToDo</span><span class="v">'+over.length+'</span></button>'+
@@ -827,7 +828,6 @@ function vHome(){
     '<button type="button" class="tile" data-nav="rcpt" data-rtab2="claims"><span class="k">提出済・未精算</span><span class="v num">'+rsub.length+'件</span><span class="s num">'+yen(rSum(rsub))+'</span></button>'+
   '</div></section>'+
   ((D().admin||D().viewListId)?sentRequestTile():'<button type="button" id="home-requests" class="tile wide'+(ordOver?' alert':'')+'" data-nav="todo" style="width:100%"><span class="k">タスクリクエスト</span><span class="v">'+ord.length+'件</span><span class="s">'+(ordOver?'期限切れ '+ordOver+'件':'期限切れ 0件')+'</span></button>')+
-  '<section class="sec" id="home-sync">'+homeSyncNotice()+gSyncPanel(true)+'</section>'+
   (rnotes.length?'<button type="button" class="tile alert" data-nav="rcpt"><span class="v">領収書の注意 '+rnotes.length+'件</span><span class="s">'+rnotes.map(h).join('・')+'</span></button>':'')+
   ((D().admin||D().viewListId)?homeCorpTile():'');
 }
@@ -1722,7 +1722,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.48.3";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.48.4";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -1791,7 +1791,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.48.3" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.48.3" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.48.4" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.48.4" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
