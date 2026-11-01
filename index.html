@@ -734,20 +734,21 @@ function sentRequests(){
  let unread=0;
  if(!m||!Array.isArray(data))return {list:[],unread:1};
  for(const x of data){
-  if(!x.s||x.s.removed||eq(x.s.email,m.email)||(!m.admin&&!canSee(m.me,x.s)))continue;
+  if(!x.s||x.s.removed||(!m.admin&&(eq(x.s.email,m.email)||!canSee(m.me,x.s))))continue;
   if(!x.ok){unread++;continue;}
   if(x.s.boxId&&!Array.isArray(x.box))unread++;
   const add=(o,box)=>{
    const id=String(o['指示ID']||'');
    if(!id.startsWith(box?'B-':'I-')||!o['内容'])return;
-   if(box&&!eq(o['出した人Gmail'],m.email))return;
+   if(box&&!m.admin&&!eq(o['出した人Gmail'],m.email))return;
    const state=String(o['状態']||'');
    if(!['未完了','完了','取り消し'].includes(state)){unread++;return;}
    const resolved=box&&state!=='完了'?boxState(o,x.reports).st:state;
    const rank=resolved==='取り消し'?2:resolved==='完了'?1:0;
    const key=JSON.stringify([box?x.s.boxId:x.s.sheetId,id]);
    const old=groups.get(key);if(old&&old.rank>=rank)return;
-   groups.set(key,{rank,t:{id:'sent:'+key,ro:true,kind:'リクエスト',title:String(o['内容']),due:cellDate(o['期限']),tantou:x.s.name,from:box?String(o['出した人の表示']||''):'社長'}});
+   const boss=!box||eq(o['出した人Gmail'],ADMIN_ACCOUNT), sender= boss?'boss':String(o['出した人Gmail']||'').toLowerCase()||'unknown:'+key;
+   groups.set(key,{rank,t:{boss,sender,senderEmail:box?String(o['出した人Gmail']||''):'',id:'sent:'+key,ro:true,kind:'リクエスト',title:String(o['内容']),due:cellDate(o['期限']),tantou:x.s.name,from:boss?'社長':String(o['出した人の表示']||'出した人未確認')}});
   };
   if(m.admin)(x.orders||[]).forEach(o=>add(o,false));
   (Array.isArray(x.box)?x.box:[]).forEach(o=>add(o,true));
@@ -755,10 +756,18 @@ function sentRequests(){
  return {list:[...groups.values()].filter(x=>x.rank===0).map(x=>x.t).sort((a,b)=>(a.due||'9').localeCompare(b.due||'9')),unread};
 }
 function sentRequestTile(){
- const {list,unread}=sentRequests(),t=requestTodayS(),late=list.filter(x=>x.due&&x.due<t).length,soon=list.filter(x=>x.due&&x.due>=t&&x.due<=addDays(t,5)).length;
- return '<button type="button" id="home-requests" class="tile wide'+(late?' alert':'')+'" data-nav="requests" data-sent="1" style="width:100%"><span class="k">タスクリクエスト（自分が出した分）</span><span class="v">未完了 '+list.length+'件</span><span class="s">期限切れ '+late+'件／5日以内 '+soon+'件</span>'+(unread?'<span class="s">読込未確認 '+unread+'件・確認できた分の件数</span>':'')+'</button>';
+ const {list,unread}=sentRequests(),boss=list.filter(x=>x.boss).length,t=requestTodayS(),late=list.filter(x=>x.due&&x.due<t).length,soon=list.filter(x=>x.due&&x.due>=t&&x.due<=addDays(t,5)).length;
+ return '<button type="button" id="home-requests" class="tile wide'+(late?' alert':'')+'" data-nav="requests" data-sent="1" style="width:100%"><span class="k">タスクリクエスト（'+(D().admin?'全体':'自分が出した分')+'）</span><span class="v">未完了 '+list.length+'件</span>'+(D().admin?'<span class="s">うち社長 '+boss+'件・GMなど '+(list.length-boss)+'件</span>':'')+'<span class="s">期限切れ '+late+'件／5日以内 '+soon+'件</span>'+(unread?'<span class="s">読込未確認 '+unread+'件・確認できた分の件数</span>':'')+'</button>';
 }
-function vRequests(){if(ui.sentRequests&&(D().admin||D().viewListId)){const {list,unread}=sentRequests();return '<section class="sec"><div class="sec-h"><h2>指示一覧（自分が出した分）</h2><span class="note">未完了 '+list.length+'件</span></div><button class="btn sm" data-nav="home">ホームへ戻る</button><p class="note">6日以上先・期限なしも含む未完了の指示です。見るだけの一覧です。</p>'+(unread?'<p class="ro" role="alert">読込未確認 '+unread+'件。確認できた分だけ表示しています。</p>':'')+'<div class="list">'+(list.map(todoRow).join('')||'<p class="empty">確認できた未完了の指示はありません</p>')+'</div></section>'}const list=genTodos().concat(roTodos()).filter(isReqTodo).sort((a,b)=>(a.due||'9').localeCompare(b.due||'9'));
+function sentRequestView(){
+ const {list,unread}=sentRequests(),admin=D().admin,authors=[...new Map(list.filter(t=>!t.boss).map(t=>[t.sender,t])).values()];
+ const selected=admin?ui.sentAuthor||'all':'all', shown=list.filter(t=>selected==='all'||t.sender===selected);
+ const options=authors.map(t=>{const same=authors.filter(a=>a.from===t.from).length>1,label=t.from+(same?'（'+(t.senderEmail||'Gmail未確認')+'）':'');return '<option value="'+h(t.sender)+'"'+(selected===t.sender?' selected':'')+'>'+h(label)+'</option>'}).join('');
+ return '<section class="sec"><div class="sec-h"><h2>指示一覧（'+(admin?'全体':'自分が出した分')+'）</h2><span class="note">未完了 '+shown.length+'件</span></div><button class="btn sm" data-nav="home">ホームへ戻る</button><p class="note">6日以上先・期限なしも含む未完了の指示です。見るだけの一覧です。</p>'+
+ (admin?'<label class="f">出した人<select id="sent-author"><option value="all"'+(selected==='all'?' selected':'')+'>全部</option><option value="boss"'+(selected==='boss'?' selected':'')+'>社長</option>'+options+'</select></label>':'')+
+ (unread?'<p class="ro" role="alert">読込未確認 '+unread+'件。確認できた分だけ表示しています。</p>':'')+'<div class="list">'+(shown.map(t=>(admin?'<p class="note">出した人：'+h(t.from)+'</p>':'')+todoRow(t)).join('')||'<p class="empty">確認できた未完了の指示はありません</p>')+'</div></section>';
+}
+function vRequests(){if(ui.sentRequests&&(D().admin||D().viewListId))return sentRequestView();const list=genTodos().concat(roTodos()).filter(isReqTodo).sort((a,b)=>(a.due||'9').localeCompare(b.due||'9'));
  return '<section class="sec"><div class="sec-h"><h2>指示一覧</h2><span class="note">未完了 '+list.length+'件</span></div><button class="btn sm" data-nav="todo">ToDoに戻る</button><p class="note">6日以上先・期限なしも含む未完了の指示です。タップで全文を確認できます。</p>'+roNote()+requestBoxNotice()+'<div class="list">'+(list.map(todoRow).join('')||'<p class="empty">未完了の指示はありません</p>')+'</div></section>';
 }
 function todoRow(t,expanded=false){
@@ -2815,7 +2824,7 @@ document.addEventListener("click",e=>{
   if(el.dataset.act==="mtdclose"){manualTodoClose();return}
   if(el.dataset.act==="mtdbackup"||el.dataset.act==="mtddraft"){manualTodoDownload(el.dataset.act==="mtddraft");return}
   if(el.dataset.open){go("detail",{caseId:el.dataset.open});return}
-  if(el.dataset.nav){const ex={csv:false};if(el.dataset.nav==="requests")ex.sentRequests=!!el.dataset.sent;if(el.closest("#home-summary")&&el.dataset.nav==="cases"){ex.q="";ex.cCo="all";ex.showEnded=false;}if(el.dataset.sharedReceipts)ex.rScope="shared";if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";if(el.dataset.nav==="cases"){ex.payOnly=!!el.dataset.pay;ex.handoffOnly=!!el.dataset.handoff;}if(el.dataset.nav==="rcpt"&&el.closest(".tile")){ex.rTab=el.dataset.rtab2||"list";ex.rScope="own";}go(el.dataset.nav,ex);if(el.dataset.jump&&ui.view===el.dataset.nav)document.getElementById(el.dataset.jump)?.scrollIntoView();return}
+  if(el.dataset.nav){const ex={csv:false};if(el.dataset.nav==="requests"){ex.sentRequests=!!el.dataset.sent;ex.sentAuthor="all";}if(el.closest("#home-summary")&&el.dataset.nav==="cases"){ex.q="";ex.cCo="all";ex.showEnded=false;}if(el.dataset.sharedReceipts)ex.rScope="shared";if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";if(el.dataset.nav==="cases"){ex.payOnly=!!el.dataset.pay;ex.handoffOnly=!!el.dataset.handoff;}if(el.dataset.nav==="rcpt"&&el.closest(".tile")){ex.rTab=el.dataset.rtab2||"list";ex.rScope="own";}go(el.dataset.nav,ex);if(el.dataset.jump&&ui.view===el.dataset.nav)document.getElementById(el.dataset.jump)?.scrollIntoView();return}
   if(el.dataset.rscope){ui.rScope=el.dataset.rscope;rClearDl();render();return;}
   if(el.dataset.rtab){ui.rTab=el.dataset.rtab;rClearDl();ui.rcCancel=null;render();return}
   if(el.dataset.ropen){rFormClear();go("rform",{rId:el.dataset.ropen});return}
@@ -3049,6 +3058,7 @@ document.addEventListener("change",e=>{
   if(t.id==="r_case"){receiptCaseChanged(t.value);return;}
   if(t.id==="r_method"||t.id==="r_co"){const card=val("r_method")==="法人カード",w=document.getElementById("r_cardWrap"),sel=document.getElementById("r_card");if(w)w.hidden=!card;
     if(sel){const ks=RS().cards.filter(k=>k.company===val("r_co"));sel.innerHTML=ks.map(k=>'<option value="'+h(k.id)+'">'+h(k.name)+'</option>').join("")||'<option value="">この会社のカードがありません</option>'}return}
+  if(t.id==="sent-author"){if(D().admin){ui.sentAuthor=t.value;render();}return}
   if(t.id==="handoffOnly"){ui.handoffOnly=t.checked;render();return}
   if(t.id==="payOnly"){ui.payOnly=t.checked;render();return}
   if(t.dataset.item!=null&&c){const it=c.items[Number(t.dataset.item)];if(it){it[t.dataset.f]=t.dataset.f==="amount"?(t.value===""?"":Number(t.value)):t.value;save();refreshItemTotals(c)}return}
