@@ -37,7 +37,8 @@ async function page(width,{admin=true,load=true}={}){
 }
 const sum=p=>p.$$eval('.sum .k',a=>Object.fromEntries(a.map(k=>[k.textContent,k.nextElementSibling.textContent])));
 const unpaidHead=p=>p.$eval('h2:text("未入金")+span',e=>e.textContent);
-const overflow=p=>p.evaluate(()=>{const d=document.documentElement;return Math.max(d.scrollWidth-d.clientWidth,...[...document.querySelectorAll('.panel,section,.row,.seg,.tbl-wrap')].map(x=>x.scrollWidth-x.clientWidth))});
+// Wide tables may scroll inside .tbl-wrap; outer panels and the page must not overflow.
+const overflow=p=>p.evaluate(()=>{const d=document.documentElement;return Math.max(d.scrollWidth-d.clientWidth,...[...document.querySelectorAll('.panel,section,.row,.seg')].map(x=>x.scrollWidth-x.clientWidth))});
 async function main(){
  server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0]));if(!f.startsWith(root+path.sep)){res.writeHead(403).end();return}try{res.end(fs.readFileSync(f))}catch{res.writeHead(404).end()}}).listen(0,'127.0.0.1');
  await new Promise(r=>server.once('listening',r));origin='http://127.0.0.1:'+server.address().port;
