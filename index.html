@@ -358,8 +358,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.48.2" title="使い方マニュアルを開く">v1.48.2・11/1更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.48.2" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.48.3" title="使い方マニュアルを開く">v1.48.3・11/1更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.48.3" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -1722,7 +1722,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.48.2";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.48.3";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -1733,9 +1733,12 @@ function statsNote(){
   if(c&&Array.isArray(c.data))return '<p class="note" style="margin:0">社員の記録（'+corpAtText()+' 読み込み'+(c.kept?'・前回の内容':'')+'）を含めた'+(statsGmCo()?h(statsGmCo())+'の':'会社全体の')+'数字です。'+(c.kept?'最新にするには「Googleとまとめて同期」を押してください。':'')+'</p>'+(c.err?'<p class="note" style="margin:0;color:var(--red)">'+h(c.err)+'（数字は前回読み込んだ内容です）</p>':'');
   return '<div class="banner" role="status"><b>社員の記録はまだ読み込んでいません。</b>下の数字は、この端末で入力した案件だけです（0件でも、社員の案件が無いとは限りません）。「Googleとまとめて同期」を押すと、社員の分も入ります。'+(c&&c.err?'<div style="color:var(--red)">'+h(c.err)+'</div>':'')+'</div>';
 }
+const statsMonth=()=>/^\d{4}-(0[1-9]|1[0-2])$/.test(ui.statsMonth||'')?ui.statsMonth:requestTodayS().slice(0,7);
+const statsHasDate=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&Number.isFinite(Date.parse(s+'T00:00:00Z'))&&new Date(s+'T00:00:00Z').toISOString().slice(0,10)===s;
+function statsPeriodControls(){const m=statsMonth(),all=ui.statsPeriod==='all';return '<section class="sec" id="stats-period"><div class="seg" role="group" aria-label="集計期間"><button type="button" data-stats-mode="month" aria-pressed="'+!all+'">月別</button><button type="button" data-stats-mode="all" aria-pressed="'+all+'">全期間</button></div>'+(!all?'<div class="row"><button class="btn" type="button" data-stats-step="-1">前月</button><label class="f">集計年月<input id="stats-month" type="month" min="0001-01" max="9999-12" value="'+h(m)+'"></label><button class="btn" type="button" data-stats-step="1">翌月</button></div>':'')+'<p class="note">見積提出日・受注日・失注日で集計します。日付がない実績は含めません。未入金は現在残高で、期間の対象外です。</p></section>';}
 function vStats(){
-  const now=new Date(), mk=now.getFullYear()+"-"+pad(now.getMonth()+1);
-  const inM=s=>s&&s.startsWith(mk);
+  const mk=statsMonth(),periodLabel=ui.statsPeriod==='all'?'全期間':Number(mk.slice(0,4))+'年'+Number(mk.slice(5))+'月';
+  const inM=s=>statsHasDate(s)&&(ui.statsPeriod==='all'||s.slice(0,7)===mk);
   const all=statsCases(), sco=statsCo(), gmCo=statsGmCo();
   const sent=all.filter(c=>inM(c.estSentDate));
   const won=all.filter(c=>(c.stage!=="lost"||c.cancelledAt)&&inM(c.orderDate));
@@ -1749,26 +1752,27 @@ function vStats(){
   const S=DB.settings;
   const un=all.filter(unpaid);
   const tl=c=>(c.ro?c.tantou:tantouLabel(c.tantou))||"未設定";
-  /* 担当ごとの内訳：今月の見積提出・受注・受注額と、未入金 */
+  /* 担当ごとの内訳：選択期間の実績と、期間対象外の現在未入金 */
   const tans=[...new Set(sent.concat(won,lost,un).map(tl))];
-  const byTanTbl=tans.length?'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>担当</th><th>見積提出</th><th>受注</th><th>失注</th><th>受注額</th><th>未入金</th></tr></thead><tbody>'+
+  const byTanTbl=tans.length?'<div class="tbl-wrap"><table class="items" style="min-width:560px"><thead><tr><th>担当</th><th>見積提出</th><th>受注</th><th>失注</th><th>受注額</th><th>未入金（現在残高）</th></tr></thead><tbody>'+
     tans.map(n=>{const w=won.filter(c=>tl(c)===n),u=un.filter(c=>tl(c)===n);
-      return '<tr><td>'+personBadge(n)+'</td><td class="num">'+sent.filter(c=>tl(c)===n).length+'件</td><td class="num">'+w.length+'件</td><td class="num">'+lost.filter(c=>tl(c)===n).length+'件</td><td class="num">'+yen(w.reduce((s,c)=>s+(Number(estOf(c))||0),0))+'</td><td class="num">'+u.length+'件 '+yen(u.reduce((s,c)=>s+remainOf(c),0))+'</td></tr>'}).join("")+'</tbody></table></div>':'<p class="note" style="margin:0">今月の見積・受注と未入金はありません</p>';
+      return '<tr><td>'+personBadge(n)+'</td><td class="num">'+sent.filter(c=>tl(c)===n).length+'件</td><td class="num">'+w.length+'件</td><td class="num">'+lost.filter(c=>tl(c)===n).length+'件</td><td class="num">'+yen(w.reduce((s,c)=>s+(Number(estOf(c))||0),0))+'</td><td class="num">'+u.length+'件 '+yen(u.reduce((s,c)=>s+remainOf(c),0))+'</td></tr>'}).join("")+'</tbody></table></div>':'<p class="note" style="margin:0">選択期間の見積・受注・失注と現在の未入金はありません</p>';
   const coSegStats=gmCo?'<p class="note" style="margin:0">'+coChip(gmCo)+' GMの会社（'+h(gmCo)+'）の数字です</p>':'<div class="seg" role="group" aria-label="会社">'+[["all","全社"],...COMPANIES.map(x=>[x,x])].map(([k,l])=>'<button type="button" data-sco="'+k+'" aria-pressed="'+(sco===k)+'">'+l+'</button>').join("")+'</div>';
   const group=key=>{const m=new Map();for(const c of un){const k=key(c);const g=m.get(k)||{n:0,sum:0,late:0};g.n++;g.sum+=remainOf(c);g.late=Math.max(g.late,lateDays(c));m.set(k,g)}return [...m.entries()].sort((a,b)=>b[1].late-a[1].late||b[1].sum-a[1].sum)};
   const row=([k,g])=>'<tr><td>'+h(k)+'</td><td class="num">'+g.n+'件</td><td class="num">'+yen(g.sum)+'</td><td class="num"'+(g.late?' style="color:var(--red);font-weight:700"':'')+'>'+(g.late?g.late+'日':'—')+'</td></tr>';
   const tbl=(head,rows)=>'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>'+head+'</th><th>件数</th><th>未入金</th><th>最長の遅れ</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   const unpaidSec='<section class="sec" id="stats-unpaid"><div class="sec-h"><h2>未入金</h2><span class="note num">'+un.length+'件 '+yen(un.reduce((s,c)=>s+remainOf(c),0))+'</span></div>'+
+    '<p class="note">現在残高（選択期間の対象外）</p>'+
     (un.length?'<div class="panel"><h3>担当者別</h3>'+tbl("担当",group(tl).map(row).join(""))+'</div>'+acctPanel()+
       '<div class="panel"><h3>物件別</h3>'+tbl("物件",group(c=>c.property||"（物件名なし）").map(row).join(""))+'<p class="note" style="margin:0">遅れの長い順です。案件一覧の「入金待ちだけ」でも確認できます。</p></div>'
       :'<div class="empty">未入金の案件はありません</div>')+'</section>';
   return (hasExamples()?'<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>':'')+
-  '<section class="sec">'+statsNote()+coSegStats+'</section>'+unpaidSec+
-  '<section class="sec"><p class="note stats-loss-note">失注にした案件は、受注日が残っていても受注には数えません。受注後取消は従来どおり受注実績を保持します。失注は今月の失注日がある案件だけを数えます。</p><p class="banner stats-undated">失注日が未入力の案件 '+undatedLost.length+'件（案件を開いて日付を入れてください）</p><div class="sec-h"><h2>'+(now.getMonth()+1)+'月の見積と受注</h2></div>'+
+  statsPeriodControls()+'<section class="sec">'+statsNote()+coSegStats+'</section>'+unpaidSec+
+  '<section class="sec"><p class="note stats-loss-note">失注にした案件は、受注日が残っていても受注には数えません。受注後取消は従来どおり受注実績を保持します。失注は選択期間の失注日がある案件だけを数えます。失注日未入力の注意は期間に関係なく表示します。</p><p class="banner stats-undated">失注日が未入力の案件 '+undatedLost.length+'件（案件を開いて日付を入れてください）</p><div class="sec-h"><h2>'+periodLabel+'の見積と受注</h2></div>'+
   '<div class="panel"><div class="row" style="align-items:flex-end;gap:18px"><div><div class="note">見積決定率（受注 ÷ 結論が出た件数）</div><div class="big">'+(rate==null?"—":rate+"%")+'</div></div>'+
   '<div class="note num">受注 '+won.length+'件 ／ 失注 '+lost.length+'件</div></div>'+
   '<div class="sum"><div><div class="k">見積提出</div><div class="v">'+sent.length+'件</div></div><div><div class="k">受注</div><div class="v">'+won.length+'件</div></div><div><div class="k">受注額（見積額）</div><div class="v">'+yen(wonAmt)+'</div></div></div></div></section>'+
-  '<section class="sec"><div class="sec-h"><h2>'+(now.getMonth()+1)+'月の担当別</h2></div><div class="panel">'+byTanTbl+'</div></section>'+
+  '<section class="sec"><div class="sec-h"><h2>'+periodLabel+'の担当別</h2></div><div class="panel">'+byTanTbl+'</div></section>'+
   '<section class="sec"><div class="sec-h"><h2>失注の理由</h2></div><div class="panel">'+
     reasons.map(([r,n])=>'<div class="brk"><span>'+r+'</span><span class="bar"><i style="width:'+(n/maxR*100)+'%"></i></span><span class="num">'+n+'件</span></div>').join("")+'</div></section>'+
   '<section class="sec"><div class="sec-h"><h2>依頼の種類別</h2></div><div class="panel"><div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>種類</th><th>見積提出</th><th>受注</th><th>失注</th></tr></thead><tbody>'+
@@ -1787,7 +1791,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.48.2" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.48.2" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.48.3" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.48.3" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -2876,6 +2880,8 @@ document.addEventListener("click",e=>{
   if(el.dataset.nco){const i=document.getElementById("n_co");if(i)i.value=el.dataset.nco;el.parentNode.querySelectorAll("[data-nco]").forEach(b=>b.setAttribute("aria-pressed",String(b===el)));return}
   if(el.dataset.ccf){ui.cCo=el.dataset.ccf;render();return}
   if(el.dataset.gco){ui.gCo=el.dataset.gco;render();return}
+  if(el.dataset.statsMode){if(['month','all'].includes(el.dataset.statsMode)){ui.statsPeriod=el.dataset.statsMode;render();}return}
+  if(el.dataset.statsStep){const m=statsMonth(),n=Number(m.slice(0,4))*12+Number(m.slice(5))-1+Number(el.dataset.statsStep),y=Math.floor(n/12);if(y>=1&&y<=9999){ui.statsMonth=String(y).padStart(4,'0')+'-'+pad(n%12+1);render();}return}
   if(el.dataset.sco){ui.sCo=el.dataset.sco;render();return}
   if(el.dataset.cco){ui.corpCo=el.dataset.cco;if(ui.corp&&ui.corp.data)roBuild(ui.corp.data);render();return}
   if(el.dataset.drole!=null){ui.dRole=Number(el.dataset.drole);render();return}
@@ -3081,6 +3087,7 @@ document.addEventListener("change",e=>{
   if(t.id==="r_case"){receiptCaseChanged(t.value);return;}
   if(t.id==="r_method"||t.id==="r_co"){const card=val("r_method")==="法人カード",w=document.getElementById("r_cardWrap"),sel=document.getElementById("r_card");if(w)w.hidden=!card;
     if(sel){const ks=RS().cards.filter(k=>k.company===val("r_co"));sel.innerHTML=ks.map(k=>'<option value="'+h(k.id)+'">'+h(k.name)+'</option>').join("")||'<option value="">この会社のカードがありません</option>'}return}
+  if(t.id==="stats-month"){if(/^[0-9]{4}-(0[1-9]|1[0-2])$/.test(t.value)&&Number(t.value.slice(0,4))>0){ui.statsMonth=t.value;}render();return}
   if(t.id==="sent-author"){if(D().admin){ui.sentAuthor=t.value;render();}return}
   if(t.id==="handoffOnly"){ui.handoffOnly=t.checked;render();return}
   if(t.id==="payOnly"){ui.payOnly=t.checked;render();return}
