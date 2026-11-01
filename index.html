@@ -358,8 +358,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.48.4" title="使い方マニュアルを開く">v1.48.4・11/1更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.48.4" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.48.5" title="使い方マニュアルを開く">v1.48.5・11/1更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.48.5" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -1480,7 +1480,7 @@ function gKeepLoad(){try{
 }catch(err){gDropKept();return null}}
 const hmd=t=>{const d=new Date(t);return (d.getMonth()+1)+"/"+d.getDate()+" "+pad(d.getHours())+":"+pad(d.getMinutes())};
 function gcalRange(from,to){
-  if(!gSignedIn()||!G.cals){const k=gKeepLoad();return k&&k.from<=from&&k.to>=to?{state:"kept",data:k.data,at:k.at}:{state:"off"}}
+  if(!gSignedIn()||!G.cals){const k=gKeepLoad();return k&&k.from<=to&&k.to>=from?{state:"kept",data:k.data,at:k.at,from:k.from,to:k.to,partial:k.from>from||k.to<to}:{state:"off"}}
   const ids=gShowIds().join(",");
   for(const k in gcalCache){const c=gcalCache[k];
     if(c.ids===ids&&c.from<=from&&c.to>=to&&(c.state==="loading"||Date.now()-c.at<(c.state==="ok"?GCAL_TTL:GCAL_ERR_TTL))){c.data=gSafeData(c.data);return c}}
@@ -1603,10 +1603,12 @@ function gcalByDay(j){
   for(const d in by)by[d].sort((a,b)=>a.sort.localeCompare(b.sort));
   return by;
 }
+const gcalCovered=(g,s)=>!!g.data&&!!g.from&&!!g.to&&g.from<=s&&g.to>=s;
+const gcalUnknown=(g,s)=>!gcalCovered(g,s)||!!g.data.missing;
 function gcalStatus(g){
   g={...g,data:gSafeData(g.data)};
   if(g.state==="kept"){const cals=(g.data&&g.data.calendars)||[];
-    return '<p class="gcst">前回の同期（'+hmd(g.at)+'）の予定を表示しています。最新にするには「Googleとまとめて同期」を押してください。'+cals.map(n=>'<span class="ev '+gcalColor(n)+'">'+h(gcalLabel(n))+'</span>').join("")+'</p>'}
+    return '<p class="gcst">前回の同期（'+hmd(g.at)+'）の予定を表示しています。最新にするには「Googleとまとめて同期」を押してください。'+(g.partial?'保存範囲外の日は「未取得」です。':'')+(g.data&&g.data.missing?'読めなかったカレンダーがあり、各日の予定は一部未取得です。':'')+cals.map(n=>'<span class="ev '+gcalColor(n)+'">'+h(gcalLabel(n))+'</span>').join("")+'</p>'}
   if(g.state==="off")return '<p class="gcst">Googleカレンダー未接続（「Googleとまとめて同期」を押すと表示されます）'+(g.msg?'：'+h(g.msg):'')+'</p>';
   if(g.state==="loading"&&!g.data)return '<p class="gcst">Googleカレンダーを読み込み中…</p>';
   if(g.state==="error")return '<p class="gcst" style="color:var(--amber)">Googleカレンダーを読めませんでした（'+h(g.msg)+'）。'+(g.data?'前回取得したGoogleの予定を表示しています。':'Googleの予定は表示できません。')+'</p>';
@@ -1619,7 +1621,8 @@ function vCal(){
   const dueToday=genTodos().concat(roTodos()).filter(x=>!x.done&&/^\d{4}-\d{2}-\d{2}$/.test(x.due||"")&&x.due<=t);
   const day=s=>({td:s===t?dueToday:[]});
   const [rFrom,rTo]=calRange();
-  const g=gcalRange(rFrom,rTo), gby=g.data?gcalByDay(g.data):{}, gday=s=>gby[s]||[];
+  const g=gcalRange(rFrom,rTo), gby=g.data?gcalByDay(g.data):{}, gday=s=>gcalCovered(g,s)?gby[s]||[]:[];
+  const unknown=s=>gcalUnknown(g,s)?'<span class="note cal-unfetched" role="status">未取得（予定の有無は未確認）</span>':'';
   const gst=gSyncPanel()+gcalStatus(g);
   const legend="";
   const note='<p class="note" style="margin:0">予定はGoogleカレンダーから表示します。案件の進捗は「案件」「ガント」で確認してください。ToDoは「ToDo」で管理し、今日が期限・期限を過ぎた未完了のものだけ今日の欄にも表示します。</p>';
@@ -1637,7 +1640,7 @@ function vCal(){
       const items=gday(s).map(x=>'<div class="wkev gcev"><span class="ev '+gcalColor(x.cal)+'">'+h(gcalLabel(x.cal))+'</span><span class="t">'+(x.time==="終日"?"":h(x.time.replace(/〜.*$/,"〜"))+' ')+h(x.title)+'</span></div>').join("")+
         b.td.map(x=>'<button type="button" data-nav="todo" class="wkev td'+(x.due<t?" over":"")+'"><span class="ev td'+(x.due<t?" over":"")+'">ToDo</span><span class="t">'+h(x.title)+'</span>'+dueLabel(x.due)+'</button>').join("");
       rows+='<div class="wkrow '+kind+(s===ui.calDay?" sel":"")+'"><button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+mdw(s)+(hol?' '+hol:'')+'を日表示で開く"'+(s===t?' aria-current="date"':'')+'><span class="dn">'+d.getDate()+'</span><span class="dw">'+WD[d.getDay()]+'</span></button>'+
-        '<div class="wki">'+(hol?'<span class="hol-name">'+hol+'</span>':'')+(items||'<span class="wknone">予定なし</span>')+'</div></div>';
+        '<div class="wki">'+(hol?'<span class="hol-name">'+hol+'</span>':'')+(items||(!gcalUnknown(g,s)?'<span class="wknone">予定なし</span>':''))+unknown(s)+'</div></div>';
     }
     return '<section class="sec">'+gst+views+
       nav(7,title,"今週","前の週","次の週")+
@@ -1649,7 +1652,7 @@ function vCal(){
       '<div class="ttl">'+h(x.title)+'</div>'+(x.loc?'<div class="row note"><span style="min-width:0;overflow-wrap:anywhere">'+h(x.loc)+'</span><a class="btn sm" style="display:inline-flex;align-items:center;text-decoration:none" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(x.loc)+'">地図</a></div>':'')+'</div>').join("");
     return '<section class="sec">'+gst+views+
       nav(1,'<span class="dtitle '+dayKind(ui.calDay)+'">'+mdw(ui.calDay)+'</span>'+(holidayName(ui.calDay)?' <span class="hol-name">'+holidayName(ui.calDay)+'</span>':''),"今日","前の日","次の日")+
-      '<div class="list">'+gRows+sel.td.map(x=>'<button type="button" class="card" data-nav="todo">'+todoCardHeading(x,'<span class="chip">ToDo</span>')+'<span class="note">ToDo画面で確認する</span></button>').join("")+((gRows||sel.td.length)?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div>'+note+'</section>';
+      '<div class="list">'+unknown(ui.calDay)+gRows+sel.td.map(x=>'<button type="button" class="card" data-nav="todo">'+todoCardHeading(x,'<span class="chip">ToDo</span>')+'<span class="note">ToDo画面で確認する</span></button>').join("")+((gRows||sel.td.length||gcalUnknown(g,ui.calDay))?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div>'+note+'</section>';
   }
   const [y,m]=ui.calMonth.split("-").map(Number);
   const first=new Date(y,m-1,1), start=new Date(y,m-1,1-first.getDay());
@@ -1661,7 +1664,7 @@ function vCal(){
     const shown=all.slice(0,2).map(([cl,l])=>'<span class="'+cl+'">'+h(l)+'</span>').join("");
     const more=all.length>2?'<span class="ev td">ほか'+(all.length-2)+'件</span>':'';
     const tdl=b.td.length?'<span class="ev td'+(b.td.some(x=>x.due<t)?" over":"")+'">ToDo '+b.td.length+'</span>':'';
-    cells+='<button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+(dt.getMonth()+1)+'月'+dt.getDate()+'日'+(hol?' '+hol:'')+'を日表示で開く"><span class="n">'+dt.getDate()+'</span>'+(hol?'<span class="hn">'+hol+'</span>':'')+shown+more+tdl+'</button>';
+    cells+='<button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+(dt.getMonth()+1)+'月'+dt.getDate()+'日'+(hol?' '+hol:'')+'を日表示で開く"><span class="n">'+dt.getDate()+'</span>'+(hol?'<span class="hn">'+hol+'</span>':'')+shown+more+tdl+(gcalUnknown(g,s)?'<span class="ev cal-unfetched">未取得</span>':'')+'</button>';
   }
   return '<section class="sec">'+gst+views+'<div class="calnav"><button class="btn sm" type="button" data-mon="-1" aria-label="前の月">‹</button><h2 class="num">'+y+'年'+m+'月</h2><button class="btn sm" type="button" data-mon="0">今月</button><button class="btn sm" type="button" data-mon="1" aria-label="次の月">›</button></div>'+
   legend+
@@ -1722,7 +1725,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.48.4";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.48.5";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -1791,7 +1794,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.48.4" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.48.4" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.48.5" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.48.5" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
