@@ -41,7 +41,7 @@ async function main(){
     if(n===7)assert.equal(await p.evaluate(()=>ST.ui.rTab),'claims');
     await p.evaluate(()=>ST.go('home'));
    }
-   await p.locator('#home-requests').click();assert.equal(await p.evaluate(()=>ST.ui.view),'todo');await p.evaluate(()=>ST.go('home'));
+   await p.locator('#home-requests').click();assert.equal(await p.evaluate(()=>ST.ui.view),role==='employee'?'todo':'requests');await p.evaluate(()=>ST.go('home'));
    if(role!=='employee'){
     await p.locator('#home-company').click();assert.equal(await p.evaluate(()=>ST.ui.view),'company');assert.equal(await p.locator('nav [data-nav="company"]').count(),0);
     assert.match(await p.locator('main').innerText(),/同期の状況/);assert.match(await p.locator('main').innerText(),/合成社員/);
