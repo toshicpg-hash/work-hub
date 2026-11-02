@@ -362,8 +362,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.49.0" title="使い方マニュアルを開く">v1.49.0・11/2更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.49.0" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.49.1" title="使い方マニュアルを開く">v1.49.1・11/3更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.49.1" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -425,8 +425,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./request-box-employee.js?v=1.47.1"></script>
 <script src="./share-management.js?v=1.48.6"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.49.0"></script>
-<script src="./calendar-view-scope.js?v=1.49.0"></script>
+<script src="./view-scope.js?v=1.49.1"></script>
+<script src="./calendar-view-scope.js?v=1.49.1"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1587,6 +1587,7 @@ function calRange(){
 let manualTodoSyncPending=null;
 async function gSyncAll(){
   if(shareRunning){toast("共有の確認・処理が終わってから同期してください。");return;}
+  if(ui.sgBusy){toast("共有の記録の取り込みが終わってから同期してください。");return;}
   if(caseSaveGuard())return;
   if(receiptSaving||receiptSelecting||receiptSending||ui.rSaveUncertain){toast("領収書の処理が終わってから同期してください。入力は残しています。",5000);return;}
   if(manualTodoSyncPending)return manualTodoSyncPending;
@@ -1638,7 +1639,7 @@ function gSyncPanel(home=false){
   const companyErrors=success?r.rows.filter(x=>companyRow(x)&&x.ok===false):[];
   const list=resultList(success?r.rows.filter(x=>!companyErrors.includes(x)):r?.rows);
   const stamp=success?new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(r.at)):'';
-  return '<div class="gsync"><button type="button" class="gsyncbtn" data-act="gsync"'+(r&&r.busy?' disabled':'')+'>'+(r&&r.busy?'同期しています…':'Googleとまとめて同期')+'</button>'+
+  return '<div class="gsync"><button type="button" class="gsyncbtn" data-act="gsync"'+(r&&r.busy?' disabled':'')+'>'+(r&&r.busy?'同期しています…':'Googleとまとめて同期')+'</button>'+(home?sheetGuardPanel():'')+
     (home&&r?.busy===false&&r.complete!==true&&r.rows?.length&&r.rows.every(x=>x.ok===true)?'<p class="banner" role="alert">同期の完了を確認できません。結果を確認して、もう一度同期してください。</p>':'')+
     (success?'<details class="sync-result"><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer">✅ 同期済み '+h(stamp)+'</summary>'+list+'</details>':list)+resultList(companyErrors)+attention.html+'</div>';
 }
@@ -1832,7 +1833,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.49.0";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.49.1";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -1902,7 +1903,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.49.0" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.49.0" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.49.1" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.49.1" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -2351,8 +2352,12 @@ async function writeCaseSheet(id,rows){
   requests.push({updateCells:{range:{sheetId:p.sheetId},rows:rows.map(r=>({values:r.map(cell)})),fields:"userEnteredValue"}});
   return gReq(url+":batchUpdate",{method:"POST",body:{requests}});
 }
-async function sheetWrite(id,tab,rows){
+async function sheetWrite(id,tab,rows,prev){
   if(tab==="案件")return writeCaseSheet(id,rows);
+  /* 前の中身を読んであるとき（記録シートの同期）は、消してから書くのではなく、余った行・列を空で上書きする1回の書き込みにする。途中で通信が切れても空のシートにならない */
+  if(Array.isArray(prev)){const w=Math.max(1,...rows.map(r=>r.length),...prev.map(r=>r.length)),out=[];
+    for(let i=0;i<Math.max(rows.length,prev.length);i++){const r=rows[i]||[];out.push(Array.from({length:w},(_,j)=>r[j]??""))}
+    return gReq(SHEETS+"/"+encodeURIComponent(id)+"/values/"+encodeURIComponent(A1(tab)+"!A1")+"?valueInputOption=RAW",{method:"PUT",body:{values:out}});}
   await gReq(SHEETS+"/"+encodeURIComponent(id)+"/values/"+encodeURIComponent(A1(tab))+":clear",{method:"POST",body:{}});
   return gReq(SHEETS+"/"+encodeURIComponent(id)+"/values/"+encodeURIComponent(A1(tab)+"!A1")+"?valueInputOption=RAW",{method:"PUT",body:{values:rows}});
 }
@@ -2390,7 +2395,7 @@ function dataRows(){
     for(const x of c.payments||[])pay.push([...base,x.date,"入金",Number(x.amount)||0,x.by||""]);
   }
   const S=RS();
-  const rc=[RC_COLS,...DB.receipts.filter(r=>!fake(r.payee)).map(r=>[r.id,r.date,r.payee,r.item,r.cat,Number(r.amount)||0,r.company,receiptSiteLabel(r),r.jobNo,r.method==="立替"?r.status:(r.closeNo?"締め済み":"締め前"),r.claimNo||r.closeNo,r.photos.map(k=>(r.drive||{})[k]&&r.drive[k].link).filter(Boolean).join(" "),r.method,S.name])];
+  const rc=[RC_COLS,...DB.receipts.filter(r=>!fake(r.payee)).map(r=>[r.id,r.date,r.payee,r.item,r.cat,Number(r.amount)||0,r.company,receiptSiteLabel(r),r.jobNo,r.method==="立替"?r.status:(r.closeNo?"締め済み":"締め前"),r.claimNo||r.closeNo,r.photos.map(k=>(r.drive||{})[k]&&r.drive[k].link).filter(Boolean).join(" ")||r.restoredLinks||"",r.method,S.name])];
   /* ToDo: what genTodos() shows on this device (case ToDos and hand-added ones; done ones are not in it). Receipt notices and the examples are left out */
   const todo=[TODO_COLS,...genTodos().filter(t=>t.auto||t.manual||t.boxRequest).flatMap(t=>{
     const c=t.caseId&&DB.cases.find(x=>x.id===t.caseId);
@@ -2417,6 +2422,10 @@ async function backupPhotos(){
 /* Called from 「Googleとまとめて同期」 after the calendar steps. One result line per step */
 async function dataSync(step){
   const id=D().sheetId;
+  /* v1.49.1 書き込む前に、共有の記録シートの件数を読む。読めないとき・この端末の記録が空か明らかに少ないときは、何も書かずに止める */
+  let g;try{g=await sharedCheck(id)}catch(err){if(err.message==="signin")throw err;step(GUARD_STEP,false,"共有の記録シートの件数を確かめられないため、記録シートへの書き込みを止めました（"+dMsg(err)+"）。通信を確かめて、もう一度同期してください");return}
+  if(g.block){ui.sheetGuard=g;ui.sgDone="";step(GUARD_STEP,false,guardText(g)+"共有の記録を消さないため、記録シートへの書き込みを止めました");return}
+  if(ui.sheetGuard&&ui.sheetGuard.id===id)ui.sheetGuard=null;
   try{const p=await backupPhotos();step("領収書の写真の控え",!p.fail,p.done+"枚アップロード"+(p.fail?"、"+p.fail+"枚できませんでした":"")+"（自分のドライブ「CPG HUB 領収書」）")}
   catch(err){step("領収書の写真の控え",false,dMsg(err))}
   const d=dataRows();
@@ -2434,13 +2443,91 @@ async function dataSync(step){
   if(tabs.includes(NAME_TAB)){try{const rows=await namesRead(id),p=CPGNames.overlay([{name:RS().name||"",sheetId:id}],rows)[0];D().nameProfile=p;shareSave();step("正規氏名",!CPGNames.pending(rows,id).length,CPGNames.pending(rows,id).length?"変更の確認途中です。確認済みの表示名を使います":"表示名を確認しました")}catch(err){if(caseSaveUncertain||err.message==="signin")throw err;step("正規氏名",false,dMsg(err))}}
   d.todo=dataRows().todo;
   for(const [tab,rows] of [["案件",d.cases],["入金",d.pay],["立替",d.rc],["ToDo",d.todo]]){
-    try{await sheetWrite(id,tab,rows);step("記録シート「"+tab+"」",true,(rows.length-1)+"行")}catch(err){step("記録シート「"+tab+"」",false,dMsg(err))}
+    try{await sheetWrite(id,tab,rows,g.rows[tab]);step("記録シート「"+tab+"」",true,(rows.length-1)+"行")}catch(err){step("記録シート「"+tab+"」",false,dMsg(err))}
   }
   const at=new Date();
   try{await sheetWrite(id,"情報",[["項目","値"],["氏名",RS().name||""],["最終同期",ymd(at)+" "+hm(at)],["版",(document.querySelector(".ver")||{}).textContent||""],["管理者",ADMIN_ACCOUNT]]);D().lastSync=at.toISOString();save();step("記録シート「情報」",true,"最終同期 "+md(ymd(at))+" "+hm(at))}
   catch(err){step("記録シート「情報」",false,dMsg(err))}
 }
 const sheetTabNames=async id=>{const v=await gReq(SHEETS+"/"+encodeURIComponent(id)+"?fields=sheets.properties.title");return ((v&&v.sheets)||[]).map(x=>x.properties&&x.properties.title)};
+/* v1.49.1 空の端末を守る：この端末の記録（案件・入金・立替）と共有の記録シートの件数を比べる。読むだけで、書かない。
+   止めるのは、共有に行があるのにこの端末が0件のとき、または案件・立替が共有の半分未満（共有が4件以上）のとき */
+const GUARD_STEP="共有の記録シートの確認", GUARD_TABS=[["案件","受付番号"],["入金","受付番号"],["立替","受付ID"]];
+const sheetObjs=rows=>{const [hd,...rs]=rows||[];return rs.map(r=>Object.fromEntries((hd||[]).map((k,i)=>[k,r[i]??""])))};
+const sheetCount=(rows,key)=>sheetObjs(rows).filter(r=>String(r[key]??"").trim()).length;
+async function sharedCheck(id){
+  const have=await sheetTabNames(id),rows=await sheetRead(id,["案件","入金","立替","ToDo"].filter(t=>have.includes(t)));
+  const d=dataRows(),local={"案件":d.cases.length-1,"入金":d.pay.length-1,"立替":d.rc.length-1},shared={};
+  for(const [t,k] of GUARD_TABS)shared[t]=sheetCount(rows[t],k);
+  const block=GUARD_TABS.some(([t])=>shared[t]>0&&(!local[t]||t!=="入金"&&shared[t]>=4&&local[t]*2<shared[t]));
+  return {id,local,shared,rows,block,empty:GUARD_TABS.every(([t])=>!local[t])};
+}
+const guardCounts=c=>"案件"+c["案件"]+"件・立替"+c["立替"]+"件・入金の記録"+c["入金"]+"件";
+const guardText=g=>g.empty?"この端末には記録がありません。共有の記録シートに"+guardCounts(g.shared)+"あります。":"この端末の記録が、共有の記録シートより明らかに少なくなっています（この端末："+guardCounts(g.local)+"／共有："+guardCounts(g.shared)+"）。";
+function sheetGuardPanel(){
+  const g=ui.sheetGuard;
+  if(!g||g.id!==D().sheetId)return ui.sgDone?'<p class="banner" role="status">'+h(ui.sgDone)+'</p>':'';
+  return '<div class="ro sheet-guard" role="alert" style="display:flex;flex-direction:column;gap:8px"><b style="color:var(--red)">'+h(guardText(g))+'</b>'+
+    '<span>このまま同期すると共有の記録を消してしまうため、記録シートへの書き込みを止めています。</span>'+
+    (ui.sgMsg?'<span style="color:var(--red)">'+h(ui.sgMsg)+'</span>':'')+
+    '<div class="row"><button class="btn pri" type="button" data-act="sgrestore"'+(ui.sgBusy?' disabled':'')+'>'+(ui.sgBusy?'取り込んでいます…':'共有の記録から、この端末に取り込む')+'</button><button class="btn" type="button" data-act="sgno"'+(ui.sgBusy?' disabled':'')+'>やめる</button></div>'+
+    '<span class="note">取り込むのは、共有の記録シートにある案件・入金・立替・手入力のToDoのうち、この端末にないものだけです。この端末にある記録と共有の記録シートは変えません。写真・メモ・住所の詳細は共有の記録シートにないため戻りません。</span></div>';
+}
+/* 共有の記録から、この端末にないものだけを取り込む。読み戻して件数と内容が一致したときだけ端末に保存する。共有の記録シートには書かない */
+async function sharedRestore(){
+  const g=ui.sheetGuard,id=D().sheetId;
+  if(!g||g.id!==id)throw Error("つないでいる記録シートが変わりました。もう一度同期してください。");
+  await gAuthorize(true);
+  const have=await sheetTabNames(id),got=await sheetRead(id,["案件","入金","立替","ToDo"].filter(t=>have.includes(t)));
+  if(D().sheetId!==id||ui.sheetGuard!==g)throw Error("つないでいる記録シートが変わりました。もう一度同期してください。");
+  const raw=localStorage.getItem(KEY);if(raw!==dbPersistedRaw)throw Error("別の画面で記録が更新されています。再読み込みしてから、もう一度取り込んでください。");
+  const next=upgrade(JSON.parse(JSON.stringify(DB))), str=v=>String(v??"").trim();
+  const sc=sheetObjs(got["案件"]).filter(r=>str(r["受付番号"])), sp=sheetObjs(got["入金"]).filter(r=>str(r["受付番号"])), sr=sheetObjs(got["立替"]).filter(r=>str(r["受付ID"])), st=sheetObjs(got["ToDo"]).filter(r=>str(r["内容"])&&str(r["種類"])==="手入力");
+  const added={cases:[],receipts:[],todos:[]};
+  /* 練習用の例（架空）と同じ番号が共有にあるときは、例を本物と取り違えないよう止める */
+  if(sc.some(r=>next.cases.some(c=>c.id===str(r["受付番号"])&&(fake(c.client)||fake(c.property))))||sr.some(r=>next.receipts.some(x=>x.id===str(r["受付ID"])&&fake(x.payee))))
+    throw Error("練習用の例（架空）と同じ番号の記録が共有の記録シートにあります。先に「数字」の「練習用の例（架空）を消す」を押してから、もう一度取り込んでください（この端末も共有の記録シートも変えていません）。");
+  for(const r of sc){const no=str(r["受付番号"]);if(next.cases.some(c=>c.id===no))continue;
+    const c=roCase(r,{s:{name:RS().name||""}});delete c.ro;delete c.owner;delete c.srcId;
+    Object.assign(c,{id:no,client:str(r["依頼元"]),tantou:str(r["担当"]),lossReason:str(r["失注理由"]),payments:[],payLog:[]});
+    for(const p of sp.filter(p=>str(p["受付番号"])===no)){const k=str(p["種類"]),at=str(p["日付"]).slice(0,10);
+      if(k==="入金")c.payments.push({date:at,amount:Number(p["金額"])||0,by:str(p["区分"])});
+      else if(k==="請求")c.billTo=str(p["区分"]);
+      else if(k==="経理に入金確認を依頼")c.payLog.push({kind:"req",at});
+      else c.payLog.push({kind:"noPay",at});}
+    next.cases.push(c);added.cases.push(no);}
+  for(const r of sr){const rid=str(r["受付ID"]);if(next.receipts.some(x=>x.id===rid))continue;
+    const method=str(r["支払い方法"])||"立替",state=str(r["状態"]),no=str(r["精算書番号"]);
+    next.receipts.push(Object.assign(RECEIPT_DEFAULTS(),{id:rid,date:str(r["日付"]).slice(0,10),payee:str(r["支払先"]),item:str(r["内容"]),cat:str(r["区分"]),amount:str(r["金額"])===""?null:Number(r["金額"]),company:str(r["会社"]),site:str(r["現場"]),jobNo:str(r["仕事番号"]),method,
+      status:method==="立替"?state:"未提出",claimNo:method==="立替"||state!=="締め済み"?no:"",closeNo:method!=="立替"&&state==="締め済み"?no:"",everSub:method==="立替"&&state!=="未提出",restoredLinks:str(r["写真リンク"])}));
+    added.receipts.push(rid);}
+  st.forEach((r,i)=>{const title=str(r["内容"]),due=str(r["期限"]).slice(0,10),tantou=str(r["担当"]);
+    if(next.todos.some(t=>!t.done&&!t.cancelled&&t.title===title&&(t.due||"")===due))return;
+    const tid="T"+(Date.now()+i);next.todos.push({id:tid,title,due,tantou,done:false});added.todos.push(tid);});
+  next.seq=Math.max(next.seq||0,...next.cases.filter(c=>/^U-/.test(c.id)).map(c=>numOf(c.id)));
+  next.rseq=Math.max(next.rseq||0,...next.receipts.filter(r=>/^R-/.test(r.id)).map(r=>numOf(r.id)));
+  /* 取り込んだあとの内容を、記録シートに送るときと同じ形にして、共有の行と1つずつ比べる（その日に決まる「遅れ日数」「最終の動き」と、端末ごとの「提出者」は比べない） */
+  const prev=DB;let out;DB=next;try{out=dataRows()}finally{DB=prev}
+  const objs=rows=>sheetObjs(rows);
+  const same=(a,b,skip)=>Object.keys(a).filter(k=>!skip.includes(k)&&k in b).find(k=>str(a[k])!==str(b[k]));
+  const oc=objs(out.cases),op=objs(out.pay),or=objs(out.rc),ot=objs(out.todo);
+  const fail=t=>{throw Error("共有の記録と取り込んだ内容が一致しないため、取り込みをやめました（この端末も共有の記録シートも変えていません）："+t)};
+  for(const no of added.cases){const a=sc.find(r=>str(r["受付番号"])===no),b=oc.find(r=>str(r["受付番号"])===no);if(!b)fail("案件 "+no);const k=same(a,b,["遅れ日数","最終の動き"]);if(k)fail("案件 "+no+" の「"+k+"」");
+    const pa=sp.filter(p=>str(p["受付番号"])===no).map(p=>PAY_COLS.map(c=>str(p[c])).join("\t")).sort(),pb=op.filter(p=>str(p["受付番号"])===no).map(p=>PAY_COLS.map(c=>str(p[c])).join("\t")).sort();
+    if(pa.join("\n")!==pb.join("\n"))fail("案件 "+no+" の入金の記録");}
+  for(const rid of added.receipts){const a=sr.find(r=>str(r["受付ID"])===rid),b=or.find(r=>str(r["受付ID"])===rid);if(!b)fail("立替 "+rid);const k=same(a,b,["提出者"]);if(k)fail("立替 "+rid+" の「"+k+"」");}
+  for(const r of st)if(!ot.some(t=>str(t["内容"])===str(r["内容"])&&str(t["期限"]).slice(0,10)===str(r["期限"]).slice(0,10)&&str(t["種類"])==="手入力"))fail("ToDo「"+str(r["内容"])+"」");
+  for(const r of sc)if(!next.cases.some(c=>c.id===str(r["受付番号"])))fail("案件の件数");
+  for(const r of sr)if(!next.receipts.some(x=>x.id===str(r["受付ID"])))fail("立替の件数");
+  if(localStorage.getItem(KEY)!==raw||D().sheetId!==id)throw Error("取り込みの途中で記録が変わったため、取り込みをやめました。もう一度お試しください。");
+  DB=next;
+  if(!save()){DB=prev;throw Error("端末に保存できなかったため、取り込みをやめました（共有の記録シートは変えていません）。");}
+  /* 読み戻し：保存した内容に、共有の受付番号・受付IDがすべてあること */
+  let back;try{back=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){back=null}
+  if(!back||!sc.every(r=>back.cases.some(c=>c.id===str(r["受付番号"])))||!sr.every(r=>back.receipts.some(x=>x.id===str(r["受付ID"])))||!added.todos.every(t=>back.todos.some(x=>x.id===t)))
+    throw Error("保存後の読み戻しで内容を確認できません。再読み込みして、記録を確かめてください（共有の記録シートは変えていません）。");
+  return {cases:added.cases.length,receipts:added.receipts.length,todos:added.todos.length};
+}
 /* PR-B only. Box and 連絡 are read-only; all report writes target this employee sheet. */
 const requestBoxApi=()=>globalThis.WorkHubRequestBoxEmployee;
 const requestTodayS=()=>requestBoxApi()?.day(new Date().toISOString())||todayS();
@@ -2521,6 +2608,8 @@ async function dataConnect(input){
   const miss=["案件","入金","立替","情報"].filter(t=>!tabs.includes(t));
   if(miss.length)throw Object.assign(new Error("tabs"),{miss});
   Object.assign(D(),{sheetId:id,sheetName:(v.properties&&v.properties.title)||""});save();
+  /* 新しい端末で最初につないだときも、同期の前と同じ確認をする（読むだけ） */
+  ui.sgDone="";try{const g=await sharedCheck(id);ui.sheetGuard=g.block?g:null}catch(err){ui.sheetGuard=null}
 }
 /* 社長の端末：社員ごとのシートを作って、その社員に「編集者」で共有する */
 const STAFF_COLS=["氏名","Gmail","シートID","シートのリンク","状態","追加日","最終同期","共有ID","会社","役割","GMの会社","指示箱ID"];
@@ -2937,7 +3026,7 @@ function dSettings(){
   const mine='<div class="panel"><h3>記録シート（社員用）</h3>'+
     (d.sheetId?'<p style="margin:0">つないでいるシート：<b>'+h(d.sheetName||d.sheetId)+'</b>'+(d.lastSync?'（最終同期 '+md(ymd(new Date(d.lastSync)))+' '+hm(new Date(d.lastSync))+'）':'（まだ同期していません）')+'</p>'+
       '<p class="note" style="margin:0">「Googleとまとめて同期」のたびに、案件・入金・立替・ToDoの要点と領収書の写真の控えを送ります。メモ・症状・住所の詳細と（架空）の例は送りません。</p>'+
-      '<div class="row"><button class="btn sm" type="button" data-act="dunlink">つなぐのをやめる</button></div>'
+      sheetGuardPanel()+'<div class="row"><button class="btn sm" type="button" data-act="dunlink">つなぐのをやめる</button></div>'
      :'<p class="note" style="margin:0">社長から届いた共有メールのリンク（またはシートID）を貼り付けて「つなぐ」を押してください。</p>'+
       '<label class="f">記録シートのリンク<input type="url" id="d_sheet" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://docs.google.com/spreadsheets/d/…/edit"></label>'+
       '<div class="row"><button class="btn pri" type="button" data-act="dlink">つなぐ</button></div>')+'</div>';
@@ -3129,9 +3218,13 @@ document.addEventListener("click",e=>{
     else toast("この端末では共有できません。「コピー」を使ってください");
     return}
   if(a==="dlink"){const v=val("d_sheet");ui.dmsg=[{ok:true,text:"つないでいます…"}];render();
-    dataConnect(v).then(()=>{ui.dmsg=[{ok:true,text:"記録シート「"+(D().sheetName||D().sheetId)+"」につなぎました。次の「Googleとまとめて同期」から送ります"}]},
+    dataConnect(v).then(()=>{ui.dmsg=[{ok:true,text:"記録シート「"+(D().sheetName||D().sheetId)+"」につなぎました。"+(ui.sheetGuard?"下の確認を先にしてください（このままでは同期で書き込みません）":"次の「Googleとまとめて同期」から送ります")}]},
       err=>{ui.dmsg=[{ok:false,text:err.message==="badid"?"リンクの形が違います（https://docs.google.com/spreadsheets/d/…）":err.message==="tabs"?"このシートには「"+err.miss.join("・")+"」のタブがありません。社長から届いたシートか確かめてください":"つなげませんでした："+dMsg(err)}]}).then(render);return}
-  if(a==="dunlink"){Object.assign(D(),{sheetId:"",sheetName:"",lastSync:""});ui.dmsg=[{ok:true,text:"記録シートとのつながりを外しました（シートは残っています）"}];save();render();return}
+  if(a==="sgno"){if(ui.sgBusy)return;ui.sheetGuard=null;ui.sgMsg="";render();toast("取り込みをやめました。この端末の記録が空か少ないあいだは、同期しても記録シートには書き込みません",6500);return}
+  if(a==="sgrestore"){if(ui.sgBusy||ui.gsync?.busy)return;ui.sgBusy=true;ui.sgMsg="";render();
+    sharedRestore().then(r=>{ui.sheetGuard=null;ui.sgDone="共有の記録から 案件"+r.cases+"件・立替"+r.receipts+"件・手入力のToDo"+r.todos+"件 を取り込み、読み戻して一致を確かめました。続けて「Googleとまとめて同期」を押してください。";toast("取り込みました",5000)},
+      err=>{ui.sgMsg=err.message==="signin"?"Googleにログインできませんでした。もう一度押してください。":err.message||dMsg(err)}).finally(()=>{ui.sgBusy=false;render()});return}
+  if(a==="dunlink"){ui.sheetGuard=null;ui.sgDone="";Object.assign(D(),{sheetId:"",sheetName:"",lastSync:""});ui.dmsg=[{ok:true,text:"記録シートとのつながりを外しました（シートは残っています）"}];save();render();return}
   if(a==="dadmin"){const log=[];ui.dview="";
     gAuthorize(true).then(()=>adminSync((text,ok)=>log.push({ok:ok===false?"warn":true,text}))).then(f=>{D().admin=true;save();
       log.unshift({ok:true,text:f.list?"既存の管理データを読み込みました（社員"+f.n+"人）":f.folder?"既存のフォルダ「CPG HUB データ」を使います（社員一覧はまだありません）":"管理をはじめました"});ui.dmsg=log},
