@@ -4,7 +4,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 process.env.TZ='Asia/Tokyo';
 const html=fs.readFileSync(path.resolve(__dirname,'../index.html'),'utf8');
 const source=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].map(m=>m[1]).find(s=>s.includes('const KEY='));
-const hook='globalThis.app={get db(){return DB},G,gAuthorize,gLoadCalendars,gShowIds,gReadOne,gReadRange,gWriteCal,gWritable,gSettings,gSafeData,gKeepLoad,gKeepSave,gcalRange,gcalByDay,gcalStatus,gSyncAll,gcalCache,gResetReads,gCleanReadPrefs,ui,go,render,isAdminDevice};';
+const hook=`globalThis.app={get db(){return DB},G,gAuthorize,gLoadCalendars,gShowIds,gReadOne,gReadRange,gWriteCal,gWritable,gSettings,gSafeData,gKeepLoad,gKeepSave,gcalRange,gcalByDay,gcalStatus,gSyncAll,gcalCache,gResetReads,gCleanReadPrefs,ui,go,render,isAdminDevice,setupCalendarScope(){D().sheetId='synthetic-own';D().nameProfile={sheetId:'synthetic-own',name:'合成本人',company:'CP',role:'社員'};CPGCalendarScope.save(localStorage,scopeIdentity(),[{id:'shared@example.test',work:true,mode:'person',company:'CP',person:'synthetic-own'},{id:'only.1.mybrand@gmail.com',work:true,mode:'person',company:'CP',person:'synthetic-own'}]);}};`;
 new vm.Script(source);
 const OWNER='toshi.cpg@gmail.com', STAFF='only.1.mybrand@gmail.com', SHARED='shared@example.test', KEEP='workhub_gcal_last_v1', KEY='workhub_proto_v1';
 const TODAY='2026-10-26', NOW=Date.parse(TODAY+'T03:00:00Z');
@@ -30,8 +30,10 @@ function boot({gShow=null,gWrite=SHARED,cache=null,storage:input,calendars=owner
   return {status:200,ok:true,json:async()=>data};
  }});
  vm.runInContext(fs.readFileSync(path.join(__dirname,'../view-scope.js'),'utf8'), context);
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'../calendar-view-scope.js'),'utf8'), context);
  vm.runInContext(source.replace(/\}\)\(\);\s*$/,hook+'\n})();'),context);
  const app=context.app;
+
  const submit=(indices,write=gWrite)=>{el('g_write').value=write;listeners.submit({preventDefault(){},target:{id:'gsetForm',querySelectorAll:()=>indices.map(value=>({value:String(value)}))}})};
  return {app,storage,requests,els,context,submit};
 }
@@ -57,12 +59,12 @@ const tests=[];async function test(name,fn){await fn();tests.push(name);console.
  });
  await test('direct reads fail closed for private ID and unresolved primary; staff primary resolves exactly',async()=>{
   const x=boot();for(const id of [OWNER,' TOSHI.CPG@GMAIL.COM ','primary'])assert.deepEqual(plain(await x.app.gReadOne({id},TODAY,TODAY)),[]);assert.equal(x.requests.length,0);
-  x.app.G.token='synthetic';x.app.G.exp=NOW+3600000;x.app.G.cals=[{id:STAFF,primary:true,name:'自分'}];await x.app.gReadOne({id:'primary',primary:true,name:'自分'},TODAY,TODAY);assert.deepEqual(eventsRead(x),[STAFF]);guard(x);
+  x.app.G.token='synthetic';x.app.G.exp=NOW+3600000;x.app.G.cals=[{id:STAFF,primary:true,name:'自分'}];const read=await x.app.gReadOne({id:'primary',primary:true,name:'自分'},TODAY,TODAY);assert.equal(read[0].id,'synthetic-event');assert.equal(read[0].private,false);assert.deepEqual(eventsRead(x),[STAFF]);guard(x);
  });
  await test('new cache sanitized on startup, storage, render, and offline reload without hiding staff primary',async()=>{
   const dirty=kept([evt(OWNER,'PRIVATE_FIXTURE'),evt('primary','ALIAS_FIXTURE'),evt(SHARED,'Shared event'),evt(STAFF,'Staff event'),{calendar:'自分',title:'NO_ID_FIXTURE'}]);
-  const x=boot({cache:dirty});assert.deepEqual(JSON.parse(x.storage.get(KEEP)).data.events.map(e=>e.calendarId),[SHARED,STAFF]);x.app.go('cal');for(const bad of ['PRIVATE_FIXTURE','ALIAS_FIXTURE','NO_ID_FIXTURE'])assert(!x.els.main.innerHTML.includes(bad));assert(x.els.main.innerHTML.includes('Shared event'));assert(x.els.main.innerHTML.includes('Staff event'));
-  const by=plain(x.app.gcalByDay(dirty.data));assert.deepEqual(by[TODAY].map(e=>e.title),['Shared event','Staff event']);const y=boot({storage:[...x.storage]});y.app.go('cal');assert(y.els.main.innerHTML.includes('Staff event'));assert.equal(y.requests.length,0);guard(x);guard(y);
+  const x=boot({cache:dirty});x.app.setupCalendarScope();assert.deepEqual(JSON.parse(x.storage.get(KEEP)).data.events.map(e=>e.calendarId),[SHARED,STAFF]);x.app.go('cal');for(const bad of ['PRIVATE_FIXTURE','ALIAS_FIXTURE','NO_ID_FIXTURE'])assert(!x.els.main.innerHTML.includes(bad));assert(x.els.main.innerHTML.includes('Shared event'));assert(x.els.main.innerHTML.includes('Staff event'));
+  const by=plain(x.app.gcalByDay(dirty.data));assert.deepEqual(by[TODAY].map(e=>e.title),['Shared event','Staff event']);const y=boot({storage:[...x.storage]});y.app.setupCalendarScope();y.app.go('cal');assert(y.els.main.innerHTML.includes('Staff event'));assert.equal(y.requests.length,0);guard(x);guard(y);
  });
  await test('live in-memory cache and status labels are sanitized, not just localStorage',async()=>{
   const x=boot();x.app.G.token='synthetic';x.app.G.exp=NOW+3600000;x.app.G.cals=ownerList.map(c=>({...c,name:c.summary}));const ids=x.app.gShowIds().join(',');x.app.gcalCache.poison={ids,from:'2026-09-01',to:'2026-11-30',at:NOW,state:'ok',data:kept([evt(OWNER,'PRIVATE_MEMORY'),evt(SHARED,'Shared event')]).data};

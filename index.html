@@ -426,6 +426,7 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./share-management.js?v=1.48.6"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
 <script src="./view-scope.js?v=1.49.0"></script>
+<script src="./calendar-view-scope.js?v=1.49.0"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -863,7 +864,7 @@ function scopeState(){
  const m=CPGViewScope.model(context,selection),data=ui.corp?.data;
  const remote=m.people.filter(p=>p.sheetId!==context.selfId&&(selection.person==='all'||selection.person===p.sheetId)&&(selection.company==='all'||selection.company==='none'||p.companies.includes(selection.company)));
  const missing=remote.filter(p=>!data?.find(x=>x.s?.sheetId===p.sheetId&&x.ok));
- if(m.state==='ready'&&selection.person!=='all'&&missing.length){m.state=data?.find(x=>x.s?.sheetId===selection.person&&!x.ok)?'failed':'unread';m.usable=false;}
+ if(ui.view!=='cal'&&m.state==='ready'&&selection.person!=='all'&&missing.length){m.state=data?.find(x=>x.s?.sheetId===selection.person&&!x.ok)?'failed':'unread';m.usable=false;}
  return {...m,context,missing,loadState:loaded.state};
 }
 function scopeSourceCases(){
@@ -934,7 +935,7 @@ function scopeHeader(){
  return '<div class="scope-bar">'+CPGViewScope.controls({...s.context,readState:s.state},s.selection)+'<p class="note">人＝'+meaning+'。</p>'+
  (s.missing.length?'<p class="note" role="status">選択内の読込未確認 '+s.missing.length+'人。確認できた分だけ表示しています。</p>':'')+
  ((overdue||urgent||undated||missing)?'<details class="scope-alert"><summary>閲覧範囲全体の要確認：'+[overdue?'期限切れToDo '+overdue+'件':'',urgent?'緊急 '+urgent+'件':'',undated?'失注日未入力 '+undated+'件':'',missing?'未読 '+missing+'人':''].filter(Boolean).join('／')+'</summary><p>選択外も含む注意です。読込未確認を0件とは判定しません。</p></details>':'')+
- (ui.view==='cal'?'<p class="banner">会社カレンダーは未構成。既存Google予定（参考・共通選択の対象外）は会社・担当を推測しません。今日のToDoには共通選択が効きます。</p>':'')+
+ (ui.view==='cal'?'<p class="banner">月・週・日も共通選択。仕事用の対応がない人は「未取得」です。</p>':'')+
  (ui.scopeSaveError?'<p role="alert">表示設定の保存を確認できません。再読み込みして確認してください。</p>':'')+'</div>';
 }
 
@@ -1530,7 +1531,7 @@ async function gReadOne(cal,from,to,mine){
       const allDay=!!e.start.date;
       /* 非公開の予定は、そのカレンダーの持ち主以外には中身を出さず「予定あり」だけにする（Google側で見える権限があっても） */
       const hide=!e.summary||(!cal.primary&&!cal.owner&&(e.visibility==="private"||e.visibility==="confidential"));
-      out.push({hub:hub||"",calendarId,calendar:cal.name,title:hide?"予定あり":e.summary,location:hide?"":e.location||"",allDay,start:allDay?e.start.date:e.start.dateTime,end:allDay?(e.end&&e.end.date)||addDays(e.start.date,1):(e.end&&e.end.dateTime)||e.start.dateTime});
+      out.push({private:["private","confidential"].includes(e.visibility),id:e.id||"",hub:hub||"",calendarId,calendar:cal.name,title:hide?"予定あり":e.summary,location:hide?"":e.location||"",allDay,start:allDay?e.start.date:e.start.dateTime,end:allDay?(e.end&&e.end.date)||addDays(e.start.date,1):(e.end&&e.end.dateTime)||e.start.dateTime});
     }
     page=(v&&v.nextPageToken)||"";
   }while(page);
@@ -1543,7 +1544,7 @@ async function gReadRange(from,to){
   if(epoch!==G.readEpoch)throw new Error("stale");
   if(res.some(r=>r.status==="rejected"&&r.reason&&r.reason.message==="signin"))throw new Error("signin");
   const events=[], sources=[];let missing=0;
-  res.forEach((r,i)=>{if(r.status==="fulfilled"){events.push(...r.value);sources.push({id:gReadId(cals[i].id),name:cals[i].name})}else missing++});
+  res.forEach((r,i)=>{if(r.status==="fulfilled"){events.push(...r.value);sources.push({id:gReadId(cals[i].id),name:cals[i].name,from,to})}else missing++});
   return gSafeData({events,sources,missing});
 }
 const GCAL_TTL=5*60000, GCAL_ERR_TTL=60000, gcalCache={}, gcalColorIdx={};
@@ -1702,16 +1703,36 @@ function gcalStatus(g){
   return '<p class="gcst">Googleカレンダー：'+(cals.map(n=>'<span class="ev '+gcalColor(n)+'">'+h(gcalLabel(n))+'</span>').join("")||'表示するカレンダーがありません')+
     (g.data&&g.data.missing?'<span>（読めないカレンダーが'+Number(g.data.missing)+'つあります）</span>':'')+(g.state==="loading"?'<span>更新中…</span>':'')+'</p>';
 }
+function calendarScopeSettings(){
+ const ctx=scopeContext(),cat=CPGViewScope.catalog(ctx),stored=CPGCalendarScope.load(localStorage,scopeIdentity());
+ const opt=(v,t)=>'<option value="'+h(v)+'">'+h(t)+'</option>';
+ return '<details class="panel"><summary>仕事用カレンダーの対応設定（この端末）</summary><p class="note">現在のGoogle一覧から、仕事専用と確認したカレンダーだけ設定します。会社・人は正規社員を選び、私的予定を含むものは設定しないでください。共有権限やGoogle予定は変更しません。設定後、未取得なら本人が同期してください。</p>'+(!G.cals?'<p>一覧未取得です。Googleとまとめて同期後に選べます。</p>':'<form id="calendarScopeForm"><label class="f">カレンダー<select id="cs_cal" required><option value="">選択してください</option>'+G.cals.filter(gReadable).map(c=>opt(c.id,c.name+' / '+c.id)).join('')+'</select></label><label class="f">用途<select id="cs_mode"><option value="person">人物を確認した仕事専用</option><option value="mixed">混在する仕事共有（元記録で確定できる予定だけ）</option></select></label><label class="f">会社（人物を確認した場合）<select id="cs_company"><option value="">選択してください</option>'+cat.companies.map(c=>opt(c,c)).join('')+opt('unknown','会社未特定（複数社等・推測しない）')+'</select></label><label class="f">人物（人物を確認した場合）<select id="cs_person"><option value="">選択してください</option>'+cat.people.map(p=>opt(p.sheetId,p.name+' / '+p.sheetId)).join('')+'</select></label><label class="f"><span><input type="checkbox" id="cs_work" required>私的予定を含まない仕事用で、会社・人物の対応を確認しました</span></label><button class="btn" type="submit">対応を確認して保存</button></form>')+'<p class="note">混在共有は、確実な元記録がない他社員の予定を分類できません。未設定・未識別は0件ではありません。</p>'+stored.rows.map((r,i)=>'<p class="note">'+h(r.id)+' → '+h(r.mode==='mixed'?'混在仕事共有':r.company+' / '+(cat.people.find(p=>p.sheetId===r.person)?.name||'人物未確認'))+' <button class="btn sm" type="button" data-calendar-map-remove="'+i+'">対応を外す</button></p>').join('')+(ui.calendarMapError?'<p role="alert">'+h(ui.calendarMapError)+'</p>':'')+'</details>';
+}
+function calendarScopeSave(){
+ const id=val('cs_cal'),mode=val('cs_mode'),company=val('cs_company'),person=val('cs_person'),cat=CPGViewScope.catalog(scopeContext());
+ if(!G.cals?.some(c=>c.id===id&&gReadable(c))||!document.getElementById('cs_work')?.checked||!['person','mixed'].includes(mode)||mode==='person'&&!cat.people.some(p=>p.sheetId===person&&(company==='unknown'||p.companies.includes(company)&&cat.companies.includes(company)))){toast('仕事用・会社・人物の対応を確認してください');return;}
+ const loaded=CPGCalendarScope.load(localStorage,scopeIdentity());if(loaded.state==='invalid'){ui.calendarMapError='保存済み設定を確認できないため上書きしません。';render();return;}
+ const row={id,work:true,mode,...(mode==='person'?{company,person}:{})};
+ if(!confirm('このブラウザの表示設定だけを変更します。\n'+id+'\n'+(mode==='mixed'?'混在する仕事共有':company+' / '+cat.people.find(p=>p.sheetId===person).name+' / '+person)+'\n私的予定を含まないことと、既存設定があれば置き換えることを確認しましたか？'))return;
+ const rows=loaded.rows.filter(r=>r.id!==id).concat(row);
+ ui.calendarMapError=CPGCalendarScope.save(localStorage,scopeIdentity(),rows)?'':'設定を保存・読み戻し確認できませんでした。成功扱いにせず再読込して確認してください。';render();if(!ui.calendarMapError)toast('この端末の仕事用対応を保存しました');
+}
+
 function vCal(){
   const t=todayS();
   const dueToday=scopeTodos().filter(x=>!x.done&&/^\d{4}-\d{2}-\d{2}$/.test(x.due||"")&&x.due<=t);
   const day=s=>({td:s===t?dueToday:[]});
   const [rFrom,rTo]=calRange();
-  const g=gcalRange(rFrom,rTo), gby=g.data?gcalByDay(g.data):{}, gday=s=>gcalCovered(g,s)?gby[s]||[]:[];
-  const unknown=s=>gcalUnknown(g,s)?'<span class="note cal-unfetched" role="status">未取得（予定の有無は未確認）</span>':'';
-  const gst=gSyncPanel()+gcalStatus(g);
+  const raw=gcalRange(rFrom,rTo), context=scopeContext(), loaded=CPGViewScope.load(localStorage,scopeIdentity(),context), model=CPGViewScope.model(context,loaded.selection);
+  const mapping=CPGCalendarScope.load(localStorage,scopeIdentity());
+  const projected=CPGCalendarScope.project({g:{...raw,data:gSafeData(raw.data)},rows:ui.calendarMapError?[]:mapping.rows,model,cases:scopeSourceCases(),resolvePerson:scopePerson,readable:gConcreteReadable,from:rFrom,to:rTo});
+  const g={...raw,data:raw.data?{...raw.data,events:projected.events,sources:(raw.data.sources||[]).filter(s=>projected.approved.some(r=>r.id===s.id)),calendars:[]}:null};
+  const gby=g.data?gcalByDay(g.data):{},gday=s=>gcalCovered(g,s)?gby[s]||[]:[];
+  const isUnknown=s=>projected.unknown(s),unknown=s=>isUnknown(s)?'<span class="note cal-unfetched" role="status">未取得（予定の有無は未確認）</span>':'';
+  const statuses=projected.status(rFrom), pending=statuses.map(p=>!p.ready?p:projected.status(rTo).find(q=>q.id===p.id)||p).filter(p=>!p.ready);
+  const gst=gSyncPanel()+'<div class="panel gcst calendar-scope-status" role="status"><b>選択した会社・人の仕事予定</b><p>'+(!model.usable?'選択対象を確認できません。':!statuses.length?'対象の予定は未取得です。':pending.length?'未取得 '+pending.length+'人：'+pending.map(p=>h(p.name)+'（'+h(p.reason)+'）').join('、'):'取得元の要求範囲は取得済み（未識別は別表示）')+'</p>'+(raw.state==='error'?'<p>Google予定を読めませんでした。未取得として表示します。</p>':'')+(pending.length?'<p>予定は一部未取得です。</p>':'')+(raw.state==='kept'?'<p>前回同期の保存済み予定です。最新にするにはGoogleとまとめて同期を押してください。</p>':'')+'<p>会社・担当未識別 '+projected.unidentified.length+'件（確認済み仕事用のみ・選択結果とは別。内容は表示しません）</p>'+(mapping.state==='invalid'?'<p>カレンダー対応設定を読み戻せません。設定を確認してください。</p>':'')+'</div>'+calendarScopeSettings();
   const legend="";
-  const note='<p class="note" style="margin:0">Google予定は共通選択の対象外の参考です。今日の欄のToDoは共通選択の対象です。案件の進捗は「案件」「ガント」で確認してください。ToDoは「ToDo」で管理し、今日が期限・期限を過ぎた未完了のものだけ今日の欄にも表示します。</p>';
+  const note='<p class="note">確認済み仕事用カレンダーだけを共通の会社・人選択で表示します。未設定・未取得は予定なしではありません。仕事用への入力後は本人が同期してください。混在共有で元記録との対応を確認できない予定は未識別です。私的カレンダーは表示しません。今日のToDoも同じ選択対象です。</p>';
   const views='<div class="seg cv" role="group" aria-label="表示の切り替え">'+[["month","月"],["week","週"],["day","日"]].map(([k,l])=>'<button type="button" data-cv="'+k+'" aria-pressed="'+(ui.calView===k)+'">'+l+'</button>').join("")+'</div>';
   const nav=(step,title,todayLabel,prevLabel,nextLabel)=>'<div class="calnav"><button class="btn sm" type="button" data-shift="'+(-step)+'" aria-label="'+prevLabel+'">‹</button><h2 class="num">'+title+'</h2>'+
     '<button class="btn sm" type="button" data-shift="today">'+todayLabel+'</button><button class="btn sm" type="button" data-shift="'+step+'" aria-label="'+nextLabel+'">›</button></div>';
@@ -1726,7 +1747,7 @@ function vCal(){
       const items=gday(s).map(x=>'<div class="wkev gcev"><span class="ev '+gcalColor(x.cal)+'">'+h(gcalLabel(x.cal))+'</span><span class="t">'+(x.time==="終日"?"":h(x.time.replace(/〜.*$/,"〜"))+' ')+h(x.title)+'</span></div>').join("")+
         b.td.map(x=>'<button type="button" data-nav="todo" class="wkev td'+(x.due<t?" over":"")+'"><span class="ev td'+(x.due<t?" over":"")+'">ToDo</span><span class="t">'+h(x.title)+'</span>'+dueLabel(x.due)+'</button>').join("");
       rows+='<div class="wkrow '+kind+(s===ui.calDay?" sel":"")+'"><button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+mdw(s)+(hol?' '+hol:'')+'を日表示で開く"'+(s===t?' aria-current="date"':'')+'><span class="dn">'+d.getDate()+'</span><span class="dw">'+WD[d.getDay()]+'</span></button>'+
-        '<div class="wki">'+(hol?'<span class="hol-name">'+hol+'</span>':'')+(items||(!gcalUnknown(g,s)?'<span class="wknone">予定なし</span>':''))+unknown(s)+'</div></div>';
+        '<div class="wki">'+(hol?'<span class="hol-name">'+hol+'</span>':'')+(items||(!isUnknown(s)?'<span class="wknone">予定なし</span>':''))+unknown(s)+'</div></div>';
     }
     return '<section class="sec">'+gst+views+
       nav(7,title,"今週","前の週","次の週")+
@@ -1738,7 +1759,7 @@ function vCal(){
       '<div class="ttl">'+h(x.title)+'</div>'+(x.loc?'<div class="row note"><span style="min-width:0;overflow-wrap:anywhere">'+h(x.loc)+'</span><a class="btn sm" style="display:inline-flex;align-items:center;text-decoration:none" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(x.loc)+'">地図</a></div>':'')+'</div>').join("");
     return '<section class="sec">'+gst+views+
       nav(1,'<span class="dtitle '+dayKind(ui.calDay)+'">'+mdw(ui.calDay)+'</span>'+(holidayName(ui.calDay)?' <span class="hol-name">'+holidayName(ui.calDay)+'</span>':''),"今日","前の日","次の日")+
-      '<div class="list">'+unknown(ui.calDay)+gRows+sel.td.map(x=>'<button type="button" class="card" data-nav="todo">'+todoCardHeading(x,'<span class="chip">ToDo</span>')+'<span class="note">ToDo画面で確認する</span></button>').join("")+((gRows||sel.td.length||gcalUnknown(g,ui.calDay))?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div>'+note+'</section>';
+      '<div class="list">'+unknown(ui.calDay)+gRows+sel.td.map(x=>'<button type="button" class="card" data-nav="todo">'+todoCardHeading(x,'<span class="chip">ToDo</span>')+'<span class="note">ToDo画面で確認する</span></button>').join("")+((gRows||sel.td.length||isUnknown(ui.calDay))?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div>'+note+'</section>';
   }
   const [y,m]=ui.calMonth.split("-").map(Number);
   const first=new Date(y,m-1,1), start=new Date(y,m-1,1-first.getDay());
@@ -1750,7 +1771,7 @@ function vCal(){
     const shown=all.slice(0,2).map(([cl,l])=>'<span class="'+cl+'">'+h(l)+'</span>').join("");
     const more=all.length>2?'<span class="ev td">ほか'+(all.length-2)+'件</span>':'';
     const tdl=b.td.length?'<span class="ev td'+(b.td.some(x=>x.due<t)?" over":"")+'">ToDo '+b.td.length+'</span>':'';
-    cells+='<button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+(dt.getMonth()+1)+'月'+dt.getDate()+'日'+(hol?' '+hol:'')+'を日表示で開く"><span class="n">'+dt.getDate()+'</span>'+(hol?'<span class="hn">'+hol+'</span>':'')+shown+more+tdl+(gcalUnknown(g,s)?'<span class="ev cal-unfetched">未取得</span>':'')+'</button>';
+    cells+='<button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+(dt.getMonth()+1)+'月'+dt.getDate()+'日'+(hol?' '+hol:'')+'を日表示で開く"><span class="n">'+dt.getDate()+'</span>'+(hol?'<span class="hn">'+hol+'</span>':'')+shown+more+tdl+(isUnknown(s)?'<span class="ev cal-unfetched">未取得</span>':'')+'</button>';
   }
   return '<section class="sec">'+gst+views+'<div class="calnav"><button class="btn sm" type="button" data-mon="-1" aria-label="前の月">‹</button><h2 class="num">'+y+'年'+m+'月</h2><button class="btn sm" type="button" data-mon="0">今月</button><button class="btn sm" type="button" data-mon="1" aria-label="次の月">›</button></div>'+
   legend+
@@ -1887,7 +1908,7 @@ function gSettings(){
   const show=new Set(gShowIds()), w=gWriteCal();
   return F('<form id="gsetForm" class="panel">'+
     '<fieldset class="gcals" style="border:0;padding:0;margin:0"><legend class="note">予定画面に表示するカレンダー</legend>'+
-    G.cals.map((c,i)=>!gReadable(c)?"":'<label><input type="checkbox" name="gshow" value="'+i+'"'+(show.has(c.id)?' checked':'')+'>'+h(c.name)+'</label>').join("")+'</fieldset><p class="note" style="margin:0">社長のマイカレンダーは、このアプリでは読み込みません。社員自身のカレンダーと共有のCPG HUBは表示できます。</p>'+
+    G.cals.map((c,i)=>!gReadable(c)?"":'<label><input type="checkbox" name="gshow" value="'+i+'"'+(show.has(c.id)?' checked':'')+'>'+h(c.name)+'</label>').join("")+'</fieldset><p class="note" style="margin:0">社長のマイカレンダーは、このアプリでは読み込みません。予定画面で仕事用・会社・人を確認したカレンダーだけ表示します。</p>'+
     '<label class="f">案件の日程を登録するカレンダー<select id="g_write">'+(gWritable().map(c=>'<option value="'+h(c.id)+'"'+(w&&w.id===c.id?' selected':'')+'>'+h(c.name)+'</option>').join("")||'<option value="">書き込めるカレンダーがありません</option>')+'</select></label>'+
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div></form>');
 }
@@ -3005,6 +3026,7 @@ document.addEventListener("click",e=>{
   if(receiptSaving||receiptSelecting||receiptSending){toast("領収書の処理中です。入力は残しています。",4000);return;}
   if(ui.rSaveUncertain&&el.closest("#rForm")&&!el.matches('button[type="submit"]'))return;
   if(el.dataset.receiptSuggestion){const id=el.dataset.receiptSuggestion==="payee"?"r_payee":"r_item",input=document.getElementById(id);if(input){input.value=el.dataset.value;receiptRefreshSuggestions();input.focus({preventScroll:true});}return;}
+  if(el.dataset.calendarMapRemove!=null){const loaded=CPGCalendarScope.load(localStorage,scopeIdentity()),i=Number(el.dataset.calendarMapRemove);if(loaded.state!=='ready'||!loaded.rows[i]||!confirm('この端末の対応設定だけを外します。Google予定・保存済みキャッシュは削除しません。'))return;ui.calendarMapError=CPGCalendarScope.save(localStorage,scopeIdentity(),loaded.rows.filter((_,n)=>n!==i))?'':'設定の読み戻し確認に失敗しました。';render();return;}
   const c=ui.caseId?editCase(ui.caseId):null;
   if(el.dataset.cddate){caseDateOpen(el.dataset.cddate,false);return}
   if(el.dataset.cdconvert){caseDateOpen(el.dataset.cdconvert,true);return}
@@ -3280,6 +3302,7 @@ document.addEventListener("submit",e=>{
   if(caseSaveGuard()){e.preventDefault();return}
   e.preventDefault();
   const f=e.target;
+  if(f.id==="calendarScopeForm"){calendarScopeSave();return}
   if(f.id==="newForm"){
     const type=val("n_type"),at=val("n_at"),co=val("n_co");
     if(!COMPANIES.includes(co)){toast("会社（CP・CPY・AT）を選んでください");const g=main.querySelector('[data-nco]');if(g)g.scrollIntoView({block:"center"});return}
