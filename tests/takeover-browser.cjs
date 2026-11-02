@@ -19,7 +19,7 @@ async function context(width,db){
   if(u.startsWith('https://www.googleapis.com/')){requests.push({url:u,method:r.request().method()});return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({items:[]})})}
   return r.fulfill({status:200,body:''});
  });
- const p=await c.newPage();p.on('pageerror',e=>errors.push(e.message));await p.clock.install({time:new Date('2026-10-25T03:00:00Z')});await p.goto(origin+'/');await p.waitForFunction(()=>!!window.testHub);await p.evaluate(()=>testHub.photoPut('keep-photo-key',new Blob(['original-photo-bytes'],{type:'image/jpeg'})));
+ const p=await c.newPage();p.on('pageerror',e=>errors.push(e.message));await p.clock.install({time:new Date('2026-10-25T03:00:00Z')});await p.goto(origin+'/');await p.waitForFunction(()=>!!window.testHub);await require('./scope-selection-helper').allPeople(p);await p.evaluate(()=>testHub.photoPut('keep-photo-key',new Blob(['original-photo-bytes'],{type:'image/jpeg'})));
  return {c,p,errors,requests};
 }
 const check=async(name,fn)=>{await fn();results.push(name);console.log('PASS',name)};
@@ -38,7 +38,7 @@ async function main(){
  db.receipts=[{id:'R-0100',date:'2026-10-24',payee:'既存取引先',amount:1234,photos:['keep-photo-key'],edits:[{reason:'keep'}],drive:{file:'keep-file'},pext:{invoice:'keep'},status:'未提出',method:'立替',company:'CP',payments:['unknown-keep']}];db.rseq=100;
  for(const width of [320,390,822,1280])await check('月・週・日とデータ保持 '+width+'px',async()=>{
   const {p,c,errors}=await context(width,db);const before=await raw(p);
-  await p.evaluate(()=>{testHub.ui.corp={at:Date.now(),kept:true};testHub.ui.corpRO=[{...testHub.CASE_DEFAULTS(),id:'remote・社員',srcId:'remote',ro:true,type:'reno',stage:'new',property:'社員案件',room:'',tantou:'社員',planDate:'2026-10-25'}];testHub.ui.corpTodo=[{title:'社員・超過',due:'2026-10-24',ro:true,tantou:'社員',caseId:'remote・社員'},{title:'社員・未来',due:'2026-10-26',ro:true}];testHub.db.settings.data.admin=true});
+  await p.evaluate(()=>{testHub.ui.corp={at:Date.now(),kept:true};testHub.ui.corpRO=[{...testHub.CASE_DEFAULTS(),id:'remote・社員',srcId:'remote',ro:true,type:'reno',stage:'new',property:'社員案件',room:'',tantou:'社員',planDate:'2026-10-25'}];testHub.ui.corpTodo=[{title:'社員・超過',due:'2026-10-24',ro:true,tantou:'社員',caseId:'remote・社員'},{title:'社員・未来',due:'2026-10-26',ro:true}];testHub.db.settings.data.admin=true;const staff={sheetId:'synthetic-calendar-staff',name:'社員',company:'CP',role:'社員'};testHub.db.settings.data.staff=[staff];testHub.ui.corp.data=[{s:staff,ok:true,cases:[],orders:[],rc:[],todo:[{'内容':'社員・超過','期限':'2026-10-24','担当':'社員','種類':'手入力'},{'内容':'社員・未来','期限':'2026-10-26','担当':'社員','種類':'手入力'}]}]});await require('./scope-selection-helper').allPeople(p);
   // Seed the existing last-calendar cache, including both local and staff-linked events.
   await p.evaluate(()=>localStorage.setItem('workhub_gcal_last_v1',JSON.stringify({policy:2,at:Date.now(),from:'2026-09-01',to:'2026-11-30',data:{sources:[{id:'test-calendar',name:'テスト'}],calendars:['テスト'],events:[{calendarId:'test-calendar',hub:'U-0100',calendar:'テスト',title:'Googleから取得した予定',allDay:true,start:'2026-10-25',end:'2026-10-26'},{calendarId:'test-calendar',hub:'remote',calendar:'テスト',title:'Google社員予定',allDay:true,start:'2026-10-25',end:'2026-10-26'}]}})));
   await go(p,'cal');assert.equal(await p.locator('.cal [data-day="2026-10-25"] .ev.td').innerText(),'ToDo 4');assert.equal(await p.locator('.cal [data-day="2026-10-23"] .ev.td').count(),0);assert.equal(await p.locator('.cal [data-day="2026-10-26"] .ev.td').count(),0);

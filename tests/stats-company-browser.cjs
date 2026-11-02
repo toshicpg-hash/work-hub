@@ -85,7 +85,7 @@ async function main(){
    d.sheetId=staff[1].sheetId;ST.ui.viewList=[Object.assign({},staff[0],{role:'社員',company:'CPY'}),Object.assign({},staff[1],{role:'GM',gmCo:'CPY'})];CPGViewScope.save(localStorage,{account:d.viewEmail,record:d.sheetId,viewer:d.viewListId},{company:'CPY',person:'all'});
    const dd=JSON.parse(JSON.stringify(data));ST.ui.corp={data:dd,at:Date.now()};ST.ui.sCo='CP';ST.roBuild(dd);ST.go('stats')},{staff,data});
   const t=await p.textContent('main');
-  assert.ok(t.includes('CPY')&&t.includes('選択した対象'),t.slice(0,300));
+  assert.ok(t.includes('CPY')&&t.includes('共通選択'),t.slice(0,300));
   assert.equal(await p.$$eval('[data-sco]',a=>a.length),0,'company buttons are not shown on a GM device');
   const s=await sum(p);
   assert.equal(s['見積提出'],'1件',JSON.stringify(s));assert.equal(s['受注'],'1件');assert.equal(await unpaidHead(p),'0件 0円');
@@ -96,9 +96,9 @@ async function main(){
   await p.evaluate(()=>{ST.ui.corpCo='AT';ST.roBuild(ST.ui.corp.data);ST.go('company')});
   assert.equal(await p.$$eval('[data-cco]',a=>a.length),0,'no company buttons in 会社の動き on a GM device');
   const home=await p.textContent('main');
-  assert.ok(home.includes('GMの会社（CPY）の社員の分です'));
+  assert.ok(home.includes('CPY GM'));
   const cards=await p.$$eval('.panel:has(h3:text-matches("動いている案件")) .card .ttl',a=>a.map(x=>x.textContent.trim().split(' ')[0]).sort());
-  assert.deepEqual(cards,['例題荘受注','試験荘受注'],cards.join());
+  assert.deepEqual(cards,['試験荘受注'],cards.join()); // same explicit CPY company selection as stats, not profile-inferred company
   await p.evaluate(()=>ST.go('cases'));
   assert.equal(await p.$$eval('.chip.ro',a=>a.length),1,'only explicit CPY company is included; missing company is not inferred');
   assert.ok(await overflow(p)<=0);
