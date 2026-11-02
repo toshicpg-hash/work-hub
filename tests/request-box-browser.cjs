@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
-const hook='window.RB={get db(){return DB},ui,go,render,roBuild,adminAdd,adminRoleSave,corpRun,boxState};';
+const hook='window.RB={get db(){return DB},ui,go,render,roBuild,adminAdd,adminRoleSave,corpRun,boxState,corpKeepSave,permList};';
 const ADMIN='toshi.cpg@gmail.com',SA='test-staff-a@example.com',SB='test-staff-b@example.com',GM='test-gm-cpy@example.com',ZEN='test-zensha@example.com';
 const TODAY='2026-10-30';
 /* ---- in-memory Google ---- */
@@ -30,7 +30,7 @@ async function google(route){
   G.files[id]={id,created:new Date(Date.UTC(2026,9,1)+G.n*60000).toISOString(),name:b.name,mime:b.mimeType,parents:b.parents||[],owner:acct,perms:[],tabs:b.mimeType.includes('spreadsheet')?[{title:'シート1',sheetId:0,rows:[]}]:null};return J({id,name:b.name})}
  let mm=p.match(/^\/drive\/v3\/files\/([^/]+)\/permissions\/?([^/]*)$/);
  if(mm){const f=G.files[mm[1]];if(!f||f.owner!==acct)return no(403);
-  if(m==='GET'&&!mm[2])return J({permissions:[{id:'owner',emailAddress:f.owner,role:'owner'}].concat(f.perms.map(x=>({id:x.id,emailAddress:x.email,role:x.role})))});
+  if(m==='GET'&&!mm[2])return J({permissions:[{id:'owner',emailAddress:f.owner,role:'owner',type:'user'}].concat(f.perms.map(x=>({id:x.id,emailAddress:x.email,role:x.role,type:'user'})))});
   if(m==='POST'){const b=req.postDataJSON(),x={id:'perm'+(++G.perm),email:b.emailAddress,role:b.role};f.perms.push(x);return J({id:x.id})}
   if(m==='PATCH'){const x=f.perms.find(x=>x.id===mm[2]);if(!x)return no(404);x.role=req.postDataJSON().role;return J({id:x.id})}
   if(m==='DELETE'){f.perms=f.perms.filter(x=>x.id!==mm[2]);return route.fulfill({status:204,headers:{'access-control-allow-origin':'*'}})}}
@@ -63,6 +63,7 @@ async function device(acct,width=400){
  await c.addInitScript(a=>{window.__acct=a},acct);
  const p=await c.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));
  await p.clock.install({time:new Date(TODAY+'T01:00:00Z')});await p.goto(origin+'/');await p.waitForFunction(()=>!!window.RB&&window.google&&google.accounts);
+ await p.evaluate(()=>{window.__autoShare=true;setInterval(()=>{if(window.__autoShare)document.querySelector('[data-share-yes]')?.click()},20)});
  return {c,p,errors};
 }
 const byName=n=>Object.values(G.files).find(f=>f.name===n);
@@ -77,9 +78,9 @@ async function main(){
   await A.p.evaluate(async([SA,SB,GM,ZEN])=>{RB.db.settings.data.admin=true;const log=()=>{};
    await RB.adminAdd('社員 一郎',SA,log,{company:'CP',role:'社員',gmCo:''});
    await RB.adminAdd('社員 二郎',SB,log,{company:'CPY',role:'社員',gmCo:''});
-   await RB.adminAdd('進藤 試験',GM,log,{company:'CPY',role:'GM',gmCo:'CPY'});
-   await RB.adminAdd('見本 太郎',ZEN,log,{company:'CP',role:'全社',gmCo:''})},[SA,SB,GM,ZEN]);
-  const bA=byName('CPG HUB_指示箱_社員 一郎'),bB=byName('CPG HUB_指示箱_社員 二郎'),bG=byName('CPG HUB_指示箱_進藤 試験');
+   await RB.adminAdd('管理 見本',GM,log,{company:'CPY',role:'GM',gmCo:'CPY'});
+   await RB.adminAdd('見本 太郎',ZEN,log,{company:'CP,CPY,AT',role:'全社',gmCo:'CP'})},[SA,SB,GM,ZEN]);
+  const bA=byName('CPG HUB_指示箱_社員 一郎'),bB=byName('CPG HUB_指示箱_社員 二郎'),bG=byName('CPG HUB_指示箱_管理 見本');
   assert.ok(bA&&bB&&bG,'boxes for the three people someone can send to');
   assert.ok(!byName('CPG HUB_指示箱_見本 太郎'),'no box when nobody can send to that person');
   assert.equal(bA.owner,ADMIN);
@@ -91,6 +92,36 @@ async function main(){
   assert.deepEqual(tab(sB,'連絡')[0],['指示箱ID','指示箱のリンク','書いた日時']);assert.equal(tab(sB,'連絡')[1][0],bB.id);
   const list=tab(byName('CPG HUB_社員一覧'),'社員');assert.equal(list[0].at(-1),'指示箱ID');
   const vl=tab(byName('CPG HUB_見る人用一覧'),'一覧');assert.equal(vl[0].at(-1),'指示箱ID');assert.ok(vl.some(r=>r[1]===SB&&r.at(-1)===bB.id));
+ });
+ await check('共有プレビュー：中止・Escape・再読込、390px/360px文字150%、旧共有保持',async()=>{
+  const before=G.calls.filter(x=>['POST','PATCH','DELETE','PUT'].includes(x[1])).length;
+  await A.p.evaluate(()=>{window.__autoShare=false;const s=RB.db.settings.data.staff.find(x=>x.role==='GM');window.__sharePending=RB.adminRoleSave(s.sheetId,{company:s.company,role:'社員',gmCo:''},'',()=>{}).then(()=> 'saved',e=>e.message)});
+  await A.p.waitForSelector('dialog.share-preview[open]');
+  assert.match(await A.p.evaluate(async()=>{const s=RB.db.settings.data.staff.find(x=>x.role==='GM');try{await RB.adminRoleSave(s.sheetId,{role:'社員'},'',()=>{});return 'unexpected'}catch(e){return e.message}}),/処理中/);
+  const text=await A.p.locator('dialog.share-preview').innerText();assert.match(text,/解除/);assert.match(text,/test-gm-cpy@example.com/);assert.match(text,/記録シート/);assert.match(text,/指示箱/);
+  fs.mkdirSync(path.join(root,'docs/preview'),{recursive:true});
+  await A.p.setViewportSize({width:390,height:844});await A.p.screenshot({path:path.join(root,'docs/preview/gm-sharing-preview-390.png')});
+  await A.p.setViewportSize({width:360,height:844});
+  await A.p.evaluate(()=>{for(const e of document.querySelectorAll('dialog.share-preview,dialog.share-preview *')){e.dataset.originalSize=getComputedStyle(e).fontSize;}for(const e of document.querySelectorAll('dialog.share-preview,dialog.share-preview *'))e.style.fontSize=parseFloat(e.dataset.originalSize)*1.5+'px'});
+  const dims=await A.p.locator('dialog.share-preview').evaluate(e=>({w:e.clientWidth,s:e.scrollWidth,page:document.documentElement.scrollWidth}));assert.ok(dims.s<=dims.w+1,JSON.stringify(dims));assert.ok(dims.page<=360);
+  await A.p.screenshot({path:path.join(root,'docs/preview/gm-sharing-preview-360-font150.png')});
+  await A.p.locator('[data-share-no]').click();assert.match(await A.p.evaluate(()=>window.__sharePending),/中止/);
+  assert.equal(G.calls.filter(x=>['POST','PATCH','DELETE','PUT'].includes(x[1])).length,before,'no remote mutation on cancel');
+  assert.equal(await A.p.evaluate(()=>RB.db.settings.data.staff.find(x=>x.email==='test-gm-cpy@example.com').role),'GM');
+  await A.p.evaluate(()=>{const s=RB.db.settings.data.staff.find(x=>x.role==='GM');window.__sharePending=RB.adminRoleSave(s.sheetId,{company:s.company,role:'社員',gmCo:''},'',()=>{}).catch(e=>e.message)});
+  await A.p.waitForSelector('dialog[open]');await A.p.keyboard.press('Escape');assert.match(await A.p.evaluate(()=>window.__sharePending),/中止/);
+  await A.p.reload();await A.p.waitForFunction(()=>!!window.RB);assert.equal(await A.p.evaluate(()=>RB.db.settings.data.staff.find(x=>x.email==='test-gm-cpy@example.com').role),'GM');
+  await A.p.evaluate(()=>{const s=RB.db.settings.data.staff.find(x=>x.role==='GM');window.__sharePending=RB.adminRoleSave(s.sheetId,{company:s.company,role:s.role,gmCo:s.gmCo},'',()=>{}).then(()=> 'saved',e=>e.message)});await A.p.waitForSelector('dialog.share-preview[open]');await A.p.locator('[data-share-yes]').click();assert.equal(await A.p.evaluate(()=>window.__sharePending),'saved');
+  await A.p.evaluate(()=>{window.__autoShare=true;setInterval(()=>{if(window.__autoShare)document.querySelector('[data-share-yes]')?.click()},20)});
+  // Legacy, externally granted access must survive a role removal later.
+  const f=byName('CPG HUB_社員 一郎');f.perms.push({id:'legacy-gm-reader',email:GM,role:'reader'});
+ });
+ await check('共有管理履歴の固定見出し・追記と読戻し、単社GMは全社兼務者を対象外',async()=>{
+  const journal=tab(byName('CPG HUB_社員一覧'),'共有管理履歴');assert.deepEqual(journal[0],['操作ID','段階','記録JSON']);assert.equal(journal.filter(r=>r[0]==='操作ID').length,1);
+  const events=journal.slice(1).map(r=>JSON.parse(r[2]));assert.ok(events.length>0);assert.ok(events.every(x=>x.list===byName('CPG HUB_社員一覧').id));
+  const own=byName('CPG HUB_見本 太郎');assert.equal(shares(own)[GM],undefined,'multi-company all-company manager excluded');
+  assert.ok(!G.calls.some(x=>x[1]==='DELETE'&&x[2].includes('legacy-gm-reader')));
+  assert.ok(!G.calls.some(x=>x[1]==='POST'&&x[2].includes('共有管理履歴')&&x[2].endsWith(':clear')),'journal never cleared');
  });
  const vlId=byName('CPG HUB_見る人用一覧').id;
  const viewer=async(acct,width)=>{const d=await device(acct,width);await d.p.evaluate(async([id,me])=>{const x=RB.db.settings.data;x.viewListId=id;x.viewEmail=me;await RB.corpRun();RB.go('company')},[vlId,acct]);return d};
@@ -105,7 +136,7 @@ async function main(){
    assert.ok((await g.p.textContent('main')).includes('v1.47.1 以降の CPG HUB で同期すると届きます'));
    const row=tab(byName('CPG HUB_指示箱_社員 二郎'),'指示').find(r=>r[1]==='見積を出す（テスト'+width+'）');
    assert.ok(/^B-20261030-[a-z0-9]{6}$/.test(row[0]),row[0]);
-   assert.deepEqual(row.slice(2),['2026-11-05','2026-10-30','未完了',GM,'GM 進藤','','']);
+   assert.deepEqual(row.slice(2),['2026-11-05','2026-10-30','未完了',GM,'GM 管理','','']);
    const o=await g.p.evaluate(()=>{const d=document.documentElement;return Math.max(d.scrollWidth-d.clientWidth,...[...document.querySelectorAll('.panel,section,.row,.form,details')].map(x=>x.scrollWidth-x.clientWidth))});assert.ok(o<=0,'overflow '+o);
   });
   await check('GMは社員の記録シートとほかの会社の指示箱に書けない '+width+'px',async()=>{
@@ -137,7 +168,7 @@ async function main(){
  await check('全社の人は全員に出せ、GMの出したものは見えない（自分の分だけ）',async()=>{
   const z=await viewer(ZEN,400);
   const names=await z.p.evaluate(()=>[...document.querySelectorAll('[data-badd]')].map(b=>RB.ui.corp.data[Number(b.dataset.badd)].s.name).sort());
-  assert.deepEqual(names,['社員 一郎','社員 二郎','進藤 試験'].sort());
+  assert.deepEqual(names,['社員 一郎','社員 二郎','管理 見本'].sort());
   assert.ok(!(await z.p.textContent('main')).includes('見積を出す（テスト'),'requests of another issuer are not listed for 全社');
   const k=await z.p.evaluate(()=>String(RB.ui.corp.data.findIndex(x=>x.s.name==='社員 一郎')));
   await z.p.fill('#bi_t'+k,'書類を出す（全社テスト）');await z.p.click('[data-badd="'+k+'"]');
@@ -149,7 +180,7 @@ async function main(){
  await check('社長の端末：全部の指示を出した人の表示付きで見られ、期限なしは指示一覧に「○○から」で残る',async()=>{
   await A.p.evaluate(async()=>{await RB.corpRun();RB.go('company')});
   const t=await A.p.textContent('main');
-  assert.ok(t.includes('タスクリクエスト（GM・全社から）')&&t.includes('GM 進藤から')&&t.includes('見本から'));
+  assert.ok(t.includes('タスクリクエスト（GM・全社から）')&&t.includes('GM 管理から')&&t.includes('見本から'));
   assert.ok(t.includes('✓ 10/30完了')&&t.includes('取り消し'));
   assert.ok((await A.p.$$('[data-bcancel]')).length>=1,'the 社長 can cancel open ones');
   await A.p.evaluate(()=>RB.go('todo',{tPeriod:'today',tTantou:'all'}));
@@ -170,11 +201,18 @@ async function main(){
   await A.p.evaluate(async([GM])=>{const s=RB.db.settings.data.staff.find(x=>x.email===GM);await RB.adminRoleSave(s.sheetId,{company:'CPY',role:'社員',gmCo:''},'',()=>{})},[GM]);
   assert.ok(!(GM in shares(bB)),JSON.stringify(shares(bB)));assert.equal(tab(bB,'指示').length,before,'requests stay');
   assert.equal(shares(bB)[ZEN],'writer');
+  assert.equal(shares(byName('CPG HUB_社員 一郎'))[GM],'reader','legacy share remains for explicit review');
   await A.p.evaluate(async([SA])=>{const s=RB.db.settings.data.staff.find(x=>x.email===SA);await RB.adminRoleSave(s.sheetId,{company:'CP,CPY',role:'GM',gmCo:'CPY'},'',()=>{})},[SA]);
   assert.equal(shares(bB)[SA],'writer');
   assert.equal(shares(byName('CPG HUB_社員 二郎'))[SA],'reader','new GM reads the record sheet only');
   assert.deepEqual(A.errors,[]);
  });
+ const cached=await viewer(SA,390);
+ await check('旧キャッシュの複数会社・管理者は再読込でGM表示から除外、保存キャッシュ原本は不変',async()=>{
+  await cached.p.evaluate(()=>{const bad={s:{name:'合成全社',email:'cache-only@example.com',sheetId:'cached-multi',company:'CP,CPY,AT',role:'全社',gmCo:'CP'},ok:true,cases:[],rc:[],todo:[],orders:[]};RB.ui.corp.data.push(bad);RB.corpKeepSave()});
+  const raw=await cached.p.evaluate(()=>localStorage.getItem('workhub_corp_last_v1'));await cached.p.reload();await cached.p.waitForFunction(()=>!!window.RB);
+  assert.equal(await cached.p.evaluate(()=>RB.ui.corp.data.some(x=>x.s.sheetId==='cached-multi')),false);assert.equal(await cached.p.evaluate(()=>localStorage.getItem('workhub_corp_last_v1')),raw);
+ });await cached.c.close();
  await A.c.close();
  console.log('ALL PASS',results.length);
 }
