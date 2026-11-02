@@ -164,11 +164,11 @@ details.fold>.panel>h3:first-child{display:none}
 .chip.nco{background:transparent;color:var(--muted);font-weight:400;border:1px dashed var(--line)}
 .chip.ro{background:var(--sunk);color:var(--muted);font-size:10px;font-weight:400;padding:0 6px}
 /* 担当のバッジ：社員一覧の順で決まる色（同じ人は同じ色・同じ表記） */
-.pbadge{display:inline-block;font-size:12.5px;font-weight:700;padding:1px 9px;border-radius:99px;white-space:nowrap;border:1px solid currentColor}
+.pbadge{display:inline-block;font-size:12.5px;font-weight:700;padding:4px 9px;border-radius:8px;white-space:nowrap;border:1px solid currentColor;line-height:1.6;max-width:100%;height:auto;box-sizing:border-box}
 .pb0{color:var(--blue);background:var(--blue-soft)}.pb1{color:var(--gc1);background:var(--gc1-soft)}.pb2{color:var(--green);background:var(--green-soft)}
 .pb3{color:var(--gc0);background:var(--gc0-soft)}.pb4{color:var(--amber);background:var(--amber-soft)}.pb5{color:var(--gc2);background:var(--gc2-soft)}
 .pbx{color:var(--fg);background:var(--sunk)}
-.pbadge.sm{font-size:10.5px;padding:0 6px}
+.pbadge.sm{font-size:10.5px;padding:2px 6px;border-radius:6px}
 /* 領収書の切り替え：予定の 月/週/日 と同じ大きさ。4つ（法人カードあり）でも400px幅に収める */
 .seg.cv.rtabs button{flex:1 1 auto;min-width:0;padding:8px 4px;white-space:nowrap;font-size:clamp(13px,4vw,18px)}
 .chip.t-kinkyu{background:var(--red-soft);color:var(--red)}
@@ -559,7 +559,7 @@ const typeKeyOf=l=>Object.keys(TYPES).find(k=>TYPES[k].label===l)||"reno";
 function roCase(r,x){
   const v=k=>String(r[k]==null?"":r[k]), d=k=>v(k).slice(0,10), num=k=>v(k)===""?null:Number(v(k));
   const stage=STAGES[v("段階キー")]?v("段階キー"):Object.keys(STAGES).find(k=>STAGES[k]===v("段階"))||"new", paid=Number(v("入金済額"))||0;
-  return Object.assign(CASE_DEFAULTS(),{ro:true,company:COMPANIES.includes(v("会社"))?v("会社"):"",owner:x.s.name,srcId:v("受付番号"),id:v("受付番号")+"・"+x.s.sheetId,type:typeKeyOf(v("種類")),stage,clientKind:"",client:v("依頼元"),property:v("物件"),room:v("部屋"),tantou:tantouLabel(v("担当")||x.s.name,x.s.sheetId),
+  return Object.assign(CASE_DEFAULTS(),{ro:true,company:COMPANIES.includes(v("会社"))?v("会社"):"",owner:x.s.name,srcId:v("受付番号"),id:v("受付番号")+"・"+x.s.sheetId,type:typeKeyOf(v("種類")),stage,clientKind:"",client:v("依頼元"),property:v("物件"),room:v("部屋"),tantou:tantouLabel(v("担当"),x.s.sheetId),
     receivedAt:v("受付日時")||(d("受付日")?new Date(d("受付日")+"T00:00:00").toISOString():""),planDate:d("予定日"),planTime:v("予定時刻（日本時間）"),cancelledAt:v("受注後取消日時"),cancelReason:v("受注後取消理由"),siteDate:d("実施日"),estAmount:num("見積額"),estSentDate:d("見積提出日"),holdDate:d("保留日"),lossDate:d("失注日"),lossReason:v("失注理由"),
     orderDate:d("受注日"),jobNo:v("仕事番号"),handedDate:d("引渡日"),builtDate:d("施工完了日"),billDate:d("請求日"),billAmount:num("請求額"),payDue:d("入金予定日"),payments:paid?[{date:d("入金日")||d("請求日"),amount:paid}]:[],paidDate:stage==="paid"?d("入金日"):""});
 }
@@ -641,11 +641,11 @@ function personBadge(name,small,owner){
  return '<span class="pbadge '+(i<0?"pbx":"pb"+(i%6))+(small?' sm':'')+'">'+h(lab)+'</span>';
 }
 function tantouOptions(){
- const list=nameList(),pk=p=>p.sheetId||p.name,out=STAFF.map(v=>({v,l:tantouLabel(v)})),taken=new Set(STAFF.map(v=>personOf(v,ownOwner())).filter(Boolean).map(pk));
- for(const p of list)if(!p.removed&&!taken.has(pk(p))){const v=p.nameKey||p.registeredName||p.name;out.push({v,l:personLabel(p),disabled:list.filter(x=>(x.nameKey||x.registeredName||x.name)===v).length>1});taken.add(pk(p))}
+ const list=nameList(),pk=p=>p.sheetId||p.name,out=STAFF.map(v=>({v,l:tantouLabel(v),disabled:CPGNames.matches(list,v,STAFF).length>1})),taken=new Set(STAFF.map(v=>personOf(v,ownOwner())).filter(Boolean).map(pk));
+ for(const p of list)if(!p.removed&&!taken.has(pk(p))){const v=p.nameKey||p.registeredName||p.name;out.push({v,l:personLabel(p),disabled:CPGNames.matches(list,v,STAFF).length>1});taken.add(pk(p))}
  const seen=new Set();return out.filter(o=>!seen.has(o.v)&&seen.add(o.v));
 }
-const tantouOptsHtml=()=>tantouOptions().map(o=>'<option value="'+h(o.v)+'"'+(o.disabled?' disabled':'')+'>'+h(o.l)+(o.disabled?'（キー重複・選択不可）':'')+'</option>').join("");
+const tantouOptsHtml=()=>tantouOptions().map(o=>'<option value="'+h(o.v)+'"'+(o.disabled?' disabled':'')+'>'+h(o.l)+(o.disabled?'（氏名重複・選択不可）':'')+'</option>').join("");
 const isEizen=c=>c.type==="eizen";
 const isTaikyo=c=>c.type==="taikyo";
 const itemsSum=(c,b)=>c.items.filter(i=>!b||i.burden===b).reduce((s,i)=>s+(Number(i.amount)||0),0);
@@ -2306,7 +2306,7 @@ async function dataSync(step){
   }
   try{if(!tabsKnown||tabs.includes("連絡")||DB.requestBoxEmployee){const r=await requestBoxSync(id);step("指示箱（GM・全社）",true,"未完了 "+r.open+"件・完了報告 "+r.sent+"件");}}
   catch(err){if(err.message==="signin"||err.requestBoxStopped||caseSaveUncertain)throw err;step("指示箱（GM・全社）",false,err.message||dMsg(err));}
-  if(tabs.includes(NAME_TAB)){try{const rows=await namesRead(id),p=CPGNames.overlay([{name:RS().name||"",sheetId:id}],rows)[0];D().nameProfile=p;shareSave();step("正規氏名",!CPGNames.pending(rows,id).length,CPGNames.pending(rows,id).length?"変更の確認途中です。確認済みの表示名を使います":"表示名を確認しました")}catch(err){step("正規氏名",false,dMsg(err))}}
+  if(tabs.includes(NAME_TAB)){try{const rows=await namesRead(id),p=CPGNames.overlay([{name:RS().name||"",sheetId:id}],rows)[0];D().nameProfile=p;shareSave();step("正規氏名",!CPGNames.pending(rows,id).length,CPGNames.pending(rows,id).length?"変更の確認途中です。確認済みの表示名を使います":"表示名を確認しました")}catch(err){if(caseSaveUncertain||err.message==="signin")throw err;step("正規氏名",false,dMsg(err))}}
   d.todo=dataRows().todo;
   for(const [tab,rows] of [["案件",d.cases],["入金",d.pay],["立替",d.rc],["ToDo",d.todo]]){
     try{await sheetWrite(id,tab,rows);step("記録シート「"+tab+"」",true,(rows.length-1)+"行")}catch(err){step("記録シート「"+tab+"」",false,dMsg(err))}
@@ -2634,7 +2634,7 @@ async function adminNameSave(sheetId,name,log=()=>{}){return adminShareOperation
  const d=D(),list=d.listId,p=d.staff.find(x=>x.sheetId===sheetId&&!x.removed);if(!p)throw Error("変更できる社員が見つかりません。");
  const initial=await namesRead(list),pending=CPGNames.pending(initial,sheetId);if(pending.length>1)throw Error("未確認の氏名変更が複数あります。個別確認してください。");
  let change=pending[0];if(change&&CPGNames.clean(name)!==change.after)throw Error("未確認の変更「"+change.after+"」を先に再確認してください。");
- if(!change&&CPGNames.clean(name)===CPGNames.clean(p.name)){const last=initial.filter(x=>x.sheetId===sheetId&&x.state==='confirmed').at(-1);if(last)change=initial.find(x=>x.id===last.id&&x.state==='intent');}
+ if(!change&&CPGNames.clean(name)===CPGNames.clean(p.name)){const last=CPGNames.chain(initial,sheetId).at(-1);if(last)change=initial.find(x=>x.id===last.id&&x.state==='intent');}
  if(!change)change=CPGNames.change(p,name,crypto.randomUUID(),new Date().toISOString());
  const targets=[sheetId,...(d.viewListId?[d.viewListId]:[])];if(new Set([list,...targets]).size!==targets.length+1)throw Error("氏名の保存先IDが重複しています。");
  const source=(await sheetRead(list,["社員"]))["社員"]||[],token=G.token;
