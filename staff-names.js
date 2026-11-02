@@ -15,7 +15,7 @@ function resolve(list,key,owner,known){
  if(list.some(p=>aliases(p).some(a=>same(a,n))))return found.length===1?found[0]:null;
  return found.length===1?found[0]:own.length===1&&found.includes(own[0])?own[0]:null;
 }
-function label(p,list){const n=clean(p.name);return list.filter(x=>same(x.name,n)).length>1?n+'（'+([p.email,p.sheetId].filter(Boolean).join('／')||'本人未特定')+'）':n}
+function label(p,list){const n=clean(p.name);return matches(list,n,[]).length>1?n+'（'+([p.email,p.sheetId].filter(Boolean).join('／')||'本人未特定')+'）':n}
 function parse(rows){
  const byId=new Map(),ordered=[];
  for(const r of rows){
