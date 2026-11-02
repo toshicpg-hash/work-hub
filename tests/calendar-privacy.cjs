@@ -19,7 +19,7 @@ function boot({gShow=null,gWrite=SHARED,cache=null,storage:input,calendars=owner
  if(!storage.has(KEY))storage.set(KEY,JSON.stringify({schemaVersion:2,seq:0,rseq:0,cases:[],todos:[],receipts:[],unknown:{preserve:true},settings:{gShow,gWrite}}));
  if(cache)storage.set(KEEP,JSON.stringify(cache));
  for(const k of ['toshi_v5','toshi_hub_safe_v1'])if(!storage.has(k))storage.set(k,'PAPA_UNCHANGED');
- const el=id=>els[id]||(els[id]={innerHTML:'',textContent:'',hidden:false,value:'',dataset:{},addEventListener(){},querySelectorAll(){return[]},querySelector(){return null},setAttribute(){}});
+ const el=id=>els[id]||(els[id]={innerHTML:'',textContent:'',hidden:false,value:'',dataset:{},addEventListener(){},querySelectorAll(){return[]},querySelector(){return null},setAttribute(){},insertAdjacentHTML(){}});
  const document={getElementById:el,querySelector:el,querySelectorAll:()=>[],addEventListener:(k,fn)=>listeners[k]=fn};
  let token=0;
  const google={accounts:{oauth2:{initTokenClient:({callback})=>({requestAccessToken(){callback({access_token:'synthetic-'+(++token),expires_in:3600})}})}}};
@@ -29,6 +29,7 @@ function boot({gShow=null,gWrite=SHARED,cache=null,storage:input,calendars=owner
   if(data===undefined)data=url.includes('/calendarList?')?{items:calendars}:{items:[{id:'synthetic-event',summary:'Work event',start:{date:TODAY},end:{date:'2026-10-27'}}]};
   return {status:200,ok:true,json:async()=>data};
  }});
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'../view-scope.js'),'utf8'), context);
  vm.runInContext(source.replace(/\}\)\(\);\s*$/,hook+'\n})();'),context);
  const app=context.app;
  const submit=(indices,write=gWrite)=>{el('g_write').value=write;listeners.submit({preventDefault(){},target:{id:'gsetForm',querySelectorAll:()=>indices.map(value=>({value:String(value)}))}})};

@@ -28,23 +28,23 @@ function catalog(context){
   .map(p=>({sheetId:p.sheetId,name:str(p.name)||'氏名未確認',role:str(p.role),companies:companies(p)}));
  const role=['社長','全社','GM','社員'];
  people.sort((a,b)=>(COMPANIES.indexOf(a.companies[0])-COMPANIES.indexOf(b.companies[0]))||((role.indexOf(a.role)+1||99)-(role.indexOf(b.role)+1||99))||a.name.localeCompare(b.name,'ja')||a.sheetId.localeCompare(b.sheetId));
- const allowed=context.fixedCompany?[context.fixedCompany].filter(c=>COMPANIES.includes(c)):COMPANIES.filter(c=>people.some(p=>p.companies.includes(c))||(context.localCompanies||[]).includes(c));
+ const allowed=context.fixedCompany?[context.fixedCompany].filter(c=>COMPANIES.includes(c)):COMPANIES.filter(c=>people.some(p=>p.companies.includes(c))||(context.localCompanies||[]).includes(c)||(context.availableCompanies||[]).includes(c));
  return {people,companies:allowed,duplicateIds:[...counts].filter(([,n])=>n>1).map(([id])=>id)};
 }
 function model(context,selection){
- const cat=catalog(context),companyOK=selection.company==='all'?!context.fixedCompany:cat.companies.includes(selection.company);
- const candidates=companyOK?cat.people.filter(p=>selection.company==='all'||p.companies.includes(selection.company)):[];
+ const cat=catalog(context),companyOK=selection.company==='none'?!context.fixedCompany:selection.company==='all'?!context.fixedCompany:cat.companies.includes(selection.company);
+ const candidates=companyOK?cat.people.filter(p=>selection.company==='all'||selection.company==='none'||p.companies.includes(selection.company)||(p.sheetId===context.selfId&&(context.localCompanies||[]).includes(selection.company))):[];
  const local=selection.person==='local:self'&&!context.selfId;
- const personOK=selection.person==='all'?context.allowAll===true:local?(selection.company==='all'||(context.localCompanies||[]).includes(selection.company)):candidates.some(p=>p.sheetId===selection.person);
+ const personOK=selection.person==='all'?context.allowAll===true:local?(selection.company==='all'||selection.company==='none'||(context.localCompanies||[]).includes(selection.company)):candidates.some(p=>p.sheetId===selection.person);
  let state=!companyOK||!personOK?'unavailable':context.readState==='ready'?'ready':context.readState==='failed'?'failed':'unread';
  return {...cat,candidates,selection:{...selection},state,usable:state==='ready',local};
 }
 const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function controls(context,selection){
  const m=model(context,selection), opt=(v,t,selected)=>'<option value="'+esc(v)+'"'+(selected?' selected':'')+'>'+esc(t)+'</option>';
- const company=(context.fixedCompany?'':opt('all','閲覧できる会社すべて',selection.company==='all'))+m.companies.map(c=>opt(c,c,c===selection.company)).join('');
+ const company=(context.fixedCompany?'':opt('all','閲覧できる会社すべて',selection.company==='all'))+m.companies.map(c=>opt(c,c,c===selection.company)).join('')+(context.fixedCompany?'':opt('none','会社未設定',selection.company==='none'));
  const person=(context.allowAll?opt('all','閲覧できる人すべて',selection.person==='all'):'')+(!context.selfId?opt('local:self','自分（この端末の記録）',selection.person==='local:self'):'')+m.candidates.map(p=>opt(p.sheetId,p.name+(m.candidates.filter(q=>q.name===p.name).length>1?'（'+p.sheetId+'）':''),p.sheetId===selection.person)).join('');
- const missingCo=!(selection.company==='all'&&!context.fixedCompany)&&!m.companies.includes(selection.company),missingPerson=!m.candidates.some(p=>p.sheetId===selection.person)&&!(selection.person==='all'&&context.allowAll)&&!m.local;
+ const missingCo=!(['all','none'].includes(selection.company)&&!context.fixedCompany)&&!m.companies.includes(selection.company),missingPerson=!m.candidates.some(p=>p.sheetId===selection.person)&&!(selection.person==='all'&&context.allowAll)&&!m.local;
  const message={unavailable:'選択した対象を確認できません。対象を選び直してください。全員には切り替えていません。',unread:'対象の記録は未読込です。0件とは確認できません。',failed:'対象の記録を読めませんでした。0件とは確認できません。'}[m.state]||'';
  return '<section aria-label="共通の表示対象" data-view-scope><label>会社<select data-scope-company>'+ (missingCo?opt(selection.company,'選択した会社を確認できません',true):'')+company+'</select></label><label>人<select data-scope-person>'+(missingPerson?opt(selection.person,'選択した人を確認できません',true):'')+person+'</select></label>'+(message?'<p role="status">'+esc(message)+'</p>':'')+'</section>';
 }
