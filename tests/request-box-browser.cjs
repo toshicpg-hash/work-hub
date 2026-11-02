@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
-const hook='window.RB={get db(){return DB},ui,go,render,roBuild,adminAdd,adminRoleSave,corpRun,boxState,corpKeepSave,permList};';
+const hook='window.RB={get db(){return DB},ui,go,render,roBuild,adminAdd,adminRoleSave,adminRemove,corpRun,boxState,corpKeepSave,permList};';
 const ADMIN='toshi.cpg@gmail.com',SA='test-staff-a@example.com',SB='test-staff-b@example.com',GM='test-gm-cpy@example.com',ZEN='test-zensha@example.com';
 const TODAY='2026-10-30';
 /* ---- in-memory Google ---- */
@@ -213,6 +213,25 @@ async function main(){
   const raw=await cached.p.evaluate(()=>localStorage.getItem('workhub_corp_last_v1'));await cached.p.reload();await cached.p.waitForFunction(()=>!!window.RB);
   assert.equal(await cached.p.evaluate(()=>RB.ui.corp.data.some(x=>x.s.sheetId==='cached-multi')),false);assert.equal(await cached.p.evaluate(()=>localStorage.getItem('workhub_corp_last_v1')),raw);
  });await cached.c.close();
+ await check('削除済み同Gmailの再登録・旧一覧再読込：履歴とファイル帰属を保持し役割操作を継続できる',async()=>{
+  const old=byName('CPG HUB_社員 二郎'),oldBox=byName('CPG HUB_指示箱_社員 二郎'),beforeRows=JSON.stringify(old.tabs);
+  await A.p.evaluate(async email=>{const s=RB.db.settings.data.staff.find(x=>x.email===email&&!x.removed);await RB.adminRemove(s)},SB);
+  const oldPerms=JSON.stringify(old.perms),boxPerms=JSON.stringify(oldBox.perms);
+  await A.p.evaluate(async email=>{await RB.adminAdd('再登録 見本',email,()=>{},{company:'CPY',role:'社員',gmCo:''})},SB);
+  const fresh=byName('CPG HUB_再登録 見本');assert.ok(fresh&&fresh.id!==old.id);assert.equal(shares(fresh)[SB],'writer');
+  assert.equal(JSON.stringify(old.perms),oldPerms,'old file is not re-shared to the re-registered account');assert.equal(JSON.stringify(oldBox.perms),boxPerms);assert.equal(JSON.stringify(old.tabs),beforeRows,'removed record history unchanged');
+  const rows=tab(byName('CPG HUB_社員一覧'),'社員').slice(1).filter(r=>r[1]===SB);assert.equal(rows.length,2);assert.equal(rows.filter(r=>r[4]==='共有を外した').length,1);assert.equal(rows.filter(r=>r[4]==='共有中').length,1);
+  await A.p.reload();await A.p.waitForFunction(()=>!!window.RB);await A.p.evaluate(()=>{setInterval(()=>document.querySelector('[data-share-yes]')?.click(),20)});
+  await A.p.evaluate(async email=>{const s=RB.db.settings.data.staff.find(x=>x.email===email&&!x.removed);await RB.adminRoleSave(s.sheetId,{company:'CPY',role:'社員',gmCo:''},'',()=>{})},SB);
+  const records=tab(byName('CPG HUB_社員一覧'),'共有管理履歴').slice(1).map(r=>JSON.parse(r[2]));assert.ok(records.some(x=>x.file===old.id&&x.email===SB&&x.action==='revoke'&&x.state==='verified'));assert.ok(records.some(x=>x.file===fresh.id&&x.email===SB&&x.action==='grant'&&x.state==='verified'));
+ });
+ await check('複数有効同Gmailの異常は社員追加/役割変更/削除の前に停止、新ファイルも作らない',async()=>{
+  const table=tab(byName('CPG HUB_社員一覧'),'社員'),saved=structuredClone(table),duplicate=structuredClone(table.find((r,i)=>i&&r[1]===SB&&r[4]==='共有中'));duplicate[2]='synthetic-conflict-record';duplicate[11]='';table.push(duplicate);
+  const before=G.calls.filter(x=>['POST','PUT','PATCH','DELETE'].includes(x[1])).length,files=Object.keys(G.files).length;
+  for(const action of ['add','role','remove']){const error=await A.p.evaluate(async({action,email})=>{try{const s=RB.db.settings.data.staff.find(x=>x.email===email&&!x.removed);if(action==='add')await RB.adminAdd('別の 見本','fresh-other@example.com',()=>{},{company:'CP',role:'社員',gmCo:''});else if(action==='role')await RB.adminRoleSave(s.sheetId,{company:'CPY',role:'社員',gmCo:''},'',()=>{});else await RB.adminRemove(s);return 'unexpected'}catch(e){return e.message}},{action,email:SB});assert.match(error,/有効な社員.*重複/)}
+  assert.equal(Object.keys(G.files).length,files);assert.equal(G.calls.filter(x=>['POST','PUT','PATCH','DELETE'].includes(x[1])).length,before,'zero remote writes before rejecting invalid active accounts');
+  table.splice(0,table.length,...saved);
+ });
  await A.c.close();
  console.log('ALL PASS',results.length);
 }

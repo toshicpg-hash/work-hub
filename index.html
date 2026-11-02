@@ -2452,7 +2452,7 @@ async function adminSync(log){
       company:String(r["会社"]||""),role:ROLES.includes(String(r["役割"]))?String(r["役割"]):"社員",gmCo:COMPANIES.includes(String(r["GMの会社"]))?String(r["GMの会社"]):"",boxId:String(r["指示箱ID"]||old.boxId||"")}}).concat(local);
   save();found.list=true;found.n=d.staff.length;return found;
 }
-const staffDup=email=>D().staff.find(s=>!s.removed&&s.email.toLowerCase()===email.toLowerCase());
+const staffDup=email=>D().staff.find(s=>!s.removed&&String(s.email).trim().toLowerCase()===String(email).trim().toLowerCase());
 /* 見る人（v1.31）：役割「全社」は全員の、「GM」はGMを務める会社の社員のシートを「閲覧者」で見る。
    見る範囲はGoogleの共有で守る（社長の管理端末で役割を保存したときに、閲覧者の共有を付けたり外したりする） */
 const ROLES=["社員","GM","全社"];
@@ -2507,9 +2507,17 @@ function shareConfirm(title,rows,note){return new Promise(resolve=>{
  el.addEventListener("cancel",e=>{e.preventDefault();end(false)});el.querySelector('[data-share-no]').onclick=()=>end(false);el.querySelector('[data-share-yes]').onclick=()=>end(true);
  document.body.appendChild(el);el.showModal();el.querySelector('h2').focus({preventScroll:true});el.scrollTop=0;
 });}
+/* Removed rows retain file ownership/history; only active accounts must be unique.
+   File identities must be unique across all rows, including removed rows. */
+function shareValidateStaff(staff){
+ const active=staff.filter(s=>!s.removed).map(s=>String(s.email||"").trim().toLowerCase());
+ if(active.some(e=>!e)||new Set(active).size!==active.length)throw Error("有効な社員のGmailが空欄または重複しています。ファイルを作らず共有変更を止めました。");
+ const ids=staff.flatMap(s=>[s.sheetId,s.boxId].filter(Boolean)).concat(D().viewListId?[D().viewListId]:[]);
+ if(staff.some(s=>!s.sheetId)||new Set(ids).size!==ids.length)throw Error("社員のファイルIDが重複または不明です。履歴の帰属を確認してください。");
+}
 async function adminShareSync(log,staff=D().staff){
  shareLocalCheck();const d=D(),vs=staff.filter(isViewer);
- if(new Set(staff.map(s=>String(s.email).toLowerCase())).size!==staff.length)throw Error("社員のGmailが重複しています。共有変更を止めました。");
+ shareValidateStaff(staff);
  const needed=staff.filter(s=>!s.boxId&&!s.removed&&vs.some(v=>canSee(v,s))),needView=!d.viewListId&&vs.length;
  if(needed.length||needView){
   if(!await shareConfirm("共有用ファイルの作成確認",needed.map(s=>s.name+"：指示箱を新規作成（この段階では共有しません）").concat(needView?["見る人用一覧を新規作成（この段階では共有しません）"]:[]),"作成後に実際のファイルIDと付与先を再確認します。作成したファイルは中止しても削除しません。"))throw Error("中止しました。共有は変更していません。");
@@ -2603,7 +2611,7 @@ async function boxOrderCancel(x,oid){
 }
 /* 役割の保存。swap: 同じ会社のGMを入れ替えるときの前のGM */
 async function adminRoleSave(sheetId,v,swapId,log){return adminShareOperation(async()=>{
-  await gAuthorize(true);await adminSync(()=>{});shareSave();shareLocalCheck();
+  await gAuthorize(true);await adminSync(()=>{});shareSave();shareLocalCheck();shareValidateStaff(D().staff);
   const staff=structuredClone(D().staff),s=staff.find(x=>x.sheetId===sheetId);if(!s)throw Error("nostaff");
   const prev=swapId&&staff.find(x=>x.sheetId===swapId);if(prev){if(prev.role==="GM")prev.role="社員";prev.gmCo=""}
   Object.assign(s,v);const result=await adminShareSync(log,staff);
@@ -2626,7 +2634,7 @@ async function viewerConnect(input){
   catch(err){D().viewListId=old;save();throw err}
 }
 async function adminAdd(name,email,log,rv,swapId){return adminShareOperation(async()=>{
- await gAuthorize(true);await adminSync(log);shareSave();shareLocalCheck();const dup=staffDup(email);if(dup)throw Object.assign(Error("dup"),{who:dup.name});
+ await gAuthorize(true);await adminSync(log);shareSave();shareLocalCheck();shareValidateStaff(D().staff);const dup=staffDup(email);if(dup)throw Object.assign(Error("dup"),{who:dup.name});
  if(!await shareConfirm("社員の記録用ファイルを作る",[name+"／"+email+" の記録シートを新規作成。付与予定：本人writer、役割に応じた閲覧共有。"],"まだ共有しません。ファイル作成後にID・全付与先を確認します。中止しても作成済みファイルは残します。"))throw Error("中止しました。");
  shareLocalCheck();if(!D().folder){const f=await driveCreate({name:"CPG HUB データ",mimeType:"application/vnd.google-apps.folder"});D().folder=f.id;shareSave()}
  const f=await driveCreate({name:"CPG HUB_"+name,mimeType:"application/vnd.google-apps.spreadsheet",parents:[D().folder]});
@@ -2636,7 +2644,7 @@ async function adminAdd(name,email,log,rv,swapId){return adminShareOperation(asy
  const result=await adminShareSync(log,staff);D().staff=staff;shareSave();await shareWriteList();log(name+"さんの登録を確認しました。要確認の共有 "+result.review+"件。案内メールは自動送信しません。");return result;
 })}
 async function adminRemove(s){return adminShareOperation(async()=>{
- await gAuthorize(true);await adminSync(()=>{});shareSave();shareLocalCheck();const staff=structuredClone(D().staff),target=staff.find(x=>x.sheetId===s.sheetId);if(!target)throw Error("nostaff");target.removed=true;
+ await gAuthorize(true);await adminSync(()=>{});shareSave();shareLocalCheck();shareValidateStaff(D().staff);const staff=structuredClone(D().staff),target=staff.find(x=>x.sheetId===s.sheetId);if(!target)throw Error("nostaff");target.removed=true;
  const result=await adminShareSync((text)=>{ui.dmsg=(ui.dmsg||[]).concat({ok:"warn",text});render()},staff);D().staff=staff;shareSave();await shareWriteList();return result;
 })}
 /* 社長の「会社の動き」: read every shared sheet (read only; nothing is written to the people's sheets) */
