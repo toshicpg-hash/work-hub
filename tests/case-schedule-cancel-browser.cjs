@@ -69,7 +69,7 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
    const old=await p.evaluate(()=>testHub.roCase({'受付番号':'old','種類':'緊急対応','段階キー':'new'},{s:{name:'合成旧版'}}));assert.equal(old.planTime,'');assert.equal(old.cancelledAt,'');assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('Normal schedule/loss/reopen/hold, old share defaults and post-handoff scope');
   }
   {
-   const syncDb=structuredClone(db);syncDb.settings.data.sheetId='synthetic-own';const network={exports:{}},a=await setup(syncDb,'Asia/Tokyo',390,network),{p}=a;
+   const syncDb=structuredClone(db);syncDb.settings.data.sheetId='synthetic-own';syncDb.settings.data.ob={legacy:true};const network={exports:{}},a=await setup(syncDb,'Asia/Tokyo',390,network),{p}=a;
    await open(p,'synthetic-emergency');await p.locator('#d_plan').fill('2026-11-11');await setTime(p,'10:00');await click(p,'plan');
    await open(p,'synthetic-won');await click(p,'woncancelask');await p.locator('#d_cancel_reason').fill('合成同期確認');await click(p,'woncancelsave');const before=await read(p);
    for(let i=0;i<2;i++){
@@ -82,7 +82,7 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
    await p.reload();assert.deepEqual((await read(p)).cases,before.cases);assert(a.requests.filter(r=>r.method!=='GET').every(r=>/^https:\/\/sheets.googleapis.com\/v4\/spreadsheets\/synthetic-own(?:\/|:batchUpdate)/.test(r.url)));assert.equal(network.grid.columnCount,33);assert.equal(network.caseClear,undefined);assert.equal(network.batches,2);assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('Repeated full mocked shared sync preserves schedule/cancellation and unrelated requests; no calendar writes');
   }
   for(const fault of ['read-throws','read-old','read-replaced'])for(const action of ['cancel','plan']){
-   const syncDb=structuredClone(db);syncDb.settings.data.sheetId='synthetic-own';const network={exports:{}},a=await setup(syncDb,'Asia/Tokyo',390,network),{p}=a;
+   const syncDb=structuredClone(db);syncDb.settings.data.sheetId='synthetic-own';syncDb.settings.data.ob={legacy:true};const network={exports:{}},a=await setup(syncDb,'Asia/Tokyo',390,network),{p}=a;
    await open(p,action==='cancel'?'synthetic-won':'synthetic-emergency');
    if(action==='cancel'){await click(p,'woncancelask');await p.locator('#d_cancel_reason').fill('合成保存結果不明');}else{await p.locator('#d_plan').fill('2026-11-11');await setTime(p,'00:05');}
    await p.evaluate(({KEY,fault})=>{
