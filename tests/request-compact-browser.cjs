@@ -11,7 +11,7 @@ async function setup(role,width=390,tz='Asia/Tokyo'){
   if(role==='employee'){D.todos=[...rows.filter((_,i)=>i%2===0).map(r=>({...r,order:true,done:false})),...normal,{id:'I-done',order:true,title:'完了済みは隠す',due:'2026-10-29',done:true}];D.requestBoxEmployee={version:1,sources:{'synthetic-own':{boxId:'synthetic-box',items:rows.filter((_,i)=>i%2===1),reports:{},pending:{},cancelled:{}}}};}
   else{const staff={name:'見本 花',email:'staff@example.com',sheetId:'synthetic-staff',company:'CP',role:'社員'};D.settings.data.staff=[staff];window.fixtureCorp=[{s:staff,ok:true,cases:[],rc:[],todo:normal.map(t=>({'内容':t.title,'期限':t.due,'担当':t.tantou,'種類':'手入力'})),orders:rows.filter((_,i)=>i%2===0).map(r=>({'指示ID':r.id,'内容':r.title,'期限':r.due,'状態':'未完了'})),box:rows.filter((_,i)=>i%2===1).map(r=>({'指示ID':r.id,'内容':r.title,'期限':r.due,'状態':r.status,'出した人の表示':r.sender})),reports:[]}];CP.ui.corp={data:fixtureCorp,at:Date.now()};CP.roBuild(fixtureCorp);}
   CP.save();CP.go('todo',{tPeriod:'today',tTantou:'all'});
- },{role,KEY});return {c,p,errors};
+ },{role,KEY});await require('./scope-selection-helper').allPeople(p);return {c,p,errors};
 }
 (async()=>{server=http.createServer((req,res)=>{const f=path.join(root,req.url.split('?')[0]);try{res.setHeader('content-type',f.endsWith('.js')?'text/javascript':f.endsWith('.png')?'image/png':'text/html');res.end(fs.readFileSync(f))}catch{res.writeHead(404).end()}});await new Promise(r=>server.listen(0,'127.0.0.1',r));origin='http://127.0.0.1:'+server.address().port;browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});try{
  for(const role of ['employee','company']){

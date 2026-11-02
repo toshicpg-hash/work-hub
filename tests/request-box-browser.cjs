@@ -124,7 +124,7 @@ async function main(){
   assert.ok(!G.calls.some(x=>x[1]==='POST'&&x[2].includes('共有管理履歴')&&x[2].endsWith(':clear')),'journal never cleared');
  });
  const vlId=byName('CPG HUB_見る人用一覧').id;
- const viewer=async(acct,width)=>{const d=await device(acct,width);await d.p.evaluate(async([id,me])=>{const x=RB.db.settings.data;x.viewListId=id;x.viewEmail=me;await RB.corpRun();RB.go('company')},[vlId,acct]);return d};
+ const viewer=async(acct,width)=>{const d=await device(acct,width);await d.p.evaluate(async([id,me])=>{const x=RB.db.settings.data;x.viewListId=id;x.viewEmail=me;await RB.corpRun();RB.go('company')},[vlId,acct]);await require('./scope-selection-helper').allPeople(d.p);return d};
  for(const width of [320,400]){
   const g=await viewer(GM,width);
   await check('GMの端末：自分の会社の社員にだけ出せ、指示箱に1行足して読み戻す '+width+'px',async()=>{
@@ -178,7 +178,7 @@ async function main(){
   assert.deepEqual(z.errors,[]);await z.c.close();
  });
  await check('社長の端末：全部の指示を出した人の表示付きで見られ、期限なしは指示一覧に「○○から」で残る',async()=>{
-  await A.p.evaluate(async()=>{await RB.corpRun();RB.go('company')});
+  await A.p.evaluate(async()=>{await RB.corpRun();RB.go('company')});await require('./scope-selection-helper').allPeople(A.p);
   const t=await A.p.textContent('main');
   assert.ok(t.includes('タスクリクエスト（GM・全社から）')&&t.includes('GM 管理 見本から')&&t.includes('見本 太郎から'));
   assert.ok(t.includes('✓ 10/30完了')&&t.includes('取り消し'));

@@ -15,7 +15,7 @@ async function page(width,setup){
   return r.fulfill({status:200,body:''})});
  const p=await c.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));
  await p.clock.install({time:new Date(TODAY+'T00:30:00Z')});await p.goto(origin+'/');await p.waitForFunction(()=>!!window.RT);
- await p.evaluate(setup);
+ await p.evaluate(setup);await require('./scope-selection-helper').allPeople(p);
  return {c,p,errors};
 }
 /* 社員の端末：期限切れの自動ToDoを6件（見積提出から日が経った案件）と、リクエスト3件（期限切れ・未来・期限なし）、完了済みのリクエスト1件 */
@@ -59,10 +59,9 @@ async function main(){
   });
   await check('期間の絞り込みでもリクエストは消えず、担当の絞り込みは効く '+width+'px',async()=>{
    for(const k of ['today','week','all']){await p.click('[data-tp="'+k+'"]');assert.equal((await top(p)).reqs.length,1,k);assert.equal(await p.locator('.request-future').count(),0)}
-   const tt=await p.$$eval('[data-tt]',a=>a.map(x=>x.dataset.tt));
-   const other=tt.find(x=>x!=='all'&&x!=='見本 一郎');
-   await p.click('[data-tt="'+other+'"]');assert.equal((await top(p)).reqs.length,0,'requests of another person are filtered out');
-   await p.click('[data-tt="all"]');assert.equal((await top(p)).reqs.length,1);
+   assert.equal(await p.locator('[data-tt]').count(),0,'no independent per-screen assignee filter');
+   await p.locator('[data-scope-person]').selectOption('local:self');assert.equal((await top(p)).reqs.length,1,'request recipient is local owner, not its text assignee');
+   await require('./scope-selection-helper').allPeople(p);assert.equal((await top(p)).reqs.length,1);
   });
   assert.deepEqual(errors,[]);await c.close();
   const a=await page(width,adminSetup);

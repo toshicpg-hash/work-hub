@@ -32,7 +32,7 @@ async function page(width,{admin=true,load=true}={}){
   /* この端末で入力した案件（会社 CP、今月見積提出） */
   ST.db.cases=[Object.assign(ST.CASE_DEFAULTS(),{id:'U-0001',company:'CP',type:'reno',stage:'quoted',client:'試験管理',clientKind:'管理会社',property:'自分の荘',room:'1',tantou:'トシ',receivedAt:'2026-10-01T01:00:00.000Z',estAmount:10000,estSentDate:'2026-10-25'})];
   if(admin&&load){const dd=JSON.parse(JSON.stringify(data));dd.forEach(x=>x.s=d.staff.find(s=>s.sheetId===x.s.sheetId));ST.ui.corp={data:dd,at:Date.now()};ST.roBuild(dd)}
-  ST.go('stats')},{admin,load,staff,data});
+  if(admin)CPGViewScope.save(localStorage,{account:'toshi.cpg@gmail.com',record:d.sheetId||'',viewer:d.listId||''},{company:'all',person:'all'});ST.go('stats')},{admin,load,staff,data});
  return {c,p,errors};
 }
 const sum=p=>p.$$eval('.sum .k',a=>Object.fromEntries(a.map(k=>[k.textContent,k.nextElementSibling.textContent])));
@@ -60,15 +60,15 @@ async function main(){
    assert.ok(rows.includes('例題 花子|1件|1件|0件|200,000円|0件 0円'),rows.join(' / '));
    assert.ok(rows.includes('トシ|1件|0件|0件|0円|0件 0円'),rows.join(' / '));
   });
-  await check('会社の絞り込み（案件の会社・空なら人の会社） '+width+'px',async()=>{
-   await p.click('[data-sco="CP"]');let s=await sum(p);
+  await check('会社の絞り込み（案件の明示会社・未設定は補完しない） '+width+'px',async()=>{
+   await p.locator('[data-scope-company]').selectOption('CP');let s=await sum(p);
    assert.equal(s['見積提出'],'2件',JSON.stringify(s));assert.equal(s['受注'],'0件');assert.equal(await unpaidHead(p),'1件 50,000円');
-   await p.click('[data-sco="CPY"]');s=await sum(p);
-   assert.equal(s['見積提出'],'2件',JSON.stringify(s));assert.equal(s['受注'],'2件');assert.equal(await unpaidHead(p),'0件 0円');
-   await p.click('[data-sco="AT"]');s=await sum(p);
+   await p.locator('[data-scope-company]').selectOption('CPY');s=await sum(p);
+   assert.equal(s['見積提出'],'1件',JSON.stringify(s));assert.equal(s['受注'],'1件');assert.equal(await unpaidHead(p),'0件 0円');
+   await p.locator('[data-scope-company]').selectOption('AT');s=await sum(p);
    assert.equal(s['見積提出'],'1件');assert.ok((await p.textContent('main')).includes('受注 0件 ／ 失注 1件'));
    assert.ok(await overflow(p)<=0);
-   await p.click('[data-sco="all"]');
+   await p.locator('[data-scope-company]').selectOption('all');
   });
   assert.deepEqual(errors,[]);await c.close();
  }
@@ -82,25 +82,25 @@ async function main(){
  await check('GMの端末：GMの会社に固定し、ほかの会社は選べない',async()=>{
   const {c,p,errors}=await page(400,{admin:false});
   await p.evaluate(({staff,data})=>{const d=ST.db.settings.data;d.viewListId='viewList0000000000000001';d.viewEmail='test-b@example.com';
-   ST.ui.viewList=[Object.assign({},staff[0],{role:'社員'}),Object.assign({},staff[1],{role:'GM',gmCo:'CPY'})];
+   d.sheetId=staff[1].sheetId;ST.ui.viewList=[Object.assign({},staff[0],{role:'社員',company:'CPY'}),Object.assign({},staff[1],{role:'GM',gmCo:'CPY'})];CPGViewScope.save(localStorage,{account:d.viewEmail,record:d.sheetId,viewer:d.viewListId},{company:'CPY',person:'all'});
    const dd=JSON.parse(JSON.stringify(data));ST.ui.corp={data:dd,at:Date.now()};ST.ui.sCo='CP';ST.roBuild(dd);ST.go('stats')},{staff,data});
   const t=await p.textContent('main');
-  assert.ok(t.includes('GMの会社（CPY）の数字です')&&t.includes('を含めたCPYの数字です'),t.slice(0,300));
+  assert.ok(t.includes('CPY')&&t.includes('共通選択'),t.slice(0,300));
   assert.equal(await p.$$eval('[data-sco]',a=>a.length),0,'company buttons are not shown on a GM device');
   const s=await sum(p);
-  assert.equal(s['見積提出'],'2件',JSON.stringify(s));assert.equal(s['受注'],'2件');assert.equal(await unpaidHead(p),'0件 0円');
+  assert.equal(s['見積提出'],'1件',JSON.stringify(s));assert.equal(s['受注'],'1件');assert.equal(await unpaidHead(p),'0件 0円');
   assert.ok(await overflow(p)<=0);
   const rows=await p.$$eval('.sec:has(h2:text-matches("月の担当別")) tbody tr',a=>a.map(x=>[...x.cells].map(c=>c.textContent).join('|')));
-  assert.deepEqual(rows.sort(),['例題 花子|1件|1件|0件|200,000円|0件 0円','見本 一郎|1件|1件|0件|100,000円|0件 0円'].sort(),rows.join(' / '));
+  assert.deepEqual(rows.sort(),['見本 一郎|1件|1件|0件|100,000円|0件 0円'],rows.join(' / '));
   /* 会社の動きも GMの会社に固定 */
   await p.evaluate(()=>{ST.ui.corpCo='AT';ST.roBuild(ST.ui.corp.data);ST.go('company')});
   assert.equal(await p.$$eval('[data-cco]',a=>a.length),0,'no company buttons in 会社の動き on a GM device');
   const home=await p.textContent('main');
-  assert.ok(home.includes('GMの会社（CPY）の社員の分です'));
+  assert.ok(home.includes('CPY GM'));
   const cards=await p.$$eval('.panel:has(h3:text-matches("動いている案件")) .card .ttl',a=>a.map(x=>x.textContent.trim().split(' ')[0]).sort());
-  assert.deepEqual(cards,['例題荘受注','試験荘受注'],cards.join());
+  assert.deepEqual(cards,['試験荘受注'],cards.join()); // same explicit CPY company selection as stats, not profile-inferred company
   await p.evaluate(()=>ST.go('cases'));
-  assert.equal(await p.$$eval('.chip.ro',a=>a.length),2,'case list shows only the CPY cases');
+  assert.equal(await p.$$eval('.chip.ro',a=>a.length),1,'only explicit CPY company is included; missing company is not inferred');
   assert.ok(await overflow(p)<=0);
   assert.deepEqual(errors,[]);await c.close();
  });
@@ -109,7 +109,7 @@ async function main(){
   await p.evaluate(({staff,data})=>{const d=ST.db.settings.data;d.viewListId='viewList0000000000000001';d.viewEmail='test-z@example.com';
    ST.ui.viewList=staff.concat([{name:'全社 太郎',email:'test-z@example.com',sheetId:'sheetZ00000000000000000009',company:'CP',role:'全社',gmCo:'CP'}]);
    const dd=JSON.parse(JSON.stringify(data));ST.ui.corp={data:dd,at:Date.now()};ST.roBuild(dd);ST.go('stats')},{staff,data});
-  assert.deepEqual(await p.$$eval('[data-sco]',a=>a.map(x=>x.dataset.sco)),['all','CP','CPY','AT']);
+  assert.deepEqual(await p.$$eval('[data-scope-company] option',a=>a.map(x=>x.value)),['all','CP','CPY','AT','none']);await p.locator('[data-scope-person]').selectOption('all');
   assert.equal((await sum(p))['見積提出'],'5件');
   assert.ok((await p.textContent('main')).includes('を含めた会社全体の数字です'));
   assert.deepEqual(errors,[]);await c.close();

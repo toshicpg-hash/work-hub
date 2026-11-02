@@ -32,7 +32,7 @@ async function setup(db,width=390,network=null){
  const p=await ctx.newPage();p.on('pageerror',e=>errors.push(e.message));await p.clock.setFixedTime(new Date('2026-10-27T03:00:00Z'));await p.goto(origin+'/seed.html');if(db)await p.evaluate(({KEY,db})=>{localStorage.setItem(KEY,JSON.stringify(db));localStorage.setItem('toshi_v5','PERSONAL_UNCHANGED');},{KEY,db});await p.goto(origin+'/');await p.waitForFunction(()=>!!window.testHub&&!!window.WorkHubManualTodo?.cancel);return {ctx,p,requests,errors};
 }
 const raw=p=>p.evaluate(KEY=>localStorage.getItem(KEY),KEY),read=async p=>JSON.parse(await raw(p));
-const todo=p=>p.evaluate(()=>{testHub.go('todo');testHub.ui.tPeriod='all';testHub.render();});
+const todo=async p=>{await p.evaluate(()=>{testHub.go('todo');testHub.ui.tPeriod='all';testHub.render();});await require('./scope-selection-helper').allPeople(p)};
 async function open(p){await todo(p);await p.locator('[data-mtdcancel="old-manual"]').click();assert.equal(await p.locator('#manualTodoCancelEditor').isVisible(),true);}
 async function cancel(p){await p.locator('#manualTodoCancelSave').click();await p.waitForFunction(()=>!document.getElementById('manualTodoCancelEditor').open);}
 (async()=>{

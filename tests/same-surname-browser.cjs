@@ -38,20 +38,20 @@ async function main(){
   const {c,p,errors}=await page(width);
   await check('ToDoの担当の絞り込みで同姓2人が分かれる '+width+'px',async()=>{
    await p.evaluate(()=>SS.go('todo',{tPeriod:'all'}));
-   const tt=await p.$$eval('[data-tt]',a=>a.map(x=>x.dataset.tt));
-   assert.ok(tt.includes('黒木 試験一')&&tt.includes('黒木 見本二')&&tt.includes('例題 花子'),tt.join());
-   assert.ok(tt.includes('黒木'),'unresolved legacy key remains without guessing: '+tt.join());
-   await p.click('[data-tt="黒木 試験一"]');
+   const tt=await p.$$eval('[data-scope-person] option',a=>a.map(x=>({id:x.value,name:x.textContent})));
+   for(const x of staff)assert.ok(tt.some(o=>o.id===x.sheetId),'permanent ID option '+x.sheetId);
+   assert.ok(!tt.some(x=>x.id==='黒木'),'ambiguous legacy label is not a person ID');
+   await p.locator('[data-scope-person]').selectOption(staff[0].sheetId);
    const a=await p.$$eval('main .list .card',x=>x.map(e=>e.textContent));
    assert.ok(['担当が空の用事','氏名で書いた用事','姓だけの用事'].every(w=>a.some(t=>t.includes(w))),'owner A rows: '+a.join('|'));
    assert.ok(!a.some(t=>t.includes('二人目の用事')));
-   await p.click('[data-tt="黒木 見本二"]');
+   await p.locator('[data-scope-person]').selectOption(staff[1].sheetId);
    const b=await p.$$eval('main .list .card',x=>x.map(e=>e.textContent));
    assert.ok(b.some(t=>t.includes('二人目の用事'))&&!b.some(t=>t.includes('担当が空の用事')),b.join('|'));
    assert.ok(await overflow(p)<=0);
   });
   await check('バッジの色と表記が人ごとに分かれる '+width+'px',async()=>{
-   await p.click('[data-tt="all"]');
+   await require('./scope-selection-helper').allPeople(p);
    const bs=await p.$$eval('main .pbadge',a=>[...new Set(a.map(x=>x.className+'|'+x.textContent))]);
    const cls=l=>bs.filter(x=>x.endsWith('|'+l)).map(x=>x.split('|')[0]);
    assert.equal(cls('黒木 試験一').length,1);assert.equal(cls('黒木 見本二').length,1);
@@ -60,15 +60,15 @@ async function main(){
   });
   await check('ガントの担当の絞り込みと行のバッジ '+width+'px',async()=>{
    await p.evaluate(()=>SS.go('gantt'));
-   const gt=await p.$$eval('[data-gt]',a=>a.map(x=>x.dataset.gt));
-   assert.deepEqual(gt.filter(x=>!['all','黒木','トシ'].includes(x)).sort(),['例題 花子','黒木 見本二','黒木 試験一'].sort());
-   await p.click('[data-gt="黒木 見本二"]');
+   const gt=await p.$$eval('[data-scope-person] option',a=>a.map(x=>x.value));
+   for(const x of staff)assert.ok(gt.includes(x.sheetId));
+   await p.locator('[data-scope-person]').selectOption(staff[1].sheetId);
    const rows=await p.$$eval('.grow:not(.ghead)',a=>a.map(x=>x.textContent));
    assert.equal(rows.length,1);assert.ok(rows[0].includes('見本荘B'));
    assert.ok(await overflow(p)<=0);
   });
   await check('会社の動き：担当別のまとめと同期の状況 '+width+'px',async()=>{
-   await p.evaluate(()=>SS.go('company'));
+   await p.evaluate(()=>SS.go('company'));await require('./scope-selection-helper').allPeople(p);
    const sums=await p.$$eval('.panel:has(h3:text-matches("動いている案件")) details > summary',a=>a.map(x=>x.textContent));
    assert.ok(sums.some(x=>x.startsWith('黒木 試験一（1件）'))&&sums.some(x=>x.startsWith('黒木 見本二（1件）')),sums.join('|'));
    const li=await p.$$eval('h3:text("同期の状況")+ul li',a=>a.map(x=>({t:x.textContent,c:getComputedStyle(x).color})));
@@ -94,12 +94,12 @@ async function main(){
   const two=[staff[0],staff[2],{name:'例題 次郎',email:'test-d@example.com',sheetId:'sheetD00000000000000000004',company:'AT',role:'社員',lastSync:TODAY+' 09:00'}];
   const {c,p,errors}=await page(400,{staffList:[staff[0],staff[2]]});
   await p.evaluate(()=>SS.go('todo',{tPeriod:'all'}));
-  let tt=await p.$$eval('[data-tt]',a=>a.map(x=>x.dataset.tt));
+  let tt=await p.$$eval('[data-scope-person] option',a=>a.map(x=>x.textContent));
   assert.ok(tt.includes('黒木 試験一')&&!tt.includes('黒木')&&tt.includes('例題 花子'),tt.join());
   await c.close();
   const q=await page(400,{staffList:two});
   await q.p.evaluate(()=>SS.go('todo',{tPeriod:'all'}));
-  tt=await q.p.$$eval('[data-tt]',a=>a.map(x=>x.dataset.tt));
+  tt=await q.p.$$eval('[data-scope-person] option',a=>a.map(x=>x.textContent));
   assert.ok(tt.includes('例題 花子')&&tt.includes('例題 次郎'),tt.join());
   assert.deepEqual(errors,[]);assert.deepEqual(q.errors,[]);await q.c.close();
  });
