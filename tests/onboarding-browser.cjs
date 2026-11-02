@@ -108,7 +108,7 @@ async function main(){
  await check('カレンダーの対応設定：入力途中の値と開いた欄が、再描画・読み込み中・読み込み後も残る',async()=>{
   const old={schemaVersion:2,seq:0,rseq:0,cases:[],todos:[],receipts:[],settings:{rcpt:{name:'見本 一郎'},data:{sheetId:OWN,lastSync:'2026-11-03T00:30:00.000Z',ob:{legacy:true}}}};
   const C=await device({db:old});
-  await C.p.evaluate(()=>{OB.G.cals=[{id:'work-a@example.com',name:'見本の仕事A',primary:false,owner:false,write:false},{id:'work-b@example.com',name:'見本の仕事B',primary:false,owner:false,write:false}];OB.go('cal')});
+  await C.p.evaluate(()=>{OB.G.cals=[{id:'work-a@example.com',name:'見本の仕事A',primary:false,owner:false,write:false},{id:'work-b@example.com',name:'見本の仕事B',primary:false,owner:false,write:false}];OB.go('stats')});
   await C.p.click('details[data-keep-open=calmap] > summary');
   await C.p.selectOption('#cs_cal','work-b@example.com');await C.p.selectOption('#cs_mode','person');await C.p.selectOption('#cs_company','unknown');await C.p.check('#cs_work');
   await C.p.evaluate(()=>OB.render());
@@ -126,7 +126,7 @@ async function main(){
  await check('本物の同期の流れでも、カレンダーの一覧の読み込み中は「読み込み中です」と出て、終わると入力が戻る',async()=>{
   const old={schemaVersion:2,seq:0,rseq:0,cases:[],todos:[],receipts:[],settings:{rcpt:{name:'見本 一郎'},data:{sheetId:OWN,lastSync:'2026-11-03T00:30:00.000Z',ob:{legacy:true}}}};
   const C=await device({db:old});
-  await C.p.evaluate(()=>{OB.G.cals=[{id:'work-a@example.com',name:'見本の仕事A',primary:false,owner:false,write:false},{id:'work-b@example.com',name:'見本の仕事B',primary:false,owner:false,write:false}];OB.go('cal')});
+  await C.p.evaluate(()=>{OB.G.cals=[{id:'work-a@example.com',name:'見本の仕事A',primary:false,owner:false,write:false},{id:'work-b@example.com',name:'見本の仕事B',primary:false,owner:false,write:false}];OB.go('stats')});
   await C.p.click('details[data-keep-open=calmap] > summary');await C.p.selectOption('#cs_cal','work-a@example.com');await C.p.selectOption('#cs_mode','mixed');
   await C.p.evaluate(()=>{window.__gate=new Promise(r=>window.__release=r)});
   await C.p.click('[data-act=gsync]');

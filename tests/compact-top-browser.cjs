@@ -87,6 +87,14 @@ async function main(){
    await p.click('[data-stats-step="1"]');assert.match(await p.locator('.mlabel').innerText(),/2026年9月/);
    await p.click('[data-stats-mode=all]');assert.equal(await p.locator('.monthbar').count(),0);await p.click('[data-stats-mode=month]');assert.equal(await p.locator('.monthbar').count(),1);
   });
+  await check(role+'：予定は月・週・日が1行（44px）、読み込みの説明はⓘの中、カレンダーの対応設定は数字の下へ',async()=>{
+   await p.evaluate(()=>{CT.ui.info={};CT.go('cal',{calView:'month'})});
+   const r=await p.evaluate(()=>{const nav=document.querySelector('.calnav').getBoundingClientRect(),b=[...document.querySelectorAll('[data-cv]')].map(x=>x.getBoundingClientRect());return {h:b.map(x=>x.height),row:b.every(x=>x.top>=nav.top-1&&x.bottom<=nav.bottom+1)}});
+   assert.ok(r.row&&r.h.every(x=>x>=44),JSON.stringify(r));
+   assert.equal(await p.locator('.gsyncbtn').count(),0);assert.equal(await p.locator('.calendar-scope-status').count(),0);assert.equal(await p.locator('details[data-keep-open=calmap]').count(),0);
+   await p.click('[data-info=scope]');assert.match(await p.locator('.calendar-scope-status').innerText(),/未取得|読み込めています/);await p.click('[data-info=scope]');
+   await p.evaluate(()=>CT.go('stats'));assert.equal(await p.locator('details[data-keep-open=calmap]').count(),1);
+  });
   await check(role+'：案件の種類はプルダウン、Access書出しは小さく端に',async()=>{
    await p.evaluate(()=>{CT.ui.type='all';CT.go('cases')});
    assert.equal(await p.locator('[data-type]').count(),0);assert.ok(await p.locator('#c_type option').count()>=10);

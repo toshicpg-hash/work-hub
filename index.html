@@ -29,7 +29,7 @@
 .wkev .ev{font-size:12.5px}
 .wknone{font-size:14px}
 .gcst{font-size:13px}
-section .calnav{flex-wrap:wrap;gap:6px}section .calnav h2{font-size:16px;margin:0;white-space:nowrap;flex:0 1 auto}section .calnav .btn.sm{min-width:40px;padding:4px 8px}section .calnav .calviews{margin-left:auto;flex:0 0 auto;gap:4px}.seg.cv.calviews button{min-height:40px;min-width:38px;font-size:14px;padding:2px 6px;border-radius:10px;flex:0 0 auto}
+section .calnav{flex-wrap:wrap;gap:6px}section .calnav h2{font-size:16px;margin:0;white-space:nowrap;flex:0 1 auto}section .calnav .btn.sm{min-width:40px;padding:4px 8px}.caltags{gap:6px}.caltags .alerttag{cursor:default}section .calnav .calviews{margin-left:auto;flex:0 0 auto;gap:4px}.seg.cv.calviews button{min-height:44px;min-width:38px;font-size:14px;padding:2px 6px;border-radius:10px;flex:0 0 auto}
 .calendar-scope-status{background:var(--sunk);border-radius:10px;padding:6px 10px;color:var(--fg)}.calendar-scope-status p{margin:0}
 .hgrp{display:inline-flex;align-items:center;gap:2px;margin-left:auto}.hgrp .seg{margin-left:0;flex-wrap:nowrap}#stats-won .sec-h h2{font-size:17px}
 .sec-h .seg{margin-left:auto}.sec-h .seg button{min-height:36px;padding:4px 10px;font-size:13px}
@@ -1038,7 +1038,7 @@ function scopeHeader(){
  const tag=[overdue?'期限切れToDo '+overdue+'件':'',urgent?'緊急 '+urgent+'件':'',undated?'失注日なし '+undated+'件':'',missing?'未読込 '+missing+'人':''].filter(Boolean);
  const ctl=CPGViewScope.controls({...s.context,readState:s.state},s.selection).replace('>閲覧できる会社すべて<','>全社<').replace('>閲覧できる人すべて<','>全員<').replace('>自分（この端末の記録）<','>自分<');
  return '<div class="scope-bar"><div class="scope-row">'+ctl+(ui.view==='home'?'':syncMini())+infoBtn('scope','表示の説明')+'</div>'+
- infoBox('scope','<p>会社・人を押すと選べます。選んだ内容は、どのタブでも同じです。人は'+h(meaning)+'のことです。</p>'+(tag.length?'<p>赤い札は、選んでいない会社・人も含めた注意です。読み込めていない人の分は0件とは数えません。</p>':'')+(ui.view==='cal'?'<p>予定の月・週・日も、選んだ会社・人の予定を出します。出すのは、仕事用と決めたカレンダーの予定だけです。私用のカレンダーは出しません。仕事用のカレンダーが決まっていない人や、まだ読み込んでいない日は「未取得」と出ます（予定がないという意味ではありません）。予定を入れたら、その人が同期してください。今日のToDoも、選んだ会社・人の分を出します。日付を押すと、その日の予定とToDoが出ます。</p>':''))+
+ infoBox('scope','<p>会社・人を押すと選べます。選んだ内容は、どのタブでも同じです。人は'+h(meaning)+'のことです。</p>'+(tag.length?'<p>赤い札は、選んでいない会社・人も含めた注意です。読み込めていない人の分は0件とは数えません。</p>':'')+(ui.view==='cal'?(ui.calInfo||'')+'<p>予定の月・週・日も、選んだ会社・人の予定を出します。出すのは、仕事用と決めたカレンダーの予定だけです。私用のカレンダーは出しません。仕事用のカレンダーが決まっていない人や、まだ読み込んでいない日は「未取得」と出ます（予定がないという意味ではありません）。予定を入れたら、その人が同期してください。今日のToDoも、選んだ会社・人の分を出します。日付を押すと、その日の予定とToDoが出ます。仕事用のカレンダーと会社・人の結び付けは、「数字」の下の「仕事用カレンダーの対応設定」でします。</p>':''))+
  (s.missing.length?'<p class="note" role="status" style="margin:0">選んだ中に、まだ読み込めていない人が'+s.missing.length+'人います。読み込めた分だけ出しています。</p>':'')+
  (tag.length&&ui.view!=='home'?'<div class="scope-row scope-notes"><button type="button" class="alerttag scope-alert" data-act="scopealert">⚠ '+h(tag.join('・'))+'</button></div>':'')+
  (ui.scopeSaveError?'<p role="alert">表示設定の保存を確認できません。再読み込みして確認してください。</p>':'')+'</div>';
@@ -1817,7 +1817,7 @@ const calsLoadingNow=()=>!!(G.calsLoading||ui.gsync?.busy);
 function calendarScopeSettings(){
  const ctx=scopeContext(),cat=CPGViewScope.catalog(ctx),stored=CPGCalendarScope.load(localStorage,scopeIdentity());
  const opt=(v,t)=>'<option value="'+h(v)+'">'+h(t)+'</option>';
- return '<details class="panel" data-keep-open="calmap"><summary>仕事用カレンダーの対応設定（この端末）</summary><p class="note">現在のGoogle一覧から、仕事専用と確認したカレンダーだけ設定します。会社・人は正規社員を選び、私的予定を含むものは設定しないでください。共有権限やGoogle予定は変更しません。「数字」→「Googleカレンダー連携」の読込対象にも選び、設定後に本人が同期してください。対応設定だけでは読込対象を増やしません。</p>'+(calsLoadingNow()?'<p role="status">カレンダーの一覧を読み込み中です。終わってから選べます（入力した内容は残ります）。</p>':!G.cals?'<p>一覧未取得です。Googleとまとめて同期後に選べます。</p>':'<form id="calendarScopeForm"><label class="f">カレンダー<select id="cs_cal" required><option value="">選択してください</option>'+G.cals.filter(gReadable).map(c=>opt(c.id,c.name+' / '+c.id)).join('')+'</select></label><label class="f">用途<select id="cs_mode"><option value="person">人物を確認した仕事専用</option><option value="mixed">複数の人が使う仕事用（HUBの案件と結び付いた予定だけ）</option></select></label><label class="f">会社（人物を確認した場合）<select id="cs_company"><option value="">選択してください</option>'+cat.companies.map(c=>opt(c,c)).join('')+opt('unknown','会社未特定（複数社等・推測しない）')+'</select></label><label class="f">人物（人物を確認した場合）<select id="cs_person"><option value="">選択してください</option>'+cat.people.map(p=>opt(p.sheetId,p.name+' / '+p.sheetId)).join('')+'</select></label><label class="f"><span><input type="checkbox" id="cs_work" required>私的予定を含まない仕事用で、会社・人物の対応を確認しました</span></label><button class="btn" type="submit">対応を確認して保存</button></form>')+'<p class="note">複数の人が使うカレンダーの予定は、HUBに登録した案件と結び付いたものだけ、誰の予定か分かります。設定していない人や、誰の予定か分からない予定は、0件という意味ではありません。</p>'+stored.rows.map((r,i)=>'<p class="note">'+h(r.id)+' → '+h(r.mode==='mixed'?'複数の人が使う仕事用':r.company+' / '+(cat.people.find(p=>p.sheetId===r.person)?.name||'人物未確認'))+' <button class="btn sm" type="button" data-calendar-map-remove="'+i+'">対応を外す</button></p>').join('')+(ui.calendarMapError?'<p role="alert">'+h(ui.calendarMapError)+'</p>':'')+'</details>';
+ return '<details class="panel" data-keep-open="calmap"><summary>仕事用カレンダーの対応設定（この端末）</summary><p class="note">Googleのカレンダーのうち、仕事だけに使うカレンダーを、会社・人と結び付けます。私用の予定が入るカレンダーは選ばないでください。Googleの予定や共有の設定は変えません。結び付けたカレンダーは、上の「Googleカレンダー連携」の「予定画面に表示するカレンダー」でも選び、その人が同期してください。</p>'+(calsLoadingNow()?'<p role="status">カレンダーの一覧を読み込み中です。終わってから選べます（入力した内容は残ります）。</p>':!G.cals?'<p>一覧未取得です。Googleとまとめて同期後に選べます。</p>':'<form id="calendarScopeForm"><label class="f">カレンダー<select id="cs_cal" required><option value="">選択してください</option>'+G.cals.filter(gReadable).map(c=>opt(c.id,c.name+' / '+c.id)).join('')+'</select></label><label class="f">用途<select id="cs_mode"><option value="person">人物を確認した仕事専用</option><option value="mixed">複数の人が使う仕事用（HUBの案件と結び付いた予定だけ）</option></select></label><label class="f">会社（人物を確認した場合）<select id="cs_company"><option value="">選択してください</option>'+cat.companies.map(c=>opt(c,c)).join('')+opt('unknown','会社未特定（複数社等・推測しない）')+'</select></label><label class="f">人物（人物を確認した場合）<select id="cs_person"><option value="">選択してください</option>'+cat.people.map(p=>opt(p.sheetId,p.name+' / '+p.sheetId)).join('')+'</select></label><label class="f"><span><input type="checkbox" id="cs_work" required>私的予定を含まない仕事用で、会社・人物の対応を確認しました</span></label><button class="btn" type="submit">対応を確認して保存</button></form>')+'<p class="note">複数の人が使うカレンダーの予定は、HUBに登録した案件と結び付いたものだけ、誰の予定か分かります。設定していない人や、誰の予定か分からない予定は、0件という意味ではありません。</p>'+stored.rows.map((r,i)=>'<p class="note">'+h(r.id)+' → '+h(r.mode==='mixed'?'複数の人が使う仕事用':r.company+' / '+(cat.people.find(p=>p.sheetId===r.person)?.name||'人物未確認'))+' <button class="btn sm" type="button" data-calendar-map-remove="'+i+'">対応を外す</button></p>').join('')+(ui.calendarMapError?'<p role="alert">'+h(ui.calendarMapError)+'</p>':'')+'</details>';
 }
 function calendarScopeSave(){
  const id=val('cs_cal'),mode=val('cs_mode'),company=val('cs_company'),person=val('cs_person'),cat=CPGViewScope.catalog(scopeContext());
@@ -1847,9 +1847,12 @@ function vCal(){
   const calProblems=[!model.usable?'選んだ会社・人を確認できません。':'',model.usable&&!statuses.length?'選んだ人の予定は未取得です（まだ読み込んでいません）。':'',pending.length?'未取得 '+pending.length+'人：'+pending.map(p=>h(p.name)).join('、')+'。予定があるかは分かりません。':'',
     raw.state==='error'?'Googleの予定を読めませんでした。未取得として出しています。':'',raw.state==='kept'?'前回の同期のときの予定です。':'',mixedMissingCount?'共有カレンダー '+mixedMissingCount+'件を読めていません（未取得）。':'',
     projected.privacyUnconfirmed.length?'同期し直してください：中身を出していない予定が '+projected.privacyUnconfirmed.length+'件あります。':'',projected.unidentified.length?'誰の予定か分からない予定が '+projected.unidentified.length+'件あります（中身は出しません）。':'',mapping.state==='invalid'?'仕事用カレンダーの設定を読み戻せません。設定を確かめてください。':''].filter(Boolean);
-  const gst=calProblems.length?'<div class="gcst calendar-scope-status" role="status">'+calProblems.map(x=>'<p>'+x+'</p>').join('')+'</div>':'';
+  /* v1.49.3 予定の読み込みの説明は上の「ⓘ」の中へ（scopeHeader が ui.calInfo を出す）。画面に出すのは小さな札だけ：持ち主の分からない予定の件数と、読めなかった・同期し直しが要るとき */
+  ui.calInfo='<div class="gcst calendar-scope-status" role="status">'+(calProblems.length?calProblems.map(x=>'<p>'+x+'</p>').join(''):'<p>選んだ人の予定は読み込めています。</p>')+'</div>';
+  const calTags=[projected.unidentified.length?'持ち主不明の予定 '+projected.unidentified.length+'件':'',raw.state==='error'?'予定を読めませんでした':'',projected.privacyUnconfirmed.length?'同期し直してください '+projected.privacyUnconfirmed.length+'件':'',mapping.state==='invalid'?'カレンダーの設定を確かめてください':''].filter(Boolean);
+  const gst=calTags.length?'<div class="row caltags">'+calTags.map(x=>'<span class="alerttag" role="status">'+h(x)+'</span>').join('')+'</div>':'';
   const legend="";
-  const note=calendarScopeSettings();
+  const note='';
   const views='<div class="seg cv calviews" role="group" aria-label="表示の切り替え">'+[["month","月"],["week","週"],["day","日"]].map(([k,l])=>'<button type="button" data-cv="'+k+'" aria-pressed="'+(ui.calView===k)+'">'+l+'</button>').join("")+'</div>';
   const nav=(step,title,todayLabel,prevLabel,nextLabel)=>'<div class="calnav"><button class="btn sm" type="button" data-shift="'+(-step)+'" aria-label="'+prevLabel+'">‹</button><h2 class="num">'+title+'</h2>'+
     '<button class="btn sm" type="button" data-shift="today">'+todayLabel+'</button><button class="btn sm" type="button" data-shift="'+step+'" aria-label="'+nextLabel+'">›</button>'+views+'</div>';
@@ -1868,7 +1871,7 @@ function vCal(){
     }
     return '<section class="sec">'+
       nav(7,title,"今週","前の週","次の週")+
-      legend+'<div class="wk">'+rows+'</div>'+gst+note+'</section>';
+      gst+legend+'<div class="wk">'+rows+'</div>'+note+'</section>';
   }
   if(ui.calView==="day"){
     const sel=day(ui.calDay);
@@ -1876,7 +1879,7 @@ function vCal(){
       '<div class="ttl">'+h(x.title)+'</div>'+(x.loc?'<div class="row note"><span style="min-width:0;overflow-wrap:anywhere">'+h(x.loc)+'</span><a class="btn sm" style="display:inline-flex;align-items:center;text-decoration:none" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(x.loc)+'">地図</a></div>':'')+'</div>').join("");
     return '<section class="sec">'+
       nav(1,'<span class="dtitle '+dayKind(ui.calDay)+'">'+mdw(ui.calDay)+'</span>'+(holidayName(ui.calDay)?' <span class="hol-name">'+holidayName(ui.calDay)+'</span>':''),"今日","前の日","次の日")+
-      '<div class="list">'+unknown(ui.calDay)+gRows+sel.td.map(x=>'<button type="button" class="card" data-nav="todo">'+todoCardHeading(x,'<span class="chip">ToDo</span>')+'<span class="note">ToDo画面で確認する</span></button>').join("")+((gRows||sel.td.length||isUnknown(ui.calDay))?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div>'+gst+note+'</section>';
+      gst+'<div class="list">'+unknown(ui.calDay)+gRows+sel.td.map(x=>'<button type="button" class="card" data-nav="todo">'+todoCardHeading(x,'<span class="chip">ToDo</span>')+'<span class="note">ToDo画面で確認する</span></button>').join("")+((gRows||sel.td.length||isUnknown(ui.calDay))?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div>'+note+'</section>';
   }
   const [y,m]=ui.calMonth.split("-").map(Number);
   const first=new Date(y,m-1,1), start=new Date(y,m-1,1-first.getDay());
@@ -1891,9 +1894,9 @@ function vCal(){
     cells+='<button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+(dt.getMonth()+1)+'月'+dt.getDate()+'日'+(hol?' '+hol:'')+'を日表示で開く"><span class="n">'+dt.getDate()+'</span>'+(hol?'<span class="hn">'+hol+'</span>':'')+shown+more+tdl+(isUnknown(s)?'<span class="ev '+(projected.dayState(s)==='unfetched'?'cal-unfetched':'cal-unidentified')+'">'+({unfetched:'未取得',additional:'一部未取得',privacy:'要同期',unidentified:'持ち主不明あり'})[projected.dayState(s)]+'</span>':'')+'</button>';
   }
   return '<section class="sec">'+'<div class="calnav"><button class="btn sm" type="button" data-mon="-1" aria-label="前の月">‹</button><h2 class="num">'+y+'年'+m+'月</h2><button class="btn sm" type="button" data-mon="0">今月</button><button class="btn sm" type="button" data-mon="1" aria-label="次の月">›</button>'+views+'</div>'+
-  legend+
+  gst+legend+
   '<div class="cal">'+["日","月","火","水","木","金","土"].map((w,i)=>'<div class="wd'+(i===0?" sun":i===6?" sat":"")+'">'+w+'</div>').join("")+cells+'</div>'+
-  gst+note+'</section>';
+  note+'</section>';
 }
 function vGantt(){
  if(!scopeState().usable)return scopeUnconfirmed();
@@ -2021,7 +2024,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  exSection()+gSettings()+dSettings()+
+  exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+dSettings()+
   '<section class="sec"><a class="btn" href="./manual.html?v=1.49.3" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.49.3" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
