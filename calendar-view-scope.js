@@ -14,8 +14,9 @@ function project({g,rows,model,cases=[],resolvePerson,readable,from='',to='9999-
  const people=model.candidates.filter(p=>model.selection.person==='all'||p.sheetId===model.selection.person),allowed=new Set(model.people.map(p=>p.sheetId));
  const approved=valid(rows)?rows.filter(r=>readable(r.id)&&(r.mode==='mixed'||allowed.has(r.person)&&(r.company==='unknown'||model.people.find(p=>p.sheetId===r.person)?.companies.includes(r.company)))):[];
  const co=model.selection.company,person=model.selection.person,match=(company,id)=>(co==='all'||co===company)&&(person==='all'||person===id);
- const maps=new Map(approved.map(r=>[r.id,r])),events=[],unidentified=[];
+ const maps=new Map(approved.map(r=>[r.id,r])),events=[],unidentified=[],privacyUnconfirmed=[];
  for(const e of g.data?.events||[]){const r=maps.get(e.calendarId),[first,last]=span(e);if(!r||!model.usable||e.private===true||!first||last<from||first>to)continue;let company=r.company,id=r.person;
+  if(e.private!==false){if(r.mode==='mixed'||match(company,id)||(company==='unknown'&&(person==='all'||person===id)))privacyUnconfirmed.push(e);continue}
   if(r.mode==='mixed'){
    // A bare case number is not provenance. Require exact saved event+calendar identity.
    const hit=cases.filter(c=>e.id&&e.hub&&c.id===e.hub&&c.gcal?.id===e.id&&c.gcal?.cal===e.calendarId);
@@ -28,8 +29,12 @@ function project({g,rows,model,cases=[],resolvePerson,readable,from='',to='9999-
  const sources=g.data?.sources||[],readyState=['ok','kept'].includes(g.state);
  const coverage=(r,day)=>readyState&&sources.some(s=>s.id===r.id&&(s.from||g.from)<=day&&(s.to||g.to)>=day);
  const status=day=>people.map(p=>{const assigned=approved.filter(r=>r.mode==='person'&&r.person===p.sheetId&&(co==='all'||r.company===co));return {id:p.sheetId,name:p.name,ready:model.usable&&assigned.length>0&&assigned.every(r=>coverage(r,day)),reason:!assigned.length?'仕事用カレンダー未設定':assigned.every(r=>coverage(r,day))?'取得済み':'未取得・読取失敗または保存範囲外'};});
- const unknown=day=>!model.usable||!people.length||status(day).some(p=>!p.ready)||unidentified.some(e=>{const [first,last]=span(e);return first<=day&&last>=day});
- return {events,unidentified,status,unknown,approved};
+ const onDay=(list,day)=>list.some(e=>{const [first,last]=span(e);return first<=day&&last>=day});
+ const unfetched=day=>!model.usable||!people.length||status(day).some(p=>!p.ready);
+ const mixedMissing=day=>approved.filter(r=>r.mode==='mixed'&&!coverage(r,day));
+ const dayState=day=>unfetched(day)?'unfetched':mixedMissing(day).length?'additional':onDay(privacyUnconfirmed,day)?'privacy':onDay(unidentified,day)?'unidentified':'ready';
+ const unknown=day=>dayState(day)!=='ready';
+ return {events,unidentified,privacyUnconfirmed,status,unknown,unfetched,dayState,mixedMissing,approved};
 }
 return {key,valid,load,save,project};
 });

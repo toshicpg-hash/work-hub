@@ -12,7 +12,7 @@ const plain=x=>JSON.parse(JSON.stringify(x));
 const cal=(id,primary=false,name=id)=>({id,primary,summary:name,accessRole:'owner'});
 const ownerList=[cal(OWNER,true),cal(SHARED,false,'CPG HUB'),cal(STAFF,false,'employee')];
 const staffList=[cal(STAFF,true),cal(OWNER,false,'renamed-private-calendar'),cal(SHARED,false,'CPG HUB')];
-const evt=(id,title=id)=>({calendarId:id,calendar:id,title,location:'synthetic',allDay:true,start:TODAY,end:'2026-10-27'});
+const evt=(id,title=id)=>({private:false,calendarId:id,calendar:id,title,location:'synthetic',allDay:true,start:TODAY,end:'2026-10-27'});
 const kept=(events,policy=2)=>({policy,at:NOW,from:'2026-09-01',to:'2026-11-30',data:{events,calendars:events.map(e=>e.calendar),sources:events.map(e=>({id:e.calendarId,name:e.calendar}))}});
 function boot({gShow=null,gWrite=SHARED,cache=null,storage:input,calendars=ownerList,fetcher}={}){
  const storage=new Map(input||[]),listeners={},els={},requests=[];

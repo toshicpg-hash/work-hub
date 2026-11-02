@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),C=require('../calendar-view-scope.js');
 const people=[{sheetId:'a',name:'合成同名',companies:['CP']},{sheetId:'b',name:'合成同名',companies:['CPY']},{sheetId:'c',name:'合成全社',companies:['CP','CPY','AT']}];
 const row=(id,person,company)=>({id,person,company,mode:'person',work:true}),rows=[row('work-a','a','CP'),row('work-b','b','CPY'),row('work-c','c','unknown'),{id:'mixed',mode:'mixed',work:true}];
-const event=(calendarId,id,title=id)=>({calendarId,id,title,start:'2026-11-02',end:'2026-11-03',allDay:true});
+const event=(calendarId,id,title=id)=>({private:false,calendarId,id,title,start:'2026-11-02',end:'2026-11-03',allDay:true});
 const g={state:'kept',from:'2026-11-01',to:'2026-11-30',data:{events:[event('work-a','a1'),event('work-b','b1'),event('work-c','c1'),event('private','SECRET'),{...event('mixed','m1'),hub:'U-001'}],sources:['work-a','work-b','work-c','mixed'].map(id=>({id}))}};
 const run=(company='all',person='all',extra={})=>C.project({g,rows,model:{usable:true,people,candidates:people,selection:{company,person}},cases:[],resolvePerson:c=>c.owner,readable:id=>id!=='blocked',...extra});
 assert.equal(run('all','a',{g:{...g,data:{...g.data,events:[{...event('work-a','priv'),private:true}]}}}).events.length,0);
@@ -10,7 +10,7 @@ assert.deepEqual(run().events.map(x=>x.id),['a1','b1','c1']);assert.equal(run().
 assert.deepEqual(run('CP','a').events.map(x=>x.id),['a1']);assert.deepEqual(run('CPY','b').events.map(x=>x.id),['b1']);
 assert.deepEqual(run('all','c').events.map(x=>x.id),['c1']);assert.equal(run('CP','c').events.length,0);assert(run('CP','c').unknown('2026-11-02'));assert.equal(run('CP','c').unidentified.length,2);
 assert(run('all','a',{rows:[]}).unknown('2026-11-02'));assert(run('all','a').unknown('2026-10-31'));assert(!run('all','a').unknown('2026-11-04'));
-const empty={...g,data:{events:[],sources:[{id:'work-a'}],missing:1}};assert(!run('all','a',{g:empty}).unknown('2026-11-02'));assert(run('all','b',{g:empty}).unknown('2026-11-02'));
+const empty={...g,data:{events:[],sources:[{id:'work-a'},{id:'mixed'}],missing:1}};assert(!run('all','a',{g:empty}).unknown('2026-11-02'));assert(run('all','b',{g:empty}).unknown('2026-11-02'));
 assert(run('all','a',{g:empty,rows:[...rows,row('work-a2','a','CP')]}).unknown('2026-11-02'));
 assert(run('all','a',{g:{...g,state:'error'}}).unknown('2026-11-02'));assert(run('all','a',{g:{...g,state:'loading'}}).unknown('2026-11-02'));
 const cases=[{id:'U-001',owner:'a',company:'CP',gcal:{cal:'mixed',id:'m1'}}];assert.deepEqual(run('CP','a',{cases}).events.map(x=>x.id),['a1','m1']);assert.equal(run('CP','a',{cases:[...cases,{...cases[0],owner:'b'}]}).events.length,1);assert.equal(run('CP','a',{cases:[{...cases[0],gcal:{cal:'mixed',id:'wrong'}}]}).events.length,1);
@@ -20,4 +20,12 @@ assert.equal(run('all','all',{model:{usable:true,people:[people[0]],candidates:[
 const storage=new Map(),adapter={getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v)},identity={account:'a',record:'a',viewer:'v'};assert(C.save(adapter,identity,rows));assert.deepEqual(C.load(adapter,identity).rows,rows);assert.equal(C.load(adapter,{...identity,account:'b'}).state,'unset');assert(!C.save(adapter,identity,[...rows,rows[0]]));assert(!C.save({setItem(){},getItem(){return 'other'}},identity,rows));assert.equal(C.load({getItem(){throw Error()}},identity).state,'invalid');
 assert(!run('all','a').unknown('2026-11-03'),'exclusive end is not an unknown following day');assert.equal(run('all','all',{from:'2026-11-04',to:'2026-11-05'}).unidentified.length,0);
 const before=JSON.stringify({g,rows,cases});run('CP','a',{cases});assert.equal(JSON.stringify({g,rows,cases}),before);
-console.log('PASS 15 groups: exact mapping, privacy, same names, multi-company unknown, unset, range, per-source empty/failure, partial sources, error/loading, exact event provenance, collisions, legacy id, authorization, storage/readback, immutable inputs');
+const legacy=event('work-a','old','LEGACY_PRIVATE_SECRET');delete legacy.private;
+const legacyG={...g,data:{events:[legacy],sources:[{id:'work-a'},{id:'mixed'}]}};const legacyRaw=JSON.stringify(legacyG);
+const legacyResult=run('all','a',{g:legacyG});assert.equal(legacyResult.events.length,0);assert.equal(legacyResult.privacyUnconfirmed.length,1);assert.equal(legacyResult.dayState('2026-11-02'),'privacy');assert.equal(JSON.stringify(legacyG),legacyRaw);
+assert.equal(run('all','b',{g:legacyG}).privacyUnconfirmed.length,0,'other dedicated legacy source never marks selected person');
+assert.equal(run('all','a',{g:{...legacyG,data:{...legacyG.data,events:[{...legacy,private:true}]}}}).events.length,0);
+assert.equal(run('all','a',{g:{...legacyG,data:{...legacyG.data,events:[{...legacy,private:false}]}}}).events.length,1);
+const failedMixed=run('all','a',{g:{...g,data:{events:[],sources:[{id:'work-a'}],missing:1}}});assert.equal(failedMixed.dayState('2026-11-02'),'additional');assert(failedMixed.unknown('2026-11-02'));assert.equal(failedMixed.mixedMissing('2026-11-02').length,1);
+assert.equal(run('all','a',{g:empty}).dayState('2026-11-02'),'ready','other dedicated source failure does not contaminate selected person');
+console.log('PASS 17 groups: exact mapping, privacy, same names, multi-company unknown, unset, range, per-source empty/failure, partial sources, error/loading, exact event provenance, collisions, legacy id, authorization, storage/readback, immutable inputs, legacy privacy fail closed, mixed missing vs other-source failure');
