@@ -2456,7 +2456,9 @@ const staffDup=email=>D().staff.find(s=>!s.removed&&s.email.toLowerCase()===emai
 const ROLES=["社員","GM","全社"];
 const coList=s=>String((s&&s.company)||"").split(/[,、，\s]+/).filter(x=>COMPANIES.includes(x));
 const isViewer=s=>!s.removed&&(s.role==="全社"||s.role==="GM"&&!!s.gmCo);
-const canSee=(v,s)=>isViewer(v)&&!s.removed&&v.sheetId!==s.sheetId&&(v.role==="全社"||coList(s).includes(v.gmCo));
+/* GM対象は同じ単一会社の一般社員のみ。全社/GM役割・兼務管理者・複数会社は対象外。 */
+const gmTarget=(v,s)=>{const cs=String(s.company||"").trim().split(/[,、，\s]+/).filter(Boolean);return s.role==="社員"&&!s.gmCo&&cs.length===1&&COMPANIES.includes(cs[0])&&cs[0]===v.gmCo};
+const canSee=(v,s)=>isViewer(v)&&!s.removed&&v.sheetId!==s.sheetId&&(v.role==="全社"||gmTarget(v,s));
 const roleLabel=s=>(s.role==="全社"?"全社":s.role==="GM"?"GM":"社員")+(s.gmCo?(s.role==="GM"?"（"+s.gmCo+"）":"・"+s.gmCo+" GM"):"");
 const gmLine=list=>COMPANIES.map(co=>{const g=list.filter(s=>!s.removed&&s.gmCo===co);return g.length?co+" GM："+g.map(x=>x.name).join("・"):""}).filter(Boolean).join("　");
 const VIEW_COLS=["氏名","Gmail","会社","役割","GMの会社","シートID","指示箱ID"];

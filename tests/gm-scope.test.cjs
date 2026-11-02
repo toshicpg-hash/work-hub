@@ -1,0 +1,18 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+const block=html.slice(html.indexOf('const ROLES='),html.indexOf('const roleLabel='));
+const ctx={};vm.createContext(ctx);vm.runInContext("const COMPANIES=['CP','CPY','AT'];"+block+';globalThis.can=canSee;',ctx);
+const gm={sheetId:'gm',role:'GM',gmCo:'CPY',company:'CPY'},employee={sheetId:'employee',role:'社員',gmCo:'',company:'CPY'};
+assert.equal(ctx.can(gm,employee),true);
+for(const company of ['CP','AT','CP,CPY','CPY,AT','CP,CPY,AT','', 'CPY CPY','CPY,UNKNOWN'])assert.equal(ctx.can(gm,{...employee,company}),false,company);
+for(const role of ['全社','GM','unknown'])assert.equal(ctx.can(gm,{...employee,role}),false,role);
+assert.equal(ctx.can(gm,{...employee,gmCo:'CPY'}),false);
+assert.equal(ctx.can(gm,{...employee,role:'全社',company:'CP,CPY,AT',gmCo:'CP'}),false);
+assert.equal(ctx.can(gm,{...employee,removed:true}),false);
+assert.equal(ctx.can(gm,{...employee,sheetId:'gm'}),false);
+assert.equal(ctx.can({...gm,removed:true},employee),false);
+assert.equal(ctx.can({...gm,role:'社員',gmCo:''},employee),false);
+const all={...gm,role:'全社',gmCo:'CP'};
+for(const s of [employee,{...employee,company:'CP,CPY,AT',role:'GM',gmCo:'AT'}])assert.equal(ctx.can(all,s),true);
+console.log('PASS single-company employee scope; multi-company/management exclusions; self/removed/nonviewer; all-company scope preserved');
