@@ -14,7 +14,7 @@ const todoRow=(title,tan,no,prop)=>({'内容':title,'期限':TODAY,'担当':tan,
 const data=[
  {s:staff[0],ok:true,cases:[caseRow('U-0001','試験荘A','黒木')],rc:[],orders:[],todo:[todoRow('担当が空の用事','',''),todoRow('氏名で書いた用事','黒木 試験一',''),todoRow('姓だけの用事','黒木','U-0001','試験荘A')]},
  {s:staff[1],ok:true,cases:[caseRow('U-0001','見本荘B','黒木')],rc:[],orders:[],todo:[todoRow('二人目の用事','黒木','U-0001','見本荘B')]},
- {s:staff[2],ok:true,cases:[caseRow('U-0001','例題荘C','例題','site')],rc:[],orders:[],todo:[]}];
+ {s:staff[2],ok:true,cases:[caseRow('U-0001','例題荘C','例題 花子','site')],rc:[],orders:[],todo:[]}];
 let server,browser,origin;const results=[];
 const check=async(name,fn)=>{await fn();results.push(name);console.log('PASS',name)};
 async function page(width,{admin=true,staffList=staff,rsName=''}={}){
@@ -39,13 +39,13 @@ async function main(){
   await check('ToDoの担当の絞り込みで同姓2人が分かれる '+width+'px',async()=>{
    await p.evaluate(()=>SS.go('todo',{tPeriod:'all'}));
    const tt=await p.$$eval('[data-tt]',a=>a.map(x=>x.dataset.tt));
-   assert.ok(tt.includes('黒木試')&&tt.includes('黒木見')&&tt.includes('例題'),tt.join());
-   assert.ok(!tt.includes('黒木'),'plain 黒木 must not remain when two people share it: '+tt.join());
-   await p.click('[data-tt="黒木試"]');
+   assert.ok(tt.includes('黒木 試験一')&&tt.includes('黒木 見本二')&&tt.includes('例題 花子'),tt.join());
+   assert.ok(tt.includes('黒木'),'unresolved legacy key remains without guessing: '+tt.join());
+   await p.click('[data-tt="黒木 試験一"]');
    const a=await p.$$eval('main .list .card',x=>x.map(e=>e.textContent));
    assert.ok(['担当が空の用事','氏名で書いた用事','姓だけの用事'].every(w=>a.some(t=>t.includes(w))),'owner A rows: '+a.join('|'));
    assert.ok(!a.some(t=>t.includes('二人目の用事')));
-   await p.click('[data-tt="黒木見"]');
+   await p.click('[data-tt="黒木 見本二"]');
    const b=await p.$$eval('main .list .card',x=>x.map(e=>e.textContent));
    assert.ok(b.some(t=>t.includes('二人目の用事'))&&!b.some(t=>t.includes('担当が空の用事')),b.join('|'));
    assert.ok(await overflow(p)<=0);
@@ -54,15 +54,15 @@ async function main(){
    await p.click('[data-tt="all"]');
    const bs=await p.$$eval('main .pbadge',a=>[...new Set(a.map(x=>x.className+'|'+x.textContent))]);
    const cls=l=>bs.filter(x=>x.endsWith('|'+l)).map(x=>x.split('|')[0]);
-   assert.equal(cls('黒木試').length,1);assert.equal(cls('黒木見').length,1);
-   assert.notEqual(cls('黒木試')[0],cls('黒木見')[0]);
+   assert.equal(cls('黒木 試験一').length,1);assert.equal(cls('黒木 見本二').length,1);
+   assert.notEqual(cls('黒木 試験一')[0],cls('黒木 見本二')[0]);
    assert.ok(!bs.some(x=>x.endsWith('|黒木')),bs.join());
   });
   await check('ガントの担当の絞り込みと行のバッジ '+width+'px',async()=>{
    await p.evaluate(()=>SS.go('gantt'));
    const gt=await p.$$eval('[data-gt]',a=>a.map(x=>x.dataset.gt));
-   assert.deepEqual(gt.filter(x=>x!=='all').sort(),['例題','黒木見','黒木試'].sort());
-   await p.click('[data-gt="黒木見"]');
+   assert.deepEqual(gt.filter(x=>!['all','黒木','トシ'].includes(x)).sort(),['例題 花子','黒木 見本二','黒木 試験一'].sort());
+   await p.click('[data-gt="黒木 見本二"]');
    const rows=await p.$$eval('.grow:not(.ghead)',a=>a.map(x=>x.textContent));
    assert.equal(rows.length,1);assert.ok(rows[0].includes('見本荘B'));
    assert.ok(await overflow(p)<=0);
@@ -70,9 +70,9 @@ async function main(){
   await check('会社の動き：担当別のまとめと同期の状況 '+width+'px',async()=>{
    await p.evaluate(()=>SS.go('company'));
    const sums=await p.$$eval('.panel:has(h3:text-matches("動いている案件")) details > summary',a=>a.map(x=>x.textContent));
-   assert.ok(sums.some(x=>x.startsWith('黒木試（1件）'))&&sums.some(x=>x.startsWith('黒木見（1件）')),sums.join('|'));
+   assert.ok(sums.some(x=>x.startsWith('黒木 試験一（1件）'))&&sums.some(x=>x.startsWith('黒木 見本二（1件）')),sums.join('|'));
    const li=await p.$$eval('h3:text("同期の状況")+ul li',a=>a.map(x=>({t:x.textContent,c:getComputedStyle(x).color})));
-   const a=li.find(x=>x.t.startsWith('黒木試')),b=li.find(x=>x.t.startsWith('黒木見')),ex=li.find(x=>x.t.startsWith('例題'));
+   const a=li.find(x=>x.t.startsWith('黒木 試験一')),b=li.find(x=>x.t.startsWith('黒木 見本二')),ex=li.find(x=>x.t.startsWith('例題 花子'));
    assert.ok(a&&!a.t.includes('今日まだ同期していません'),JSON.stringify(li));
    assert.ok(b&&b.t.includes('（今日まだ同期していません）'),JSON.stringify(li));
    assert.notEqual(a.c,b.c,'not-synced-today line is red');
@@ -83,40 +83,40 @@ async function main(){
   await check('受付と手入力ToDoの担当の選択肢 '+width+'px',async()=>{
    await p.evaluate(()=>SS.go('new'));
    const o=await p.$$eval('#n_tantou option',a=>a.map(x=>x.textContent));
-   assert.ok(o.includes('黒木試')&&o.includes('黒木見')&&o.includes('例題')&&o.includes('トシ')&&!o.includes('黒木'),o.join());
+   assert.ok(o.includes('黒木 試験一')&&o.includes('黒木 見本二')&&o.includes('例題 花子')&&o.includes('トシ')&&o.includes('黒木'),o.join());
    await p.evaluate(()=>SS.go('todo'));
    const t=await p.$$eval('#td_tantou option',a=>a.map(x=>x.textContent));
-   assert.ok(t.includes('黒木試')&&t.includes('黒木見'),t.join());
+   assert.ok(t.includes('黒木 試験一')&&t.includes('黒木 見本二'),t.join());
   });
   assert.deepEqual(errors,[]);await c.close();
  }
- await check('HUBの担当と同じ姓（黒木）は1人でも姓＋名の1字、ほかの姓は1人なら姓だけ',async()=>{
+ await check('姓の人数によらず正規のフルネーム表示',async()=>{
   const two=[staff[0],staff[2],{name:'例題 次郎',email:'test-d@example.com',sheetId:'sheetD00000000000000000004',company:'AT',role:'社員',lastSync:TODAY+' 09:00'}];
   const {c,p,errors}=await page(400,{staffList:[staff[0],staff[2]]});
   await p.evaluate(()=>SS.go('todo',{tPeriod:'all'}));
   let tt=await p.$$eval('[data-tt]',a=>a.map(x=>x.dataset.tt));
-  assert.ok(tt.includes('黒木試')&&!tt.includes('黒木')&&tt.includes('例題'),tt.join());
+  assert.ok(tt.includes('黒木 試験一')&&!tt.includes('黒木')&&tt.includes('例題 花子'),tt.join());
   await c.close();
   const q=await page(400,{staffList:two});
   await q.p.evaluate(()=>SS.go('todo',{tPeriod:'all'}));
   tt=await q.p.$$eval('[data-tt]',a=>a.map(x=>x.dataset.tt));
-  assert.ok(tt.includes('例題花')&&tt.includes('例題次')&&!tt.includes('例題'),tt.join());
+  assert.ok(tt.includes('例題 花子')&&tt.includes('例題 次郎'),tt.join());
   assert.deepEqual(errors,[]);assert.deepEqual(q.errors,[]);await q.c.close();
  });
  await check('受付の担当：HUBの担当は今までの値「黒木」で保存し、表示は区別した名前',async()=>{
   const {c,p,errors}=await page(400);
   await p.evaluate(()=>SS.go('new'));
   const o=await p.$$eval('#n_tantou option',a=>a.map(x=>x.value+'='+x.textContent));
-  assert.ok(o.includes('黒木=黒木試')&&o.includes('黒木　見本二=黒木見')&&o.includes('トシ=トシ'),o.join());
+  assert.ok(o.includes('黒木=黒木')&&o.includes('黒木 試験一=黒木 試験一')&&o.includes('黒木　見本二=黒木 見本二')&&o.includes('トシ=トシ'),o.join());
   assert.deepEqual(errors,[]);await c.close();
  });
  await check('社員の端末：自分の姓のHUBの担当は自分の区別した名前で出る',async()=>{
   const {c,p,errors}=await page(400,{admin:false,staffList:[],rsName:'黒木 見本二'});
   await p.evaluate(()=>SS.go('new'));
   const o=await p.$$eval('#n_tantou option',a=>a.map(x=>x.value+'='+x.textContent));
-  assert.ok(o.includes('黒木=黒木見')&&o.includes('トシ=トシ')&&o.length===2,o.join());
+  assert.ok(o.includes('黒木=黒木 見本二')&&o.includes('トシ=トシ')&&o.length===2,o.join());
   const raw=await p.evaluate(()=>localStorage.getItem('workhub_proto_v1')||'');
-  assert.ok(!raw.includes('黒木見'),'labels are not written to saved data');
+  assert.ok(!raw.includes('黒木 見本二'),'display does not save data');
   assert.deepEqual(errors,[]);await c.close();
  });
  await check('帳票・外に出す名前はフルネーム（Access用CSV・カレンダーの説明）',async()=>{
@@ -125,7 +125,7 @@ async function main(){
    return {csv:SS.csvText([c]),desc:SS.gDesc(c),label:SS.tantouLabel('黒木')}});
   assert.ok(r.csv.split('\n')[1].includes(',黒木 見本二,'),r.csv);
   assert.ok(r.desc.includes('担当：黒木 見本二'),r.desc);
-  assert.equal(r.label,'黒木見');
+  assert.equal(r.label,'黒木 見本二');
   assert.deepEqual(errors,[]);await c.close();
  });
  console.log('ALL PASS',results.length);
