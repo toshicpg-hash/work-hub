@@ -641,7 +641,7 @@ function personBadge(name,small,owner){
  return '<span class="pbadge '+(i<0?"pbx":"pb"+(i%6))+(small?' sm':'')+'">'+h(lab)+'</span>';
 }
 function tantouOptions(){
- const list=nameList(),pk=p=>p.sheetId||p.name,out=STAFF.map(v=>({v,l:tantouLabel(v),disabled:CPGNames.matches(list,v,STAFF).length>1})),taken=new Set(STAFF.map(v=>personOf(v,ownOwner())).filter(Boolean).map(pk));
+ const list=nameList(),pk=p=>p.sheetId||p.name,out=STAFF.map(v=>({v,l:tantouLabel(v),disabled:CPGNames.matches(list,v,STAFF).length>1})),taken=new Set(out.filter(o=>!o.disabled).map(o=>personOf(o.v,ownOwner())).filter(Boolean).map(pk));
  for(const p of list)if(!p.removed&&!taken.has(pk(p))){const v=p.nameKey||p.registeredName||p.name;out.push({v,l:personLabel(p),disabled:CPGNames.matches(list,v,STAFF).length>1});taken.add(pk(p))}
  const seen=new Set();return out.filter(o=>!seen.has(o.v)&&seen.add(o.v));
 }
