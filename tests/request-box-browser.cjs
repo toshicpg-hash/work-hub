@@ -136,7 +136,7 @@ async function main(){
    assert.ok((await g.p.textContent('main')).includes('v1.47.1 以降の CPG HUB で同期すると届きます'));
    const row=tab(byName('CPG HUB_指示箱_社員 二郎'),'指示').find(r=>r[1]==='見積を出す（テスト'+width+'）');
    assert.ok(/^B-20261030-[a-z0-9]{6}$/.test(row[0]),row[0]);
-   assert.deepEqual(row.slice(2),['2026-11-05','2026-10-30','未完了',GM,'GM 管理','','']);
+   assert.deepEqual(row.slice(2),['2026-11-05','2026-10-30','未完了',GM,'GM 管理 見本','','']);
    const o=await g.p.evaluate(()=>{const d=document.documentElement;return Math.max(d.scrollWidth-d.clientWidth,...[...document.querySelectorAll('.panel,section,.row,.form,details')].map(x=>x.scrollWidth-x.clientWidth))});assert.ok(o<=0,'overflow '+o);
   });
   await check('GMは社員の記録シートとほかの会社の指示箱に書けない '+width+'px',async()=>{
@@ -174,13 +174,13 @@ async function main(){
   await z.p.fill('#bi_t'+k,'書類を出す（全社テスト）');await z.p.click('[data-badd="'+k+'"]');
   await z.p.waitForFunction(()=>!RB.ui.bBusy&&RB.ui.bMsg&&!/送っています/.test(RB.ui.bMsg.text));
   const row=tab(byName('CPG HUB_指示箱_社員 一郎'),'指示').find(r=>r[1]==='書類を出す（全社テスト）');
-  assert.deepEqual([row[2],row[4],row[5],row[6]],['','未完了',ZEN,'見本']);
+  assert.deepEqual([row[2],row[4],row[5],row[6]],['','未完了',ZEN,'見本 太郎']);
   assert.deepEqual(z.errors,[]);await z.c.close();
  });
  await check('社長の端末：全部の指示を出した人の表示付きで見られ、期限なしは指示一覧に「○○から」で残る',async()=>{
   await A.p.evaluate(async()=>{await RB.corpRun();RB.go('company')});
   const t=await A.p.textContent('main');
-  assert.ok(t.includes('タスクリクエスト（GM・全社から）')&&t.includes('GM 管理から')&&t.includes('見本から'));
+  assert.ok(t.includes('タスクリクエスト（GM・全社から）')&&t.includes('GM 管理 見本から')&&t.includes('見本 太郎から'));
   assert.ok(t.includes('✓ 10/30完了')&&t.includes('取り消し'));
   assert.ok((await A.p.$$('[data-bcancel]')).length>=1,'the 社長 can cancel open ones');
   await A.p.evaluate(()=>RB.go('todo',{tPeriod:'today',tTantou:'all'}));
@@ -188,7 +188,7 @@ async function main(){
   assert.ok(!reqs.some(x=>x.includes('書類を出す（全社テスト）')),'no-date request stays out of ToDo');
   await A.p.click('[data-nav=requests]');
   const all=await A.p.$$eval('.request-compact .card',a=>a.map(x=>x.textContent));
-  assert.ok(all.some(x=>x.includes('見本から')&&x.includes('書類を出す（全社テスト）')),all.join('|'));
+  assert.ok(all.some(x=>x.includes('見本 太郎から')&&x.includes('書類を出す（全社テスト）')),all.join('|'));
   assert.ok(!reqs.some(x=>x.includes('見積を出す（テスト')),'done / cancelled are not in the ToDo block');
  });
  await check('社員は自分あての指示箱だけ読め、ほかの人の指示箱は読めない',async()=>{

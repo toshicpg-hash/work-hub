@@ -60,7 +60,7 @@ async function main(){
   await check('期間の絞り込みでもリクエストは消えず、担当の絞り込みは効く '+width+'px',async()=>{
    for(const k of ['today','week','all']){await p.click('[data-tp="'+k+'"]');assert.equal((await top(p)).reqs.length,1,k);assert.equal(await p.locator('.request-future').count(),0)}
    const tt=await p.$$eval('[data-tt]',a=>a.map(x=>x.dataset.tt));
-   const other=tt.find(x=>x!=='all'&&x!=='見本');
+   const other=tt.find(x=>x!=='all'&&x!=='見本 一郎');
    await p.click('[data-tt="'+other+'"]');assert.equal((await top(p)).reqs.length,0,'requests of another person are filtered out');
    await p.click('[data-tt="all"]');assert.equal((await top(p)).reqs.length,1);
   });
@@ -70,7 +70,7 @@ async function main(){
    const r=await top(a.p);
    assert.ok(r.box&&r.first,JSON.stringify(r));
    assert.deepEqual(r.reqs.map(x=>x.t),['社員への期限切れのリクエスト（テスト）']);
-   assert.ok(r.reqs.every(x=>x.boss&&x.chip&&x.badge==='見本'),JSON.stringify(r.reqs));
+   assert.ok(r.reqs.every(x=>x.boss&&x.chip&&x.badge==='見本 一郎'),JSON.stringify(r.reqs));
    assert.ok(r.reqs[0].over);
    assert.ok(!JSON.stringify(r).includes('取り消した')&&!JSON.stringify(r).includes('完了した')&&!JSON.stringify(r).includes('古い書き出し'));
    assert.ok(r.rest.includes('見積書をExcelで作成して提出'));
