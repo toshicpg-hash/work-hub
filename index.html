@@ -29,6 +29,10 @@
 .wkev .ev{font-size:12.5px}
 .wknone{font-size:14px}
 .gcst{font-size:13px}
+section .calnav{flex-wrap:wrap;gap:6px}section .calnav h2{font-size:16px;margin:0;white-space:nowrap;flex:0 1 auto}section .calnav .btn.sm{min-width:40px;padding:4px 8px}section .calnav .calviews{margin-left:auto;flex:0 0 auto;gap:4px}.seg.cv.calviews button{min-height:40px;min-width:38px;font-size:14px;padding:2px 6px;border-radius:10px;flex:0 0 auto}
+.calendar-scope-status{background:var(--sunk);border-radius:10px;padding:6px 10px;color:var(--fg)}.calendar-scope-status p{margin:0}
+.hgrp{display:inline-flex;align-items:center;gap:2px;margin-left:auto}.hgrp .seg{margin-left:0;flex-wrap:nowrap}#stats-won .sec-h h2{font-size:17px}
+.sec-h .seg{margin-left:auto}.sec-h .seg button{min-height:36px;padding:4px 10px;font-size:13px}
 
 #manualTodoEditor{width:min(94vw,680px);max-height:90dvh;overflow:auto;border:0;border-radius:18px;padding:18px}#manualTodoEditor::backdrop{background:#14272b88}#manualTodoEditor h2{margin:0;font-size:20px}#manualTodoEditor .form{margin:0}#manualTodoEditor textarea{resize:vertical;min-height:96px}#manualTodoStatus{white-space:pre-wrap;overflow-wrap:anywhere}#manualTodoEditor .row{flex-wrap:wrap}.manual-history{padding:10px 0;border-top:1px solid #d7dfdf;overflow-wrap:anywhere}.manual-history p{margin:6px 0}.manual-storage-notice{position:sticky;top:0;z-index:25;padding:12px;background:#fff3d6;color:#573b00;font-size:14px;line-height:1.5}
 @media(max-width:420px){#manualTodoEditor{padding:14px}#manualTodoEditor .btn{min-height:44px}#manualTodoEditor .f{min-width:0}}
@@ -39,8 +43,37 @@
 #manualTodoCancelEditor{width:min(94vw,680px);max-height:90dvh;overflow:auto;border:0;border-radius:18px;padding:18px}#manualTodoCancelEditor::backdrop{background:#14272b88}#manualTodoCancelEditor .form{margin:0}#manualTodoCancelEditor h2{margin:0;font-size:20px}#manualTodoCancelEditor .row{flex-wrap:wrap}#manualTodoCancelTarget,#manualTodoCancelStatus{white-space:pre-wrap;overflow-wrap:anywhere}#manualTodoCancelEditor .f{min-width:0}#manualTodoCancelEditor .btn{min-height:44px}
 .shared-totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px}.shared-totals div{background:var(--sunk);padding:10px;border-radius:8px;display:flex;flex-direction:column;gap:4px}.shared-person,.shared-receipt{min-width:0;overflow-wrap:anywhere}.shared-receipt .row{flex-wrap:wrap}.shared-receipt .btn{white-space:normal;min-height:44px}.shared-receipt dd{overflow-wrap:anywhere}
 
-.scope-bar [data-view-scope]{display:flex;flex-wrap:wrap;gap:12px}.scope-bar label{display:flex;flex-direction:column;flex:1 1 130px;min-width:0}.scope-bar select{font:inherit;font-size:16px;min-height:44px;width:100%;min-width:0;max-width:100%;padding:8px}.scope-bar p{overflow-wrap:anywhere;margin:8px 0}.scope-bar [data-view-scope]{margin:0;padding:0}.scope-bar summary{font-size:13px}.scope-bar{padding:8px 0}.scope-alert{color:var(--red);font-weight:700}
-@media(min-width:700px){.scope-bar{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);align-items:center;gap:2px 8px;padding:0;margin-bottom:-12px}.scope-bar [data-view-scope]{grid-column:1;grid-row:1/3}.scope-bar label{flex-direction:row;align-items:center;gap:6px}.scope-bar select{width:100%;flex:1}.scope-bar>p.note{margin:0;font-size:11px;grid-column:2}.scope-bar>.scope-alert{grid-column:2}.scope-bar>.scope-alert summary{font-size:11px}.scope-bar>.banner,.scope-bar>[role=alert]{grid-column:1/-1}}
+/* v1.49.3 上の部分を細く：会社・人は1行の小さな選択（押すと端末の選択画面が開く）、注意は赤い札1つ、説明はⓘ */
+.scope-bar{display:flex;flex-direction:column;gap:4px;padding:0;margin-bottom:-8px}
+.scope-row{display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap}
+.scope-bar .scope-row [data-view-scope]{display:flex;align-items:center;gap:2px;flex:1 1 11em;min-width:11em;margin:0;padding:0}
+.scope-bar .scope-row [data-view-scope] label{display:flex;flex-direction:row;align-items:center;flex:0 1 auto;min-width:5em;max-width:calc(50% - 8px);font-size:0}.scope-bar .scope-row [data-view-scope] label select{min-width:5em}
+.syncmini{max-width:10em;overflow:hidden;text-overflow:ellipsis;padding:0 10px}
+.scope-bar .scope-row [data-view-scope] label+label::before{content:"・";font-size:15px;color:var(--muted);padding:0 2px}
+.scope-bar .scope-row select{font:inherit;font-size:15px;font-weight:700;min-height:44px;width:auto;max-width:100%;min-width:0;padding:4px 20px 4px 4px;border:0;border-radius:8px;background-color:transparent;color:var(--fg);text-overflow:ellipsis}
+.scope-bar .scope-row select:focus-visible{outline:2px solid var(--accent)}
+.scope-bar .scope-row [data-view-scope] p{flex-basis:100%;font-size:12px;margin:0;color:var(--red)}
+.scope-bar .scope-row [data-view-scope]{flex-wrap:wrap}.scope-bar .scope-row [data-view-scope] label{flex-wrap:nowrap}
+.ibtn{flex:0 0 auto;min-width:44px;min-height:44px;border:0;background:transparent;color:var(--accent);font-size:20px;line-height:1;cursor:pointer;border-radius:50%}
+.sec-h .ibtn{min-height:36px;min-width:40px;font-size:18px}.sec-h{min-height:36px}
+.ibtn[aria-expanded=true]{background:var(--accent-soft)}
+.infobox{background:var(--sunk);border-radius:10px;padding:8px 12px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:6px;overflow-wrap:anywhere}.infobox p{margin:0}
+.monthbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px;align-items:stretch}
+.monthbar .btn{min-height:48px;font-size:15px;padding:0 12px}
+.monthpick{position:relative;display:flex;align-items:center;justify-content:center;min-height:48px;border:1px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer;min-width:0}
+.monthpick .mlabel{font-size:20px;font-weight:700;white-space:nowrap}
+.monthpick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px;border:0;padding:0;margin:0}
+.monthpick:focus-within{outline:2px solid var(--accent)}
+.btn.xs{min-height:36px;font-size:12.5px;padding:4px 10px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.findrow{flex-wrap:wrap;gap:6px}.findrow input[type=search]{flex:1 1 120px;min-width:0}.findrow .typesel{flex:0 1 118px;min-width:0}.findrow .typesel select{width:100%}
+.filters{flex:0 0 auto}.filters summary{min-height:44px;display:flex;align-items:center;padding:0 10px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:13.5px;background:var(--card)}
+.filters[open]{flex-basis:100%}.filterbox{display:flex;flex-direction:column;gap:4px;padding:6px 2px}
+.syncmini{flex:0 0 auto;min-height:44px;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:0 12px;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.syncmini.warn{border-color:var(--red);color:var(--red);font-weight:700}
+@media(min-width:700px){.scope-bar{flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 12px}.scope-bar>.scope-row:first-child{flex:1 1 360px}.scope-bar>.scope-notes{flex:0 1 auto}.scope-bar>.infobox,.scope-bar>p{flex-basis:100%}}
+.syncwarn{flex:1 1 200px;min-width:0;color:var(--red);font-size:12.5px;font-weight:700;overflow-wrap:anywhere}.scope-notes{gap:6px 10px}
+.alerttag{align-self:flex-start;min-height:32px;border:0;border-radius:999px;background:var(--red-soft,#fde8e8);color:var(--red);font:inherit;font-size:13px;font-weight:700;padding:4px 12px;cursor:pointer;text-align:left;max-width:100%}
 
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -369,8 +402,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.49.2" title="使い方マニュアルを開く">v1.49.2・11/3更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.49.2" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.49.3" title="使い方マニュアルを開く">v1.49.3・11/3更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.49.3" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -432,8 +465,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./request-box-employee.js?v=1.47.1"></script>
 <script src="./share-management.js?v=1.48.6"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.49.2"></script>
-<script src="./calendar-view-scope.js?v=1.49.2"></script>
+<script src="./view-scope.js?v=1.49.3"></script>
+<script src="./calendar-view-scope.js?v=1.49.3"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -622,6 +655,9 @@ async function corpRun(){
     throw err}
 }
 /* 見るだけの社員の記録の状態（社長の管理端末と見る人の端末） */
+/* v1.49.3 読み込みの時刻は ⓘ の中へ。まだ読み込んでいない注意は出したまま */
+function roNoteText(){if(!D().admin&&!D().viewListId||!roOn())return "";return '<p>社員の記録（見るだけ）：'+(ui.corp.kept?keptNote():corpAtText()+'に読み込み')+'</p>';}
+function roNoteWarn(){if(!D().admin&&!D().viewListId||roOn())return "";return roNote();}
 function roNote(){
   if(!D().admin&&!D().viewListId)return "";
   if(roOn())return '<p class="note" style="margin:0">社員の記録（見るだけ）：'+(ui.corp.kept?keptNote():corpAtText()+'に読み込み')+'</p>';
@@ -787,7 +823,7 @@ function sentRequestView(){
  (unread?'<p class="ro" role="alert">読込未確認 '+unread+'件。確認できた分だけ表示しています。</p>':'')+'<div class="list">'+(shown.map(t=>(admin?'<p class="note">出した人：'+h(t.from)+'</p>':'')+todoRow(t)).join('')||'<p class="empty">確認できた未完了の指示はありません</p>')+'</div></section>';
 }
 function vRequests(){if(!scopeState().usable)return scopeUnconfirmed();if(ui.sentRequests&&(D().admin||D().viewListId))return sentRequestView();const list=scopeTodos().filter(isReqTodo).sort((a,b)=>(a.due||'9').localeCompare(b.due||'9'));
- return '<section class="sec"><div class="sec-h"><h2>指示一覧</h2><span class="note">未完了 '+list.length+'件</span></div><button class="btn sm" data-nav="todo">ToDoに戻る</button><p class="note">6日以上先・期限なしも含む未完了の指示です。タップで全文を確認できます。</p>'+roNote()+requestBoxNotice()+'<div class="list">'+(list.map(todoRow).join('')||'<p class="empty">未完了の指示はありません</p>')+'</div></section>';
+ return '<section class="sec"><div class="sec-h"><h2>指示一覧</h2><span class="note">未完了 '+list.length+'件</span>'+infoBtn('requests','指示一覧の説明')+'<span class="sp"></span><button class="btn xs" type="button" data-nav="todo">ToDoに戻る</button></div>'+infoBox('requests','<p>期限が6日以上先のもの・期限なしも含めた、未完了の指示です。タップすると全文が開きます。</p>'+roNoteText())+roNoteWarn()+requestBoxNotice()+'<div class="list">'+(list.map(todoRow).join('')||'<p class="empty">未完了の指示はありません</p>')+'</div></section>';
 }
 function todoRow(t,expanded=false){
   if(isReqTodo(t)&&expanded!==true)return compactRequestRow(t);
@@ -883,22 +919,27 @@ function calendarDriftList(){
  const cases=calendarDriftCases(),row=c=>'<li><button class="btn drift-case" type="button" data-drift="'+h(c.id)+'">'+h([c.id,c.property,c.room].filter(Boolean).join(" "))+'（HUB '+h(mdh(c.planDate))+'／カレンダー '+h(mdh(c.gcal.date))+'）</button></li>';
  return '<p>要確認：日付のずれ '+cases.length+'件。カレンダーに登録した日付との比較です。更新は案件の画面で行ってください。</p><ul>'+cases.slice(0,5).map(row).join('')+'</ul>'+(cases.length>5?'<details><summary>ほか'+(cases.length-5)+'件</summary><ul>'+cases.slice(5).map(row).join('')+'</ul></details>':'');
 }
-function homeSyncNotice(){
+function homeSyncLabels(){
   const r=ui.gsync,own=(r?.rows||[]).filter(x=>!((D().admin||D().viewListId)&&x.name==='社員の記録')),bad=own.filter(x=>x.ok!==true&&x.name!=='日付の変わった案件').length,drift=own.some(x=>x.name==='日付の変わった案件')?calendarDriftCases().length:0;
   const incomplete=!!r&&r.busy===false&&r.complete!==true,old=!!D().sheetId&&jstDay(D().lastSync)!==jstDay(new Date().toISOString());
   const pending=DB.todos.filter(t=>t.order&&t.done&&!t.synced).length,box=!!requestBoxNotice(),uncertain=caseSaveUncertain||ui.rSaveUncertain||!!(document.getElementById('manualTodoStorageNotice')&&!document.getElementById('manualTodoStorageNotice').hidden);
-  const labels=[drift?'日付のずれ '+drift+'件（要確認）':'',bad?'同期エラー '+bad+'件':'',incomplete?'同期未完了 1件':'',old?'今日未同期 1件':'',pending?'未送信の完了報告 '+pending+'件':'',box?'指示箱の注意 1件':'',uncertain?'保存未確認 1件':''].filter(Boolean);
+  return [drift?'日付のずれ '+drift+'件（要確認）':'',bad?'同期エラー '+bad+'件':'',incomplete?'同期未完了 1件':'',old?'今日未同期 1件':'',pending?'未送信の完了報告 '+pending+'件':'',box?'指示箱の注意 1件':'',uncertain?'保存未確認 1件':''].filter(Boolean);
+}
+function homeSyncNotice(){
+  const labels=homeSyncLabels();
   return labels.length?'<div class="tile alert" role="status"><span class="k">この端末の同期の注意</span><span class="s" style="color:var(--red)">'+labels.map(h).join('・')+'</span></div>':'';
 }
 function homeCorpTile(){
   const c=ui.corp,rows=(c?.data||[]).filter(x=>x.s&&scopeContext().canView(x.s)),t=todayS(),old=rows.filter(x=>x.ok&&(!x.s.lastSync||String(x.s.lastSync).slice(0,10)!==t)).length,bad=rows.filter(x=>!x.ok).length;
   const attention=!c?.data||old||bad||c?.err||c?.kept||rows.some(x=>x.receiptRead?.state==='invalid');
-  return '<button type="button" id="home-company" class="tile'+(attention?' alert':'')+'" data-nav="company" style="width:100%"><span class="k">会社の動き</span><span class="v">'+(c?.data?(scopeState().usable?'選択内の共有記録 '+scopeCompanyData().length+'人':'選択内の共有記録は未確認'):'社員の記録は未読込')+'</span><span class="s">'+(c?.data?'閲覧範囲全体：今日未同期 '+old+'人・読めなかった社員 '+bad+'人':'同期状況は未確認です')+'</span>'+
+  return '<button type="button" id="home-company" class="tile'+(attention?' alert':'')+'" data-nav="company" style="width:100%"><span class="k">会社の動き</span><span class="v">'+(c?.data?(scopeState().usable?'選択内の共有記録 '+scopeCompanyData().length+'人':'選択内の共有記録は未確認'):'社員の記録は未読込')+'</span><span class="s">'+(c?.data?'見られる社員全体：今日未同期 '+old+'人・読めなかった社員 '+bad+'人':'同期状況は未確認です')+'</span>'+
     (c?.err?'<span class="s">'+h(c.err)+'</span>':'')+(c?.kept?'<span class="s">'+keptNote()+'</span>':'')+(rows.some(x=>x.receiptRead?.state==='invalid')?'<span class="s">共有領収書の読取注意 '+rows.filter(x=>x.receiptRead?.state==='invalid').length+'人</span>':'')+'</button>';
 }
 function vCompany(){
   if(!D().admin&&!D().viewListId)return '<button class="back" data-nav="home">‹ ホームへ戻る</button><p>この端末には会社の動きの閲覧設定がありません。</p>';
-  return '<button type="button" class="back" data-nav="home">‹ ホームへ戻る</button>'+corpView();
+  /* v1.49.3 戻るボタンは見出しの行に置く（上の部分を短くする） */
+  const v=corpView(),k='<div class="sec-h"><h2>会社の動き</h2>';
+  return v.includes(k)?v.replace(k,'<div class="sec-h"><button type="button" class="back" data-nav="home">‹ ホームへ戻る</button>'+k.slice('<div class="sec-h">'.length)):'<button type="button" class="back" data-nav="home">‹ ホームへ戻る</button>'+v;
 }
 
 /* Shared display selection: no business DB or synchronization changes. */
@@ -980,16 +1021,26 @@ function scopeSharedReceiptGroups(method=''){
  return WorkHubSharedReceipts.project(sharedReceiptContext(),ui.corp?.data||[],{source:s.selection.person==='all'?'':s.selection.person,company:['all','none'].includes(s.selection.company)?'':s.selection.company}).filter(g=>g.source.s.sheetId!==D().sheetId&&s.context.canView(g.source.s)).map(g=>{const rows=g.rows.filter(r=>scopeCompanyMatch(r.company));return {...g,rows:method?rows.filter(r=>r.method===method):rows,summary:WorkHubSharedReceipts.summary(rows)};});
 }
 function scopeHomeReceipts(statuses){return scopeReceiptRows(DB.receipts).concat(scopeSharedReceiptGroups().filter(g=>['ready','cached'].includes(g.state)&&!g.previous).flatMap(g=>g.rows)).filter(r=>r.method==='立替'&&statuses.includes(r.status));}
+const infoBtn=(k,label)=>'<button type="button" class="ibtn" data-info="'+k+'" aria-expanded="'+!!(ui.info&&ui.info[k])+'" aria-label="'+(label||'説明')+'を開く" title="説明">ⓘ</button>';
+const infoBox=(k,html)=>ui.info&&ui.info[k]&&html?'<div class="infobox" role="note" data-info-box="'+k+'">'+html+'</div>':'';
+/* ホーム以外の同期：小さな1行。自分の端末の注意（同期エラー・今日未同期・未送信・保存未確認）は赤字で出したままにする */
+function syncMini(){
+  const r=ui.gsync,busy=!!r?.busy,t=r?.at||Date.parse(D().lastSync||"")||Date.parse(D().corpAt||"")||0,warn=homeSyncLabels();
+  const when=t?new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(t)):'未同期';
+  return '<button type="button" class="syncmini'+(warn.length?' warn':'')+'" data-act="gsync" aria-label="Googleとまとめて同期'+(warn.length?'（この端末の注意：'+h(warn.join('・'))+'）':'')+'" title="'+(warn.length?'この端末の注意：'+h(warn.join('・'))+'。詳しくはホームで':'Googleとまとめて同期')+'"'+(busy?' disabled':'')+'>'+(busy?'同期しています…':(warn.length?'⚠ ':'')+h(when)+' ↻')+'</button>';
+}
 function scopeHeader(){
  if(['new','detail','rform'].includes(ui.view))return '<p class="note">表示対象は保持しています。変更は一覧画面で行ってください。</p>';
- const s=scopeState(),meaning=ui.view==='rcpt'?'所有者':ui.view==='requests'?'宛先':ui.view==='todo'?'担当（リクエストは宛先）':'担当／宛先／所有者';
+ const s=scopeState(),meaning=ui.view==='rcpt'?'領収書を出した人':ui.view==='requests'?'リクエストのあて先':ui.view==='todo'?'担当（リクエストはあて先）':'担当（リクエストはあて先、領収書は出した人）';
  const overdue=scopeAvailableTodos().filter(t=>t.due&&t.due<todayS()).length;
  const all=scopeSourceCases(),urgent=all.filter(c=>c.type==='kinkyu'&&['new','site'].includes(c.stage)).length,undated=all.filter(c=>c.stage==='lost'&&!c.cancelledAt&&!c.lossDate).length;
  const missing=s.people.filter(p=>p.sheetId!==s.context.selfId&&!(ui.corp?.data||[]).some(x=>x.s?.sheetId===p.sheetId&&x.ok)).length;
- return '<div class="scope-bar">'+CPGViewScope.controls({...s.context,readState:s.state},s.selection)+'<p class="note">人＝'+meaning+'。</p>'+
- (s.missing.length?'<p class="note" role="status">選択内の読込未確認 '+s.missing.length+'人。確認できた分だけ表示しています。</p>':'')+
- ((overdue||urgent||undated||missing)?'<details class="scope-alert"><summary>閲覧範囲全体の要確認：'+[overdue?'期限切れToDo '+overdue+'件':'',urgent?'緊急 '+urgent+'件':'',undated?'失注日未入力 '+undated+'件':'',missing?'未読 '+missing+'人':''].filter(Boolean).join('／')+'</summary><p>選択外も含む注意です。読込未確認を0件とは判定しません。</p></details>':'')+
- (ui.view==='cal'?'<p class="banner">月・週・日も共通選択。仕事用の対応がない人は「未取得」です。</p>':'')+
+ const tag=[overdue?'期限切れToDo '+overdue+'件':'',urgent?'緊急 '+urgent+'件':'',undated?'失注日なし '+undated+'件':'',missing?'未読込 '+missing+'人':''].filter(Boolean);
+ const ctl=CPGViewScope.controls({...s.context,readState:s.state},s.selection).replace('>閲覧できる会社すべて<','>全社<').replace('>閲覧できる人すべて<','>全員<').replace('>自分（この端末の記録）<','>自分<');
+ return '<div class="scope-bar"><div class="scope-row">'+ctl+(ui.view==='home'?'':syncMini())+infoBtn('scope','表示の説明')+'</div>'+
+ infoBox('scope','<p>会社・人を押すと選べます。選んだ内容は、どのタブでも同じです。人は'+h(meaning)+'のことです。</p>'+(tag.length?'<p>赤い札は、選んでいない会社・人も含めた注意です。読み込めていない人の分は0件とは数えません。</p>':'')+(ui.view==='cal'?'<p>予定の月・週・日も、選んだ会社・人の予定を出します。出すのは、仕事用と決めたカレンダーの予定だけです。私用のカレンダーは出しません。仕事用のカレンダーが決まっていない人や、まだ読み込んでいない日は「未取得」と出ます（予定がないという意味ではありません）。予定を入れたら、その人が同期してください。今日のToDoも、選んだ会社・人の分を出します。日付を押すと、その日の予定とToDoが出ます。</p>':''))+
+ (s.missing.length?'<p class="note" role="status" style="margin:0">選んだ中に、まだ読み込めていない人が'+s.missing.length+'人います。読み込めた分だけ出しています。</p>':'')+
+ (tag.length&&ui.view!=='home'?'<div class="scope-row scope-notes"><button type="button" class="alerttag scope-alert" data-act="scopealert">⚠ '+h(tag.join('・'))+'</button></div>':'')+
  (ui.scopeSaveError?'<p role="alert">表示設定の保存を確認できません。再読み込みして確認してください。</p>':'')+'</div>';
 }
 
@@ -1003,15 +1054,16 @@ function vCases(){
   const order={new:0,site:1,quoted:2,hold:3,won:4,handed:5,working:5,built:6,billed:7,paid:8,lost:9};
   list.sort((a,b)=>ui.payOnly?lateDays(b)-lateDays(a)||(a.payDue||"").localeCompare(b.payDue||""):(b.type==="kinkyu"&&!ended(b)&&order[b.stage]<2)-(a.type==="kinkyu"&&!ended(a)&&order[a.stage]<2)||order[a.stage]-order[b.stage]||b.id.localeCompare(a.id));
   const won=DB.cases.filter(c=>c.stage==="won");
-  return '<section class="sec"><div class="sec-h"><h2>案件</h2><span class="note num">'+list.length+'件</span><span class="sp"></span>'+
-    '<button class="btn sm" type="button" data-act="csv"'+(won.length?'':' disabled')+'>引渡待ちをAccess用に書き出す（'+won.length+'）</button></div>'+
-    (ui.csv?csvPanel(won):'')+'<p class="note">Access書出し・経理への確認依頼はこの端末の全対象案件です（表示選択では変更しません）。</p>'+
-    roNote()+
-    '<input type="search" id="q" placeholder="物件・依頼元・番号で探す" value="'+h(ui.q)+'">'+
+  const nf=[ui.payOnly,ui.showEnded,ui.handoffOnly].filter(Boolean).length;
+  return '<section class="sec"><div class="sec-h"><h2>案件</h2><span class="note num">'+list.length+'件</span>'+infoBtn('cases','案件の説明')+'<span class="sp"></span>'+
+    '<button class="btn xs" type="button" data-act="csv"'+(won.length?'':' disabled')+' title="引渡待ちをAccess用に書き出す">Access書出し（'+won.length+'）</button></div>'+
+    (ui.csv?csvPanel(won):'')+infoBox('cases','<p>「Access書出し」は、受注して引渡しを待っている案件をAccess用に書き出します。書き出しと経理への入金確認の依頼は、上で選んだ会社・人に関係なく、この端末の案件すべてが対象です。</p>'+roNoteText())+
+    roNoteWarn()+
+    '<div class="row findrow"><input type="search" id="q" placeholder="物件・依頼元・番号で探す" value="'+h(ui.q)+'"><label class="f typesel"><span class="sr">依頼の種類</span><select id="c_type" aria-label="依頼の種類">'+[["all","種類：すべて"],...Object.entries(TYPES).map(([k,v])=>[k,v.label])].map(([k,l])=>'<option value="'+k+'"'+(ui.type===k?' selected':'')+'>'+h(l)+'</option>').join("")+'</select></label>'+
+    '<details class="filters"'+(nf||ui.filtersOpen?' open':'')+'><summary>絞り込み'+(nf?'（'+nf+'）':'')+'</summary><div class="filterbox note">'+
+    '<label class="row"><input type="checkbox" id="payOnly"'+(ui.payOnly?" checked":"")+'> 入金待ちだけ</label><label class="row"><input type="checkbox" id="showEnded"'+(ui.showEnded?" checked":"")+'> 失注・受注後取消・入金済も表示</label>'+
+    '<label class="row"><input type="checkbox" id="handoffOnly"'+(ui.handoffOnly?' checked':'')+'> Access引渡待ちだけ（受注済み・仕事番号待ち）</label></div></details></div>'+
     (noCo?'<p class="note" style="margin:0">会社が未設定の案件が '+noCo+'件あります。案件を開いて「会社」の <b>選ぶ</b> で CP・CPY・AT を選んでください。</p>':'')+
-    '<div class="seg" role="group" aria-label="依頼の種類">'+[["all","すべて"],...Object.entries(TYPES).map(([k,v])=>[k,v.label])].map(([k,l])=>'<button type="button" data-type="'+k+'" aria-pressed="'+(ui.type===k)+'">'+l+'</button>').join("")+'</div>'+
-    '<div class="row note"><label class="row"><input type="checkbox" id="payOnly"'+(ui.payOnly?" checked":"")+'> 入金待ちだけ</label><label class="row"><input type="checkbox" id="showEnded"'+(ui.showEnded?" checked":"")+'> 失注・受注後取消・入金済も表示</label></div>'+
-    '<label class="row note"><input type="checkbox" id="handoffOnly"'+(ui.handoffOnly?' checked':'')+'> Access引渡待ちだけ（受注済み・仕事番号待ち）</label>'+
     (ui.payOnly?acctPanel():'')+
     '<div class="list">'+(list.map(caseCard).join("")||'<div class="empty">該当する案件はありません</div>')+'</div></section>';
 }
@@ -1329,11 +1381,10 @@ function vTodo(){
   const requestToday=requestTodayS();
   const reqOver=reqs.filter(x=>x.due&&x.due<requestToday).length;
   const seg=(id,cur,opts)=>'<div class="seg" role="group">'+opts.map(([k,l])=>'<button type="button" data-'+id+'="'+h(k)+'" aria-pressed="'+(cur===k)+'">'+h(l)+'</button>').join("")+'</div>';
-  return '<section class="sec"><div class="sec-h"><h2>ToDo</h2><span class="note num">'+(reqs.length+list.length)+'件</span></div>'+
-  seg("tp",ui.tPeriod,[["today","今日まで"],["week","1週間以内"],["all","すべて"]])+
-  roNote()+requestBoxNotice()+
-  '<div class="reqbox"><div class="sec-h"><h3>タスクリクエスト</h3><span class="note num">'+reqs.length+'件'+(reqOver?'・期限切れ '+reqOver+'件':'')+'</span><span class="sp"></span><button class="btn sm request-list-link" type="button" data-nav="requests">指示一覧</button></div><div class="list">'+(reqs.map(t=>todoRow(t)).join('')||'<p class="note">期限が近い未完了の指示はありません</p>')+'</div></div>'+
-  '<p class="note" style="margin:0">案件のToDoは段階に合わせて自動で出ます。案件を進めると消えます。</p>'+
+  return '<section class="sec"><div class="sec-h"><h2>ToDo</h2><span class="note num">'+(reqs.length+list.length)+'件</span>'+infoBtn('todo','ToDoの説明')+seg("tp",ui.tPeriod,[["today","今日まで"],["week","1週間以内"],["all","すべて"]])+'</div>'+
+  infoBox('todo','<p>案件のToDoは、案件の段階に合わせて自動で出ます。案件を進めると消えます。</p><p>タスクリクエストは、期限切れと、期限の5日前から当日までのものをここに出します。先の期限・期限なしのものは「指示一覧」で見られます。</p>'+roNoteText())+
+  roNoteWarn()+requestBoxNotice()+
+  '<div class="reqbox"><div class="sec-h"><h3>タスクリクエスト</h3><span class="note num">'+reqs.length+'件'+(reqOver?'・期限切れ '+reqOver+'件':'')+'</span><span class="sp"></span><button class="btn xs request-list-link" type="button" data-nav="requests">指示一覧</button></div>'+(reqs.length?'<div class="list">'+reqs.map(t=>todoRow(t)).join('')+'</div>':'')+'</div>'+
   '<div class="list">'+(list.map(todoRow).join("")||'<div class="empty">この条件のToDoはありません</div>')+'</div></section>'+
   completedManualTodos()+cancelledManualTodos()+
   '<section class="panel"><h3>ToDoを手で追加</h3><form id="todoForm" class="form">'+
@@ -1766,14 +1817,14 @@ const calsLoadingNow=()=>!!(G.calsLoading||ui.gsync?.busy);
 function calendarScopeSettings(){
  const ctx=scopeContext(),cat=CPGViewScope.catalog(ctx),stored=CPGCalendarScope.load(localStorage,scopeIdentity());
  const opt=(v,t)=>'<option value="'+h(v)+'">'+h(t)+'</option>';
- return '<details class="panel" data-keep-open="calmap"><summary>仕事用カレンダーの対応設定（この端末）</summary><p class="note">現在のGoogle一覧から、仕事専用と確認したカレンダーだけ設定します。会社・人は正規社員を選び、私的予定を含むものは設定しないでください。共有権限やGoogle予定は変更しません。「数字」→「Googleカレンダー連携」の読込対象にも選び、設定後に本人が同期してください。対応設定だけでは読込対象を増やしません。</p>'+(calsLoadingNow()?'<p role="status">カレンダーの一覧を読み込み中です。終わってから選べます（入力した内容は残ります）。</p>':!G.cals?'<p>一覧未取得です。Googleとまとめて同期後に選べます。</p>':'<form id="calendarScopeForm"><label class="f">カレンダー<select id="cs_cal" required><option value="">選択してください</option>'+G.cals.filter(gReadable).map(c=>opt(c.id,c.name+' / '+c.id)).join('')+'</select></label><label class="f">用途<select id="cs_mode"><option value="person">人物を確認した仕事専用</option><option value="mixed">混在する仕事共有（元記録で確定できる予定だけ）</option></select></label><label class="f">会社（人物を確認した場合）<select id="cs_company"><option value="">選択してください</option>'+cat.companies.map(c=>opt(c,c)).join('')+opt('unknown','会社未特定（複数社等・推測しない）')+'</select></label><label class="f">人物（人物を確認した場合）<select id="cs_person"><option value="">選択してください</option>'+cat.people.map(p=>opt(p.sheetId,p.name+' / '+p.sheetId)).join('')+'</select></label><label class="f"><span><input type="checkbox" id="cs_work" required>私的予定を含まない仕事用で、会社・人物の対応を確認しました</span></label><button class="btn" type="submit">対応を確認して保存</button></form>')+'<p class="note">混在共有は、確実な元記録がない他社員の予定を分類できません。未設定・未識別は0件ではありません。</p>'+stored.rows.map((r,i)=>'<p class="note">'+h(r.id)+' → '+h(r.mode==='mixed'?'混在仕事共有':r.company+' / '+(cat.people.find(p=>p.sheetId===r.person)?.name||'人物未確認'))+' <button class="btn sm" type="button" data-calendar-map-remove="'+i+'">対応を外す</button></p>').join('')+(ui.calendarMapError?'<p role="alert">'+h(ui.calendarMapError)+'</p>':'')+'</details>';
+ return '<details class="panel" data-keep-open="calmap"><summary>仕事用カレンダーの対応設定（この端末）</summary><p class="note">現在のGoogle一覧から、仕事専用と確認したカレンダーだけ設定します。会社・人は正規社員を選び、私的予定を含むものは設定しないでください。共有権限やGoogle予定は変更しません。「数字」→「Googleカレンダー連携」の読込対象にも選び、設定後に本人が同期してください。対応設定だけでは読込対象を増やしません。</p>'+(calsLoadingNow()?'<p role="status">カレンダーの一覧を読み込み中です。終わってから選べます（入力した内容は残ります）。</p>':!G.cals?'<p>一覧未取得です。Googleとまとめて同期後に選べます。</p>':'<form id="calendarScopeForm"><label class="f">カレンダー<select id="cs_cal" required><option value="">選択してください</option>'+G.cals.filter(gReadable).map(c=>opt(c.id,c.name+' / '+c.id)).join('')+'</select></label><label class="f">用途<select id="cs_mode"><option value="person">人物を確認した仕事専用</option><option value="mixed">複数の人が使う仕事用（HUBの案件と結び付いた予定だけ）</option></select></label><label class="f">会社（人物を確認した場合）<select id="cs_company"><option value="">選択してください</option>'+cat.companies.map(c=>opt(c,c)).join('')+opt('unknown','会社未特定（複数社等・推測しない）')+'</select></label><label class="f">人物（人物を確認した場合）<select id="cs_person"><option value="">選択してください</option>'+cat.people.map(p=>opt(p.sheetId,p.name+' / '+p.sheetId)).join('')+'</select></label><label class="f"><span><input type="checkbox" id="cs_work" required>私的予定を含まない仕事用で、会社・人物の対応を確認しました</span></label><button class="btn" type="submit">対応を確認して保存</button></form>')+'<p class="note">複数の人が使うカレンダーの予定は、HUBに登録した案件と結び付いたものだけ、誰の予定か分かります。設定していない人や、誰の予定か分からない予定は、0件という意味ではありません。</p>'+stored.rows.map((r,i)=>'<p class="note">'+h(r.id)+' → '+h(r.mode==='mixed'?'複数の人が使う仕事用':r.company+' / '+(cat.people.find(p=>p.sheetId===r.person)?.name||'人物未確認'))+' <button class="btn sm" type="button" data-calendar-map-remove="'+i+'">対応を外す</button></p>').join('')+(ui.calendarMapError?'<p role="alert">'+h(ui.calendarMapError)+'</p>':'')+'</details>';
 }
 function calendarScopeSave(){
  const id=val('cs_cal'),mode=val('cs_mode'),company=val('cs_company'),person=val('cs_person'),cat=CPGViewScope.catalog(scopeContext());
  if(!G.cals?.some(c=>c.id===id&&gReadable(c))||!document.getElementById('cs_work')?.checked||!['person','mixed'].includes(mode)||mode==='person'&&!cat.people.some(p=>p.sheetId===person&&(company==='unknown'||p.companies.includes(company)&&cat.companies.includes(company)))){ui.keepDirty.add('calendarScopeForm');toast('仕事用・会社・人物の対応を確認してください');return;}
  const loaded=CPGCalendarScope.load(localStorage,scopeIdentity());if(loaded.state==='invalid'){ui.keepDirty.add('calendarScopeForm');ui.calendarMapError='保存済み設定を確認できないため上書きしません。';render();return;}
  const row={id,work:true,mode,...(mode==='person'?{company,person}:{})};
- if(!confirm('このブラウザの表示設定だけを変更します。\n'+id+'\n'+(mode==='mixed'?'混在する仕事共有':company+' / '+cat.people.find(p=>p.sheetId===person).name+' / '+person)+'\n私的予定を含まないことと、既存設定があれば置き換えることを確認しましたか？')){ui.keepDirty.add('calendarScopeForm');return;}
+ if(!confirm('このブラウザの表示設定だけを変更します。\n'+id+'\n'+(mode==='mixed'?'複数の人が使う仕事用':company+' / '+cat.people.find(p=>p.sheetId===person).name+' / '+person)+'\n私的予定を含まないことと、既存設定があれば置き換えることを確認しましたか？')){ui.keepDirty.add('calendarScopeForm');return;}
  const rows=loaded.rows.filter(r=>r.id!==id).concat(row);
  ui.calendarMapError=CPGCalendarScope.save(localStorage,scopeIdentity(),rows)?'':'設定を保存・読み戻し確認できませんでした。成功扱いにせず再読込して確認してください。';if(ui.calendarMapError)ui.keepDirty.add('calendarScopeForm');render();if(!ui.calendarMapError)toast('この端末の仕事用対応を保存しました');
 }
@@ -1788,16 +1839,20 @@ function vCal(){
   const projected=CPGCalendarScope.project({g:{...raw,data:gSafeData(raw.data)},rows:ui.calendarMapError?[]:mapping.rows,model,cases:scopeSourceCases(),resolvePerson:scopePerson,readable:gConcreteReadable,from:rFrom,to:rTo});
   const g={...raw,data:raw.data?{...raw.data,events:projected.events,sources:(raw.data.sources||[]).filter(s=>projected.approved.some(r=>r.id===s.id)),calendars:[]}:null};
   const gby=g.data?gcalByDay(g.data):{},gday=s=>gcalCovered(g,s)?gby[s]||[]:[];
-  const isUnknown=s=>projected.unknown(s),dayNotice=s=>({unfetched:'未取得（予定の有無は未確認）',additional:'追加予定未確認（混在共有を未取得）',privacy:'非公開区分未確認（再取得が必要）',unidentified:'未識別あり（選択対象の有無は未確認）'})[projected.dayState(s)]||'';
+  const isUnknown=s=>projected.unknown(s),dayNotice=s=>({unfetched:'未取得（予定があるか分かりません）',additional:'未取得あり（共有カレンダーを読めていません）',privacy:'同期し直してください（中身を出していない予定あり）',unidentified:'誰の予定か分からない予定あり'})[projected.dayState(s)]||'';
   const unknown=s=>dayNotice(s)?'<span class="note '+(projected.dayState(s)==='unfetched'?'cal-unfetched':'cal-unidentified')+'" role="status">'+dayNotice(s)+'</span>':'';
   const statuses=projected.status(rFrom), pending=statuses.map(p=>!p.ready?p:projected.status(rTo).find(q=>q.id===p.id)||p).filter(p=>!p.ready);
   const mixedMissingCount=new Set([...projected.mixedMissing(rFrom),...projected.mixedMissing(rTo)].map(r=>r.id)).size;
-  const gst=gSyncPanel()+'<div class="panel gcst calendar-scope-status" role="status"><b>選択した会社・人の仕事予定</b><p>'+(!model.usable?'選択対象を確認できません。':!statuses.length?'対象の予定は未取得です。':pending.length?'未取得 '+pending.length+'人：'+pending.map(p=>h(p.name)+'（'+h(p.reason)+'）').join('、'):projected.privacyUnconfirmed.length?'取得元は保存済み・非公開区分は未確認':'人物別カレンダーの要求範囲は取得済み（混在共有は別確認）')+'</p>'+(raw.state==='error'?'<p>Google予定を読めませんでした。未取得として表示します。</p>':'')+(pending.length?'<p>予定は一部未取得です。</p>':'')+(raw.state==='kept'?'<p>前回同期の保存済み予定です。最新にするにはGoogleとまとめて同期を押してください。</p>':'')+(mixedMissingCount?'<p>混在共有 '+mixedMissingCount+'件は未取得。追加予定の有無は未確認です。</p>':'')+(projected.privacyUnconfirmed.length?'<p>非公開区分未確認 '+projected.privacyUnconfirmed.length+'件。旧キャッシュ原本を残し、内容は表示しません。本人が同期して再取得してください。</p>':'')+'<p>会社・担当未識別 '+projected.unidentified.length+'件（確認済み仕事用のみ・選択結果とは別。内容は表示しません）</p>'+(mapping.state==='invalid'?'<p>カレンダー対応設定を読み戻せません。設定を確認してください。</p>':'')+'</div>'+calendarScopeSettings();
+  /* v1.49.3 予定の読み込み状況：困ったことがあるときだけ、短い言葉で出す。設定の欄は予定の下へ */
+  const calProblems=[!model.usable?'選んだ会社・人を確認できません。':'',model.usable&&!statuses.length?'選んだ人の予定は未取得です（まだ読み込んでいません）。':'',pending.length?'未取得 '+pending.length+'人：'+pending.map(p=>h(p.name)).join('、')+'。予定があるかは分かりません。':'',
+    raw.state==='error'?'Googleの予定を読めませんでした。未取得として出しています。':'',raw.state==='kept'?'前回の同期のときの予定です。':'',mixedMissingCount?'共有カレンダー '+mixedMissingCount+'件を読めていません（未取得）。':'',
+    projected.privacyUnconfirmed.length?'同期し直してください：中身を出していない予定が '+projected.privacyUnconfirmed.length+'件あります。':'',projected.unidentified.length?'誰の予定か分からない予定が '+projected.unidentified.length+'件あります（中身は出しません）。':'',mapping.state==='invalid'?'仕事用カレンダーの設定を読み戻せません。設定を確かめてください。':''].filter(Boolean);
+  const gst=calProblems.length?'<div class="gcst calendar-scope-status" role="status">'+calProblems.map(x=>'<p>'+x+'</p>').join('')+'</div>':'';
   const legend="";
-  const note='<p class="note">確認済み仕事用カレンダーだけを共通の会社・人選択で表示します。未設定・未取得は予定なしではありません。仕事用への入力後は本人が同期してください。混在共有で元記録との対応を確認できない予定は未識別です。私的カレンダーは表示しません。今日のToDoも同じ選択対象です。</p>';
-  const views='<div class="seg cv" role="group" aria-label="表示の切り替え">'+[["month","月"],["week","週"],["day","日"]].map(([k,l])=>'<button type="button" data-cv="'+k+'" aria-pressed="'+(ui.calView===k)+'">'+l+'</button>').join("")+'</div>';
+  const note=calendarScopeSettings();
+  const views='<div class="seg cv calviews" role="group" aria-label="表示の切り替え">'+[["month","月"],["week","週"],["day","日"]].map(([k,l])=>'<button type="button" data-cv="'+k+'" aria-pressed="'+(ui.calView===k)+'">'+l+'</button>').join("")+'</div>';
   const nav=(step,title,todayLabel,prevLabel,nextLabel)=>'<div class="calnav"><button class="btn sm" type="button" data-shift="'+(-step)+'" aria-label="'+prevLabel+'">‹</button><h2 class="num">'+title+'</h2>'+
-    '<button class="btn sm" type="button" data-shift="today">'+todayLabel+'</button><button class="btn sm" type="button" data-shift="'+step+'" aria-label="'+nextLabel+'">›</button></div>';
+    '<button class="btn sm" type="button" data-shift="today">'+todayLabel+'</button><button class="btn sm" type="button" data-shift="'+step+'" aria-label="'+nextLabel+'">›</button>'+views+'</div>';
   if(ui.calView==="week"){
     const sd=parseYmd(ui.calDay), from=addDays(ui.calDay,-sd.getDay()), to=addDays(from,6);
     const F=parseYmd(from), T=parseYmd(to);
@@ -1811,17 +1866,17 @@ function vCal(){
       rows+='<div class="wkrow '+kind+(s===ui.calDay?" sel":"")+'"><button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+mdw(s)+(hol?' '+hol:'')+'を日表示で開く"'+(s===t?' aria-current="date"':'')+'><span class="dn">'+d.getDate()+'</span><span class="dw">'+WD[d.getDay()]+'</span></button>'+
         '<div class="wki">'+(hol?'<span class="hol-name">'+hol+'</span>':'')+(items||(!isUnknown(s)?'<span class="wknone">予定なし</span>':''))+unknown(s)+'</div></div>';
     }
-    return '<section class="sec">'+gst+views+
+    return '<section class="sec">'+
       nav(7,title,"今週","前の週","次の週")+
-      legend+'<div class="wk">'+rows+'</div>'+note+'</section>';
+      legend+'<div class="wk">'+rows+'</div>'+gst+note+'</section>';
   }
   if(ui.calView==="day"){
     const sel=day(ui.calDay);
     const gRows=gday(ui.calDay).map(x=>'<div class="card gccard"><div class="row"><span class="ev '+gcalColor(x.cal)+'" style="font-size:12px;padding:1px 6px">'+h(gcalLabel(x.cal))+'</span><span class="note num">'+h(x.time)+'</span></div>'+
       '<div class="ttl">'+h(x.title)+'</div>'+(x.loc?'<div class="row note"><span style="min-width:0;overflow-wrap:anywhere">'+h(x.loc)+'</span><a class="btn sm" style="display:inline-flex;align-items:center;text-decoration:none" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(x.loc)+'">地図</a></div>':'')+'</div>').join("");
-    return '<section class="sec">'+gst+views+
+    return '<section class="sec">'+
       nav(1,'<span class="dtitle '+dayKind(ui.calDay)+'">'+mdw(ui.calDay)+'</span>'+(holidayName(ui.calDay)?' <span class="hol-name">'+holidayName(ui.calDay)+'</span>':''),"今日","前の日","次の日")+
-      '<div class="list">'+unknown(ui.calDay)+gRows+sel.td.map(x=>'<button type="button" class="card" data-nav="todo">'+todoCardHeading(x,'<span class="chip">ToDo</span>')+'<span class="note">ToDo画面で確認する</span></button>').join("")+((gRows||sel.td.length||isUnknown(ui.calDay))?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div>'+note+'</section>';
+      '<div class="list">'+unknown(ui.calDay)+gRows+sel.td.map(x=>'<button type="button" class="card" data-nav="todo">'+todoCardHeading(x,'<span class="chip">ToDo</span>')+'<span class="note">ToDo画面で確認する</span></button>').join("")+((gRows||sel.td.length||isUnknown(ui.calDay))?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div>'+gst+note+'</section>';
   }
   const [y,m]=ui.calMonth.split("-").map(Number);
   const first=new Date(y,m-1,1), start=new Date(y,m-1,1-first.getDay());
@@ -1833,12 +1888,12 @@ function vCal(){
     const shown=all.slice(0,2).map(([cl,l])=>'<span class="'+cl+'">'+h(l)+'</span>').join("");
     const more=all.length>2?'<span class="ev td">ほか'+(all.length-2)+'件</span>':'';
     const tdl=b.td.length?'<span class="ev td'+(b.td.some(x=>x.due<t)?" over":"")+'">ToDo '+b.td.length+'</span>':'';
-    cells+='<button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+(dt.getMonth()+1)+'月'+dt.getDate()+'日'+(hol?' '+hol:'')+'を日表示で開く"><span class="n">'+dt.getDate()+'</span>'+(hol?'<span class="hn">'+hol+'</span>':'')+shown+more+tdl+(isUnknown(s)?'<span class="ev '+(projected.dayState(s)==='unfetched'?'cal-unfetched':'cal-unidentified')+'">'+({unfetched:'未取得',additional:'追加予定未確認',privacy:'区分未確認',unidentified:'未識別あり'})[projected.dayState(s)]+'</span>':'')+'</button>';
+    cells+='<button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+(dt.getMonth()+1)+'月'+dt.getDate()+'日'+(hol?' '+hol:'')+'を日表示で開く"><span class="n">'+dt.getDate()+'</span>'+(hol?'<span class="hn">'+hol+'</span>':'')+shown+more+tdl+(isUnknown(s)?'<span class="ev '+(projected.dayState(s)==='unfetched'?'cal-unfetched':'cal-unidentified')+'">'+({unfetched:'未取得',additional:'一部未取得',privacy:'要同期',unidentified:'持ち主不明あり'})[projected.dayState(s)]+'</span>':'')+'</button>';
   }
-  return '<section class="sec">'+gst+views+'<div class="calnav"><button class="btn sm" type="button" data-mon="-1" aria-label="前の月">‹</button><h2 class="num">'+y+'年'+m+'月</h2><button class="btn sm" type="button" data-mon="0">今月</button><button class="btn sm" type="button" data-mon="1" aria-label="次の月">›</button></div>'+
+  return '<section class="sec">'+'<div class="calnav"><button class="btn sm" type="button" data-mon="-1" aria-label="前の月">‹</button><h2 class="num">'+y+'年'+m+'月</h2><button class="btn sm" type="button" data-mon="0">今月</button><button class="btn sm" type="button" data-mon="1" aria-label="次の月">›</button>'+views+'</div>'+
   legend+
   '<div class="cal">'+["日","月","火","水","木","金","土"].map((w,i)=>'<div class="wd'+(i===0?" sun":i===6?" sat":"")+'">'+w+'</div>').join("")+cells+'</div>'+
-  '<p class="note" style="margin:0">日付を押すと、その日の予定とToDoを表示します。</p>'+note+'</section>';
+  gst+note+'</section>';
 }
 function vGantt(){
  if(!scopeState().usable)return scopeUnconfirmed();
@@ -1862,11 +1917,11 @@ function vGantt(){
     if(td&&td.due){const dd=diffDays(td.due,from);if(dd>=0&&dd<DAYS)bars+='<span class="gmark'+(td.due<t?" over":"")+'" style="left:'+(x(td.due)*W+W/2)+'px" title="'+h(td.title)+' '+md(td.due)+'"></span>'}
     return '<div class="grow"><button type="button" class="glab" data-open="'+h(c.id)+'"><b>'+h(c.property)+' '+h(c.room)+'</b><span class="chip t-'+c.type+'" style="font-size:10px">'+TYPES[c.type].label+'</span>'+(c.ro?personBadge(c.tantou,true):'')+'</button><div class="gtrack">'+todayLine+bars+'</div></div>';
   }).join("");
-  return '<section class="sec"><div class="sec-h"><h2>ガント</h2><span class="note num">動いている案件 '+list.length+'件 ・ 2週間前〜2週間後</span></div>'+
-  roNote()+
-  '<div class="legend"><span><i style="background:var(--accent)"></i>受付〜現地確認</span><span><i style="background:var(--amber)"></i>見積作成</span><span><i style="background:var(--muted);opacity:.45"></i>返事待ち</span><span><i style="background:var(--amber-soft);border:1px dashed var(--amber)"></i>保留</span><span><i style="background:var(--green)"></i>受注・引渡待ち</span><span>◆ 次のToDoの期限（赤は超過）</span><span>｜ 立会・調査の予定日</span></div>'+
+  return '<section class="sec"><div class="sec-h"><h2>ガント</h2><span class="note num">動いている案件 '+list.length+'件 ・ 2週間前〜2週間後</span>'+infoBtn('gantt','ガントの説明')+'</div>'+
+  infoBox('gantt','<p>横にスクロールできます。案件名を押すと詳細が開きます。2週間より前に受付した案件は、左端から出します。</p>'+roNoteText())+roNoteWarn()+
   (list.length?'<div class="gwrap" style="--w:'+W+'px;--tw:'+(DAYS*W)+'px"><div class="grow ghead"><div class="glab">案件</div><div class="gtrack">'+head+'</div></div>'+rows+'</div>':'<div class="empty">動いている案件はありません</div>')+
-  '<p class="note" style="margin:0">横にスクロールできます。案件名を押すと詳細を開きます。2週間より前に受付した案件は左端から表示します。</p></section>';
+  '<div class="legend"><span><i style="background:var(--accent)"></i>受付〜現地確認</span><span><i style="background:var(--amber)"></i>見積作成</span><span><i style="background:var(--muted);opacity:.45"></i>返事待ち</span><span><i style="background:var(--amber-soft);border:1px dashed var(--amber)"></i>保留</span><span><i style="background:var(--green)"></i>受注・引渡待ち</span><span>◆ 次のToDoの期限（赤は超過）</span><span>｜ 立会・調査の予定日</span></div>'+
+  '</section>';
 }
 
 /* 数字の画面の案件（v1.46.5）：社長・見る人の端末では、読み込んだ社員の記録（会社の動きの絞り込みに関係なく全員分）も入れる。
@@ -1892,20 +1947,25 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.49.2";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.49.3";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
 const corpCoNow=()=>statsGmCo()||ui.corpCo||"all";
+function statsReadText(){const c=ui.corp;if(!D().admin&&!D().viewListId||!(c&&Array.isArray(c.data)))return "";return '<p>社員の記録（'+corpAtText()+' 読み込み'+(c.kept?'・前回の内容':'')+'）を含めた'+(statsGmCo()?h(statsGmCo())+'の':'会社全体の')+'数字です。</p>';}
 function statsNote(){
   if(!D().admin&&!D().viewListId)return "";
   const c=ui.corp;
-  if(c&&Array.isArray(c.data))return '<p class="note" style="margin:0">社員の記録（'+corpAtText()+' 読み込み'+(c.kept?'・前回の内容':'')+'）を含めた'+(statsGmCo()?h(statsGmCo())+'の':'会社全体の')+'数字です。'+(c.kept?'最新にするには「Googleとまとめて同期」を押してください。':'')+'</p>'+(c.err?'<p class="note" style="margin:0;color:var(--red)">'+h(c.err)+'（数字は前回読み込んだ内容です）</p>':'');
+  if(c&&Array.isArray(c.data))return c.err?'<p class="note" style="margin:0;color:var(--red)">'+h(c.err)+'（数字は前回読み込んだ内容です）</p>':"";
   return '<div class="banner" role="status"><b>社員の記録はまだ読み込んでいません。</b>下の数字は、この端末で入力した案件だけです（0件でも、社員の案件が無いとは限りません）。「Googleとまとめて同期」を押すと、社員の分も入ります。'+(c&&c.err?'<div style="color:var(--red)">'+h(c.err)+'</div>':'')+'</div>';
 }
 const statsMonth=()=>/^\d{4}-(0[1-9]|1[0-2])$/.test(ui.statsMonth||'')?ui.statsMonth:requestTodayS().slice(0,7);
 const statsHasDate=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&Number.isFinite(Date.parse(s+'T00:00:00Z'))&&new Date(s+'T00:00:00Z').toISOString().slice(0,10)===s;
-function statsPeriodControls(){const m=statsMonth(),all=ui.statsPeriod==='all';return '<section class="sec" id="stats-period"><div class="seg" role="group" aria-label="集計期間"><button type="button" data-stats-mode="month" aria-pressed="'+!all+'">月別</button><button type="button" data-stats-mode="all" aria-pressed="'+all+'">全期間</button></div>'+(!all?'<div class="row"><button class="btn" type="button" data-stats-step="-1">前月</button><label class="f">集計年月<input id="stats-month" type="month" min="0001-01" max="9999-12" value="'+h(m)+'"></label><button class="btn" type="button" data-stats-step="1">翌月</button></div>':'')+'<p class="note">見積提出日・受注日・失注日で集計します。日付がない実績は含めません。未入金は現在残高で、期間の対象外です。</p></section>';}
+/* v1.49.3 月の選択は「‹ 前月｜2026年11月｜翌月 ›」の1行。真ん中を押すと月を選べる（端末の月の選択画面） */
+function statsPeriodControls(){const m=statsMonth(),all=ui.statsPeriod==='all',ml=Number(m.slice(0,4))+'年'+Number(m.slice(5))+'月';return '<div id="stats-period">'+
+ (!all?'<div class="monthbar"><button class="btn" type="button" data-stats-step="-1" aria-label="前月">‹ 前月</button><label class="monthpick"><span class="mlabel num" aria-hidden="true">'+h(ml)+'</span><input id="stats-month" type="month" min="0001-01" max="9999-12" value="'+h(m)+'" aria-label="集計年月（押すと月を選べます）"></label><button class="btn" type="button" data-stats-step="1" aria-label="翌月">翌月 ›</button></div>':'')+
+ infoBox('stats','<p>見積は見積提出日、受注は受注日、失注は失注日の月で数えます。日付が入っていない実績は数えません。未入金は今の残高で、選んだ月とは関係ありません。</p><p>失注にした案件は、受注日が残っていても受注には数えません。受注後に取り消した案件は、受注の実績として残します。失注日が入っていない案件の注意は、月に関係なく出します。</p>'+statsReadText()+'<p>下の数字は、上で選んだ会社・人の分です。経理への確認の操作は、選んだ会社・人に関係なく、この端末の案件すべてが対象です。</p>')+'</div>';}
+const statsModeSeg=()=>{const all=ui.statsPeriod==='all';return '<span class="hgrp"><div class="seg" role="group" aria-label="集計期間"><button type="button" data-stats-mode="month" aria-pressed="'+!all+'">月別</button><button type="button" data-stats-mode="all" aria-pressed="'+all+'">全期間</button></div>'+infoBtn('stats','数字の説明')+'</span>';};
 function vStats(){
   const mk=statsMonth(),periodLabel=ui.statsPeriod==='all'?'全期間':Number(mk.slice(0,4))+'年'+Number(mk.slice(5))+'月';
   const inM=s=>statsHasDate(s)&&(ui.statsPeriod==='all'||s.slice(0,7)===mk);
@@ -1931,23 +1991,23 @@ function vStats(){
   const group=key=>{const m=new Map();for(const c of un){const k=key(c);const g=m.get(k)||{n:0,sum:0,late:0};g.n++;g.sum+=remainOf(c);g.late=Math.max(g.late,lateDays(c));m.set(k,g)}return [...m.entries()].sort((a,b)=>b[1].late-a[1].late||b[1].sum-a[1].sum)};
   const row=([k,g])=>'<tr><td>'+h(k)+'</td><td class="num">'+g.n+'件</td><td class="num">'+yen(g.sum)+'</td><td class="num"'+(g.late?' style="color:var(--red);font-weight:700"':'')+'>'+(g.late?g.late+'日':'—')+'</td></tr>';
   const tbl=(head,rows)=>'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>'+head+'</th><th>件数</th><th>未入金</th><th>最長の遅れ</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
-  const unpaidSec='<section class="sec" id="stats-unpaid"><div class="sec-h"><h2>未入金</h2><span class="note num">'+un.length+'件 '+yen(un.reduce((s,c)=>s+remainOf(c),0))+'</span></div>'+
-    '<p class="note">現在残高（選択期間の対象外）</p>'+
-    (un.length?'<div class="panel"><h3>担当者別</h3>'+tbl("担当",group(tl).map(row).join(""))+'</div>'+(acctList().length?'<p class="note">以下の経理確認操作は、この端末の全対象案件です（共通選択の対象外）。</p>'+acctPanel():'')+
+  const unpaidSec='<section class="sec" id="stats-unpaid"><div class="sec-h"><h2>未入金</h2><span class="note num">'+un.length+'件 '+yen(un.reduce((s,c)=>s+remainOf(c),0))+'</span><span class="note">現在残高</span></div>'+
+    (un.length?'<div class="panel"><h3>担当者別</h3>'+tbl("担当",group(tl).map(row).join(""))+'</div>'+(acctList().length?acctPanel():'')+
       '<div class="panel"><h3>物件別</h3>'+tbl("物件",group(c=>c.property||"（物件名なし）").map(row).join(""))+'<p class="note" style="margin:0">遅れの長い順です。案件一覧の「入金待ちだけ」でも確認できます。</p></div>'
       :'<div class="empty">未入金の案件はありません</div>')+'</section>';
   return (hasExamples()?'<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>':'')+
-  statsPeriodControls()+(scopeState().usable?'<section class="sec">'+statsNote()+'<p class="note">上の読み込み説明は閲覧範囲全体です。以下の数字は共通選択で絞った対象だけです。</p>'+coSegStats+'</section>'+unpaidSec+
-  '<section class="sec"><p class="note stats-loss-note">失注にした案件は、受注日が残っていても受注には数えません。受注後取消は従来どおり受注実績を保持します。失注は選択期間の失注日がある案件だけを数えます。失注日未入力の注意は期間に関係なく表示します。</p><p class="banner stats-undated">失注日が未入力の案件 '+undatedLost.length+'件（案件を開いて日付を入れてください）</p><div class="sec-h"><h2>'+periodLabel+'の見積と受注</h2></div>'+
+  (scopeState().usable?(statsNote()?'<section class="sec">'+statsNote()+'</section>':'')+
+  '<section class="sec" id="stats-won">'+statsPeriodControls()+(undatedLost.length?'<p class="banner stats-undated">失注日が未入力の案件 '+undatedLost.length+'件（案件を開いて日付を入れてください）</p>':'')+'<div class="sec-h"><h2>'+periodLabel+'の見積と受注</h2>'+statsModeSeg()+'</div>'+
   '<div class="panel"><div class="row" style="align-items:flex-end;gap:18px"><div><div class="note">見積決定率（受注 ÷ 結論が出た件数）</div><div class="big">'+(rate==null?"—":rate+"%")+'</div></div>'+
   '<div class="note num">受注 '+won.length+'件 ／ 失注 '+lost.length+'件</div></div>'+
   '<div class="sum"><div><div class="k">見積提出</div><div class="v">'+sent.length+'件</div></div><div><div class="k">受注</div><div class="v">'+won.length+'件</div></div><div><div class="k">受注額（見積額）</div><div class="v">'+yen(wonAmt)+'</div></div></div></div></section>'+
+  unpaidSec+
   '<section class="sec"><div class="sec-h"><h2>'+periodLabel+'の担当別</h2></div><div class="panel">'+byTanTbl+'</div></section>'+
   '<section class="sec"><div class="sec-h"><h2>失注の理由</h2></div><div class="panel">'+
     reasons.map(([r,n])=>'<div class="brk"><span>'+r+'</span><span class="bar"><i style="width:'+(n/maxR*100)+'%"></i></span><span class="num">'+n+'件</span></div>').join("")+'</div></section>'+
   '<section class="sec"><div class="sec-h"><h2>依頼の種類別</h2></div><div class="panel"><div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>種類</th><th>見積提出</th><th>受注</th><th>失注</th></tr></thead><tbody>'+
     byType.map(([l,n,w,x])=>'<tr><td>'+l+'</td><td class="num">'+n+'件</td><td class="num">'+w+'件</td><td class="num">'+x+'件</td></tr>').join("")+'</tbody></table></div></div></section>'+
-  "":scopeUnconfirmed())+
+  "":'<section class="sec"><div class="sec-h"><h2>数字</h2>'+statsModeSeg()+'</div>'+statsPeriodControls()+'</section>'+scopeUnconfirmed())+
   foldSec("todoDays","自動ToDoの期限設定（目安）",'<form id="setForm" class="panel">'+
     '<p class="note" style="margin:0">自動ToDoの期限を決める日数です。土日祝も含みます。この端末だけの設定で、保存すると既存案件の該当する自動ToDoにも反映されます。手入力ToDoやリクエストの期限は変わりません。</p>'+
     '<div class="form">'+
@@ -1962,11 +2022,11 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.49.2" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.49.2" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.49.3" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.49.3" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
-  if(!G.cals)return F('<div class="panel">'+gSyncPanel()+'<p class="note" style="margin:0">「Googleとまとめて同期」でログインすると、表示するカレンダーと登録先を選べます。ログインはアプリを開くたびに必要です（PAPA HUBと同じ）。</p></div>');
+  if(!G.cals)return F('<div class="panel"><div class="row">'+syncMini()+'</div><p class="note" style="margin:0">この「↻」（ホームの「Googleとまとめて同期」と同じ）でログインすると、表示するカレンダーと登録先を選べます。ログインはアプリを開くたびに必要です（PAPA HUBと同じ）。</p></div>');
   const show=new Set(gShowIds()), w=gWriteCal();
   if(calsLoadingNow())return F('<div class="panel"><p class="note" role="status" style="margin:0">カレンダーの一覧を読み込み中です。終わってから選べます（入力した内容は残ります）。</p></div>');
   return F('<form id="gsetForm" class="panel">'+
@@ -2150,7 +2210,7 @@ function rRow(r,check,ret){
     (ret&&r.status==="提出済"?'<button class="btn sm danger" type="button" data-rreturn="'+r.id+'">差戻し</button>':'')+'</div>';
 }
 function receiptScopeHeader(){
-  return '<div class="seg cv" role="group" aria-label="領収書の所有者"><button type="button" data-rscope="own" aria-pressed="'+(ui.rScope!=="shared")+'">自分の領収書</button><button type="button" data-rscope="shared" aria-pressed="'+(ui.rScope==="shared")+'">社員の共有領収書</button></div>';
+  return '<div class="seg cv" role="group" aria-label="領収書の出した人"><button type="button" data-rscope="own" aria-pressed="'+(ui.rScope!=="shared")+'">自分の領収書</button><button type="button" data-rscope="shared" aria-pressed="'+(ui.rScope==="shared")+'">社員の共有領収書</button></div>';
 }
 function companyReceiptSummary(){
   if(!scopeState().usable)return '';
@@ -2160,7 +2220,7 @@ function companyReceiptSummary(){
   const ok=c.data.filter(x=>x.ok);
     const rcSum=(x,co,st)=>x.rc.filter(r=>r["会社"]===co&&r["支払い方法"]!=="法人カード"&&(Array.isArray(st)?st.includes(r["状態"]):r["状態"]===st)).reduce((s,r)=>s+(Number(r["金額"])||0),0);
     const rcRows=ok.flatMap(x=>COMPANIES.filter(k=>co==="all"||k===co).map(co=>[x.s.name,co,rcSum(x,co,["未提出","差戻し"]),rcSum(x,co,"提出済")])).filter(r=>r[2]||r[3]);
-  return '<div class="panel"><h3>立替</h3><p class="note">所有者は上の共通の「人」で選びます。</p><p class="note">下の集計は立替のみです。法人カード・原本は共有領収書で確認できます。</p>'+(rcRows.length?'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>社員</th><th>会社</th><th>未提出</th><th>提出済・未精算</th></tr></thead><tbody>'+
+  return '<div class="panel"><div class="sec-h"><h3>立替</h3>'+infoBtn('rcsum','立替の集計の説明')+'</div>'+infoBox('rcsum','<p>上で選んだ「人」が出した領収書の集計です。ここは立替だけです。法人カードと領収書の原本は「社員の共有領収書」で見られます。</p>')+(rcRows.length?'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>社員</th><th>会社</th><th>未提出</th><th>提出済・未精算</th></tr></thead><tbody>'+
         rcRows.map(r=>'<tr><td>'+h(r[0])+'</td><td>'+r[1]+'</td><td class="num">'+yen(r[2])+'</td><td class="num">'+yen(r[3])+'</td></tr>').join("")+'</tbody></table></div>':'<p class="note" style="margin:0">立替はありません</p>')+'</div>';
 }
 function vRcpt(){return companyReceiptSummary()+vRcptBody()+(scopeOwnReceipts()&&scopeState().selection.person==='all'?vSharedReceipts():'');}
@@ -2210,7 +2270,7 @@ function vRcptBody(){
         '<label class="f full">カード名<input type="text" id="rc_name" placeholder="例：CP 法人カード"></label></div>'+
         '<div class="row"><button class="btn sm" type="button" data-act="cardadd">カードを登録</button></div></div>':'');
   }
-  return '<section class="sec"><h2>自分の領収書</h2><p class="note" style="margin:0">この端末で登録した領収書です。社員分は上の「社員の共有領収書」で確認できます。</p><button class="btn pri" type="button" data-act="rnew" style="width:100%;min-height:52px;font-size:16px">＋ 領収書を登録</button>'+
+  return '<section class="sec"><div class="sec-h"><h2>自分の領収書</h2>'+infoBtn('rcown','自分の領収書の説明')+'</div>'+infoBox('rcown','<p>この端末で登録した領収書です。社員の分は「社員の共有領収書」で見られます。</p>')+'<button class="btn pri" type="button" data-act="rnew" style="width:100%;min-height:52px;font-size:16px">＋ 領収書を登録</button>'+
     (notes.length?'<div class="banner" role="status">'+notes.map(n=>'<div>'+h(n)+'</div>').join("")+'</div>':'')+
     '<div class="seg cv rtabs" role="group" aria-label="領収書の表示">'+tabs.map(([k,l])=>'<button type="button" data-rtab="'+k+'" aria-pressed="'+(tab===k)+'">'+l+'</button>').join("")+'</div>'+
     body+'</section>';
@@ -2240,7 +2300,7 @@ function vSharedReceipts(){
   if(ui.corp?.kept)body+='<div class="banner" role="status">この端末の前回読み込み：'+h(receiptReadTime(ui.corp.at))+'。今回のGoogle照合は未確認です。</div>';
   else if(ui.corp?.at)body+='<p class="note" style="margin:0">この端末での読み込み：'+h(receiptReadTime(ui.corp.at))+'</p>';
   if(!data.length)body+='<div class="banner" role="status">'+h(ui.corp?.at&&!ui.corp?.kept?'今回の読み込みで表示できる共有元は確認できませんでした。':cacheReason)+'「社員の共有記録を読み直す」で確認してください。空とは判定していません。</div>';
-  body+='<div class="form">'+'<p class="note">所有者は共通の「人」選択です。</p>'+select('rs_method','支払い方法',[['','すべて'],['立替','立替'],['法人カード','法人カード'],['未確認','未確認']],filter.method)+'</div>';
+  body+='<div class="form">'+'<p class="note">出した人は、上の「人」で選びます。</p>'+select('rs_method','支払い方法',[['','すべて'],['立替','立替'],['法人カード','法人カード'],['未確認','未確認']],filter.method)+'</div>';
   for(const group of groups){
     const x=group.source,ss=group.summary,prev=group.previous,ready=['ready','cached'].includes(group.state),has=ready||prev;
     body+='<section class="panel shared-person" data-shared-person="'+h(x.s.sheetId)+'"><h3>'+h(x.s.name)+'さん（見るだけ）</h3><p class="note num" style="margin:0">共有元の最終同期：'+h(prev?x.receiptPrevious.lastSync||'未確認':x.s.lastSync||'未同期・未確認')+'</p><p class="note num" style="margin:0">この明細の読み込み：'+h(receiptReadTime(prev?x.receiptPrevious.readAt:x.receiptRead?.at||ui.corp?.at))+(x.receiptRead?.version?'／送信側 '+h(x.receiptRead.version):'')+'</p>';
@@ -2482,7 +2542,7 @@ async function backupPhotos(){
 /* Called from 「Googleとまとめて同期」 after the calendar steps. One result line per step */
 async function dataSync(step){
   const id=D().sheetId;
-  /* v1.49.2 書き込む前に、共有の記録シートの件数を読む。読めないとき・この端末の記録が空か明らかに少ないときは、何も書かずに止める */
+  /* v1.49.1 書き込む前に、共有の記録シートの件数を読む。読めないとき・この端末の記録が空か明らかに少ないときは、何も書かずに止める */
   let g;try{g=await sharedCheck(id)}catch(err){if(err.message==="signin")throw err;step(GUARD_STEP,false,"共有の記録シートの件数を確かめられないため、記録シートへの書き込みを止めました（"+dMsg(err)+"）。通信を確かめて、もう一度同期してください");return}
   if(g.block){ui.sheetGuard=g;ui.sgDone="";step(GUARD_STEP,false,guardText(g)+"共有の記録を消さないため、記録シートへの書き込みを止めました");return}
   if(ui.sheetGuard&&ui.sheetGuard.id===id)ui.sheetGuard=null;
@@ -2510,7 +2570,7 @@ async function dataSync(step){
   catch(err){step("記録シート「情報」",false,dMsg(err))}
 }
 const sheetTabNames=async id=>{const v=await gReq(SHEETS+"/"+encodeURIComponent(id)+"?fields=sheets.properties.title");return ((v&&v.sheets)||[]).map(x=>x.properties&&x.properties.title)};
-/* v1.49.2 空の端末を守る：この端末の記録（案件・入金・立替）と共有の記録シートの件数を比べる。読むだけで、書かない。
+/* v1.49.1 空の端末を守る：この端末の記録（案件・入金・立替）と共有の記録シートの件数を比べる。読むだけで、書かない。
    止めるのは、共有に行があるのにこの端末が0件のとき、または案件・立替が共有の半分未満（共有が4件以上）のとき */
 const GUARD_STEP="共有の記録シートの確認", GUARD_TABS=[["案件","受付番号"],["入金","受付番号"],["立替","受付ID"]];
 const sheetObjs=rows=>{const [hd,...rs]=rows||[];return rs.map(r=>Object.fromEntries((hd||[]).map((k,i)=>[k,r[i]??""])))};
@@ -3057,13 +3117,12 @@ function corpView(){
       '<p class="note">社員ごとの立替は領収書ページで確認できます。</p>':scopeUnconfirmed());
   }
   const staffL=D().admin?D().staff:(ui.viewList||[]), gl=gmLine(staffL);
-  return '<section class="sec"><div class="sec-h"><h2>会社の動き</h2><span class="note">'+(D().admin?'社長用・見るだけ':'見るだけ')+'</span></div>'+
-    (gl?'<p class="note num" style="margin:0">'+h(gl)+'</p>':'')+
-    '<button class="btn" type="button" data-act="corp"'+(c&&c.busy?' disabled':'')+'>'+(c&&c.busy?'読み込んでいます…':'社員の記録を読み込む'+(D().admin?'（'+D().staff.filter(s=>!s.removed).length+'人）':''))+'</button>'+
-    (D().admin?'<div class="row"><button class="btn sm" type="button" data-act="dreload"'+(ui.dbusy?' disabled':'')+'>一覧を読み直す</button><span class="note">ほかの端末で追加した社員を出します</span></div>':'')+
-    '<p class="note">共通選択：案件は担当、リクエストは宛先。同期の状況は閲覧範囲全体の注意を表示します。</p>'+
+  return '<section class="sec"><div class="sec-h"><h2>会社の動き</h2>'+infoBtn('corp','会社の動きの説明')+'</div>'+
+    '<div class="row"><button class="btn xs" type="button" data-act="corp" title="社員の記録を読み込む"'+(c&&c.busy?' disabled':'')+'>'+(c&&c.busy?'読み込んでいます…':'記録を読み込む'+(D().admin?'（'+D().staff.filter(s=>!s.removed).length+'人）':''))+'</button>'+(gl?'<span class="note num">'+h(gl)+'</span>':'')+'</div>'+
+    infoBox('corp','<p>'+(D().admin?'社長用です。':'')+'社員の記録は見るだけで、直せません。上で選んだ会社・人の分を出します。案件は担当、リクエストはあて先で選びます。同期の状況は、選んでいない人も含めて出します。</p>'+(c&&c.at&&!c.kept?'<p>'+md(ymd(new Date(c.at)))+' '+hm(new Date(c.at))+'に読み込み</p>':'')+
+      (D().admin?'<div class="row"><button class="btn sm" type="button" data-act="dreload"'+(ui.dbusy?' disabled':'')+'>一覧を読み直す</button><span>ほかの端末で追加した社員を出します</span></div>':''))+
     (ui.dview==="corp"?dMsgList():'')+
-    (c&&c.err?'<p class="note" style="margin:0;color:var(--red)">'+h(c.err)+'</p>':'')+(c&&c.at?(c.kept?'<div class="banner" role="status">'+keptNote()+'</div>':'<p class="note" style="margin:0">'+md(ymd(new Date(c.at)))+' '+hm(new Date(c.at))+'に読み込み</p>'):'')+body+'</section>';
+    (c&&c.err?'<p class="note" style="margin:0;color:var(--red)">'+h(c.err)+'</p>':'')+(c&&c.at&&c.kept?'<div class="banner" role="status">'+keptNote()+'</div>':'')+body+'</section>';
 }
 /* 会社（複数可）・役割・GMの会社の入力欄。p: id の頭 */
 function roleForm(p,s){
@@ -3273,6 +3332,7 @@ document.addEventListener("click",e=>{
   if(el.dataset.delitem&&c){c.items.splice(Number(el.dataset.delitem),1);save();render();return}
   if(el.dataset.cset&&c){c.company=el.dataset.cset;ui.coEdit=false;save();render();toast("会社を"+c.company+"にしました");return}
   if(el.dataset.obrole){if(D().viewListId)return;try{obSet({role:el.dataset.obrole==="GM"?"GM":"社員"})}catch(err){toast(err.message,6000)}ui.obMsg=null;render();return}
+  if(el.dataset.info){ui.info=ui.info||{};ui.info[el.dataset.info]=!ui.info[el.dataset.info];render();return}
   const a=el.dataset.act;if(!a)return;
   if(a==="rnew"){rFormClear();go("rform",{rId:null});return}
   if(a==="rdlclose"){rClearDl();render();return}
@@ -3365,6 +3425,8 @@ document.addEventListener("click",e=>{
   if(a==="corp"){ui.corp=Object.assign({},ui.corp,{busy:true,err:""});render();
     corpRun().catch(err=>{ui.corp=Object.assign({},ui.corp,{busy:false,err:"読み込めませんでした："+corpErr(err)})}).then(render);return}
   if(a==="gsync"){if(!(ui.gsync&&ui.gsync.busy))gSyncAll();return}
+  if(a==="scopealert"){const t=todayS(),overdue=scopeAvailableTodos().some(x=>x.due&&x.due<t),urgent=scopeSourceCases().some(c=>c.type==='kinkyu'&&['new','site'].includes(c.stage)),undated=scopeSourceCases().some(c=>c.stage==='lost'&&!c.cancelledAt&&!c.lossDate);
+    if(overdue)go("todo",{tPeriod:"today",tTantou:"all"});else if(urgent)go("cases",{type:"kinkyu"});else if(undated)go("stats");else go(D().admin||D().viewListId?"company":"home");return}
   if(a==="obclose"){try{obSet({done:new Date().toISOString()})}catch(err){toast(err.message,6000)}ui.obMsg=null;render();return}
   if(a==="oblogin"){ui.obBusy=true;ui.obMsg=null;render();gAuthorize(true).then(()=>{obSet({login:true});ui.obMsg={ok:true,text:"ログインしました"}},err=>{ui.obMsg={ok:false,text:err.message==="signin"?"ログインできませんでした。もう一度押してください。":err.message||gMsg(err)}}).finally(()=>{ui.obBusy=false;render()});return}
   if(a==="obsheet"){const v=val("ob_sheet");ui.obBusy=true;ui.obMsg={ok:true,text:"つないでいます…"};render();
@@ -3474,7 +3536,8 @@ document.addEventListener("change",e=>{
 
   if(caseSaveGuard()){e.preventDefault();return}
   const t=e.target, c=ui.caseId?editCase(ui.caseId):null;
-  if(t.id==="showEnded"){ui.showEnded=t.checked;render();return}
+  if(t.id==="showEnded"){ui.showEnded=t.checked;ui.filtersOpen=true;render();return}
+  if(t.id==="c_type"){ui.type=Object.keys(TYPES).includes(t.value)?t.value:"all";render();return}
   if(t.id==="cdel_gcal"){ui.cdelCal=t.checked;ui.cdelMsg="";render();return}
   if(["rs_person","rs_company","rs_method"].includes(t.id)){ui[{rs_person:"rSharedSource",rs_company:"rSharedCompany",rs_method:"rSharedMethod"}[t.id]]=t.value;render();return;}
   if(t.id==="r_photo"){const files=[...t.files];t.value="";receiptSelectFiles(files);return}
@@ -3483,8 +3546,8 @@ document.addEventListener("change",e=>{
     if(sel){const ks=RS().cards.filter(k=>k.company===val("r_co"));sel.innerHTML=ks.map(k=>'<option value="'+h(k.id)+'">'+h(k.name)+'</option>').join("")||'<option value="">この会社のカードがありません</option>'}return}
   if(t.id==="stats-month"){if(/^[0-9]{4}-(0[1-9]|1[0-2])$/.test(t.value)&&Number(t.value.slice(0,4))>0){ui.statsMonth=t.value;}render();return}
   if(t.id==="sent-author"){if(D().admin){ui.sentAuthor=t.value;render();}return}
-  if(t.id==="handoffOnly"){ui.handoffOnly=t.checked;render();return}
-  if(t.id==="payOnly"){ui.payOnly=t.checked;render();return}
+  if(t.id==="handoffOnly"){ui.handoffOnly=t.checked;ui.filtersOpen=true;render();return}
+  if(t.id==="payOnly"){ui.payOnly=t.checked;ui.filtersOpen=true;render();return}
   if(t.dataset.item!=null&&c){const it=c.items[Number(t.dataset.item)];if(it){it[t.dataset.f]=t.dataset.f==="amount"?(t.value===""?"":Number(t.value)):t.value;save();refreshItemTotals(c)}return}
   if(t.id==="d_billing"&&c){c.billingTenant=t.value;save();return}
   if(t.id==="d_photo"&&c){

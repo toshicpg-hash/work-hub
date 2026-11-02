@@ -50,7 +50,7 @@ async function main(){
  });
  await check('390px synthetic screenshots, no horizontal overflow and no data changes',async()=>{
  await p.evaluate(()=>{ST.db.settings.data.admin=false;ST.ui.corpRO=null;ST.go('stats')});assert.ok(await overflow(p)<=0);
- await p.locator('.stats-loss-note').scrollIntoViewIfNeeded();await p.screenshot({path:path.join(root,'docs/preview/stats-lost-390.png')});
+ await p.locator('#stats-won').scrollIntoViewIfNeeded();await p.screenshot({path:path.join(root,'docs/preview/stats-lost-390.png')});
  await p.locator('.sec:has(h2:text-matches("月の担当別"))').evaluate(e=>window.scrollTo(0,e.getBoundingClientRect().top+window.scrollY-100));await p.screenshot({path:path.join(root,'docs/preview/stats-staff-390.png')});
  await p.locator('.sec:has(h2:text("依頼の種類別"))').scrollIntoViewIfNeeded();await p.screenshot({path:path.join(root,'docs/preview/stats-types-390.png')});
  assert.equal(await p.evaluate(()=>JSON.stringify(ST.db.cases)),original);assert.deepEqual(errors,[]);
