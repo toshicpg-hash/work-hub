@@ -51,7 +51,7 @@ async function main(){
    assert.equal(s['受注'],'2件');assert.equal(s['受注額（見積額）'].replace(/\s/g,''),'300,000円');
    assert.ok((await p.textContent('main')).includes('受注 2件 ／ 失注 1件'));
    assert.equal(await unpaidHead(p),'1件 50,000円');
-   assert.ok((await p.textContent('main')).includes('を含めた会社全体の数字です'));
+   await p.click('[data-info=stats]');assert.ok((await p.textContent('main')).includes('を含めた会社全体の数字です'));await p.click('[data-info=stats]');
    assert.ok(await overflow(p)<=0);
   });
   await check('担当別の表 '+width+'px',async()=>{
@@ -84,8 +84,8 @@ async function main(){
   await p.evaluate(({staff,data})=>{const d=ST.db.settings.data;d.viewListId='viewList0000000000000001';d.viewEmail='test-b@example.com';
    d.sheetId=staff[1].sheetId;ST.ui.viewList=[Object.assign({},staff[0],{role:'社員',company:'CPY'}),Object.assign({},staff[1],{role:'GM',gmCo:'CPY'})];CPGViewScope.save(localStorage,{account:d.viewEmail,record:d.sheetId,viewer:d.viewListId},{company:'CPY',person:'all'});
    const dd=JSON.parse(JSON.stringify(data));ST.ui.corp={data:dd,at:Date.now()};ST.ui.sCo='CP';ST.roBuild(dd);ST.go('stats')},{staff,data});
-  const t=await p.textContent('main');
-  assert.ok(t.includes('CPY')&&t.includes('共通選択'),t.slice(0,300));
+  await p.click('[data-info=stats]');const t=await p.textContent('main');await p.click('[data-info=stats]');
+  assert.ok(t.includes('CPY')&&t.includes('上で選んだ会社・人の分'),t.slice(0,300));
   assert.equal(await p.$$eval('[data-sco]',a=>a.length),0,'company buttons are not shown on a GM device');
   const s=await sum(p);
   assert.equal(s['見積提出'],'1件',JSON.stringify(s));assert.equal(s['受注'],'1件');assert.equal(await unpaidHead(p),'0件 0円');
@@ -111,7 +111,7 @@ async function main(){
    const dd=JSON.parse(JSON.stringify(data));ST.ui.corp={data:dd,at:Date.now()};ST.roBuild(dd);ST.go('stats')},{staff,data});
   assert.deepEqual(await p.$$eval('[data-scope-company] option',a=>a.map(x=>x.value)),['all','CP','CPY','AT','none']);await p.locator('[data-scope-person]').selectOption('all');
   assert.equal((await sum(p))['見積提出'],'5件');
-  assert.ok((await p.textContent('main')).includes('を含めた会社全体の数字です'));
+  await p.click('[data-info=stats]');assert.ok((await p.textContent('main')).includes('を含めた会社全体の数字です'));await p.click('[data-info=stats]');
   assert.deepEqual(errors,[]);await c.close();
  });
  await check('社員の端末は今まで通り自分の分だけ（注記なし）',async()=>{
