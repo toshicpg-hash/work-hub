@@ -234,6 +234,13 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 .sum .k{font-size:11.5px;color:var(--muted);font-weight:700}
 .sum .v{font-weight:700;font-variant-numeric:tabular-nums}
 .ro{background:var(--sunk);border-radius:10px;padding:10px 12px;font-size:13px}
+.ob{border:2px solid var(--accent)}
+.ob ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.ob li{display:flex;gap:8px;align-items:flex-start;font-size:14px;color:var(--muted)}
+.ob li .n{flex:0 0 26px;height:26px;border-radius:50%;background:var(--sunk);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.ob li.done .n{background:var(--accent-soft);color:var(--accent)}
+.ob li.cur{color:var(--fg);font-weight:700}.ob li.cur .n{background:var(--accent);color:var(--accent-fg)}
+.ob .obact{display:flex;flex-direction:column;gap:8px;min-width:0}
 .photos{display:flex;gap:8px;flex-wrap:wrap}
 .photos img{width:84px;height:84px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
 .bar{height:10px;border-radius:5px;background:var(--sunk);overflow:hidden}
@@ -362,8 +369,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.49.1" title="使い方マニュアルを開く">v1.49.1・11/3更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.49.1" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.49.2" title="使い方マニュアルを開く">v1.49.2・11/3更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.49.2" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -425,8 +432,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./request-box-employee.js?v=1.47.1"></script>
 <script src="./share-management.js?v=1.48.6"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.49.1"></script>
-<script src="./calendar-view-scope.js?v=1.49.1"></script>
+<script src="./view-scope.js?v=1.49.2"></script>
+<script src="./calendar-view-scope.js?v=1.49.2"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -490,6 +497,9 @@ function upgrade(db){
   if(!obj(db.settings.rcpt.noSeq))db.settings.rcpt.noSeq={};
   /* 記録の送り先 (v1.17) */
   if(!obj(db.settings.data))db.settings.data={};
+  /* v1.49.2 初期設定の案内：すでに使っている端末（記録シート・見る人用一覧・管理・入力した記録がある）には出さない */
+  if(!obj(db.settings.data.ob)){const dd=db.settings.data,real=x=>!String(x||"").includes("（架空）");
+    db.settings.data.ob=dd.sheetId||dd.viewListId||dd.admin||db.cases.some(c=>real(c.client)&&real(c.property))||db.receipts.some(r=>real(r.payee))?{legacy:true}:{}}
   withDefaults(db.settings.data,DATA_DEFAULTS());
   if(!Array.isArray(db.settings.data.staff))db.settings.data.staff=[];
   db.receipts.forEach(r=>{if(!obj(r.drive))r.drive={}});
@@ -513,7 +523,7 @@ function exSection(){
       :'<div class="row"><button class="btn danger" type="button" data-act="exask">練習用の例（架空）を消す</button></div>')+'</div>',!!(ui.exAsk||ui.exDone));
 }
 /* A new device starts empty (the practice examples were removed before real use began) */
-const emptyDB=()=>({schemaVersion:SCHEMA_VERSION,seq:0,rseq:0,settings:SETTINGS_DEFAULTS(),todos:[],cases:[],receipts:[]});
+const emptyDB=()=>{const s=SETTINGS_DEFAULTS();s.data.ob={};return {schemaVersion:SCHEMA_VERSION,seq:0,rseq:0,settings:s,todos:[],cases:[],receipts:[]}};
 /* 練習用の例: earlier sample data, recognised by its ID range AND its （架空）/（例） mark, so nothing a person entered is touched */
 const numOf=id=>Number(String(id).replace(/\D/g,""))||0;
 const fakeMark=x=>String(x||"").includes("（架空）"), exMark=x=>/（例）|\(例\)/.test(String(x||""));
@@ -797,9 +807,53 @@ function todoRow(t,expanded=false){
     (c?'<button class="btn sm" type="button" data-open="'+h(c.id)+'">案件を開く</button>':t.nav?'<button class="btn sm" type="button" data-nav="'+t.nav+'">領収書を開く</button>':(manualTodoEditable(t)?'<button class="btn sm" type="button" data-mtdedit="'+h(t.id)+'">編集</button>'+(!t.done&&!t.cancelled?'<button class="btn sm" type="button" data-mtdcancel="'+h(t.id)+'">取消</button>':''):'')+(t.done?'<span class="chip">完了済み</span>':'<button class="btn sm" type="button" data-done="'+h(t.id)+'">完了</button>'))+'</div></div>';
 }
 
+/* v1.49.2 新しい社員・GMの初期設定の案内（ホームの一番上）。順番：ログイン → 本人の記録シート → 氏名・会社 → 最初の同期 →
+   社員は記録の保存と読み戻しの確認、GM・全社は見る人用一覧。社長の端末と、すでに使っている端末には出さない */
+const obState=()=>D().ob||{};
+const obActive=()=>{const o=obState();return !D().admin&&!o.legacy&&!o.done};
+const obGM=()=>obState().role==="GM"||!!D().viewListId;
+const realRecords=db=>(db.cases||[]).filter(c=>!fake(c.client)&&!fake(c.property)).length+(db.receipts||[]).filter(r=>!fake(r.payee)).length+(db.todos||[]).filter(t=>!t.order&&!t.done&&!t.cancelled&&!exTodo(t)).length;
+function obSteps(){
+  const d=D(),o=obState();
+  return [
+    {k:"login",t:"Googleにログイン",done:!!(o.login||d.sheetId||gSignedIn())},
+    {k:"sheet",t:"本人の記録シートにつなぐ",done:!!d.sheetId},
+    {k:"name",t:"氏名・会社を確かめる",done:!!(d.sheetId&&o.name===d.sheetId&&RS().name)},
+    {k:"sync",t:"最初の同期",done:!!(d.sheetId&&d.lastSync&&o.name===d.sheetId)},
+    obGM()?{k:"view",t:"見る人用一覧をつなぐ",done:!!d.viewListId}:{k:"check",t:"記録を1件保存して、読み戻しを確かめる",done:!!(o.check&&o.check===d.sheetId)}];
+}
+const obCur=()=>obSteps().find(x=>!x.done);
+/* 順番を飛ばしたときの止め方。先にすることがあれば、その名前を返す */
+function obBefore(k){if(!obActive())return "";const st=obSteps(),i=st.findIndex(x=>x.k===k);const miss=(i<0?st.slice(0,k==="view"?4:3):st.slice(0,i)).find(x=>!x.done);return miss?miss.t:"";}
+function obPanel(){
+  if(!obActive())return "";
+  const st=obSteps(),cur=st.find(x=>!x.done),o=obState(),d=D();
+  if(!cur)return '<section class="sec" id="onboarding"><div class="panel ob" role="status"><h3>初期設定が終わりました</h3><p class="note" style="margin:0">これからは、1日3回「Googleとまとめて同期」を押してください。</p><div class="row"><button class="btn pri" type="button" data-act="obclose">案内を閉じる</button></div></div></section>';
+  const msg=ui.obMsg?'<p role="alert" style="margin:0;color:'+(ui.obMsg.ok?'var(--accent)':'var(--red)')+'">'+h(ui.obMsg.text)+'</p>':'';
+  const busy=ui.obBusy?' disabled':'';
+  const act={
+    login:'<p class="note" style="margin:0">仕事で使うGoogleアカウント（社長に伝えたGmail）でログインします。</p><button class="btn pri" type="button" data-act="oblogin"'+busy+'>Googleにログイン</button>',
+    sheet:'<p class="note" style="margin:0">社長から届いた共有メールの、記録シートのリンクを貼り付けます。'+(obGM()?'GM・全社の人も、見る人用一覧より先に、本人の記録シートをつなぎます。':'')+'</p><label class="f">記録シートのリンク<input type="url" id="ob_sheet" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://docs.google.com/spreadsheets/d/…/edit"></label><button class="btn pri" type="button" data-act="obsheet"'+busy+'>つなぐ</button>',
+    name:'<label class="f">氏名（社長の社員一覧と同じ書き方）<input type="text" id="ob_name" maxlength="100" value="'+h(RS().name||"")+'" placeholder="例：見本 一郎"></label><label class="f">所属の会社<select id="ob_co">'+COMPANIES.map(co=>'<option value="'+co+'"'+(RS().lastCo===co?' selected':'')+'>'+co+'</option>').join("")+'</select></label><p class="note" style="margin:0">会社は領収書の会社の初めの値にもなります。</p><button class="btn pri" type="button" data-act="obname"'+busy+'>この氏名・会社で確かめました</button>',
+    sync:(ui.sheetGuard&&ui.sheetGuard.id===d.sheetId?'<p style="margin:0;color:var(--red)">下の同期の欄に出ている確認（共有の記録から取り込む）を先にしてください。</p>':'<p class="note" style="margin:0">記録シートに、この端末の記録を送ります。下の青いボタンでも同じです。</p>')+'<button class="btn pri" type="button" data-act="obsync"'+(ui.gsync?.busy?' disabled':'')+'>最初の同期をする</button>',
+    check:'<p class="note" style="margin:0">案件の受付・ToDo・領収書のどれかを1件入れて保存してから押すと、この端末に保存されていて読み戻せるかを確かめます。練習用の記録は入れないでください。</p><button class="btn pri" type="button" data-act="obcheck"'+busy+'>保存と読み戻しを確かめる</button>',
+    view:'<p class="note" style="margin:0">社長から届いた「見る人用のリンク」を貼り付けます。</p><label class="f">見る人用のリンク<input type="url" id="ob_view" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://docs.google.com/spreadsheets/d/…/edit"></label><button class="btn pri" type="button" data-act="obview"'+busy+'>つなぐ</button>'}[cur.k];
+  return '<section class="sec" id="onboarding"><div class="panel ob"><div class="sec-h"><h2>初期設定</h2><span class="note num">'+(st.indexOf(cur)+1)+'／'+st.length+'</span></div>'+
+    '<div class="row" role="group" aria-label="役割"><span class="note">役割</span><div class="seg"><button type="button" data-obrole="社員" aria-pressed="'+!obGM()+'"'+(d.viewListId?' disabled':'')+'>社員</button><button type="button" data-obrole="GM" aria-pressed="'+obGM()+'"'+(d.viewListId?' disabled':'')+'>GM・全社</button></div></div>'+
+    '<ol>'+st.map((x,i)=>'<li class="'+(x.done?'done':x===cur?'cur':'')+'"'+(x===cur?' aria-current="step"':'')+'><span class="n">'+(x.done?'✓':i+1)+'</span><span>'+h(x.t)+(x===cur?'（次にすること）':'')+'</span></li>').join("")+'</ol>'+
+    '<div class="obact">'+msg+act+'</div></div></section>';
+}
+function obSet(fields){const o={...obState(),...fields};D().ob=o;if(!save())throw Error("端末に保存できませんでした。");let back;try{back=JSON.parse(localStorage.getItem(KEY)).settings.data.ob}catch(e){back=null}if(!back||Object.keys(fields).some(k=>back[k]!==fields[k]))throw Error("保存後の読み戻しで確認できませんでした。再読み込みしてください。");}
+/* 社員：自分で入れた記録が端末に保存され、読み戻せることを確かめる（確認用の記録は作らない） */
+function obCheck(){
+  const n=realRecords(DB);if(!n)throw Error("まだ記録がありません。案件の受付・ToDo・領収書のどれかを1件入れて保存してから、もう一度押してください。");
+  let back;try{back=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){back=null}
+  if(!back||localStorage.getItem(KEY)!==dbPersistedRaw||realRecords(back)!==n)throw Error("保存した記録を読み戻せませんでした。再読み込みして、もう一度押してください。");
+  obSet({check:D().sheetId});return n;
+}
 const accessWaiting=c=>c.stage==="won"&&!c.cancelledAt&&!String(c.jobNo??"").trim();
 function vHome(){
- if(!scopeState().usable)return '<section class="sec" id="home-sync">'+homeSyncNotice()+gSyncPanel(true)+'</section>'+scopeUnconfirmed()+((D().admin||D().viewListId)?homeCorpTile():'');
+ if(!scopeState().usable)return obPanel()+'<section class="sec" id="home-sync">'+homeSyncNotice()+gSyncPanel(true)+'</section>'+scopeUnconfirmed()+((D().admin||D().viewListId)?homeCorpTile():'');
   const todos=genTodos(), t=todayS(), all=scopeCases(), tdAll=scopeTodos(); /* 社長の管理端末では、読み込んだ社員の分も含めた会社全体の数字 */
   const over=tdAll.filter(x=>x.due&&x.due<t), todayT=tdAll.filter(x=>x.due===t);
   const urgent=all.filter(c=>c.type==="kinkyu"&&(c.stage==="new"||c.stage==="site"));
@@ -807,7 +861,7 @@ function vHome(){
   const rp=scopeHomeReceipts(['未提出','差戻し']), rsub=scopeHomeReceipts(['提出済']), rnotes=rcptNotices();
   const un=all.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   const ord=scopeTodos().filter(x=>x.order), ordOver=ord.filter(x=>x.due&&x.due<t).length;
-  return '<section class="sec" id="home-sync">'+homeSyncNotice()+gSyncPanel(true)+'</section>'+
+  return obPanel()+'<section class="sec" id="home-sync">'+homeSyncNotice()+gSyncPanel(true)+'</section>'+
   (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）のサンプルを含みます。</div>':'')+
   '<section class="sec" id="home-summary"><div class="sec-h"><h2>今日のまとめ</h2></div><div class="tiles">'+
 
@@ -1477,6 +1531,9 @@ const gMsg=err=>{const m=err&&err.message;return m==="gis"?"Googleの読み込�
   m==="signin"?"もう一度「Googleとまとめて同期」を押してください":m==="nowrite"?"書き込めるカレンダーがありません":err&&err.name==="AbortError"?"時間切れ":err&&err.status===403?"権限がありません":err&&err.status===404?"見つかりません":"通信できませんでした"};
 const gCalName=c=>c.primary?"自分":GNAMES[c.id]||c.summaryOverride||c.summary||c.id;
 async function gLoadCalendars(){
+  G.calsLoading=true;try{return await gLoadCalendarsRun()}finally{G.calsLoading=false}
+}
+async function gLoadCalendarsRun(){
   const epoch=G.readEpoch;let page="", items=[];
   do{const v=await gApi("users/me/calendarList?maxResults=250"+(page?"&pageToken="+encodeURIComponent(page):""));if(epoch!==G.readEpoch)throw new Error("stale");items.push(...((v&&v.items)||[]));page=(v&&v.nextPageToken)||""}while(page);
   if(epoch!==G.readEpoch)throw new Error("stale");
@@ -1588,6 +1645,7 @@ let manualTodoSyncPending=null;
 async function gSyncAll(){
   if(shareRunning){toast("共有の確認・処理が終わってから同期してください。");return;}
   if(ui.sgBusy){toast("共有の記録の取り込みが終わってから同期してください。");return;}
+  if(D().sheetId&&obBefore("sync")){const b=obBefore("sync");ui.obMsg={ok:false,text:"先に「"+b+"」をしてください。"};render();toast("先に初期設定の「"+b+"」をしてください",5000);return;}
   if(caseSaveGuard())return;
   if(receiptSaving||receiptSelecting||receiptSending||ui.rSaveUncertain){toast("領収書の処理が終わってから同期してください。入力は残しています。",5000);return;}
   if(manualTodoSyncPending)return manualTodoSyncPending;
@@ -1704,19 +1762,20 @@ function gcalStatus(g){
   return '<p class="gcst">Googleカレンダー：'+(cals.map(n=>'<span class="ev '+gcalColor(n)+'">'+h(gcalLabel(n))+'</span>').join("")||'表示するカレンダーがありません')+
     (g.data&&g.data.missing?'<span>（読めないカレンダーが'+Number(g.data.missing)+'つあります）</span>':'')+(g.state==="loading"?'<span>更新中…</span>':'')+'</p>';
 }
+const calsLoadingNow=()=>!!(G.calsLoading||ui.gsync?.busy);
 function calendarScopeSettings(){
  const ctx=scopeContext(),cat=CPGViewScope.catalog(ctx),stored=CPGCalendarScope.load(localStorage,scopeIdentity());
  const opt=(v,t)=>'<option value="'+h(v)+'">'+h(t)+'</option>';
- return '<details class="panel"><summary>仕事用カレンダーの対応設定（この端末）</summary><p class="note">現在のGoogle一覧から、仕事専用と確認したカレンダーだけ設定します。会社・人は正規社員を選び、私的予定を含むものは設定しないでください。共有権限やGoogle予定は変更しません。「数字」→「Googleカレンダー連携」の読込対象にも選び、設定後に本人が同期してください。対応設定だけでは読込対象を増やしません。</p>'+(!G.cals?'<p>一覧未取得です。Googleとまとめて同期後に選べます。</p>':'<form id="calendarScopeForm"><label class="f">カレンダー<select id="cs_cal" required><option value="">選択してください</option>'+G.cals.filter(gReadable).map(c=>opt(c.id,c.name+' / '+c.id)).join('')+'</select></label><label class="f">用途<select id="cs_mode"><option value="person">人物を確認した仕事専用</option><option value="mixed">混在する仕事共有（元記録で確定できる予定だけ）</option></select></label><label class="f">会社（人物を確認した場合）<select id="cs_company"><option value="">選択してください</option>'+cat.companies.map(c=>opt(c,c)).join('')+opt('unknown','会社未特定（複数社等・推測しない）')+'</select></label><label class="f">人物（人物を確認した場合）<select id="cs_person"><option value="">選択してください</option>'+cat.people.map(p=>opt(p.sheetId,p.name+' / '+p.sheetId)).join('')+'</select></label><label class="f"><span><input type="checkbox" id="cs_work" required>私的予定を含まない仕事用で、会社・人物の対応を確認しました</span></label><button class="btn" type="submit">対応を確認して保存</button></form>')+'<p class="note">混在共有は、確実な元記録がない他社員の予定を分類できません。未設定・未識別は0件ではありません。</p>'+stored.rows.map((r,i)=>'<p class="note">'+h(r.id)+' → '+h(r.mode==='mixed'?'混在仕事共有':r.company+' / '+(cat.people.find(p=>p.sheetId===r.person)?.name||'人物未確認'))+' <button class="btn sm" type="button" data-calendar-map-remove="'+i+'">対応を外す</button></p>').join('')+(ui.calendarMapError?'<p role="alert">'+h(ui.calendarMapError)+'</p>':'')+'</details>';
+ return '<details class="panel" data-keep-open="calmap"><summary>仕事用カレンダーの対応設定（この端末）</summary><p class="note">現在のGoogle一覧から、仕事専用と確認したカレンダーだけ設定します。会社・人は正規社員を選び、私的予定を含むものは設定しないでください。共有権限やGoogle予定は変更しません。「数字」→「Googleカレンダー連携」の読込対象にも選び、設定後に本人が同期してください。対応設定だけでは読込対象を増やしません。</p>'+(calsLoadingNow()?'<p role="status">カレンダーの一覧を読み込み中です。終わってから選べます（入力した内容は残ります）。</p>':!G.cals?'<p>一覧未取得です。Googleとまとめて同期後に選べます。</p>':'<form id="calendarScopeForm"><label class="f">カレンダー<select id="cs_cal" required><option value="">選択してください</option>'+G.cals.filter(gReadable).map(c=>opt(c.id,c.name+' / '+c.id)).join('')+'</select></label><label class="f">用途<select id="cs_mode"><option value="person">人物を確認した仕事専用</option><option value="mixed">混在する仕事共有（元記録で確定できる予定だけ）</option></select></label><label class="f">会社（人物を確認した場合）<select id="cs_company"><option value="">選択してください</option>'+cat.companies.map(c=>opt(c,c)).join('')+opt('unknown','会社未特定（複数社等・推測しない）')+'</select></label><label class="f">人物（人物を確認した場合）<select id="cs_person"><option value="">選択してください</option>'+cat.people.map(p=>opt(p.sheetId,p.name+' / '+p.sheetId)).join('')+'</select></label><label class="f"><span><input type="checkbox" id="cs_work" required>私的予定を含まない仕事用で、会社・人物の対応を確認しました</span></label><button class="btn" type="submit">対応を確認して保存</button></form>')+'<p class="note">混在共有は、確実な元記録がない他社員の予定を分類できません。未設定・未識別は0件ではありません。</p>'+stored.rows.map((r,i)=>'<p class="note">'+h(r.id)+' → '+h(r.mode==='mixed'?'混在仕事共有':r.company+' / '+(cat.people.find(p=>p.sheetId===r.person)?.name||'人物未確認'))+' <button class="btn sm" type="button" data-calendar-map-remove="'+i+'">対応を外す</button></p>').join('')+(ui.calendarMapError?'<p role="alert">'+h(ui.calendarMapError)+'</p>':'')+'</details>';
 }
 function calendarScopeSave(){
  const id=val('cs_cal'),mode=val('cs_mode'),company=val('cs_company'),person=val('cs_person'),cat=CPGViewScope.catalog(scopeContext());
- if(!G.cals?.some(c=>c.id===id&&gReadable(c))||!document.getElementById('cs_work')?.checked||!['person','mixed'].includes(mode)||mode==='person'&&!cat.people.some(p=>p.sheetId===person&&(company==='unknown'||p.companies.includes(company)&&cat.companies.includes(company)))){toast('仕事用・会社・人物の対応を確認してください');return;}
- const loaded=CPGCalendarScope.load(localStorage,scopeIdentity());if(loaded.state==='invalid'){ui.calendarMapError='保存済み設定を確認できないため上書きしません。';render();return;}
+ if(!G.cals?.some(c=>c.id===id&&gReadable(c))||!document.getElementById('cs_work')?.checked||!['person','mixed'].includes(mode)||mode==='person'&&!cat.people.some(p=>p.sheetId===person&&(company==='unknown'||p.companies.includes(company)&&cat.companies.includes(company)))){ui.keepDirty.add('calendarScopeForm');toast('仕事用・会社・人物の対応を確認してください');return;}
+ const loaded=CPGCalendarScope.load(localStorage,scopeIdentity());if(loaded.state==='invalid'){ui.keepDirty.add('calendarScopeForm');ui.calendarMapError='保存済み設定を確認できないため上書きしません。';render();return;}
  const row={id,work:true,mode,...(mode==='person'?{company,person}:{})};
- if(!confirm('このブラウザの表示設定だけを変更します。\n'+id+'\n'+(mode==='mixed'?'混在する仕事共有':company+' / '+cat.people.find(p=>p.sheetId===person).name+' / '+person)+'\n私的予定を含まないことと、既存設定があれば置き換えることを確認しましたか？'))return;
+ if(!confirm('このブラウザの表示設定だけを変更します。\n'+id+'\n'+(mode==='mixed'?'混在する仕事共有':company+' / '+cat.people.find(p=>p.sheetId===person).name+' / '+person)+'\n私的予定を含まないことと、既存設定があれば置き換えることを確認しましたか？')){ui.keepDirty.add('calendarScopeForm');return;}
  const rows=loaded.rows.filter(r=>r.id!==id).concat(row);
- ui.calendarMapError=CPGCalendarScope.save(localStorage,scopeIdentity(),rows)?'':'設定を保存・読み戻し確認できませんでした。成功扱いにせず再読込して確認してください。';render();if(!ui.calendarMapError)toast('この端末の仕事用対応を保存しました');
+ ui.calendarMapError=CPGCalendarScope.save(localStorage,scopeIdentity(),rows)?'':'設定を保存・読み戻し確認できませんでした。成功扱いにせず再読込して確認してください。';if(ui.calendarMapError)ui.keepDirty.add('calendarScopeForm');render();if(!ui.calendarMapError)toast('この端末の仕事用対応を保存しました');
 }
 
 function vCal(){
@@ -1833,7 +1892,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.49.1";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.49.2";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -1903,15 +1962,16 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.49.1" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.49.1" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.49.2" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.49.2" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
   if(!G.cals)return F('<div class="panel">'+gSyncPanel()+'<p class="note" style="margin:0">「Googleとまとめて同期」でログインすると、表示するカレンダーと登録先を選べます。ログインはアプリを開くたびに必要です（PAPA HUBと同じ）。</p></div>');
   const show=new Set(gShowIds()), w=gWriteCal();
+  if(calsLoadingNow())return F('<div class="panel"><p class="note" role="status" style="margin:0">カレンダーの一覧を読み込み中です。終わってから選べます（入力した内容は残ります）。</p></div>');
   return F('<form id="gsetForm" class="panel">'+
     '<fieldset class="gcals" style="border:0;padding:0;margin:0"><legend class="note">予定画面に表示するカレンダー</legend>'+
-    G.cals.map((c,i)=>!gReadable(c)?"":'<label><input type="checkbox" name="gshow" value="'+i+'"'+(show.has(c.id)?' checked':'')+'>'+h(c.name)+'</label>').join("")+'</fieldset><p class="note" style="margin:0">社長のマイカレンダーは、このアプリでは読み込みません。予定画面で仕事用・会社・人を確認したカレンダーだけ表示します。</p>'+
+    G.cals.map((c,i)=>!gReadable(c)?"":'<label><input type="checkbox" name="gshow" value="'+i+'" data-keep-key="gshow:'+h(c.id)+'"'+(show.has(c.id)?' checked':'')+'>'+h(c.name)+'</label>').join("")+'</fieldset><p class="note" style="margin:0">社長のマイカレンダーは、このアプリでは読み込みません。予定画面で仕事用・会社・人を確認したカレンダーだけ表示します。</p>'+
     '<label class="f">案件の日程を登録するカレンダー<select id="g_write">'+(gWritable().map(c=>'<option value="'+h(c.id)+'"'+(w&&w.id===c.id?' selected':'')+'>'+h(c.name)+'</option>').join("")||'<option value="">書き込めるカレンダーがありません</option>')+'</select></label>'+
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div></form>');
 }
@@ -2422,7 +2482,7 @@ async function backupPhotos(){
 /* Called from 「Googleとまとめて同期」 after the calendar steps. One result line per step */
 async function dataSync(step){
   const id=D().sheetId;
-  /* v1.49.1 書き込む前に、共有の記録シートの件数を読む。読めないとき・この端末の記録が空か明らかに少ないときは、何も書かずに止める */
+  /* v1.49.2 書き込む前に、共有の記録シートの件数を読む。読めないとき・この端末の記録が空か明らかに少ないときは、何も書かずに止める */
   let g;try{g=await sharedCheck(id)}catch(err){if(err.message==="signin")throw err;step(GUARD_STEP,false,"共有の記録シートの件数を確かめられないため、記録シートへの書き込みを止めました（"+dMsg(err)+"）。通信を確かめて、もう一度同期してください");return}
   if(g.block){ui.sheetGuard=g;ui.sgDone="";step(GUARD_STEP,false,guardText(g)+"共有の記録を消さないため、記録シートへの書き込みを止めました");return}
   if(ui.sheetGuard&&ui.sheetGuard.id===id)ui.sheetGuard=null;
@@ -2450,7 +2510,7 @@ async function dataSync(step){
   catch(err){step("記録シート「情報」",false,dMsg(err))}
 }
 const sheetTabNames=async id=>{const v=await gReq(SHEETS+"/"+encodeURIComponent(id)+"?fields=sheets.properties.title");return ((v&&v.sheets)||[]).map(x=>x.properties&&x.properties.title)};
-/* v1.49.1 空の端末を守る：この端末の記録（案件・入金・立替）と共有の記録シートの件数を比べる。読むだけで、書かない。
+/* v1.49.2 空の端末を守る：この端末の記録（案件・入金・立替）と共有の記録シートの件数を比べる。読むだけで、書かない。
    止めるのは、共有に行があるのにこの端末が0件のとき、または案件・立替が共有の半分未満（共有が4件以上）のとき */
 const GUARD_STEP="共有の記録シートの確認", GUARD_TABS=[["案件","受付番号"],["入金","受付番号"],["立替","受付ID"]];
 const sheetObjs=rows=>{const [hd,...rs]=rows||[];return rs.map(r=>Object.fromEntries((hd||[]).map((k,i)=>[k,r[i]??""])))};
@@ -3059,12 +3119,33 @@ function dSettings(){
 }
 
 const main=document.getElementById("main");
+/* v1.49.2 入力途中の設定を、読み込み完了などの再描画で消さない。入力のあったフォームだけを覚え、送信したら忘れる。
+   選択肢がまだ無い（読み込み中の）値は、選択肢が出たときに戻す */
+const KEEP_FORMS=["calendarScopeForm","gsetForm","setForm","rsetForm","todoForm"];
+ui.keep={};ui.keepDirty=new Set();ui.keepOpen={};
+const keepKey=e=>e.dataset.keepKey||e.id||(e.name&&(e.type==="checkbox"||e.type==="radio")?e.name+"="+e.value:"");
+const keepVal=e=>e.type==="checkbox"||e.type==="radio"?e.checked:e.value;
+function keepCapture(){
+  for(const id of ui.keepDirty){const f=document.getElementById(id);if(!f||!main.contains(f))continue;const old=ui.keep[id]||{},v={...old};
+    f.querySelectorAll("input,select,textarea").forEach(e=>{const k=keepKey(e);if(!k)return;
+      if(e.tagName==="SELECT"&&old[k]&&![...e.options].some(o=>o.value===old[k]))return;v[k]=keepVal(e)});ui.keep[id]=v}
+  main.querySelectorAll("details[data-keep-open]").forEach(d=>{ui.keepOpen[d.dataset.keepOpen]=d.open});
+}
+function keepRestore(){
+  for(const id of Object.keys(ui.keep)){const f=document.getElementById(id);if(!f)continue;const v=ui.keep[id];
+    f.querySelectorAll("input,select,textarea").forEach(e=>{const k=keepKey(e);if(!k||!(k in v))return;
+      if(e.type==="checkbox"||e.type==="radio")e.checked=!!v[k];else if(e.tagName==="SELECT"){if([...e.options].some(o=>o.value===v[k]))e.value=v[k]}else e.value=v[k]})}
+  main.querySelectorAll("details[data-keep-open]").forEach(d=>{const k=d.dataset.keepOpen;if(ui.keepOpen[k]||Object.keys(ui.keep).some(id=>d.querySelector("#"+CSS.escape(id))))d.open=true});
+}
+const keepForget=id=>{delete ui.keep[id];ui.keepDirty.delete(id)};
 function render(){
   if(ui.view==="rform"&&(receiptSaving||receiptSelecting))return;
   if(ui.view==="rform"&&document.getElementById("rForm")){const ids={date:"r_date",payee:"r_payee",item:"r_item",amount:"r_amount",company:"r_co",method:"r_method",cardId:"r_card",cat:"r_cat",caseId:"r_case",site:"r_site",room:"r_room",jobNo:"r_job",note:"r_note"};ui.rDraft=Object.fromEntries(Object.entries(ids).map(([k,id])=>[k,val(id)]));}
   receiptReleaseURLs();
   const v={home:vHome,company:vCompany,cases:vCases,new:vNew,detail:vDetail,todo:vTodo,requests:vRequests,cal:vCal,gantt:vGantt,stats:vStats,rcpt:vRcpt,rform:vRform}[ui.view]||vHome;
+  keepCapture();
   main.innerHTML=v();
+  keepRestore();
   const scopeMarkup=scopeHeader();if(ui.view==="home")main.querySelector("#home-sync")?.insertAdjacentHTML("afterend",scopeMarkup);else main.insertAdjacentHTML("afterbegin",scopeMarkup);
   document.querySelector(".proto").hidden=!hasExamples();
   const ml=document.getElementById("manualLink");if(ml)ml.setAttribute("href",manualHref()); /* 社長・全社・GMの端末は管理者向けのマニュアル */
@@ -3191,6 +3272,7 @@ document.addEventListener("click",e=>{
   if(el.dataset.burden!=null&&c){const it=c.items[Number(el.dataset.burden)];if(it){it.burden=el.dataset.b;save();render()}return}
   if(el.dataset.delitem&&c){c.items.splice(Number(el.dataset.delitem),1);save();render();return}
   if(el.dataset.cset&&c){c.company=el.dataset.cset;ui.coEdit=false;save();render();toast("会社を"+c.company+"にしました");return}
+  if(el.dataset.obrole){if(D().viewListId)return;try{obSet({role:el.dataset.obrole==="GM"?"GM":"社員"})}catch(err){toast(err.message,6000)}ui.obMsg=null;render();return}
   const a=el.dataset.act;if(!a)return;
   if(a==="rnew"){rFormClear();go("rform",{rId:null});return}
   if(a==="rdlclose"){rClearDl();render();return}
@@ -3245,7 +3327,8 @@ document.addEventListener("click",e=>{
     if(other){ui.dAsk={text:v.gmCo+"のGMはすでに"+other.name+"さんです。入れ替えますか？（"+other.name+"さんはGMから外れ、"+(other.role==="GM"?"役割は「社員」に戻ります":"役割は「全社」のままです")+"）",run:()=>run(other.sheetId)};render();showAlert();return}
     run("");return}
   if(a==="dvcopy"){const el=document.getElementById("d_vlink");try{navigator.clipboard.writeText(el.value).then(()=>toast("コピーしました"),()=>{el.select();toast("選択しました。長押しでコピーしてください")})}catch(err){el.select()}return}
-  if(a==="dvlink"){const v=val("d_view");ui.dmsg=[{ok:true,text:"つないでいます…"}];ui.dview="";render();
+  if(a==="dvlink"){const b=obBefore("view");if(b){ui.dmsg=[{ok:false,text:"先に「"+b+"」をしてください（ホームの初期設定）。逆の順番だと、会社・人の選択肢から自分が外れます。"}];render();return}
+    const v=val("d_view");ui.dmsg=[{ok:true,text:"つないでいます…"}];ui.dview="";render();
     viewerConnect(v).then(m=>{ui.dmsg=[{ok:true,text:"会社の動き（見るだけ）につなぎました（"+roleLabel(m)+"）。ホームの「会社の動き」で「社員の記録を読み込む」を押してください"}]},
       err=>{ui.dmsg=[{ok:false,text:err.message==="badid"?"リンクの形が違います（https://docs.google.com/spreadsheets/d/…）":err.message==="notview"?"見る人用の一覧ではありません。社長から届いた「見る人用のリンク」か確かめてください":err.message==="notviewer"?(err.me||"このアカウント")+" は、全社・GMの役割になっていません。社長に確かめてください":"つなげませんでした："+dMsg(err)}]}).then(render);return}
   if(a==="dvunlink"){corpKeepClear();Object.assign(D(),{viewListId:"",viewEmail:""});ui.corp=null;ui.corpRO=null;ui.viewList=null;ui.dmsg=[{ok:true,text:"会社の動きとのつながりを外しました"}];save();render();return}
@@ -3282,6 +3365,21 @@ document.addEventListener("click",e=>{
   if(a==="corp"){ui.corp=Object.assign({},ui.corp,{busy:true,err:""});render();
     corpRun().catch(err=>{ui.corp=Object.assign({},ui.corp,{busy:false,err:"読み込めませんでした："+corpErr(err)})}).then(render);return}
   if(a==="gsync"){if(!(ui.gsync&&ui.gsync.busy))gSyncAll();return}
+  if(a==="obclose"){try{obSet({done:new Date().toISOString()})}catch(err){toast(err.message,6000)}ui.obMsg=null;render();return}
+  if(a==="oblogin"){ui.obBusy=true;ui.obMsg=null;render();gAuthorize(true).then(()=>{obSet({login:true});ui.obMsg={ok:true,text:"ログインしました"}},err=>{ui.obMsg={ok:false,text:err.message==="signin"?"ログインできませんでした。もう一度押してください。":err.message||gMsg(err)}}).finally(()=>{ui.obBusy=false;render()});return}
+  if(a==="obsheet"){const v=val("ob_sheet");ui.obBusy=true;ui.obMsg={ok:true,text:"つないでいます…"};render();
+    dataConnect(v).then(()=>{obSet({login:true});ui.obMsg={ok:true,text:"記録シート「"+(D().sheetName||D().sheetId)+"」につなぎました。"}},
+      err=>{ui.obMsg={ok:false,text:err.message==="badid"?"リンクの形が違います（https://docs.google.com/spreadsheets/d/…）":err.message==="tabs"?"このシートには「"+err.miss.join("・")+"」のタブがありません。社長から届いたシートか確かめてください":"つなげませんでした："+dMsg(err)}}).finally(()=>{ui.obBusy=false;render()});return}
+  if(a==="obname"){const b=obBefore("name");if(b){ui.obMsg={ok:false,text:"先に「"+b+"」をしてください。"};render();return}
+    const name=val("ob_name").trim(),co=val("ob_co");if(!name||!COMPANIES.includes(co)){ui.obMsg={ok:false,text:"氏名と会社を入れてください。"};render();return}
+    try{RS().name=name;RS().lastCo=co;obSet({name:D().sheetId});ui.obMsg={ok:true,text:"氏名・会社を保存して、読み戻しを確かめました。"}}catch(err){ui.obMsg={ok:false,text:err.message}}render();return}
+  if(a==="obsync"){const b=obBefore("sync");if(b){ui.obMsg={ok:false,text:"先に「"+b+"」をしてください。"};render();return}ui.obMsg=null;if(!(ui.gsync&&ui.gsync.busy))gSyncAll();return}
+  if(a==="obcheck"){const b=obBefore("check");if(b){ui.obMsg={ok:false,text:"先に「"+b+"」をしてください。"};render();return}
+    try{const n=obCheck();ui.obMsg={ok:true,text:"この端末の記録 "+n+"件 が保存されていて、読み戻せることを確かめました。"}}catch(err){ui.obMsg={ok:false,text:err.message}}render();return}
+  if(a==="obview"){const b=obBefore("view");if(b){ui.obMsg={ok:false,text:"先に「"+b+"」をしてください。逆の順番だと、会社・人の選択肢から自分が外れます。"};render();return}
+    const v=val("ob_view");ui.obBusy=true;ui.obMsg={ok:true,text:"つないでいます…"};render();
+    viewerConnect(v).then(m=>{ui.obMsg={ok:true,text:"見る人用一覧につなぎました（"+roleLabel(m)+"）。"}},
+      err=>{ui.obMsg={ok:false,text:err.message==="badid"?"リンクの形が違います（https://docs.google.com/spreadsheets/d/…）":err.message==="notview"?"見る人用の一覧ではありません。社長から届いた「見る人用のリンク」か確かめてください":err.message==="notviewer"?(err.me||"このアカウント")+" は、全社・GMの役割になっていません。社長に確かめてください":"つなげませんでした："+dMsg(err)}}).finally(()=>{ui.obBusy=false;render()});return}
   if(!c)return;
   if(c.cancelledAt&&["plan","site","rushwin","quote","win","eizenwork","lose","hold","built","bill","pay","payundo","acctnopay","hand","reopen"].includes(a)){toast("受注後取消済みの案件は再開できません");return}
   if(a==="woncancelask"){if(c.stage!=="won"||c.cancelledAt)return;ui.wonCancel=c.id;render();document.getElementById("d_cancel_reason")?.focus();return}
@@ -3360,6 +3458,7 @@ document.addEventListener("click",e=>{
   if(a==="csvone"){go("cases",{csv:true});return}
 });
 document.addEventListener("input",e=>{
+  {const fm=e.target.closest&&e.target.closest("form");if(fm&&KEEP_FORMS.includes(fm.id))ui.keepDirty.add(fm.id)}
   if(caseSaveGuard()){e.preventDefault();return}
   if(e.target.id==="r_payee"||e.target.id==="r_item"){receiptRefreshSuggestions();return;}
   const t=e.target;
@@ -3370,6 +3469,7 @@ document.addEventListener("input",e=>{
   if(t.dataset.item!=null&&c){const it=c.items[Number(t.dataset.item)];if(it){it[t.dataset.f]=t.dataset.f==="amount"?(t.value===""?"":Number(t.value)):t.value;save();refreshItemTotals(c)}return}
 });
 document.addEventListener("change",e=>{
+  {const fm=e.target.closest&&e.target.closest("form");if(fm&&KEEP_FORMS.includes(fm.id))ui.keepDirty.add(fm.id)}
   if(e.target.matches("[data-scope-company],[data-scope-person]")){if(["new","detail","rform"].includes(ui.view))return;const field=e.target.matches("[data-scope-company]")?"company":"person",next={...scopeState().selection,[field]:e.target.value};ui.scopeSaveError=!CPGViewScope.save(localStorage,scopeIdentity(),next).ok;render();main.querySelector(field==="company"?"[data-scope-company]":"[data-scope-person]")?.focus();return;}
 
   if(caseSaveGuard()){e.preventDefault();return}
@@ -3397,6 +3497,7 @@ document.addEventListener("submit",e=>{
   if(caseSaveGuard()){e.preventDefault();return}
   e.preventDefault();
   const f=e.target;
+  if(KEEP_FORMS.includes(f.id))keepForget(f.id);
   if(f.id==="calendarScopeForm"){calendarScopeSave();return}
   if(f.id==="newForm"){
     const type=val("n_type"),at=val("n_at"),co=val("n_co");
