@@ -18,6 +18,36 @@ await p.evaluate(()=>SC.go('requests',{sentRequests:true}));assert.match(await p
 await p.evaluate(()=>SC.go('rcpt'));assert.equal(await p.locator('.shared-receipt').count(),1);assert.match(await p.locator('.shared-receipt').innerText(),/合成店舗/);assert.equal(await p.locator('[data-act=rnew],[data-rclaim],[data-rsettle]').count(),0);assert.equal(await p.evaluate(()=>SC.scopeHomeReceipts(['未提出']).length),1);
 await p.evaluate(()=>{SC.ui.rScope='shared';SC.go('home')});await p.locator('[data-scope-company]').selectOption('all');await p.locator('[data-scope-person]').selectOption('fixture-0');await p.evaluate(()=>SC.go('rcpt'));assert.equal(await p.locator('[data-act=rnew]').count(),1,'stale separate receipt view does not override common self');
 console.log('PASS selected owner/recipient/case across home ToDo gantt company sent requests and readonly receipts');
+await p.evaluate(()=>{SC.go('company');window.scopeTodoBefore=SC.ui.corp.data.find(x=>x.s.sheetId==='fixture-2').todo});await p.locator('[data-scope-company]').selectOption('AT');await p.locator('[data-scope-person]').selectOption('fixture-2');
+for(const state of ['null','missing','empty']){
+ await p.evaluate(state=>{const x=SC.ui.corp.data.find(x=>x.s.sheetId==='fixture-2');if(state==='missing')delete x.todo;else x.todo=state==='null'?null:[];SC.render()},state);
+ const shape=await p.evaluate(()=>{const x=SC.scopeCompanyData().find(x=>x.s.sheetId==='fixture-2');return {null:x.todo===null,missing:x.todo===undefined,array:Array.isArray(x.todo)}});
+ assert.equal(shape.null,state==='null');assert.equal(shape.missing,state==='missing');assert.equal(shape.array,state==='empty');
+ assert.equal(await p.getByText('ToDoはありません',{exact:true}).count(),state==='empty'?1:0);
+ assert.equal(await p.getByText(/ToDoはまだ届いていません/).count(),state==='empty'?0:1);
+ await p.locator('[data-scope-person]').selectOption('fixture-5');assert(!(await p.evaluate(()=>SC.scopeCompanyData().map(x=>x.s.sheetId))).includes('fixture-2'),'unselected null source is excluded safely');await p.locator('[data-scope-person]').selectOption('fixture-2');
+}
+await p.evaluate(()=>{SC.ui.corp.data.find(x=>x.s.sheetId==='fixture-2').todo=window.scopeTodoBefore;SC.render()});
+console.log('PASS missing/null ToDo stays unread; verified empty stays empty; scope exclusion never throws');
+await p.evaluate(()=>{
+ window.scopeOriginalCases=SC.db.cases.slice();window.scopeOriginalCorp=SC.ui.corp.data.slice();
+ SC.db.cases.push({...SC.CASE_DEFAULTS(),id:'SYN-OWN-BILL',company:'CP',type:'reno',stage:'billed',property:'合成本人未入金',tantou:'',billAmount:450,payDue:'2026-11-03'});
+ const own=SC.db.settings.data.staff.find(s=>s.sheetId===SC.db.settings.data.sheetId),won={'受付番号':'SYN-LOCAL','会社':'CP','種類':'リノベーション','段階':'受注・引渡待ち','段階キー':'won','物件':'合成本人案件','担当':''};
+ const j=SC.ui.corp.data.findIndex(x=>x.s.sheetId==='fixture-3'),other=SC.ui.corp.data[j];SC.ui.corp.data[j]={...other,cases:other.cases.concat({...won,'物件':'別社員の同番号','担当':other.s.name})};
+ SC.ui.corp.data.push({s:own,ok:true,cases:[won,{...won},{'受付番号':'SYN-OWN-BILL','会社':'CP','種類':'リノベーション','段階':'請求済・入金待ち','段階キー':'billed','物件':'合成本人未入金','担当':'','残額':'450','遅れ日数':'0'}],todo:null,orders:[],box:[],reports:[],rc:[]});SC.save();SC.go('cases');
+});
+await p.locator('[data-scope-company]').selectOption('CP');await p.locator('[data-scope-person]').selectOption('fixture-0');
+const ownBefore=await p.evaluate(()=>({db:JSON.stringify(SC.db),corp:JSON.stringify(SC.ui.corp.data)}));
+assert.equal(await p.evaluate(()=>SC.scopeCases().length),2);assert.equal(await p.locator('[data-open]').count(),2);
+await p.evaluate(()=>SC.go('home'));assert.equal(await p.locator('#home-summary .tile').nth(3).locator('.v').innerText(),'2');
+await p.evaluate(()=>SC.go('company'));assert.equal(await p.evaluate(()=>SC.scopeCompanyData().find(x=>x.s.sheetId==='fixture-0').cases.length),2);assert.match(await p.locator('main').innerText(),/動いている案件 2件/);assert.match(await p.locator('main').innerText(),/450円/);assert.equal(await p.getByText(/ToDoはまだ届いていません/).count(),1);
+await p.evaluate(()=>SC.go('stats'));assert.match(await p.locator('#stats-unpaid').innerText(),/1件 450円/);
+assert.deepEqual(await p.evaluate(()=>({db:JSON.stringify(SC.db),corp:JSON.stringify(SC.ui.corp.data)})),ownBefore);
+await p.locator('[data-scope-person]').selectOption('fixture-3');assert(!(await p.evaluate(()=>SC.scopeCompanyData().map(x=>x.s.sheetId))).includes('fixture-0'),'other person does not inherit own shared rows');assert.equal(await p.evaluate(()=>SC.scopeCompanyData().find(x=>x.s.sheetId==='fixture-3').cases.filter(r=>r['受付番号']==='SYN-LOCAL'&&r['物件']==='別社員の同番号').length),1,'same case number remains identified by other permanent sheet');
+await p.evaluate(()=>{SC.db.cases=window.scopeOriginalCases;SC.ui.corp.data=window.scopeOriginalCorp;SC.save();SC.render()});
+console.log('PASS own local/shared case identity, active/unpaid consistency, duplicate row once, no source mutation');
+
+
 
 await p.locator('[data-scope-company]').selectOption('all');await p.locator('[data-scope-person]').selectOption('fixture-0');await p.evaluate(()=>SC.go('cases'));
 const business=await p.evaluate(()=>JSON.stringify(SC.db)),todos=await p.evaluate(()=>JSON.stringify(SC.genTodos())),exports=await p.evaluate(()=>JSON.stringify(SC.dataRows()));

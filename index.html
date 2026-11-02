@@ -908,13 +908,13 @@ function scopeAvailableTodos(){
 function scopeTodos(){return scopeAvailableTodos().filter(scopeTodoMatch);
 }
 function scopeCompanyData(){
- const ctx=scopeContext(),selected=new Set(scopeCases().filter(c=>c.ro).map(c=>c.id));
+ const ctx=scopeContext(),selected=new Set(scopeCases().map(c=>JSON.stringify([c._scopeOwner,String(c.ro?c.srcId:c.id)])));
  return (ui.corp?.data||[]).map((x,i)=>({...x,_i:i})).filter(x=>x.s&&ctx.canView(x.s)).map(x=>{
  const recipient=scopeRecipientMatch(x.s.sheetId);
  if(!x.ok)return recipient?x:null;
- const cases=(x.cases||[]).filter(r=>selected.has(String(r['受付番号'])+'・'+x.s.sheetId));
- const todo=(x.todo||[]).filter(r=>scopeTodoMatch({caseId:r['受付番号']?r['受付番号']+'・'+x.s.sheetId:'',_scopeOwner:x.s.sheetId,_scopeRaw:r['担当']||'',kind:r['種類'],ro:true,company:r['会社']}));
- return recipient||cases.length||todo.length?{...x,cases,todo,orders:recipient?x.orders:[],box:recipient?x.box:[],rc:recipient?(x.rc||[]).filter(r=>scopeCompanyMatch(r['会社'])):[]}:null;
+ const seen=new Set(),cases=(x.cases||[]).filter(r=>{const key=JSON.stringify([x.s.sheetId,String(r['受付番号'])]);if(!selected.has(key)||seen.has(key))return false;seen.add(key);return true;});
+ const todo=Array.isArray(x.todo)?x.todo.filter(r=>scopeTodoMatch({caseId:r['受付番号']?r['受付番号']+'・'+x.s.sheetId:'',_scopeOwner:x.s.sheetId,_scopeRaw:r['担当']||'',kind:r['種類'],ro:true,company:r['会社']})):x.todo;
+ return recipient||cases.length||todo?.length?{...x,cases,todo,orders:recipient?x.orders:[],box:recipient?x.box:[],rc:recipient?(x.rc||[]).filter(r=>scopeCompanyMatch(r['会社'])):[]}:null;
  }).filter(Boolean);
 }
 function scopeOwnReceipts(){const s=scopeState();return s.usable&&(s.selection.person==='all'||s.selection.person===(D().sheetId||'local:self'));}
