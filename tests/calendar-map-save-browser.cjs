@@ -81,6 +81,18 @@ async function main(){
   assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   assert.deepEqual(errors,[]);await c.close();
  });
+ await check('本人の端末では、本人の主カレンダーは対応設定がなくても本人の予定として出る（ほかのカレンダーは出ない）',async()=>{
+  for(const opt of [{viewList:false,viewListId:false},{}]){
+   const {c,p,errors}=await device(opt);
+   await p.evaluate(SELF=>{const ev=(calendarId,id,title)=>({private:false,calendarId,id,calendar:'見本',title,allDay:true,start:'2026-11-03',end:'2026-11-04'});
+    localStorage.setItem('workhub_gcal_last_v1',JSON.stringify({policy:2,at:Date.now(),from:'2026-11-01',to:'2026-11-30',data:{events:[ev(SELF,'s1','見本の自分の予定'),ev('shared-work@example.com','w1','見本の結び付けていない予定')],sources:[{id:SELF},{id:'shared-work@example.com'}],missing:0}}));
+    CM.go('cal',{calDay:'2026-11-03',calMonth:'2026-11',calView:'day'})},SELF);
+   const t=await p.textContent('main');assert.match(t,/見本の自分の予定/,JSON.stringify(opt));assert.doesNotMatch(t,/見本の結び付けていない予定/);
+   assert.deepEqual(await saved(p),[],'nothing is saved by showing it');
+   /* 開き直して一覧がまだ無いとき（G.cals なし）も、覚えた主カレンダーで出す */
+   await p.evaluate(()=>{CM.db.settings.data.gPrimary='self@example.com';CM.save();CM.G.cals=null;CM.render()});assert.match(await p.textContent('main'),/見本の自分の予定/);
+   assert.deepEqual(errors,[]);await c.close();}
+ });
  await check('初期設定の役割ボタンに「選んでも権限は変わらない」の説明がある',async()=>{
   const c=await browser.newContext({viewport:{width:360,height:800},serviceWorkers:'block'});await c.route(/googleapis|accounts\.google|fonts\./,r=>r.fulfill({status:200,body:''}));
   const p=await c.newPage();await p.goto(origin+'/index.html');

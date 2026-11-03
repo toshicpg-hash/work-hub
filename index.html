@@ -1593,6 +1593,8 @@ async function gLoadCalendarsRun(){
   do{const v=await gApi("users/me/calendarList?maxResults=250"+(page?"&pageToken="+encodeURIComponent(page):""));if(epoch!==G.readEpoch)throw new Error("stale");items.push(...((v&&v.items)||[]));page=(v&&v.nextPageToken)||""}while(page);
   if(epoch!==G.readEpoch)throw new Error("stale");
   G.cals=items.filter(c=>c&&c.id&&!c.deleted).map(c=>({id:c.id,name:gCalName(c),primary:!!c.primary,owner:c.accessRole==="owner",write:c.accessRole==="owner"||c.accessRole==="writer"}));
+  /* v1.49.5 本人の主カレンダーのID（この端末の設定。開き直して一覧がまだ無いときも、本人の予定として出すため） */
+  {const pr=G.cals.find(c=>c.primary&&gConcreteReadable(c.id));if(pr&&D().gPrimary!==pr.id){D().gPrimary=pr.id;save()}}
   gResetReads();gCleanReadPrefs(true);
   return G.cals;
 }
@@ -1817,6 +1819,16 @@ function gcalStatus(g){
   return '<p class="gcst">Googleカレンダー：'+(cals.map(n=>'<span class="ev '+gcalColor(n)+'">'+h(gcalLabel(n))+'</span>').join("")||'表示するカレンダーがありません')+
     (g.data&&g.data.missing?'<span>（読めないカレンダーが'+Number(g.data.missing)+'つあります）</span>':'')+(g.state==="loading"?'<span>更新中…</span>':'')+'</p>';
 }
+/* v1.49.5 本人の端末では、本人の主カレンダーは対応設定がなくても本人の予定として出す（初めて使う人が予定0件に見えないように）。
+   この端末の本人の記録シートがあるときだけ。社長のマイカレンダーは今までどおり読まない。対応設定で結び付けていれば、そちらを使う */
+function calSelfRows(rows,model){
+  const own=D().sheetId,id=(G.cals||[]).find(c=>c.primary&&gConcreteReadable(c.id))?.id||D().gPrimary||"";
+  if(!own||!id||!gConcreteReadable(id)||(rows||[]).some(r=>r.id===id))return rows;
+  const me=(model.people||[]).find(p=>p.sheetId===own);if(!me)return rows;
+  /* 会社：選んでいる会社が本人の会社ならその会社、本人の会社が1社ならその会社、ほかは「会社未特定」（全社を選んだときに出る） */
+  const sel=model.selection?.company,company=me.companies.includes(sel)?sel:me.companies.length===1?me.companies[0]:"unknown";
+  return (rows||[]).concat({id,work:true,mode:"person",company,person:own});
+}
 const calsLoadingNow=()=>!!(G.calsLoading||ui.gsync?.busy);
 /* 自分の会社がまだ分からないとき（一覧が未接続・未読込）は、自分に結び付けるために3社すべてを選べるようにする */
 const calMapSelfUnknown=cat=>{const own=D().sheetId,me=cat.people.find(p=>p.sheetId===own);return !!(own&&me&&!me.companies.length)};
@@ -1853,7 +1865,7 @@ function vCal(){
   const [rFrom,rTo]=calRange();
   const raw=gcalRange(rFrom,rTo), context=scopeContext(), loaded=CPGViewScope.load(localStorage,scopeIdentity(),context), model=CPGViewScope.model(context,loaded.selection);
   const mapping=CPGCalendarScope.load(localStorage,scopeIdentity());
-  const projected=CPGCalendarScope.project({g:{...raw,data:gSafeData(raw.data)},rows:ui.calendarMapError?[]:mapping.rows,model,cases:scopeSourceCases(),resolvePerson:scopePerson,readable:gConcreteReadable,from:rFrom,to:rTo});
+  const projected=CPGCalendarScope.project({g:{...raw,data:gSafeData(raw.data)},rows:ui.calendarMapError?[]:calSelfRows(mapping.rows,model),model,cases:scopeSourceCases(),resolvePerson:scopePerson,readable:gConcreteReadable,from:rFrom,to:rTo});
   const g={...raw,data:raw.data?{...raw.data,events:projected.events,sources:(raw.data.sources||[]).filter(s=>projected.approved.some(r=>r.id===s.id)),calendars:[]}:null};
   const gby=g.data?gcalByDay(g.data):{},gday=s=>gcalCovered(g,s)?gby[s]||[]:[];
   const isUnknown=s=>projected.unknown(s),dayNotice=s=>({unfetched:'未取得（予定があるか分かりません）',additional:'未取得あり（共有カレンダーを読めていません）',privacy:'同期し直してください（中身を出していない予定あり）',unidentified:'誰の予定か分からない予定あり'})[projected.dayState(s)]||'';
