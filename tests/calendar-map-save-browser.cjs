@@ -1,0 +1,104 @@
+/* v1.49.5 仕事用カレンダーの対応設定：全社・複数会社・見る人用一覧につないだ（管理でない）端末で、自分の主カレンダーを保存できる。
+   Synthetic fixtures only (fictional names, example.com). No Google requests. */
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
+let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
+const root=path.resolve(__dirname,'..');
+const hook='window.CM={get db(){return DB},get ui(){return ui},G,go,save,render,scopeContext,scopeIdentity,signIn(){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000},setViewerList(f){viewerList=f}};';
+const OWN='synthetic-self-sheet-000000001',OTHER='synthetic-self-sheet-OTHER0009',SELF='self@example.com';
+let server,browser,origin;const results=[];
+const check=async(name,fn)=>{await fn();results.push(name);console.log('PASS',name)};
+async function device({ownInList=OWN,viewList=true,width=390,viewListId=true}={}){
+ const c=await browser.newContext({viewport:{width,height:844},timezoneId:'Asia/Tokyo',locale:'ja-JP',serviceWorkers:'block'});
+ await c.route('**/*',r=>{const u=new URL(r.request().url());if(u.origin===origin){if(u.pathname==='/'||u.pathname==='/index.html')return r.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(root,'index.html'),'utf8').replace('corpKeepLoad();\nrender();',hook+'\ncorpKeepLoad();\nrender();')});return r.continue()}return r.fulfill({status:200,body:'{}'})});
+ const p=await c.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));const dialogs=[];p.on('dialog',d=>{dialogs.push(d.message());d.accept()});
+ await p.goto(origin+'/');await p.waitForFunction(()=>!!window.CM);
+ await p.evaluate(({OWN,ownInList,viewList,SELF,viewListId})=>{const d=CM.db.settings.data;d.ob={legacy:true};d.sheetId=OWN;d.viewListId=viewListId?'synthetic-view-list-000000001':'';d.viewEmail=viewListId?SELF:'';
+  d.nameProfile={name:'見本 一郎',sheetId:OWN};CM.db.settings.rcpt.name='見本 一郎';
+  CM.ui.viewList=viewList?[{name:'見本 一郎',email:SELF,sheetId:ownInList,company:'CP,CPY,AT',role:'全社',gmCo:'CP',removed:false},{name:'見本 二郎',email:'b@example.com',sheetId:'synthetic-b-sheet-0000000002',company:'CPY',role:'社員',gmCo:'',removed:false}]:null;
+  CM.G.cals=[{id:SELF,name:'自分',primary:true,owner:true,write:true},{id:'shared-work@example.com',name:'見本の共有',primary:false,owner:false,write:true}];
+  CM.save();CM.go('stats')},{OWN,ownInList,viewList,SELF,viewListId});
+ await p.click('details[data-keep-open=calmap] > summary');
+ return {c,p,errors,dialogs};
+}
+const fill=async(p,{cal=SELF,mode='person',company='CP',person=OWN,work=true}={})=>{await p.selectOption('#cs_cal',cal);await p.selectOption('#cs_mode',mode);await p.selectOption('#cs_company',company);if(person!=null)await p.selectOption('#cs_person',person);if(work)await p.check('#cs_work');else await p.uncheck('#cs_work')};
+const saved=p=>p.evaluate(()=>{try{return JSON.parse(JSON.stringify(window.CPGCalendarScope.load(localStorage,CM.scopeIdentity()).rows))}catch(e){return null}});
+async function main(){
+ server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0]));if(!f.startsWith(root+path.sep)){res.writeHead(403).end();return}try{res.setHeader('content-type',f.endsWith('.js')?'text/javascript':'text/html');res.end(fs.readFileSync(f))}catch{res.writeHead(404).end()}}).listen(0,'127.0.0.1');
+ await new Promise(r=>server.once('listening',r));origin='http://127.0.0.1:'+server.address().port;
+ browser=await playwright.chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
+ await check('全社・複数会社の見る人の端末で、自分の主カレンダーを自分（CP）に結び付けて保存できる',async()=>{
+  const {c,p,errors,dialogs}=await device();await fill(p);await p.click('#calendarScopeForm button[type=submit]');
+  assert.equal(dialogs.length,1);assert.match(await p.textContent('#toast'),/保存しました/);
+  assert.deepEqual(await saved(p),[{id:SELF,work:true,mode:'person',company:'CP',person:OWN}]);
+  assert.deepEqual(errors,[]);await c.close();
+ });
+ await check('不具合の再現：見る人用一覧の自分の行のシートIDが端末の記録シートと違っても、自分の会社（一覧のGmailの行）で保存できる',async()=>{
+  const {c,p,errors}=await device({ownInList:OTHER});
+  const opts=await p.$$eval('#cs_person option',a=>a.map(o=>o.value));assert.ok(opts.includes(OWN));
+  await fill(p);await p.click('#calendarScopeForm button[type=submit]');
+  assert.match(await p.textContent('#toast'),/保存しました/);assert.equal((await saved(p)).length,1);
+  /* 保存した対応で、予定にも出せる（自分の会社が分かっている） */
+  const ok=await p.evaluate(OWN=>{const ctx=CM.scopeContext(),me=window.CPGViewScope.catalog(ctx).people.find(x=>x.sheetId===OWN);return me&&me.companies.includes('CP')},OWN);assert.ok(ok);
+  assert.deepEqual(errors,[]);await c.close();
+ });
+ await check('見る人用一覧が未接続（viewListIdなし）の全社の端末でも、自分の主カレンダーを自分・CPに結び付けて保存でき、予定に出せる',async()=>{
+  const {c,p,errors,dialogs}=await device({viewList:false,viewListId:false});
+  assert.deepEqual(await p.$$eval('#cs_company option',a=>a.map(o=>o.value).filter(v=>v&&v!=='unknown')),['CP','CPY','AT'],'all companies can be chosen for yourself');
+  await fill(p);await p.click('#calendarScopeForm button[type=submit]');
+  assert.equal(dialogs.length,1);assert.match(await p.textContent('#toast'),/保存しました/);
+  assert.deepEqual(await saved(p),[{id:SELF,work:true,mode:'person',company:'CP',person:OWN}]);
+  const approved=await p.evaluate(OWN=>{const me=window.CPGViewScope.catalog(CM.scopeContext()).people.find(x=>x.sheetId===OWN);return me&&me.companies},OWN);
+  assert.deepEqual(approved,['CP'],'the saved row is shown in the calendar (the person has the company)');
+  assert.deepEqual(errors,[]);await c.close();
+ });
+ await check('見る人用一覧につないでいるのに一覧が未読込のときは、保存の前に読み直す。読めなくても自分の結び付けは保存できる',async()=>{
+  const {c,p,errors}=await device({viewList:false});
+  await p.evaluate(()=>{CM.signIn();window.readCount=0;CM.setViewerList(async()=>{window.readCount++;return [{name:'見本 一郎',email:'self@example.com',sheetId:'synthetic-self-sheet-000000001',company:'CP,CPY,AT',role:'全社',gmCo:'CP',removed:false}]})});
+  await fill(p);await p.click('#calendarScopeForm button[type=submit]');await p.waitForFunction(()=>/保存しました|保存できません/.test(document.getElementById('toast').textContent));
+  assert.match(await p.textContent('#toast'),/保存しました/);assert.equal(await p.evaluate(()=>window.readCount),1);assert.equal(await p.evaluate(()=>CM.ui.viewList.length),1);
+  await c.close();
+  const b=await device({viewList:false});
+  await b.p.evaluate(()=>{CM.signIn();CM.setViewerList(async()=>{throw Error('synthetic read failure')})});
+  await fill(b.p);await b.p.click('#calendarScopeForm button[type=submit]');await b.p.waitForFunction(()=>/保存しました|保存できません/.test(document.getElementById('toast').textContent));
+  assert.match(await b.p.textContent('#toast'),/保存しました/);assert.equal((await saved(b.p)).length,1);
+  assert.deepEqual(errors,[]);assert.deepEqual(b.errors,[]);await b.c.close();
+ });
+ await check('ほかの人を選ぶときの条件はゆるめない（一覧の会社に選んだ会社がないと保存しない）',async()=>{
+  const {c,p,errors,dialogs}=await device();await fill(p,{company:'CP',person:'synthetic-b-sheet-0000000002'});await p.click('#calendarScopeForm button[type=submit]');
+  assert.equal(dialogs.length,0);assert.match(await p.textContent('#toast'),/見本 二郎さんの会社に「CP」がありません/);assert.deepEqual(await saved(p),[]);
+  assert.deepEqual(errors,[]);await c.close();
+ });
+ await check('保存できないときは、どの条件で止まったかを出す',async()=>{
+  const {c,p,errors}=await device();
+  const submit=()=>p.evaluate(()=>document.getElementById('calendarScopeForm').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
+  await fill(p,{work:false});await submit();assert.match(await p.textContent('#toast'),/チェックを入れてください/);
+  await fill(p,{company:'',person:OWN});await submit();assert.match(await p.textContent('#toast'),/会社を選んでください/);
+  await fill(p,{person:''});await submit();assert.match(await p.textContent('#toast'),/人物を選んでください/);
+  await fill(p,{company:'CP',person:'synthetic-b-sheet-0000000002'});await submit();assert.match(await p.textContent('#toast'),/見本 二郎さんの会社に「CP」がありません/);
+  await p.evaluate(()=>{CM.G.cals=CM.G.cals.filter(x=>x.primary!==true)});await fill(p,{cal:'shared-work@example.com'});await p.evaluate(()=>{document.getElementById('cs_cal').innerHTML+='<option value="gone@example.com">gone</option>';document.getElementById('cs_cal').value='gone@example.com'});await submit();assert.match(await p.textContent('#toast'),/カレンダーを選んでください/);
+  assert.deepEqual(await saved(p),[]);
+  assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  assert.deepEqual(errors,[]);await c.close();
+ });
+ await check('本人の端末では、本人の主カレンダーは対応設定がなくても本人の予定として出る（ほかのカレンダーは出ない）',async()=>{
+  for(const opt of [{viewList:false,viewListId:false},{}]){
+   const {c,p,errors}=await device(opt);
+   await p.evaluate(SELF=>{const ev=(calendarId,id,title)=>({private:false,calendarId,id,calendar:'見本',title,allDay:true,start:'2026-11-03',end:'2026-11-04'});
+    localStorage.setItem('workhub_gcal_last_v1',JSON.stringify({policy:2,at:Date.now(),from:'2026-11-01',to:'2026-11-30',data:{events:[ev(SELF,'s1','見本の自分の予定'),ev('shared-work@example.com','w1','見本の結び付けていない予定')],sources:[{id:SELF},{id:'shared-work@example.com'}],missing:0}}));
+    CM.go('cal',{calDay:'2026-11-03',calMonth:'2026-11',calView:'day'})},SELF);
+   const t=await p.textContent('main');assert.match(t,/見本の自分の予定/,JSON.stringify(opt));assert.doesNotMatch(t,/見本の結び付けていない予定/);
+   assert.deepEqual(await saved(p),[],'nothing is saved by showing it');
+   /* 開き直して一覧がまだ無いとき（G.cals なし）も、覚えた主カレンダーで出す */
+   await p.evaluate(()=>{CM.db.settings.data.gPrimary='self@example.com';CM.save();CM.G.cals=null;CM.render()});assert.match(await p.textContent('main'),/見本の自分の予定/);
+   assert.deepEqual(errors,[]);await c.close();}
+ });
+ await check('初期設定の役割ボタンに「選んでも権限は変わらない」の説明がある',async()=>{
+  const c=await browser.newContext({viewport:{width:360,height:800},serviceWorkers:'block'});await c.route(/googleapis|accounts\.google|fonts\./,r=>r.fulfill({status:200,body:''}));
+  const p=await c.newPage();await p.goto(origin+'/index.html');
+  assert.match(await p.textContent('#onboarding'),/「GM・全社」は、社長から役割を「GM」か「全社」にしてもらった人が選びます。ここで選んでも、見られる範囲や権限は変わりません/);
+  assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await c.close();
+ });
+ console.log('ALL PASS',results.length);
+}
+main().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();if(server)server.close()});
