@@ -63,7 +63,7 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
    }
   }
   {
-   const a=await setup(db),{p}=a;await open(p,'synthetic-normal');assert.equal(await p.locator('#d_plan_hour,#d_plan_minute,input[type=time]').count(),0);await p.locator('#d_plan').fill('2026-11-15');await click(p,'plan');assert.equal((await read(p)).cases[2].planDate,'2026-11-15');
+   const a=await setup(db),{p}=a;await open(p,'synthetic-normal');assert.equal(await p.locator('input[type=time]').count(),0);assert.equal(await p.locator('#d_plan_end_hour').count(),1,'v1.49.6: optional start/end time for non-emergency plans');await p.locator('#d_plan').fill('2026-11-15');await click(p,'plan');assert.equal((await read(p)).cases[2].planDate,'2026-11-15');
    await open(p,'synthetic-quoted');await click(p,'lose');assert.equal((await read(p)).cases.find(c=>c.id==='synthetic-quoted').stage,'lost');await click(p,'reopen');assert.equal((await read(p)).cases.find(c=>c.id==='synthetic-quoted').stage,'quoted');await p.locator('#d_hold').fill('2026-11-20');await click(p,'hold');assert.equal((await read(p)).cases.find(c=>c.id==='synthetic-quoted').holdDate,'2026-11-20');
    for(const stage of ['handed','working','built','billed','paid']){await open(p,'synthetic-'+stage);assert.equal(await p.locator('[data-act="woncancelask"]').count(),0);await stale(p,'woncancelask');assert.equal(await p.locator('#d_cancel_reason').count(),0);}
    const old=await p.evaluate(()=>testHub.roCase({'受付番号':'old','種類':'緊急対応','段階キー':'new'},{s:{name:'合成旧版'}}));assert.equal(old.planTime,'');assert.equal(old.cancelledAt,'');assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('Normal schedule/loss/reopen/hold, old share defaults and post-handoff scope');
@@ -79,7 +79,7 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
     assert.equal(network.exports.ToDo.some(r=>r[3]==='synthetic-won'&&r[6]!=='手入力'),false);
     assert.deepEqual((await read(p)).cases,before.cases);assert.deepEqual((await read(p)).todos,before.todos);
    }
-   await p.reload();assert.deepEqual((await read(p)).cases,before.cases);assert(a.requests.filter(r=>r.method!=='GET').every(r=>/^https:\/\/sheets.googleapis.com\/v4\/spreadsheets\/synthetic-own(?:\/|:batchUpdate)/.test(r.url)));assert.equal(network.grid.columnCount,33);assert.equal(network.caseClear,undefined);assert.equal(network.batches,2);assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('Repeated full mocked shared sync preserves schedule/cancellation and unrelated requests; no calendar writes');
+   await p.reload();assert.deepEqual((await read(p)).cases,before.cases);assert(a.requests.filter(r=>r.method!=='GET').every(r=>/^https:\/\/sheets.googleapis.com\/v4\/spreadsheets\/synthetic-own(?:\/|:batchUpdate)/.test(r.url)));assert.equal(network.grid.columnCount,34);assert.equal(network.caseClear,undefined);assert.equal(network.batches,2);assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('Repeated full mocked shared sync preserves schedule/cancellation and unrelated requests; no calendar writes');
   }
   for(const fault of ['read-throws','read-old','read-replaced'])for(const action of ['cancel','plan']){
    const syncDb=structuredClone(db);syncDb.settings.data.sheetId='synthetic-own';syncDb.settings.data.ob={legacy:true};const network={exports:{}},a=await setup(syncDb,'Asia/Tokyo',390,network),{p}=a;
@@ -123,7 +123,7 @@ const stale=(p,a)=>p.evaluate(a=>{const b=document.createElement('button');b.dat
    const outcome=await p.evaluate(async()=>{testHub.authorize();try{await testHub.sheetWrite('synthetic-own','案件',testHub.dataRows().cases);return 'ok'}catch(e){return e.message}});
    assert.equal(network.caseClear,undefined);
    if(fault){assert.notEqual(outcome,'ok');assert.deepEqual(network.exports['案件'],original);assert.equal(network.grid.columnCount,29);assert.equal(network.grid.rowCount,3);if(['metadata','missing-grid'].includes(fault))assert.equal(network.calls.filter(r=>r.method!=='GET').length,0);}
-   else{assert.equal(outcome,'ok');assert.equal(network.grid.columnCount,33);assert.equal(network.grid.rowCount,db.cases.length+1);assert.equal(network.exports['案件'][0].length,33);const count=network.grid.rowCount;await p.evaluate(()=>testHub.sheetWrite('synthetic-own','案件',[testHub.dataRows().cases[0]]));assert.equal(network.grid.rowCount,count);assert.equal(network.grid.columnCount,33);assert.equal(network.exports['案件'].length,1);}
+   else{assert.equal(outcome,'ok');assert.equal(network.grid.columnCount,34);assert.equal(network.grid.rowCount,db.cases.length+1);assert.equal(network.exports['案件'][0].length,34);const count=network.grid.rowCount;await p.evaluate(()=>testHub.sheetWrite('synthetic-own','案件',[testHub.dataRows().cases[0]]));assert.equal(network.grid.rowCount,count);assert.equal(network.grid.columnCount,34);assert.equal(network.exports['案件'].length,1);}
    assert.deepEqual(a.errors,[]);await a.ctx.close();results.push('29-column bounded mirror '+(fault||'grow/repeat/header-only')+': no preclear and no partial mutation');
   }
   {
