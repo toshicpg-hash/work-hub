@@ -64,6 +64,7 @@ section .calnav{flex-wrap:wrap;gap:6px}section .calnav h2{font-size:16px;margin:
 .monthpick .mlabel{font-size:20px;font-weight:700;white-space:nowrap}
 .monthpick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px;border:0;padding:0;margin:0}
 .monthpick:focus-within{outline:2px solid var(--accent)}
+.form.plan-time{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.form.plan-time .f{min-width:0}.form.plan-time select{width:100%}
 .btn.xs{min-height:36px;font-size:12.5px;padding:4px 10px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .findrow{flex-wrap:wrap;gap:6px}.findrow input[type=search]{flex:1 1 120px;min-width:0}.findrow .typesel{flex:0 1 118px;min-width:0}.findrow .typesel select{width:100%}
@@ -402,8 +403,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.49.5" title="使い方マニュアルを開く">v1.49.5・11/3更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.49.5" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.49.6" title="使い方マニュアルを開く">v1.49.6・11/3更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.49.6" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -465,8 +466,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./request-box-employee.js?v=1.47.1"></script>
 <script src="./share-management.js?v=1.48.6"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.49.5"></script>
-<script src="./calendar-view-scope.js?v=1.49.5"></script>
+<script src="./view-scope.js?v=1.49.6"></script>
+<script src="./calendar-view-scope.js?v=1.49.6"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -503,7 +504,7 @@ const diffDays=(a,b)=>Math.round((parseYmd(a)-parseYmd(b))/864e5);
 
 /* Stored-data defaults: when a field is added, give it a default here. withDefaults only fills keys that are missing */
 const SCHEMA_VERSION=2;
-const CASE_DEFAULTS=()=>({company:"",addr:"",items:[],note:"",symptom:"",planDate:"",planTime:"",cancelledAt:"",cancelReason:"",estAmount:null,estSentDate:"",siteDate:"",lossReason:"",lossDate:"",holdDate:"",orderDate:"",jobNo:"",billingTenant:"入居者に直接",handedDate:"",gcal:null,builtDate:"",billDate:"",billAmount:null,billTo:"",payDue:"",payments:[],paidDate:"",payLog:[]});
+const CASE_DEFAULTS=()=>({company:"",addr:"",items:[],note:"",symptom:"",planDate:"",planTime:"",planEnd:"",cancelledAt:"",cancelReason:"",estAmount:null,estSentDate:"",siteDate:"",lossReason:"",lossDate:"",holdDate:"",orderDate:"",jobNo:"",billingTenant:"入居者に直接",handedDate:"",gcal:null,builtDate:"",billDate:"",billAmount:null,billTo:"",payDue:"",payments:[],paidDate:"",payLog:[]});
 const TODO_DEFAULTS=()=>({title:"",due:"",tantou:"",done:false});
 const RECEIPT_DEFAULTS=()=>({date:"",payee:"",item:"",amount:null,company:"CP",method:"立替",cardId:"",cat:"材料費",caseId:"",site:"",jobNo:"",note:"",photos:[],pext:{},status:"未提出",claimNo:"",submitDate:"",settleDate:"",closeNo:"",createdAt:"",everSub:false,returnedFrom:"",edits:[],drive:{}});
 const RSET_DEFAULTS=()=>({name:"",payDays:{CP:2,CPY:4,AT:-1},to:{CP:"桜田",CPY:"桜田",AT:"大須"},useCard:false,cards:[],lastCo:"CP",noSeq:{}});
@@ -609,7 +610,7 @@ function roCase(r,x){
   const v=k=>String(r[k]==null?"":r[k]), d=k=>v(k).slice(0,10), num=k=>v(k)===""?null:Number(v(k));
   const stage=STAGES[v("段階キー")]?v("段階キー"):Object.keys(STAGES).find(k=>STAGES[k]===v("段階"))||"new", paid=Number(v("入金済額"))||0;
   return Object.assign(CASE_DEFAULTS(),{ro:true,company:COMPANIES.includes(v("会社"))?v("会社"):"",owner:x.s.name,srcId:v("受付番号"),id:v("受付番号")+"・"+x.s.sheetId,type:typeKeyOf(v("種類")),stage,clientKind:"",client:v("依頼元"),property:v("物件"),room:v("部屋"),tantou:tantouLabel(v("担当"),x.s.sheetId),
-    receivedAt:v("受付日時")||(d("受付日")?new Date(d("受付日")+"T00:00:00").toISOString():""),planDate:d("予定日"),planTime:v("予定時刻（日本時間）"),cancelledAt:v("受注後取消日時"),cancelReason:v("受注後取消理由"),siteDate:d("実施日"),estAmount:num("見積額"),estSentDate:d("見積提出日"),holdDate:d("保留日"),lossDate:d("失注日"),lossReason:v("失注理由"),
+    receivedAt:v("受付日時")||(d("受付日")?new Date(d("受付日")+"T00:00:00").toISOString():""),planDate:d("予定日"),planTime:v("予定時刻（日本時間）"),planEnd:(e=>HHMM.test(e)&&HHMM.test(v("予定時刻（日本時間）"))&&e>v("予定時刻（日本時間）")?e:"")(v("予定終了時刻（日本時間）")),cancelledAt:v("受注後取消日時"),cancelReason:v("受注後取消理由"),siteDate:d("実施日"),estAmount:num("見積額"),estSentDate:d("見積提出日"),holdDate:d("保留日"),lossDate:d("失注日"),lossReason:v("失注理由"),
     orderDate:d("受注日"),jobNo:v("仕事番号"),handedDate:d("引渡日"),builtDate:d("施工完了日"),billDate:d("請求日"),billAmount:num("請求額"),payDue:d("入金予定日"),payments:paid?[{date:d("入金日")||d("請求日"),amount:paid}]:[],paidDate:stage==="paid"?d("入金日"):""});
 }
 function roBuild(data){
@@ -915,7 +916,8 @@ function vHome(){
   (rnotes.length?'<button type="button" class="tile alert" data-nav="rcpt"><span class="v">領収書の注意 '+rnotes.length+'件</span><span class="s">'+rnotes.map(h).join('・')+'</span></button>':'')+
   ((D().admin||D().viewListId)?homeCorpTile():'');
 }
-const calendarDriftCases=()=>DB.cases.filter(c=>c.gcal&&c.gcal.id&&c.gcal.date&&c.planDate&&c.gcal.date!==c.planDate&&!ended(c));
+/* 日付が違う、または v1.49.6 以降に登録した予定で時刻が違う（それより前の登録は時刻を覚えていないので日付だけ比べる） */
+const calendarDriftCases=()=>DB.cases.filter(c=>c.gcal&&c.gcal.id&&c.gcal.date&&c.planDate&&(c.gcal.date!==c.planDate||c.gcal.when&&c.gcal.when!==planSig(c))&&!ended(c));
 function calendarDriftList(){
  const cases=calendarDriftCases(),row=c=>'<li><button class="btn drift-case" type="button" data-drift="'+h(c.id)+'">'+h([c.id,c.property,c.room].filter(Boolean).join(" "))+'（HUB '+h(mdh(c.planDate))+'／カレンダー '+h(mdh(c.gcal.date))+'）</button></li>';
  return '<p>要確認：日付のずれ '+cases.length+'件。カレンダーに登録した日付との比較です。更新は案件の画面で行ってください。</p><ul>'+cases.slice(0,5).map(row).join('')+'</ul>'+(cases.length>5?'<details><summary>ほか'+(cases.length-5)+'件</summary><ul>'+cases.slice(5).map(row).join('')+'</ul></details>':'');
@@ -1153,12 +1155,12 @@ function gcalPreview(c){
   let st, btn="";
   if(!c.planDate)st='日程を決めると登録できます。';
   else if(!g||!g.date){st='まだ登録していません（登録先：'+h(where)+'）。';btn='<button class="btn pri" type="button" data-act="greg">Googleカレンダーに登録</button>'}
-  else if(g.date!==c.planDate){st='<b style="color:var(--red)">登録済みの日付（'+mdh(g.date)+'）と予定日が違います。</b>';btn='<button class="btn pri" type="button" data-act="greg">カレンダーの予定を更新</button>'}
+  else if(g.date!==c.planDate||g.when&&g.when!==planSig(c)){st='<b style="color:var(--red)">'+(g.date!==c.planDate?'登録済みの日付（'+mdh(g.date)+'）と予定日が違います。':'登録済みの時刻と予定の時刻が違います。')+'</b>';btn='<button class="btn pri" type="button" data-act="greg">カレンダーの予定を更新</button>'}
   else st='登録済み：'+h(where)+'（'+mdh(g.date)+'）'+(g.link&&/^https:\/\/www\.google\.com\/calendar\//.test(g.link)?' <a href="'+h(g.link)+'" target="_blank" rel="noopener noreferrer">Googleで開く</a>':'');
   return '<div class="panel" id="case-google-calendar" style="scroll-margin-top:110px"><h3>Googleカレンダー</h3>'+
   '<p style="margin:0">'+st+'</p>'+(btn?'<div class="row">'+btn+'</div>':'')+
   '<dl class="kv"><dt>件名</dt><dd>'+h(gTitle(c))+'</dd>'+
-  '<dt>日付</dt><dd class="num">'+(c.planDate?mdh(c.planDate)+' '+s+'（終日）':'日程を決めると入ります')+'</dd>'+
+  '<dt>日付</dt><dd class="num">'+(c.planDate?mdh(c.planDate)+' '+(planTimed(c)?planRange(c)+' '+s:s+'（終日）'):'日程を決めると入ります')+'</dd>'+
   '<dt>場所</dt><dd>'+(h(c.addr)||'住所が未入力です')+'</dd>'+
   '<dt>説明</dt><dd style="white-space:pre-wrap">'+h(gDesc(c))+'</dd></dl>'+
   '<p class="note" style="margin:0">メモや症状はGoogleには送りません。自動では登録しないので、日程を決めたらボタンを押してください。</p></div>';
@@ -1239,6 +1241,19 @@ function emergencyTimeFields(value){
   return '<div class="form" style="width:100%"><label class="f">時（日本時間・24時間）<select id="d_plan_hour" aria-label="時（日本時間・24時間）" required>'+options(24,parts[0])+'</select></label><label class="f">分（日本時間）<select id="d_plan_minute" aria-label="分（日本時間）" required>'+options(60,parts[1])+'</select></label></div>'+
     (value&&!valid?'<p class="note" role="status">保存済みの時刻を選択欄に表示できません。記録は変更していません。予定時刻を確認して時・分を選んでください。</p>':'');
 }
+/* v1.49.6 立会・現調などの予定の時刻（任意）。開始・終了の「時」「分」（日本時間・24時間）。終了なしは開始から1時間。時刻なしは終日 */
+const HHMM=/^([01]\d|2[0-3]):[0-5]\d$/;
+const planTimed=c=>c.type!=="kinkyu"&&HHMM.test(c.planTime||"");
+function planEndEff(c){if(!planTimed(c))return "";if(HHMM.test(c.planEnd||""))return c.planEnd;const [h0,m0]=c.planTime.split(":").map(Number),t=h0*60+m0+60;return t>=1440?"24:00":pad(Math.floor(t/60))+":"+pad(t%60);}
+const planRange=c=>planTimed(c)?c.planTime+"〜"+planEndEff(c):c.type==="kinkyu"?(c.planTime||"時刻未定"):"終日";
+/* カレンダーに登録した内容と比べる印（日付と時刻） */
+const planSig=c=>c.planDate+"|"+(planTimed(c)?c.planTime+"-"+planEndEff(c):"");
+function planTimeFields(c){
+  const parts=v=>HHMM.test(v||"")?v.split(":"):["",""],[sh,sm]=parts(c.planTime),[eh,em]=parts(c.planEnd);
+  const sel=(id,label,n,cur)=>'<label class="f">'+label+'<select id="'+id+'" aria-label="'+label+'"><option value="">なし</option>'+Array.from({length:n},(_,i)=>{const v=pad(i);return '<option value="'+v+'"'+(v===cur?' selected':'')+'>'+v+'</option>'}).join("")+'</select></label>';
+  return '<div class="form plan-time" style="width:100%">'+sel("d_plan_hour","開始（時）",24,sh)+sel("d_plan_minute","開始（分）",60,sm)+sel("d_plan_end_hour","終了（時）",24,eh)+sel("d_plan_end_minute","終了（分）",60,em)+'</div>'+
+    '<p class="note" style="margin:0">時刻は日本時間・24時間です。入れなくてもかまいません（Googleカレンダーには終日の予定で入ります）。開始だけ入れたときは、開始から1時間の予定にします（日をまたぐときは、その日の24時まで）。</p>';
+}
 function caseDateWarning(c){return c.orderDate&&(c.lossDate||c.stage==='lost')?'<div class="banner case-date-warning" role="status"><b>受注日・失注日の確認が必要です。</b>受注日と失注日が両方あるか、失注の段階に受注日が残っています。元の記録を確認してください。保存は止めず、日付を自動変更しません。</div>':'';}
 
 /* Explicit local corrections; history travels in the existing JSON backup, not the shared mirror. */
@@ -1289,7 +1304,7 @@ function vDetail(){
   let act="";
   if(c.stage==="new"&&!isEizen(c)){
     act='<div class="panel"><h3>次にやること：'+TYPES[c.type].site+'</h3>'+
-      ('<div class="row"><label class="f" style="flex:1 1 200px">'+TYPES[c.type].site+'の予定日（日本時間）'+(c.planDate?'（'+mdh(c.planDate)+'に決定済み）':'')+'<input type="date" id="d_plan" value="'+h(c.planDate||addDays(todayS(),2))+'"><span class="note" data-dl="d_plan">'+mdh(c.planDate||addDays(todayS(),2))+'</span></label>'+ (c.type==="kinkyu"?emergencyTimeFields(c.planTime):'')+'<button class="btn" type="button" data-act="plan" style="align-self:flex-end">日程を決める</button></div>')+
+      ('<div class="row"><label class="f" style="flex:1 1 200px">'+TYPES[c.type].site+'の予定日（日本時間）'+(c.planDate?'（'+mdh(c.planDate)+(planTimed(c)?' '+planRange(c):'')+'に決定済み）':'')+'<input type="date" id="d_plan" value="'+h(c.planDate||addDays(todayS(),2))+'"><span class="note" data-dl="d_plan">'+mdh(c.planDate||addDays(todayS(),2))+'</span></label>'+ (c.type==="kinkyu"?emergencyTimeFields(c.planTime):planTimeFields(c))+'<button class="btn" type="button" data-act="plan" style="align-self:flex-end">日程を決める</button></div>')+
       '<label class="f">'+TYPES[c.type].site+'を実施した日<input type="date" id="d_site" value="'+todayS()+'"><span class="note" data-dl="d_site">'+mdh(todayS())+'</span></label>'+
       '<div class="row"><button class="btn pri" type="button" data-act="site">'+TYPES[c.type].site+'を済みにする</button>'+
       (c.type==="kinkyu"?'<button class="btn" type="button" data-act="rushwin">見積を省いて受注へ（緊急）</button>':'')+'</div>'+
@@ -1337,7 +1352,7 @@ function vDetail(){
       (ui.rcvEdit?'<div class="ro" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"><label class="f">受付日時<input type="datetime-local" id="d_rcv" value="'+h(ui.rcvSuggest?ui.rcvSuggest+"T"+localDT(c.receivedAt).slice(11):localDT(c.receivedAt))+'"></label>'+
         '<span class="note">実際に依頼を受けた日時にします。緊急の経過時間・ToDoの期限・ガントも、この日時で計算し直します。</span>'+
         '<div class="row"><button class="btn pri" type="button" data-act="rcvsave">受付日時を保存</button><button class="btn" type="button" data-act="rcvno">やめる</button></div></div>':'')+'</dd>'+
-    (c.planDate?'<dt>現地予定（日本時間）</dt><dd>'+h(c.planDate)+' '+h(c.planTime||"時刻未定")+'</dd>':'')+
+    (c.planDate?'<dt>現地予定（日本時間）</dt><dd>'+h(c.planDate)+' '+h(planRange(c))+'</dd>':'')+
     (c.siteDate?'<dt>'+TYPES[c.type].site+'</dt><dd class="num">'+mdh(c.siteDate)+'</dd>':'')+
     (estOf(c)!=null&&c.stage!=="new"&&c.stage!=="site"?'<dt>見積</dt><dd class="num">'+yen(estOf(c))+(c.estSentDate?'（'+md(c.estSentDate)+'提出）':'')+'</dd>':'')+
     (c.orderDate?'<dt>受注日</dt><dd class="num">'+md(c.orderDate)+'</dd>':'')+
@@ -1501,7 +1516,7 @@ window.addEventListener?.("storage",e=>{if(e.key===KEY&&manualTodoCancelSession)
 /* 社員の案件の詳細（見るだけ。編集・削除・登録のボタンは出さない） */
 function roDetail(c){
   const dt=x=>x?mdh(x):"";
-  const rows=[["受注後取消日時",japanStamp(c.cancelledAt)],["取消理由",c.cancelReason],["依頼元",c.client],["受付",c.receivedAt?dt(ymd(new Date(c.receivedAt))):""],[TYPES[c.type].site+"の予定（日本時間）",c.planDate?c.planDate+" "+(c.planTime||"時刻未定"):""],[TYPES[c.type].site+"の実施",dt(c.siteDate)],
+  const rows=[["受注後取消日時",japanStamp(c.cancelledAt)],["取消理由",c.cancelReason],["依頼元",c.client],["受付",c.receivedAt?dt(ymd(new Date(c.receivedAt))):""],[TYPES[c.type].site+"の予定（日本時間）",c.planDate?c.planDate+" "+planRange(c):""],[TYPES[c.type].site+"の実施",dt(c.siteDate)],
     ["見積",estOf(c)!=null?yen(estOf(c)):""],["見積提出",dt(c.estSentDate)],["保留（次の確認）",c.stage==="hold"?dt(c.holdDate):""],["失注",dt(c.lossDate)],["受注",dt(c.orderDate)],["仕事番号",c.jobNo],["引渡",dt(c.handedDate)],["施工完了",dt(c.builtDate)],
     ["請求",c.billAmount!=null?yen(c.billAmount)+(c.billDate?"（"+dt(c.billDate)+"）":""):""],["入金予定",dt(c.payDue)],["入金済",paidSum(c)?yen(paidSum(c)):""],["残額",c.stage==="billed"?yen(remainOf(c))+(lateDays(c)?"・"+lateDays(c)+"日遅れ":""):""]].filter(x=>x[1]);
   const td=roTodos().filter(t=>t.caseId===c.id);
@@ -1766,22 +1781,27 @@ const gDesc=c=>["受付番号："+c.id,"依頼の種類："+TYPES[c.type].label,
 async function gRegister(c){
   await gAuthorize();
   if(!G.cals)await gLoadCalendars();
-  const body={summary:gTitle(c),location:c.addr||"",description:gDesc(c),status:"confirmed",start:{date:c.planDate},end:{date:addDays(c.planDate,1)},extendedProperties:{private:{cpgHubCase:c.id}}};
+  /* 時刻があれば、その時間（日本時間）の予定。なければ終日。終日⇔時間の切り替えでは、使わない方を null にして消す */
+  const endT=planEndEff(c),endDay=endT==="24:00"?addDays(c.planDate,1):c.planDate,endHM=endT==="24:00"?"00:00":endT;
+  const when=planTimed(c)?{start:{dateTime:c.planDate+"T"+c.planTime+":00+09:00",timeZone:"Asia/Tokyo",date:null},end:{dateTime:endDay+"T"+endHM+":00+09:00",timeZone:"Asia/Tokyo",date:null}}:{start:{date:c.planDate,dateTime:null,timeZone:null},end:{date:addDays(c.planDate,1),dateTime:null,timeZone:null}};
+  const body={summary:gTitle(c),location:c.addr||"",description:gDesc(c),status:"confirmed",...when,extendedProperties:{private:{cpgHubCase:c.id}}},sig=planSig(c);
+  /* 新しく作るときは null を送らない（null は PATCH で前の値を消すときだけ） */
+  const post=JSON.parse(JSON.stringify(body,(k,v)=>v===null?undefined:v));
   if(c.gcal&&c.gcal.id&&c.gcal.cal){
     const path="calendars/"+encodeURIComponent(c.gcal.cal)+"/events/"+encodeURIComponent(c.gcal.id);
-    try{const r=await gApi(path,{method:"PATCH",body});c.gcal=Object.assign({},c.gcal,{date:c.planDate,link:r&&r.htmlLink||c.gcal.link||""});save();return "updated"}
+    try{const r=await gApi(path,{method:"PATCH",body});c.gcal=Object.assign({},c.gcal,{date:c.planDate,when:sig,link:r&&r.htmlLink||c.gcal.link||""});save();return "updated"}
     catch(err){
       if(err.status!==404)throw err;
       /* never created (a send that failed earlier): create it now with the saved id */
-      const r=await gApi("calendars/"+encodeURIComponent(c.gcal.cal)+"/events",{method:"POST",body:Object.assign({id:c.gcal.id},body)});
-      c.gcal=Object.assign({},c.gcal,{date:c.planDate,link:r&&r.htmlLink||""});save();return "created";
+      const r=await gApi("calendars/"+encodeURIComponent(c.gcal.cal)+"/events",{method:"POST",body:Object.assign({id:c.gcal.id},post)});
+      c.gcal=Object.assign({},c.gcal,{date:c.planDate,when:sig,link:r&&r.htmlLink||""});save();return "created";
     }
   }
   const cal=gWriteCal();if(!cal)throw new Error("nowrite");
   c.gcal={cal:cal.id,calName:cal.name,id:gRand(),date:"",link:""};save();
-  try{const r=await gApi("calendars/"+encodeURIComponent(cal.id)+"/events",{method:"POST",body:Object.assign({id:c.gcal.id},body)});c.gcal.date=c.planDate;c.gcal.link=r&&r.htmlLink||"";save();return "created"}
+  try{const r=await gApi("calendars/"+encodeURIComponent(cal.id)+"/events",{method:"POST",body:Object.assign({id:c.gcal.id},post)});c.gcal.date=c.planDate;c.gcal.when=sig;c.gcal.link=r&&r.htmlLink||"";save();return "created"}
   catch(err){
-    if(err.status===409){const r=await gApi("calendars/"+encodeURIComponent(cal.id)+"/events/"+encodeURIComponent(c.gcal.id),{method:"PATCH",body});c.gcal.date=c.planDate;c.gcal.link=r&&r.htmlLink||"";save();return "created"}
+    if(err.status===409){const r=await gApi("calendars/"+encodeURIComponent(cal.id)+"/events/"+encodeURIComponent(c.gcal.id),{method:"PATCH",body});c.gcal.date=c.planDate;c.gcal.when=sig;c.gcal.link=r&&r.htmlLink||"";save();return "created"}
     throw err;
   }
 }
@@ -1979,7 +1999,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.49.5";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.49.6";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2054,7 +2074,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.49.5" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.49.5" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.49.6" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.49.6" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -2522,7 +2542,7 @@ const sheetIdOf=x=>{const m=String(x||"").match(/\/spreadsheets\/d\/([A-Za-z0-9_
 const fake=x=>String(x||"").includes("（架空）");
 
 /* What a person sends: the main points only — no memo, symptom or detailed address */
-const CASE_COLS=["受付番号","種類","段階","物件","部屋","依頼元","担当","受付日","予定日","実施日","見積額","受注日","仕事番号","施工完了日","請求日","請求額","入金予定日","入金済額","残額","遅れ日数","最終の動き","見積提出日","保留日","失注日","引渡日","入金日","段階キー","受付日時","会社","予定時刻（日本時間）","受注後取消日時","受注後取消理由","失注理由"];
+const CASE_COLS=["受付番号","種類","段階","物件","部屋","依頼元","担当","受付日","予定日","実施日","見積額","受注日","仕事番号","施工完了日","請求日","請求額","入金予定日","入金済額","残額","遅れ日数","最終の動き","見積提出日","保留日","失注日","引渡日","入金日","段階キー","受付日時","会社","予定時刻（日本時間）","受注後取消日時","受注後取消理由","失注理由","予定終了時刻（日本時間）"];
 const PAY_COLS=["受付番号","物件","部屋","担当","日付","種類","金額","区分"];
 const TODO_COLS=["内容","期限","担当","受付番号","物件","部屋","種類","状態"];
 const todoState=(due,day=todayS())=>{if(!due)return "期限なし";const n=diffDays(due,day);return n<0?"期限切れ":n===0?"今日":"今後"};
@@ -2538,7 +2558,7 @@ function corpLastMove(r){
 function dataRows(){
   const real=DB.cases.filter(c=>!fake(c.client)&&!fake(c.property));
   const cases=[CASE_COLS,...real.map(c=>[c.id,TYPES[c.type].label,STAGES[c.stage],c.property,c.room,c.client,c.tantou,c.receivedAt?ymd(new Date(c.receivedAt)):"",c.planDate,c.siteDate,estOf(c)??"",c.orderDate,c.jobNo,c.builtDate,c.billDate,c.billAmount??"",c.payDue,c.billDate?paidSum(c):"",c.billDate?Math.max(0,remainOf(c)):"",lateDays(c)||"",lastMove(c),
-    c.estSentDate,c.holdDate,c.lossDate,c.handedDate,(c.payments||[]).map(x=>x.date).filter(Boolean).sort().pop()||"",c.stage,c.receivedAt||"",c.company||"",c.planTime||"",c.cancelledAt||"",c.cancelReason||"",c.lossReason??""])];
+    c.estSentDate,c.holdDate,c.lossDate,c.handedDate,(c.payments||[]).map(x=>x.date).filter(Boolean).sort().pop()||"",c.stage,c.receivedAt||"",c.company||"",c.planTime||"",c.cancelledAt||"",c.cancelReason||"",c.lossReason??"",c.planEnd||""])];
   const pay=[PAY_COLS];
   for(const c of real){
     const base=[c.id,c.property,c.room,c.tantou];
@@ -3171,6 +3191,14 @@ function roleVal(p){
   return {company:COMPANIES.filter(co=>cs.includes(co)).join(","),role,gmCo};
 }
 const dMsgList=()=>{const m=ui.dmsg;return m?'<ul class="gres" role="status">'+m.map(x=>'<li class="'+(x.ok===false?'ng':x.ok==="warn"?'warn':'ok')+'">'+(x.ok===false?'× ':x.ok==="warn"?'！ ':'✓ ')+h(x.text)+'</li>').join("")+'</ul>':''};
+/* v1.49.6 社員一覧の「最終同期」：社員一覧シートの列（古い値が残ることがある）ではなく、社員の記録シートの「情報」タブを読み込んだ値を出す。
+   まだ読み込んでいないときは「未読込」。社員一覧シートの列はそのまま（読みも書きも変えない） */
+function staffSyncText(s){
+  const x=(ui.corp?.data||[]).find(y=>y.s&&y.s.sheetId===s.sheetId);
+  if(!x)return "最終同期 未読込（社員の記録を読み込むと出ます）";
+  if(!x.ok)return "最終同期 読み込めませんでした";
+  return x.s.lastSync?"最終同期 "+x.s.lastSync+(ui.corp.kept?"（前回の読み込み）":""):"最終同期 まだ同期していません";
+}
 /* 設定：社員の「記録シート」と、社長用の「管理」 */
 function dSettings(){
   const d=D(), msg=ui.dview==="corp"?'':dMsgList();
@@ -3185,7 +3213,7 @@ function dSettings(){
       (!d.admin?'<p class="note" style="margin:0">社員ごとの記録シートを、社長のドライブのフォルダ「CPG HUB データ」に作ります。</p><div class="row"><button class="btn pri" type="button" data-act="dadmin">管理をはじめる</button></div>':
       (d.staff.length?'<ul class="dl">'+d.staff.map((s,i)=>'<li><div class="row"><b>'+h(s.name)+'</b><span class="note">'+h(s.email)+'</span><span class="sp"></span>'+(s.removed?'<span class="note">役割解除済み（要確認の共有は別途確認）</span>':'<button class="btn sm" type="button" data-dname="'+h(s.sheetId)+'">正規氏名</button><button class="btn sm" type="button" data-drole="'+i+'">会社・役割</button><button class="btn sm danger" type="button" data-dunshare="'+i+'">共有を外す</button>')+'</div>'+
         '<div class="row note"><span class="chip">'+h(coList(s).join("・")||"会社なし")+'</span><span class="chip'+(isViewer(s)?' ro':'')+'">'+h(roleLabel(s))+'</span></div>'+
-        '<div class="note num">シート '+h(s.sheetId.slice(0,10))+'…・追加 '+md(s.addedAt)+(s.lastSync?'・最終同期 '+h(s.lastSync):'')+'</div>'+
+        '<div class="note num">シート '+h(s.sheetId.slice(0,10))+'…・追加 '+md(s.addedAt)+'・'+h(staffSyncText(s))+'</div>'+
         (s.nameHistory?.length?'<details><summary>氏名の変更履歴</summary><ul>'+s.nameHistory.map(r=>'<li>'+h(r.before)+' → '+h(r.after)+'（'+h(new Date(r.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+' JST）</li>').join("")+'</ul></details>':'')+
         (ui.dName===s.sheetId?'<label class="f">正規氏名<input id="dn_name" maxlength="100" value="'+h(ui.dNameDraft??s.name)+'"></label><div class="row"><button class="btn pri" data-act="dn-save">変更内容を確認</button><button class="btn" data-act="dn-cancel">やめる</button></div><p class="note">過去の担当キー・案件・履歴は置換しません。同姓同名はGmailとシートIDで対象を確認してください。</p>':'')+
         (ui.dRole===i?roleForm("dr",s)+'<div class="row"><button class="btn pri" type="button" data-act="droledo"'+(ui.dbusy?' disabled':'')+'>保存する</button><button class="btn" type="button" data-act="droleno">やめる</button></div>':'')+
@@ -3503,12 +3531,20 @@ document.addEventListener("click",e=>{
     gRegister(c).then(r=>{toast(r==="updated"?"Googleカレンダーの予定を更新しました":"Googleカレンダーに登録しました")},err=>{toast("登録できませんでした："+gMsg(err),5000)}).finally(()=>{ui.gbusy=false;render()});return}
   if(a==="plan"){
     if(c.stage!=="new"||isEizen(c))return;
-    const d=val("d_plan"),hour=val("d_plan_hour"),minute=val("d_plan_minute"),time=c.type==="kinkyu"?(hour!==""&&minute!==""?hour+":"+minute:""):c.planTime||"";
+    const d=val("d_plan"),hour=val("d_plan_hour"),minute=val("d_plan_minute"),time=hour!==""&&minute!==""?hour+":"+minute:"";
     if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!parseYmd(d)){toast("予定日を入れてください");return}
-    if(c.type==="kinkyu"&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)){toast("予定時刻（日本時間）を入れてください");return}
+    if(c.type==="kinkyu"&&!HHMM.test(time)){toast("予定時刻（日本時間）を入れてください");return}
+    let end="";
+    if(c.type!=="kinkyu"){
+      const eh=val("d_plan_end_hour"),em=val("d_plan_end_minute");end=eh!==""&&em!==""?eh+":"+em:"";
+      if((hour==="")!==(minute==="")){toast("開始の「時」と「分」を両方選んでください（時刻なしなら両方「なし」）",5000);return}
+      if((eh==="")!==(em==="")){toast("終了の「時」と「分」を両方選んでください（終了なしなら両方「なし」）",5000);return}
+      if(end&&!time){toast("終了だけは入れられません。開始の時刻も選んでください",5000);return}
+      if(end&&end<=time){toast("終了は開始より後の時刻にしてください（保存していません）",5000);return}
+    }
     if(manualTodoBusy()){toast("同期などの処理が終わってから保存してください");return}
-    if(!saveCaseChange(c,{planDate:d,planTime:time}))return;
-    render();toast(d+" "+time+"（日本時間）に"+TYPES[c.type].site+"の予定を入れました");return;
+    if(!saveCaseChange(c,c.type==="kinkyu"?{planDate:d,planTime:time}:{planDate:d,planTime:time,planEnd:end}))return;
+    render();toast(d+" "+(c.type==="kinkyu"?time:planRange(c))+"（日本時間）に"+TYPES[c.type].site+"の予定を入れました");return;
   }
   if(a==="site"){c.siteDate=val("d_site")||todayS();c.stage="site";save();render();toast(TYPES[c.type].site+"を済みにしました");return}
   if(a==="rushwin"){c.orderDate=todayS();c.stage="won";save();render();toast("受注にしました。Accessへ引き渡してください");return}
