@@ -4,20 +4,20 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
-const hook='window.CM={get db(){return DB},get ui(){return ui},G,go,save,render,scopeContext,scopeIdentity};';
+const hook='window.CM={get db(){return DB},get ui(){return ui},G,go,save,render,scopeContext,scopeIdentity,signIn(){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000},setViewerList(f){viewerList=f}};';
 const OWN='synthetic-self-sheet-000000001',OTHER='synthetic-self-sheet-OTHER0009',SELF='self@example.com';
 let server,browser,origin;const results=[];
 const check=async(name,fn)=>{await fn();results.push(name);console.log('PASS',name)};
-async function device({ownInList=OWN,viewList=true,width=390}={}){
+async function device({ownInList=OWN,viewList=true,width=390,viewListId=true}={}){
  const c=await browser.newContext({viewport:{width,height:844},timezoneId:'Asia/Tokyo',locale:'ja-JP',serviceWorkers:'block'});
  await c.route('**/*',r=>{const u=new URL(r.request().url());if(u.origin===origin){if(u.pathname==='/'||u.pathname==='/index.html')return r.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(root,'index.html'),'utf8').replace('corpKeepLoad();\nrender();',hook+'\ncorpKeepLoad();\nrender();')});return r.continue()}return r.fulfill({status:200,body:'{}'})});
  const p=await c.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));const dialogs=[];p.on('dialog',d=>{dialogs.push(d.message());d.accept()});
  await p.goto(origin+'/');await p.waitForFunction(()=>!!window.CM);
- await p.evaluate(({OWN,ownInList,viewList,SELF})=>{const d=CM.db.settings.data;d.ob={legacy:true};d.sheetId=OWN;d.viewListId='synthetic-view-list-000000001';d.viewEmail=SELF;
+ await p.evaluate(({OWN,ownInList,viewList,SELF,viewListId})=>{const d=CM.db.settings.data;d.ob={legacy:true};d.sheetId=OWN;d.viewListId=viewListId?'synthetic-view-list-000000001':'';d.viewEmail=viewListId?SELF:'';
   d.nameProfile={name:'見本 一郎',sheetId:OWN};CM.db.settings.rcpt.name='見本 一郎';
   CM.ui.viewList=viewList?[{name:'見本 一郎',email:SELF,sheetId:ownInList,company:'CP,CPY,AT',role:'全社',gmCo:'CP',removed:false},{name:'見本 二郎',email:'b@example.com',sheetId:'synthetic-b-sheet-0000000002',company:'CPY',role:'社員',gmCo:'',removed:false}]:null;
   CM.G.cals=[{id:SELF,name:'自分',primary:true,owner:true,write:true},{id:'shared-work@example.com',name:'見本の共有',primary:false,owner:false,write:true}];
-  CM.save();CM.go('stats')},{OWN,ownInList,viewList,SELF});
+  CM.save();CM.go('stats')},{OWN,ownInList,viewList,SELF,viewListId});
  await p.click('details[data-keep-open=calmap] > summary');
  return {c,p,errors,dialogs};
 }
@@ -42,16 +42,31 @@ async function main(){
   const ok=await p.evaluate(OWN=>{const ctx=CM.scopeContext(),me=window.CPGViewScope.catalog(ctx).people.find(x=>x.sheetId===OWN);return me&&me.companies.includes('CP')},OWN);assert.ok(ok);
   assert.deepEqual(errors,[]);await c.close();
  });
- await check('見る人用一覧がまだ読めていないときは、理由を出して保存しない',async()=>{
-  const {c,p,errors,dialogs}=await device({viewList:false});
-  await p.evaluate(()=>{CM.db.cases=[{id:'U-0001',company:'CP',type:'reno',stage:'new',client:'見本管理',property:'見本荘',room:'1',items:[],payments:[],payLog:[]}];CM.save();CM.render()});
-  await p.click('details[data-keep-open=calmap] > summary').catch(()=>{});
-  if(!(await p.evaluate(()=>document.querySelector('details[data-keep-open=calmap]').open)))await p.click('details[data-keep-open=calmap] > summary');
+ await check('見る人用一覧が未接続（viewListIdなし）の全社の端末でも、自分の主カレンダーを自分・CPに結び付けて保存でき、予定に出せる',async()=>{
+  const {c,p,errors,dialogs}=await device({viewList:false,viewListId:false});
+  assert.deepEqual(await p.$$eval('#cs_company option',a=>a.map(o=>o.value).filter(v=>v&&v!=='unknown')),['CP','CPY','AT'],'all companies can be chosen for yourself');
   await fill(p);await p.click('#calendarScopeForm button[type=submit]');
-  assert.equal(dialogs.length,0);assert.match(await p.textContent('#toast'),/会社をまだ確かめられません。「Googleとまとめて同期」で見る人用一覧を読み直して/);
-  assert.match(await p.textContent('details[data-keep-open=calmap]'),/会社をまだ確かめられません/);
-  assert.deepEqual(await saved(p),[]);
-  assert.equal(await p.$eval('#cs_cal',e=>e.value),SELF,'the typed values stay');
+  assert.equal(dialogs.length,1);assert.match(await p.textContent('#toast'),/保存しました/);
+  assert.deepEqual(await saved(p),[{id:SELF,work:true,mode:'person',company:'CP',person:OWN}]);
+  const approved=await p.evaluate(OWN=>{const me=window.CPGViewScope.catalog(CM.scopeContext()).people.find(x=>x.sheetId===OWN);return me&&me.companies},OWN);
+  assert.deepEqual(approved,['CP'],'the saved row is shown in the calendar (the person has the company)');
+  assert.deepEqual(errors,[]);await c.close();
+ });
+ await check('見る人用一覧につないでいるのに一覧が未読込のときは、保存の前に読み直す。読めなくても自分の結び付けは保存できる',async()=>{
+  const {c,p,errors}=await device({viewList:false});
+  await p.evaluate(()=>{CM.signIn();window.readCount=0;CM.setViewerList(async()=>{window.readCount++;return [{name:'見本 一郎',email:'self@example.com',sheetId:'synthetic-self-sheet-000000001',company:'CP,CPY,AT',role:'全社',gmCo:'CP',removed:false}]})});
+  await fill(p);await p.click('#calendarScopeForm button[type=submit]');await p.waitForFunction(()=>/保存しました|保存できません/.test(document.getElementById('toast').textContent));
+  assert.match(await p.textContent('#toast'),/保存しました/);assert.equal(await p.evaluate(()=>window.readCount),1);assert.equal(await p.evaluate(()=>CM.ui.viewList.length),1);
+  await c.close();
+  const b=await device({viewList:false});
+  await b.p.evaluate(()=>{CM.signIn();CM.setViewerList(async()=>{throw Error('synthetic read failure')})});
+  await fill(b.p);await b.p.click('#calendarScopeForm button[type=submit]');await b.p.waitForFunction(()=>/保存しました|保存できません/.test(document.getElementById('toast').textContent));
+  assert.match(await b.p.textContent('#toast'),/保存しました/);assert.equal((await saved(b.p)).length,1);
+  assert.deepEqual(errors,[]);assert.deepEqual(b.errors,[]);await b.c.close();
+ });
+ await check('ほかの人を選ぶときの条件はゆるめない（一覧の会社に選んだ会社がないと保存しない）',async()=>{
+  const {c,p,errors,dialogs}=await device();await fill(p,{company:'CP',person:'synthetic-b-sheet-0000000002'});await p.click('#calendarScopeForm button[type=submit]');
+  assert.equal(dialogs.length,0);assert.match(await p.textContent('#toast'),/見本 二郎さんの会社に「CP」がありません/);assert.deepEqual(await saved(p),[]);
   assert.deepEqual(errors,[]);await c.close();
  });
  await check('保存できないときは、どの条件で止まったかを出す',async()=>{
