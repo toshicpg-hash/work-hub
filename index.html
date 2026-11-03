@@ -181,6 +181,7 @@ ol.hist li{overflow-wrap:anywhere}
 .card.urgent{border-left:5px solid var(--red)}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-width:0}
 .row .sp{flex:1}
+.staff-id{gap:2px 8px}.staff-id .note{overflow-wrap:anywhere;min-width:0}.staff-acts{margin-top:6px}
 .ttl{font-weight:700;min-width:0;overflow-wrap:anywhere}
 .todo-title{display:flex;align-items:flex-start;gap:8px;min-width:0}.todo-title>.ttl{flex:1}.todo-deadline{display:flex;justify-content:flex-start;min-width:0;text-align:left}
 .chip{font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:99px;background:var(--sunk);color:var(--muted);white-space:nowrap}
@@ -274,6 +275,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 .ob li .n{flex:0 0 26px;height:26px;border-radius:50%;background:var(--sunk);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
 .ob li.done .n{background:var(--accent-soft);color:var(--accent)}
 .ob li.cur{color:var(--fg);font-weight:700}.ob li.cur .n{background:var(--accent);color:var(--accent-fg)}
+.ob .obsteps{list-style:decimal;padding-left:1.4em;gap:4px}.ob .obsteps li{display:list-item;color:var(--fg);font-weight:400;font-size:13.5px;overflow-wrap:anywhere}
 .ob .obact{display:flex;flex-direction:column;gap:8px;min-width:0}
 .photos{display:flex;gap:8px;flex-wrap:wrap}
 .photos img{width:84px;height:84px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
@@ -403,8 +405,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.49.7" title="使い方マニュアルを開く">v1.49.7・11/3更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.49.7" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.49.8" title="使い方マニュアルを開く">v1.49.8・11/3更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.49.8" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -466,8 +468,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./request-box-employee.js?v=1.47.1"></script>
 <script src="./share-management.js?v=1.48.6"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.49.7"></script>
-<script src="./calendar-view-scope.js?v=1.49.7"></script>
+<script src="./view-scope.js?v=1.49.8"></script>
+<script src="./calendar-view-scope.js?v=1.49.8"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -853,6 +855,7 @@ const realRecords=db=>(db.cases||[]).filter(c=>!fake(c.client)&&!fake(c.property
 function obSteps(){
   const d=D(),o=obState();
   return [
+    {k:"calshare",t:"自分のGoogleカレンダーを社長と専務に共有する",done:!!o.calShared},
     {k:"login",t:"Googleにログイン",done:!!(o.login||d.sheetId||gSignedIn())},
     {k:"sheet",t:"本人の記録シートにつなぐ",done:!!d.sheetId},
     {k:"name",t:"氏名・会社を確かめる",done:!!(d.sheetId&&o.name===d.sheetId&&RS().name)},
@@ -869,6 +872,7 @@ function obPanel(){
   const msg=ui.obMsg?'<p role="alert" style="margin:0;color:'+(ui.obMsg.ok?'var(--accent)':'var(--red)')+'">'+h(ui.obMsg.text)+'</p>':'';
   const busy=ui.obBusy?' disabled':'';
   const act={
+    calshare:'<p class="note" style="margin:0">社長と専務が、あなたの予定を見られるようにします。HUBからは共有できたか確かめられないので、終わったら「共有しました」を押してください。</p><ol class="obsteps"><li>スマホのブラウザ（Chrome・Safari）で <b>calendar.google.com</b> を開く</li><li>画面のいちばん下の「<b>デスクトップ</b>」を押す（パソコン用の画面になります）</li><li>右上の<b>歯車</b> →「<b>設定</b>」</li><li>左の「マイカレンダーの設定」で、<b>自分の名前のカレンダー</b>を押す</li><li>「<b>特定のユーザーまたはグループと共有する</b>」→「ユーザーやグループを追加」で、社長（<b>'+h(ADMIN_ACCOUNT)+'</b>）と<b>専務のGmail</b>を入れ、権限を「<b>予定の表示（すべての予定の詳細）</b>」にして「送信」</li></ol><p class="note" style="margin:0">専務のGmailは、社長から届いた案内に書いてあります。iPhoneの「Googleカレンダー」アプリでは共有の設定ができません。ブラウザで開いてください。</p><button class="btn pri" type="button" data-act="obcalshare"'+busy+'>共有しました</button>',
     login:'<p class="note" style="margin:0">仕事で使うGoogleアカウント（社長に伝えたGmail）でログインします。</p><button class="btn pri" type="button" data-act="oblogin"'+busy+'>Googleにログイン</button>',
     sheet:'<p class="note" style="margin:0">社長から届いた共有メールの、記録シートのリンクを貼り付けます。'+(obGM()?'GM・全社の人も、見る人用一覧より先に、本人の記録シートをつなぎます。':'')+'</p><label class="f">記録シートのリンク<input type="url" id="ob_sheet" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://docs.google.com/spreadsheets/d/…/edit"></label><button class="btn pri" type="button" data-act="obsheet"'+busy+'>つなぐ</button>',
     name:'<label class="f">氏名（社長の社員一覧と同じ書き方）<input type="text" id="ob_name" maxlength="100" value="'+h(RS().name||"")+'" placeholder="例：見本 一郎"></label><label class="f">所属の会社<select id="ob_co">'+COMPANIES.map(co=>'<option value="'+co+'"'+(RS().lastCo===co?' selected':'')+'>'+co+'</option>').join("")+'</select></label><p class="note" style="margin:0">会社は領収書の会社の初めの値にもなります。</p><button class="btn pri" type="button" data-act="obname"'+busy+'>この氏名・会社で確かめました</button>',
@@ -1854,10 +1858,14 @@ const calsLoadingNow=()=>!!(G.calsLoading||ui.gsync?.busy);
 /* 自分の会社がまだ分からないとき（一覧が未接続・未読込）は、自分に結び付けるために3社すべてを選べるようにする */
 const calMapSelfUnknown=cat=>{const own=D().sheetId,me=cat.people.find(p=>p.sheetId===own);return !!(own&&me&&!me.companies.length)};
 const calMapCompanies=cat=>calMapSelfUnknown(cat)?COMPANIES.slice():cat.companies;
+/* v1.49.8 見る人用一覧がまだ読めていないときの案内（会社・人物の選択肢が自分だけになるため） */
+const viewListUnread=()=>!D().admin&&!!D().viewListId&&!(ui.viewList||[]).length;
+const VIEWLIST_UNREAD='見る人用一覧が読めていません。「数字」→「会社の動きを見る（管理者用）」をつないで、「Googleとまとめて同期」を押してください（それまでは、ほかの社員を選べません）。';
+function viewListNotice(){return viewListUnread()?'<p class="banner viewlist-unread" role="status">'+h(VIEWLIST_UNREAD)+'</p>':(!D().admin&&ui.viewListWarn?'<p class="note" role="status" style="margin:0">'+h(ui.viewListWarn)+'</p>':'');}
 function calendarScopeSettings(){
  const ctx=scopeContext(),cat=CPGViewScope.catalog(ctx),stored=CPGCalendarScope.load(localStorage,scopeIdentity());
  const opt=(v,t)=>'<option value="'+h(v)+'">'+h(t)+'</option>';
- return '<details class="panel" data-keep-open="calmap"><summary>仕事用カレンダーの対応設定（この端末）</summary><p class="note">Googleのカレンダーのうち、仕事だけに使うカレンダーを、会社・人と結び付けます。私用の予定が入るカレンダーは選ばないでください。Googleの予定や共有の設定は変えません。結び付けたカレンダーは、上の「Googleカレンダー連携」の「予定画面に表示するカレンダー」でも選び、その人が同期してください。</p>'+(calsLoadingNow()?'<p role="status">カレンダーの一覧を読み込み中です。終わってから選べます（入力した内容は残ります）。</p>':!G.cals?'<p>一覧未取得です。Googleとまとめて同期後に選べます。</p>':'<form id="calendarScopeForm"><label class="f">カレンダー<select id="cs_cal" required><option value="">選択してください</option>'+G.cals.filter(gReadable).map(c=>opt(c.id,c.name+' / '+c.id)).join('')+'</select></label><label class="f">用途<select id="cs_mode"><option value="person">人物を確認した仕事専用</option><option value="mixed">複数の人が使う仕事用（HUBの案件と結び付いた予定だけ）</option></select></label><label class="f">会社（人物を確認した場合）<select id="cs_company"><option value="">選択してください</option>'+calMapCompanies(cat).map(c=>opt(c,c)).join('')+opt('unknown','会社未特定（複数社等・推測しない）')+'</select></label><label class="f">人物（人物を確認した場合）<select id="cs_person"><option value="">選択してください</option>'+cat.people.map(p=>opt(p.sheetId,p.name+' / '+p.sheetId)).join('')+'</select></label><label class="f"><span><input type="checkbox" id="cs_work" required>私的予定を含まない仕事用で、会社・人物の対応を確認しました</span></label><button class="btn" type="submit">対応を確認して保存</button></form>')+'<p class="note">複数の人が使うカレンダーの予定は、HUBに登録した案件と結び付いたものだけ、誰の予定か分かります。設定していない人や、誰の予定か分からない予定は、0件という意味ではありません。</p>'+stored.rows.map((r,i)=>'<p class="note">'+h(r.id)+' → '+h(r.mode==='mixed'?'複数の人が使う仕事用':r.company+' / '+(cat.people.find(p=>p.sheetId===r.person)?.name||'人物未確認'))+' <button class="btn sm" type="button" data-calendar-map-remove="'+i+'">対応を外す</button></p>').join('')+(ui.calendarMapError?'<p role="alert">'+h(ui.calendarMapError)+'</p>':'')+'</details>';
+ return '<details class="panel" data-keep-open="calmap"><summary>仕事用カレンダーの対応設定（この端末）</summary>'+viewListNotice()+(!D().admin&&!D().viewListId?'<p class="note" style="margin:0">全社・GMの人は、「数字」→「会社の動きを見る（管理者用）」をつないで同期すると、ほかの社員も選べます。</p>':'')+'<p class="note">Googleのカレンダーのうち、仕事だけに使うカレンダーを、会社・人と結び付けます。私用の予定が入るカレンダーは選ばないでください。Googleの予定や共有の設定は変えません。結び付けたカレンダーは、上の「Googleカレンダー連携」の「予定画面に表示するカレンダー」でも選び、その人が同期してください。</p>'+(calsLoadingNow()?'<p role="status">カレンダーの一覧を読み込み中です。終わってから選べます（入力した内容は残ります）。</p>':!G.cals?'<p>一覧未取得です。Googleとまとめて同期後に選べます。</p>':'<form id="calendarScopeForm"><label class="f">カレンダー<select id="cs_cal" required><option value="">選択してください</option>'+G.cals.filter(gReadable).map(c=>opt(c.id,c.name+' / '+c.id)).join('')+'</select></label><label class="f">用途<select id="cs_mode"><option value="person">人物を確認した仕事専用</option><option value="mixed">複数の人が使う仕事用（HUBの案件と結び付いた予定だけ）</option></select></label><label class="f">会社（人物を確認した場合）<select id="cs_company"><option value="">選択してください</option>'+calMapCompanies(cat).map(c=>opt(c,c)).join('')+opt('unknown','会社未特定（複数社等・推測しない）')+'</select></label><label class="f">人物（人物を確認した場合）<select id="cs_person"><option value="">選択してください</option>'+cat.people.map(p=>opt(p.sheetId,p.name+' / '+p.sheetId)).join('')+'</select></label><label class="f"><span><input type="checkbox" id="cs_work" required>私的予定を含まない仕事用で、会社・人物の対応を確認しました</span></label><button class="btn" type="submit">対応を確認して保存</button></form>')+'<p class="note">複数の人が使うカレンダーの予定は、HUBに登録した案件と結び付いたものだけ、誰の予定か分かります。設定していない人や、誰の予定か分からない予定は、0件という意味ではありません。</p>'+stored.rows.map((r,i)=>'<p class="note">'+h(r.id)+' → '+h(r.mode==='mixed'?'複数の人が使う仕事用':r.company+' / '+(cat.people.find(p=>p.sheetId===r.person)?.name||'人物未確認'))+' <button class="btn sm" type="button" data-calendar-map-remove="'+i+'">対応を外す</button></p>').join('')+(ui.calendarMapError?'<p role="alert">'+h(ui.calendarMapError)+'</p>':'')+'</details>';
 }
 async function calendarScopeSave(){
  /* 見る人用一覧につないでいるのに一覧が空のときは、保存の前に読み直す（ログイン中だけ。読めなくても自分の結び付けは続けられる） */
@@ -2000,7 +2008,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.49.7";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.49.8";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2075,7 +2083,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.49.7" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.49.7" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.49.8" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.49.8" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3038,7 +3046,10 @@ async function adminNameSave(sheetId,name,log=()=>{}){return adminShareOperation
 /* 見る人の端末：「CPG HUB_見る人用一覧」を読み、自分が全社かGMかを確かめる */
 async function viewerList(){
   const rows=objRows((await sheetRead(D().viewListId,["一覧"]))["一覧"]);
-  const list=rows.filter(r=>r["シートID"]).map(r=>({name:String(r["氏名"]),email:String(r["Gmail"]),company:String(r["会社"]||""),role:String(r["役割"]||"社員"),gmCo:String(r["GMの会社"]||""),sheetId:String(r["シートID"]),boxId:String(r["指示箱ID"]||""),removed:false}));return CPGNames.overlay(list,await namesRead(D().viewListId));
+  const list=rows.filter(r=>r["シートID"]).map(r=>({name:String(r["氏名"]),email:String(r["Gmail"]),company:String(r["会社"]||""),role:String(r["役割"]||"社員"),gmCo:String(r["GMの会社"]||""),sheetId:String(r["シートID"]),boxId:String(r["指示箱ID"]||""),removed:false}));
+  /* v1.49.8 正規氏名の履歴が読めなくても、一覧そのものは使う（読めないと全社・GMの端末でほかの社員が選べなくなるため）。名前は一覧の氏名のまま */
+  let names=[];ui.viewListWarn="";try{names=await namesRead(D().viewListId)}catch(err){if(err.message==="signin")throw err;ui.viewListWarn="社員の正式な氏名の履歴を読めなかったため、一覧の氏名で出しています（"+(err.message||dMsg(err))+"）";}
+  return CPGNames.overlay(list,names);
 }
 async function myEmail(){const r=await gReq(DRIVE.replace("/files","/about")+"?fields=user(emailAddress)");return (r&&r.user&&r.user.emailAddress)||""}
 async function viewerConnect(input){
@@ -3172,7 +3183,7 @@ function corpView(){
   const staffL=D().admin?D().staff:(ui.viewList||[]), gl=gmLine(staffL);
   return '<section class="sec"><div class="sec-h"><h2>会社の動き</h2>'+infoBtn('corp','会社の動きの説明')+'</div>'+
     '<div class="row"><button class="btn xs" type="button" data-act="corp" title="社員の記録を読み込む"'+(c&&c.busy?' disabled':'')+'>'+(c&&c.busy?'読み込んでいます…':'記録を読み込む'+(D().admin?'（'+D().staff.filter(s=>!s.removed).length+'人）':''))+'</button>'+(gl?'<span class="note num">'+h(gl)+'</span>':'')+'</div>'+
-    infoBox('corp','<p>'+(D().admin?'社長用です。':'')+'社員の記録は見るだけで、直せません。上で選んだ会社・人の分を出します。案件は担当、リクエストはあて先で選びます。同期の状況は、選んでいない人も含めて出します。</p>'+(c&&c.at&&!c.kept?'<p>'+md(ymd(new Date(c.at)))+' '+hm(new Date(c.at))+'に読み込み</p>':'')+
+    viewListNotice()+infoBox('corp','<p>'+(D().admin?'社長用です。':'')+'社員の記録は見るだけで、直せません。上で選んだ会社・人の分を出します。案件は担当、リクエストはあて先で選びます。同期の状況は、選んでいない人も含めて出します。</p>'+(c&&c.at&&!c.kept?'<p>'+md(ymd(new Date(c.at)))+' '+hm(new Date(c.at))+'に読み込み</p>':'')+
       (D().admin?'<div class="row"><button class="btn sm" type="button" data-act="dreload"'+(ui.dbusy?' disabled':'')+'>一覧を読み直す</button><span>ほかの端末で追加した社員を出します</span></div>':''))+
     (ui.dview==="corp"?dMsgList():'')+
     (c&&c.err?'<p class="note" style="margin:0;color:var(--red)">'+h(c.err)+'</p>':'')+(c&&c.at&&c.kept?'<div class="banner" role="status">'+keptNote()+'</div>':'')+body+'</section>';
@@ -3212,7 +3223,7 @@ function dSettings(){
       '<div class="row"><button class="btn pri" type="button" data-act="dlink">つなぐ</button></div>')+'</div>';
   const admin=isAdminDevice()?'<div class="panel"><h3>管理（社長用）</h3>'+
       (!d.admin?'<p class="note" style="margin:0">社員ごとの記録シートを、社長のドライブのフォルダ「CPG HUB データ」に作ります。</p><div class="row"><button class="btn pri" type="button" data-act="dadmin">管理をはじめる</button></div>':
-      (d.staff.length?'<ul class="dl">'+d.staff.map((s,i)=>'<li><div class="row"><b>'+h(s.name)+'</b><span class="note">'+h(s.email)+'</span><span class="sp"></span>'+(s.removed?'<span class="note">役割解除済み（要確認の共有は別途確認）</span>':'<button class="btn sm" type="button" data-dname="'+h(s.sheetId)+'">正規氏名</button><button class="btn sm" type="button" data-drole="'+i+'">会社・役割</button><button class="btn sm danger" type="button" data-dunshare="'+i+'">共有を外す</button>')+'</div>'+
+      (d.staff.length?'<ul class="dl">'+d.staff.map((s,i)=>'<li><div class="row staff-id"><b>'+h(s.name)+'</b><span class="note">'+h(s.email)+'</span></div><div class="row staff-acts">'+(s.removed?'<span class="note">役割解除済み（要確認の共有は別途確認）</span>':'<button class="btn sm" type="button" data-dname="'+h(s.sheetId)+'">正規氏名</button><button class="btn sm" type="button" data-drole="'+i+'">会社・役割</button><button class="btn sm danger" type="button" data-dunshare="'+i+'">共有を外す</button>')+'</div>'+
         '<div class="row note"><span class="chip">'+h(coList(s).join("・")||"会社なし")+'</span><span class="chip'+(isViewer(s)?' ro':'')+'">'+h(roleLabel(s))+'</span></div>'+
         '<div class="note num">シート '+h(s.sheetId.slice(0,10))+'…・追加 '+md(s.addedAt)+'・'+h(staffSyncText(s))+'</div>'+
         (s.nameHistory?.length?'<details><summary>氏名の変更履歴</summary><ul>'+s.nameHistory.map(r=>'<li>'+h(r.before)+' → '+h(r.after)+'（'+h(new Date(r.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+' JST）</li>').join("")+'</ul></details>':'')+
@@ -3489,6 +3500,7 @@ document.addEventListener("click",e=>{
   if(a==="scopealert"){const t=todayS(),overdue=scopeAvailableTodos().some(x=>x.due&&x.due<t),urgent=scopeSourceCases().some(c=>c.type==='kinkyu'&&['new','site'].includes(c.stage)),undated=scopeSourceCases().some(c=>c.stage==='lost'&&!c.cancelledAt&&!c.lossDate);
     if(overdue)go("todo",{tPeriod:"today",tTantou:"all"});else if(urgent)go("cases",{type:"kinkyu"});else if(undated)go("stats");else go(D().admin||D().viewListId?"company":"home");return}
   if(a==="obclose"){try{obSet({done:new Date().toISOString()})}catch(err){toast(err.message,6000)}ui.obMsg=null;render();return}
+  if(a==="obcalshare"){try{obSet({calShared:true});ui.obMsg={ok:true,text:"共有したことを、この端末に記録しました。"}}catch(err){ui.obMsg={ok:false,text:err.message}}render();return}
   if(a==="oblogin"){ui.obBusy=true;ui.obMsg=null;render();gAuthorize(true).then(()=>{obSet({login:true});ui.obMsg={ok:true,text:"ログインしました"}},err=>{ui.obMsg={ok:false,text:err.message==="signin"?"ログインできませんでした。もう一度押してください。":err.message||gMsg(err)}}).finally(()=>{ui.obBusy=false;render()});return}
   if(a==="obsheet"){const v=val("ob_sheet");ui.obBusy=true;ui.obMsg={ok:true,text:"つないでいます…"};render();
     dataConnect(v).then(()=>{obSet({login:true});ui.obMsg={ok:true,text:"記録シート「"+(D().sheetName||D().sheetId)+"」につなぎました。"}},
