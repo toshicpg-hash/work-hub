@@ -1244,7 +1244,8 @@ function emergencyTimeFields(value){
 /* v1.49.6 立会・現調などの予定の時刻（任意）。開始・終了の「時」「分」（日本時間・24時間）。終了なしは開始から1時間。時刻なしは終日 */
 const HHMM=/^([01]\d|2[0-3]):[0-5]\d$/;
 const planTimed=c=>c.type!=="kinkyu"&&HHMM.test(c.planTime||"");
-function planEndEff(c){if(!planTimed(c))return "";if(HHMM.test(c.planEnd||""))return c.planEnd;const [h0,m0]=c.planTime.split(":").map(Number),t=h0*60+m0+60;return t>=1440?"24:00":pad(Math.floor(t/60))+":"+pad(t%60);}
+/* 終了が開始以下（古い列が残った場合など）は使わず、開始から1時間にする */
+function planEndEff(c){if(!planTimed(c))return "";if(HHMM.test(c.planEnd||"")&&c.planEnd>c.planTime)return c.planEnd;const [h0,m0]=c.planTime.split(":").map(Number),t=h0*60+m0+60;return t>=1440?"24:00":pad(Math.floor(t/60))+":"+pad(t%60);}
 const planRange=c=>planTimed(c)?c.planTime+"〜"+planEndEff(c):c.type==="kinkyu"?(c.planTime||"時刻未定"):"終日";
 /* カレンダーに登録した内容と比べる印（日付と時刻） */
 const planSig=c=>c.planDate+"|"+(planTimed(c)?c.planTime+"-"+planEndEff(c):"");
