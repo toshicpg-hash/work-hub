@@ -76,8 +76,8 @@ async function main(){
   assert.deepEqual(rows[0].slice(0,OLD_COLS.length),OLD_COLS);assert.equal(rows[0][OLD_COLS.length],'予定終了時刻（日本時間）');assert.equal(rows[0].length,OLD_COLS.length+1);
   const r=rows.find(x=>x[0]==='U-0201');assert.equal(r[OLD_COLS.indexOf('予定時刻（日本時間）')],'09:30');assert.equal(r[OLD_COLS.length],'10:15');
   /* 共有の記録（社長・GMの画面と取り込み）でも終了時刻を読む。古い記録（列なし）は終了なし */
-  const back=await p.evaluate(({head,row})=>{const o=Object.fromEntries(head.map((k,i)=>[k,row[i]]));const x={s:{name:'見本 一郎'}};const a=PT.roCase(o,x);delete o['予定終了時刻（日本時間）'];const b=PT.roCase(o,x);return [a.planTime,a.planEnd,b.planEnd]},{head:rows[0],row:r});
-  assert.deepEqual(back,['09:30','10:15','']);
+  const back=await p.evaluate(({head,row})=>{const o=Object.fromEntries(head.map((k,i)=>[k,row[i]]));const x={s:{name:'見本 一郎'}};const a=PT.roCase(o,x);delete o['予定終了時刻（日本時間）'];const b=PT.roCase(o,x);o['予定終了時刻（日本時間）']='08:00';const c=PT.roCase(o,x);o['予定時刻（日本時間）']='';o['予定終了時刻（日本時間）']='10:00';const d=PT.roCase(o,x);return [a.planTime,a.planEnd,b.planEnd,c.planEnd,d.planEnd]},{head:rows[0],row:r});
+  assert.deepEqual(back,['09:30','10:15','','',''],'an end not after the start (e.g. a stale column) is ignored');
  });
  await check('古い記録（日付だけ・登録時刻を覚えていない）はそのまま読め、日付が同じならずれ扱いにしない',async()=>{
   await p.evaluate(()=>{const k=PT.db.cases.find(c=>c.id==='U-0201');delete k.planEnd;k.planTime='';k.planDate='2026-11-08';k.gcal={cal:'work-cal@example.com',calName:'見本の仕事',id:'cpghubold',date:'2026-11-08',link:''};PT.save();PT.render()});

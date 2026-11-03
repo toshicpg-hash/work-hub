@@ -610,7 +610,7 @@ function roCase(r,x){
   const v=k=>String(r[k]==null?"":r[k]), d=k=>v(k).slice(0,10), num=k=>v(k)===""?null:Number(v(k));
   const stage=STAGES[v("段階キー")]?v("段階キー"):Object.keys(STAGES).find(k=>STAGES[k]===v("段階"))||"new", paid=Number(v("入金済額"))||0;
   return Object.assign(CASE_DEFAULTS(),{ro:true,company:COMPANIES.includes(v("会社"))?v("会社"):"",owner:x.s.name,srcId:v("受付番号"),id:v("受付番号")+"・"+x.s.sheetId,type:typeKeyOf(v("種類")),stage,clientKind:"",client:v("依頼元"),property:v("物件"),room:v("部屋"),tantou:tantouLabel(v("担当"),x.s.sheetId),
-    receivedAt:v("受付日時")||(d("受付日")?new Date(d("受付日")+"T00:00:00").toISOString():""),planDate:d("予定日"),planTime:v("予定時刻（日本時間）"),planEnd:v("予定終了時刻（日本時間）"),cancelledAt:v("受注後取消日時"),cancelReason:v("受注後取消理由"),siteDate:d("実施日"),estAmount:num("見積額"),estSentDate:d("見積提出日"),holdDate:d("保留日"),lossDate:d("失注日"),lossReason:v("失注理由"),
+    receivedAt:v("受付日時")||(d("受付日")?new Date(d("受付日")+"T00:00:00").toISOString():""),planDate:d("予定日"),planTime:v("予定時刻（日本時間）"),planEnd:(e=>HHMM.test(e)&&HHMM.test(v("予定時刻（日本時間）"))&&e>v("予定時刻（日本時間）")?e:"")(v("予定終了時刻（日本時間）")),cancelledAt:v("受注後取消日時"),cancelReason:v("受注後取消理由"),siteDate:d("実施日"),estAmount:num("見積額"),estSentDate:d("見積提出日"),holdDate:d("保留日"),lossDate:d("失注日"),lossReason:v("失注理由"),
     orderDate:d("受注日"),jobNo:v("仕事番号"),handedDate:d("引渡日"),builtDate:d("施工完了日"),billDate:d("請求日"),billAmount:num("請求額"),payDue:d("入金予定日"),payments:paid?[{date:d("入金日")||d("請求日"),amount:paid}]:[],paidDate:stage==="paid"?d("入金日"):""});
 }
 function roBuild(data){
