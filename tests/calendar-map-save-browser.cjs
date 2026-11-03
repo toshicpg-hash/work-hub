@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
-const hook='window.CM={get db(){return DB},get ui(){return ui},G,go,save,render,scopeContext,scopeIdentity,signIn(){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000},setViewerList(f){viewerList=f}};';
+const hook='window.CM={get db(){return DB},get ui(){return ui},G,go,save,render,scopeContext,scopeIdentity,signIn(){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000},setViewerList(f){viewerList=f},realViewerList:()=>viewerList()};';
 const OWN='synthetic-self-sheet-000000001',OTHER='synthetic-self-sheet-OTHER0009',SELF='self@example.com';
 let server,browser,origin;const results=[];
 const check=async(name,fn)=>{await fn();results.push(name);console.log('PASS',name)};
@@ -103,6 +103,29 @@ async function main(){
   assert.deepEqual(errors,[]);await c.close();
   const e=await device({viewList:false,viewListId:false});assert.doesNotMatch(await e.p.textContent('main'),msg);assert.match(await e.p.textContent('details[data-keep-open=calmap]'),/全社・GMの人は、「数字」→「会社の動きを見る（管理者用）」をつないで同期すると/);await e.c.close();
  });
+ for(const [label,names] of [['見出しが違う',[['ID','段階','記録']]],['記録が読めない',[['変更ID','段階','記録JSON'],['n1','confirmed','{壊れた']]],['読み込みに失敗する','throw']]){
+  await check('社員氏名履歴が「'+label+'」ときも見る人用一覧は埋まり、対応設定と会社の動きにほかの社員・会社が出る',async()=>{
+   const {c,p,errors}=await device({viewList:false});
+   const list=[['氏名','Gmail','会社','役割','GMの会社','シートID','指示箱ID'],['見本 一郎','self@example.com','CP,CPY,AT','全社','CP','synthetic-self-sheet-000000001',''],['見本 二郎','b@example.com','CPY','社員','','synthetic-b-sheet-0000000002',''],['見本 三郎','c@example.com','AT','社員','','synthetic-c-sheet-0000000003','']];
+   /* Google Sheets の応答を合成する（見る人用一覧：一覧タブと社員氏名履歴タブ） */
+   await p.route(/sheets\.googleapis\.com/,r=>{const u=decodeURIComponent(r.request().url());
+    if(/fields=sheets\.properties\.title/.test(u))return r.fulfill({contentType:'application/json',body:JSON.stringify({sheets:[{properties:{title:'一覧'}},{properties:{title:'社員氏名履歴'}}]})});
+    if(/社員氏名履歴/.test(u)){if(names==='throw')return r.fulfill({status:500,contentType:'application/json',body:'{"error":{"code":500,"message":"synthetic"}}'});return r.fulfill({contentType:'application/json',body:JSON.stringify({valueRanges:[{values:names}]})})}
+    if(/一覧/.test(u))return r.fulfill({contentType:'application/json',body:JSON.stringify({valueRanges:[{values:list}]})});
+    return r.fulfill({contentType:'application/json',body:'{}'})});
+   await p.evaluate(()=>CM.signIn());
+   await p.evaluate(async()=>{CM.ui.viewList=await CM.realViewerList();CM.render()});
+   const r=await p.evaluate(()=>({n:CM.ui.viewList.length,warn:CM.ui.viewListWarn,co:[...document.querySelectorAll('#cs_company option')].map(o=>o.value),pe:[...document.querySelectorAll('#cs_person option')].map(o=>o.textContent)}));
+   assert.equal(r.n,3);assert.match(r.warn,/社員の正式な氏名の履歴を読めなかったため、一覧の氏名で出しています/);
+   for(const k of ['CP','CPY','AT'])assert.ok(r.co.includes(k),k+' '+r.co);
+   assert.ok(r.pe.some(t=>/見本 二郎/.test(t))&&r.pe.some(t=>/見本 三郎/.test(t)),r.pe.join(','));
+   assert.doesNotMatch(await p.textContent('main'),/見る人用一覧が読めていません/);
+   await p.evaluate(()=>CM.go('company'));const t=await p.textContent('main');
+   assert.doesNotMatch(t,/見る人用一覧が読めていません/);assert.match(t,/一覧の氏名で出しています/);const opts=await p.evaluate(()=>[...document.querySelectorAll('main select option')].map(o=>o.textContent).join(','));assert.match(opts,/CPY/);assert.match(opts,/AT/);assert.match(opts,/見本 二郎/);
+   assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+   assert.deepEqual(errors,[]);await c.close();
+  });
+ }
  await check('初期設定の役割ボタンに「選んでも権限は変わらない」の説明がある',async()=>{
   const c=await browser.newContext({viewport:{width:360,height:800},serviceWorkers:'block'});await c.route(/googleapis|accounts\.google|fonts\./,r=>r.fulfill({status:200,body:''}));
   const p=await c.newPage();await p.goto(origin+'/index.html');
