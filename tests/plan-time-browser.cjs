@@ -64,6 +64,13 @@ async function main(){
   patch=calls.find(x=>x.method==='PATCH');assert.deepEqual(patch.body.start,{date:'2026-11-05',dateTime:null,timeZone:null});
   assert.match(await p.textContent('#case-google-calendar'),/（終日）/);
  });
+ await check('保存されている終了が開始以下（古い列が残った場合など）は、使わずに開始から1時間として出し・登録する',async()=>{
+  await p.evaluate(()=>{const k=PT.db.cases.find(c=>c.id==='U-0201');k.planDate='2026-11-05';k.planTime='15:00';k.planEnd='11:00';PT.save();PT.render()});
+  assert.match(await p.textContent('main'),/2026-11-05 15:00〜16:00/);
+  calls.length=0;await p.click('[data-act=greg]');await p.waitForFunction(()=>!PT.ui.gbusy);
+  const patch=calls.find(x=>x.method==='PATCH');assert.equal(patch.body.start.dateTime,'2026-11-05T15:00:00+09:00');assert.equal(patch.body.end.dateTime,'2026-11-05T16:00:00+09:00');
+  await p.evaluate(()=>{const k=PT.db.cases.find(c=>c.id==='U-0201');k.planEnd='';PT.save();PT.render()});
+ });
  await check('終了が開始より前・同じ、片方だけの選択、終了だけは保存しない（理由を出す）',async()=>{
   const before=await one(p);
   for(const [v,re] of [[{sh:'11',sm:'00',eh:'10',em:'00'},/終了は開始より後/],[{sh:'11',sm:'00',eh:'11',em:'00'},/終了は開始より後/],[{sh:'11',sm:''},/開始の「時」と「分」を両方/],[{sh:'11',sm:'00',eh:'12'},/終了の「時」と「分」を両方/],[{eh:'12',em:'00'},/終了だけは入れられません/]]){
