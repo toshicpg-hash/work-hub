@@ -93,6 +93,16 @@ async function main(){
    await p.evaluate(()=>{CM.db.settings.data.gPrimary='self@example.com';CM.save();CM.G.cals=null;CM.render()});assert.match(await p.textContent('main'),/見本の自分の予定/);
    assert.deepEqual(errors,[]);await c.close();}
  });
+ await check('見る人用一覧が読めていないときは、対応設定の欄と「会社の動き」に案内を出す（読めたら消える）',async()=>{
+  const {c,p,errors}=await device({viewList:false});
+  const msg=/見る人用一覧が読めていません。「数字」→「会社の動きを見る（管理者用）」をつないで、「Googleとまとめて同期」を押してください/;
+  assert.match(await p.textContent('details[data-keep-open=calmap]'),msg);
+  await p.evaluate(()=>CM.go('company'));assert.match(await p.textContent('main'),msg);
+  await p.evaluate(()=>{CM.ui.viewList=[{name:'見本 一郎',email:'self@example.com',sheetId:'synthetic-self-sheet-000000001',company:'CP,CPY,AT',role:'全社',gmCo:'CP',removed:false}];CM.render()});assert.doesNotMatch(await p.textContent('main'),msg);
+  assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  assert.deepEqual(errors,[]);await c.close();
+  const e=await device({viewList:false,viewListId:false});assert.doesNotMatch(await e.p.textContent('main'),msg);assert.match(await e.p.textContent('details[data-keep-open=calmap]'),/全社・GMの人は、「数字」→「会社の動きを見る（管理者用）」をつないで同期すると/);await e.c.close();
+ });
  await check('初期設定の役割ボタンに「選んでも権限は変わらない」の説明がある',async()=>{
   const c=await browser.newContext({viewport:{width:360,height:800},serviceWorkers:'block'});await c.route(/googleapis|accounts\.google|fonts\./,r=>r.fulfill({status:200,body:''}));
   const p=await c.newPage();await p.goto(origin+'/index.html');
