@@ -3191,6 +3191,14 @@ function roleVal(p){
   return {company:COMPANIES.filter(co=>cs.includes(co)).join(","),role,gmCo};
 }
 const dMsgList=()=>{const m=ui.dmsg;return m?'<ul class="gres" role="status">'+m.map(x=>'<li class="'+(x.ok===false?'ng':x.ok==="warn"?'warn':'ok')+'">'+(x.ok===false?'× ':x.ok==="warn"?'！ ':'✓ ')+h(x.text)+'</li>').join("")+'</ul>':''};
+/* v1.49.6 社員一覧の「最終同期」：社員一覧シートの列（古い値が残ることがある）ではなく、社員の記録シートの「情報」タブを読み込んだ値を出す。
+   まだ読み込んでいないときは「未読込」。社員一覧シートの列はそのまま（読みも書きも変えない） */
+function staffSyncText(s){
+  const x=(ui.corp?.data||[]).find(y=>y.s&&y.s.sheetId===s.sheetId);
+  if(!x)return "最終同期 未読込（社員の記録を読み込むと出ます）";
+  if(!x.ok)return "最終同期 読み込めませんでした";
+  return x.s.lastSync?"最終同期 "+x.s.lastSync+(ui.corp.kept?"（前回の読み込み）":""):"最終同期 まだ同期していません";
+}
 /* 設定：社員の「記録シート」と、社長用の「管理」 */
 function dSettings(){
   const d=D(), msg=ui.dview==="corp"?'':dMsgList();
@@ -3205,7 +3213,7 @@ function dSettings(){
       (!d.admin?'<p class="note" style="margin:0">社員ごとの記録シートを、社長のドライブのフォルダ「CPG HUB データ」に作ります。</p><div class="row"><button class="btn pri" type="button" data-act="dadmin">管理をはじめる</button></div>':
       (d.staff.length?'<ul class="dl">'+d.staff.map((s,i)=>'<li><div class="row"><b>'+h(s.name)+'</b><span class="note">'+h(s.email)+'</span><span class="sp"></span>'+(s.removed?'<span class="note">役割解除済み（要確認の共有は別途確認）</span>':'<button class="btn sm" type="button" data-dname="'+h(s.sheetId)+'">正規氏名</button><button class="btn sm" type="button" data-drole="'+i+'">会社・役割</button><button class="btn sm danger" type="button" data-dunshare="'+i+'">共有を外す</button>')+'</div>'+
         '<div class="row note"><span class="chip">'+h(coList(s).join("・")||"会社なし")+'</span><span class="chip'+(isViewer(s)?' ro':'')+'">'+h(roleLabel(s))+'</span></div>'+
-        '<div class="note num">シート '+h(s.sheetId.slice(0,10))+'…・追加 '+md(s.addedAt)+(s.lastSync?'・最終同期 '+h(s.lastSync):'')+'</div>'+
+        '<div class="note num">シート '+h(s.sheetId.slice(0,10))+'…・追加 '+md(s.addedAt)+'・'+h(staffSyncText(s))+'</div>'+
         (s.nameHistory?.length?'<details><summary>氏名の変更履歴</summary><ul>'+s.nameHistory.map(r=>'<li>'+h(r.before)+' → '+h(r.after)+'（'+h(new Date(r.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+' JST）</li>').join("")+'</ul></details>':'')+
         (ui.dName===s.sheetId?'<label class="f">正規氏名<input id="dn_name" maxlength="100" value="'+h(ui.dNameDraft??s.name)+'"></label><div class="row"><button class="btn pri" data-act="dn-save">変更内容を確認</button><button class="btn" data-act="dn-cancel">やめる</button></div><p class="note">過去の担当キー・案件・履歴は置換しません。同姓同名はGmailとシートIDで対象を確認してください。</p>':'')+
         (ui.dRole===i?roleForm("dr",s)+'<div class="row"><button class="btn pri" type="button" data-act="droledo"'+(ui.dbusy?' disabled':'')+'>保存する</button><button class="btn" type="button" data-act="droleno">やめる</button></div>':'')+
