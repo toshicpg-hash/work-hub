@@ -25,7 +25,7 @@ function catalog(context){
  for(const p of rows)if(p&&!p.removed&&str(p.sheetId))counts.set(p.sheetId,(counts.get(p.sheetId)||0)+1);
  const people=rows.filter(p=>{if(!p||p.removed||!str(p.sheetId)||counts.get(p.sheetId)!==1)return false;
   try{return typeof context.canView==='function'&&context.canView(p)===true}catch(e){return false}})
-  .map(p=>({sheetId:p.sheetId,name:str(p.name)||'氏名未確認',role:str(p.role),companies:companies(p)}));
+  .map(p=>({sheetId:p.sheetId,name:str(p.label)||str(p.name)||'氏名未確認',role:str(p.role),companies:companies(p)}));
  const role=['社長','全社','経理','業務管理','GM','社員'];
  people.sort((a,b)=>(COMPANIES.indexOf(a.companies[0])-COMPANIES.indexOf(b.companies[0]))||((role.indexOf(a.role)+1||99)-(role.indexOf(b.role)+1||99))||a.name.localeCompare(b.name,'ja')||a.sheetId.localeCompare(b.sheetId));
  const allowed=context.fixedCompany?[context.fixedCompany].filter(c=>COMPANIES.includes(c)):COMPANIES.filter(c=>people.some(p=>p.companies.includes(c))||(context.localCompanies||[]).includes(c)||(context.availableCompanies||[]).includes(c));

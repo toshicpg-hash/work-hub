@@ -15,7 +15,11 @@ function resolve(list,key,owner,known){
  if(list.some(p=>aliases(p).some(a=>same(a,n))))return found.length===1?found[0]:null;
  return found.length===1?found[0]:own.length===1&&found.includes(own[0])?own[0]:null;
 }
-function label(p,list){const n=clean(p.name);return matches(list,n,[]).length>1?n+'（'+([p.email,p.sheetId].filter(Boolean).join('／')||'本人未特定')+'）':n}
+/* v1.50.2 表示名（社員一覧の「表示名」。例：肩書）があればそれを出す。同じ表示名・同じ氏名の人がほかにいれば、氏名を添えて区別する */
+const disp=p=>clean(p&&p.displayName)||clean(p&&p.name);
+function label(p,list){const n=clean(p.name),d=clean(p.displayName);
+ if(d){const dup=(list||[]).some(q=>q&&q!==p&&(q.sheetId?q.sheetId!==p.sheetId:true)&&(same(disp(q),d)||same(clean(q.name),d)));return dup?d+'（'+n+'）':d}
+ return matches(list,n,[]).length>1?n+'（'+([p.email,p.sheetId].filter(Boolean).join('／')||'本人未特定')+'）':n}
 function parse(rows){
  const byId=new Map(),ordered=[];
  for(const r of rows){

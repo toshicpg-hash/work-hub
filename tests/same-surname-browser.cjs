@@ -83,7 +83,7 @@ async function main(){
   await check('受付と手入力ToDoの担当の選択肢 '+width+'px',async()=>{
    await p.evaluate(()=>SS.go('new'));
    const o=await p.$$eval('#n_tantou option',a=>a.map(x=>x.textContent));
-   assert.ok(o.includes('黒木 試験一')&&o.includes('黒木 見本二')&&o.includes('例題 花子')&&o.includes('トシ')&&o.some(x=>x.startsWith('黒木（氏名重複')),o.join());
+   assert.ok(o.includes('黒木 試験一')&&o.includes('黒木 見本二')&&o.includes('例題 花子')&&o.includes('社長')&&o.some(x=>x.startsWith('黒木（氏名重複')),o.join());
    await p.evaluate(()=>SS.go('todo'));
    const t=await p.$$eval('#td_tantou option',a=>a.map(x=>x.textContent));
    assert.ok(t.includes('黒木 試験一')&&t.includes('黒木 見本二'),t.join());
@@ -107,14 +107,14 @@ async function main(){
   const {c,p,errors}=await page(400);
   await p.evaluate(()=>SS.go('new'));
   const o=await p.$$eval('#n_tantou option',a=>a.map(x=>x.value+'='+x.textContent));
-  assert.ok(o.some(x=>x.startsWith('黒木=黒木（氏名重複'))&&o.includes('黒木 試験一=黒木 試験一')&&o.includes('黒木　見本二=黒木 見本二')&&o.includes('トシ=トシ'),o.join());
+  assert.ok(o.some(x=>x.startsWith('黒木=黒木（氏名重複'))&&o.includes('黒木 試験一=黒木 試験一')&&o.includes('黒木　見本二=黒木 見本二')&&o.includes('トシ=社長'),o.join());
   assert.deepEqual(errors,[]);await c.close();
  });
  await check('社員の端末：自分の姓のHUBの担当は自分の区別した名前で出る',async()=>{
   const {c,p,errors}=await page(400,{admin:false,staffList:[],rsName:'黒木 見本二'});
   await p.evaluate(()=>SS.go('new'));
   const o=await p.$$eval('#n_tantou option',a=>a.map(x=>x.value+'='+x.textContent));
-  assert.ok(o.includes('黒木=黒木 見本二')&&o.includes('トシ=トシ')&&o.length===2,o.join());
+  assert.ok(o.includes('黒木=黒木 見本二')&&o.includes('トシ=社長')&&o.length===2,o.join());
   const raw=await p.evaluate(()=>localStorage.getItem('workhub_proto_v1')||'');
   assert.ok(!raw.includes('黒木 見本二'),'display does not save data');
   assert.deepEqual(errors,[]);await c.close();
