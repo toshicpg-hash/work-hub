@@ -129,7 +129,7 @@ async function main(){
  await check('初期設定の役割ボタンに「選んでも権限は変わらない」の説明がある',async()=>{
   const c=await browser.newContext({viewport:{width:360,height:800},serviceWorkers:'block'});await c.route(/googleapis|accounts\.google|fonts\./,r=>r.fulfill({status:200,body:''}));
   const p=await c.newPage();await p.goto(origin+'/index.html');
-  assert.match(await p.textContent('#onboarding'),/「GM・全社」は、社長から役割を「GM」か「全社」にしてもらった人が選びます。ここで選んでも、見られる範囲や権限は変わりません/);
+  assert.match(await p.textContent('#onboarding'),/「GM・全社」は、社長から役割を「GM」「全社」「経理」「業務管理」のどれかにしてもらった人が選びます。ここで選んでも、見られる範囲や権限は変わりません/);
   assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await c.close();
  });
  console.log('ALL PASS',results.length);

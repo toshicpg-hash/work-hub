@@ -41,14 +41,11 @@ async function main(){
  browser=await playwright.chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
  sheets[OWN]={'案件':[],'入金':[],'立替':[],'情報':[]};
  const A=await device();
- await check('新しい端末：ホームの一番上に初期設定が出て、最初はカレンダーの共有、次に①ログイン',async()=>{
+ await check('新しい端末：ホームの一番上に初期設定が出て、最初は①ログイン。カレンダーの共有は最初の同期のあと',async()=>{
   assert.equal(await A.p.locator('main > section').first().getAttribute('id'),'onboarding');
-  assert.equal(await cur(A.p),'calshare');
-  const sh=await A.p.textContent('#onboarding');for(const s of ['calendar.google.com','「デスクトップ」','歯車','特定のユーザーまたはグループと共有する','予定の表示（すべての予定の詳細）','iPhoneの「Googleカレンダー」アプリでは共有の設定ができません','専務のGmail'])assert.ok(sh.includes(s),s);
-  assert.ok(await overflow(A.p)<=0);
-  await A.p.screenshot({path:path.join(root,'docs/preview/onboarding-calshare-390.png')});
-  await A.p.click('[data-act=obcalshare]');assert.equal(await cur(A.p),'login');assert.equal((await read(A.p)).settings.data.ob.calShared,true,'kept on this device');
-  const t=await A.p.textContent('#onboarding');for(const s of ['自分のGoogleカレンダーを社長と専務に共有する','Googleにログイン','本人の記録シートにつなぐ','氏名・会社を確かめる','最初の同期','記録を1件保存して、読み戻しを確かめる'])assert.ok(t.includes(s),s);
+  assert.equal(await cur(A.p),'login');
+  const t=await A.p.textContent('#onboarding');const names=['Googleにログイン','本人の記録シートにつなぐ','氏名・会社を確かめる','最初の同期','自分のGoogleカレンダーを、予定を見てよい人に共有する','記録を1件保存して、読み戻しを確かめる'];
+  for(const s of names)assert.ok(t.includes(s),s);assert.deepEqual(names.map(s=>t.indexOf(s)).slice().sort((a,b)=>a-b),names.map(s=>t.indexOf(s)),'in this order');
   assert.ok(await A.p.isVisible('[data-act=oblogin]'));assert.ok(await overflow(A.p)<=0);
   await A.p.screenshot({path:path.join(root,'docs/preview/onboarding-start-390.png')});
  });
@@ -73,7 +70,15 @@ async function main(){
   await A.p.addStyleTag({content:'#toast{display:none!important}'});
   await A.p.screenshot({path:path.join(root,'docs/preview/onboarding-sync-390.png')});
   await A.p.click('[data-act=obsync]');await A.p.waitForFunction(()=>OB.ui.gsync&&!OB.ui.gsync.busy);
-  assert.equal(await cur(A.p),'check',JSON.stringify(await A.p.evaluate(()=>OB.ui.gsync.rows)));
+  assert.equal(await cur(A.p),'calshare',JSON.stringify(await A.p.evaluate(()=>OB.ui.gsync.rows)));
+  /* 共有のボタンと、ボタンが使えないときのブラウザでの手順 */
+  assert.ok(await A.p.isVisible('#onboarding [data-act=csload]'));
+  await A.p.click('#onboarding .cs-manual > summary');
+  const sh=await A.p.textContent('#onboarding');for(const s of ['予定を見てよい人','見るだけ','calendar.google.com','「デスクトップ」','歯車','特定のユーザーまたはグループと共有する','予定の表示（すべての予定の詳細）','iPhoneの「Googleカレンダー」アプリでは共有の設定ができません'])assert.ok(sh.includes(s),s);
+  assert.ok(await overflow(A.p)<=0);
+  await A.p.screenshot({path:path.join(root,'docs/preview/onboarding-calshare-390.png')});
+  await A.p.click('[data-act=obcalshare]');assert.equal((await read(A.p)).settings.data.ob.calShared,true,'kept on this device');
+  assert.equal(await cur(A.p),'check');
   await A.p.click('[data-act=obcheck]');assert.match(await A.p.textContent('#onboarding'),/まだ記録がありません/);assert.equal(await cur(A.p),'check');
   await A.p.evaluate(()=>{OB.db.todos.push({id:'T900',title:'見本の初めての用事',due:'2026-11-04',tantou:'見本',done:false});OB.save();OB.render()});
   await A.p.click('[data-act=obcheck]');assert.equal(await cur(A.p),'');
@@ -88,7 +93,7 @@ async function main(){
   const t=await B.p.textContent('#onboarding');assert.ok(t.includes('見る人用一覧をつなぐ')&&!t.includes('記録を1件保存'));
   await B.p.evaluate(()=>{OB.go('stats');document.querySelectorAll('details[data-fold]').forEach(d=>d.open=true)});
   await B.p.fill('#d_view','https://docs.google.com/spreadsheets/d/synthetic-view-list-000000001/edit');await B.p.click('[data-act=dvlink]');
-  assert.match(await B.p.textContent('main'),/先に「自分のGoogleカレンダーを社長と専務に共有する」をしてください/);
+  assert.match(await B.p.textContent('main'),/先に「Googleにログイン」をしてください/);
   await B.p.evaluate(own=>{const d=OB.db.settings.data;d.ob={...d.ob,calShared:true,login:true,name:own};d.sheetId=own;d.lastSync='2026-11-03T00:30:00.000Z';OB.db.settings.rcpt.name='見本 進';OB.save();OB.go('home')},OWN);
   assert.equal(await cur(B.p),'view');assert.ok(await B.p.isVisible('#ob_view'));assert.ok(await overflow(B.p)<=0);
   await B.p.screenshot({path:path.join(root,'docs/preview/onboarding-gm-view-390.png')});
@@ -103,7 +108,7 @@ async function main(){
  });
  await check('360px・文字が大きくても横にはみ出さない',async()=>{
   const N=await device({width:360});await N.p.addStyleTag({content:'html{font-size:150%} .ob,.ob button,.ob input,.ob select{font-size:21px}'});
-  for(const step of ['calshare','login','sheet','name']){if(step==='login')await N.p.evaluate(()=>{OB.db.settings.data.ob={calShared:true};OB.save();OB.render()});if(step==='sheet')await N.p.evaluate(()=>{OB.db.settings.data.ob={calShared:true,login:true};OB.save();OB.render()});
+  for(const step of ['login','sheet','name']){if(step==='sheet')await N.p.evaluate(()=>{OB.db.settings.data.ob={calShared:true,login:true};OB.save();OB.render()});
    if(step==='name')await N.p.evaluate(own=>{OB.db.settings.data.sheetId=own;OB.save();OB.render()},OWN);
    assert.equal(await cur(N.p),step);assert.ok(await overflow(N.p)<=0,step)}
   assert.deepEqual(N.errors,[]);await N.c.close();
