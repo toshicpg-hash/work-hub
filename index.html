@@ -406,8 +406,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.0" title="使い方マニュアルを開く">v1.50.0・11/3更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.0" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.1" title="使い方マニュアルを開く">v1.50.1・11/5更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.1" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -469,8 +469,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./request-box-employee.js?v=1.47.1"></script>
 <script src="./share-management.js?v=1.48.6"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.0"></script>
-<script src="./calendar-view-scope.js?v=1.50.0"></script>
+<script src="./view-scope.js?v=1.50.1"></script>
+<script src="./calendar-view-scope.js?v=1.50.1"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1834,7 +1834,7 @@ function gcalByDay(j){
     if(last<first)last=first;
     for(let d=first,i=0;d<=last&&i<93;d=addDays(d,1),i++){
       const time=allDay||(d>first&&d<last)?"終日":d===first&&d===last?hm(st)+"〜"+hm(en):d===first?hm(st)+"〜":"〜"+hm(en);
-      (by[d]=by[d]||[]).push({cal:String(e.calendar||""),title:String(e.title||"（件名なし）"),loc:String(e.location||""),time,sort:allDay?"":time});
+      (by[d]=by[d]||[]).push({cal:String(e.calendar||""),calId:String(e.calendarId||""),title:String(e.title||"（件名なし）"),loc:String(e.location||""),time,sort:allDay?"":time});
     }
   }
   for(const d in by)by[d].sort((a,b)=>a.sort.localeCompare(b.sort));
@@ -1842,6 +1842,16 @@ function gcalByDay(j){
 }
 const gcalCovered=(g,s)=>!!g.data&&!!g.from&&!!g.to&&g.from<=s&&g.to>=s;
 const gcalUnknown=(g,s)=>!gcalCovered(g,s)||!!g.data.missing;
+/* v1.50.1 予定の札：「仕事用カレンダーの対応設定」で人物に結び付けたカレンダー（本人の端末の自分の主カレンダーを含む）は、その人の表示名（担当バッジと同じ personLabel）と担当バッジの色。
+   結び付けていないカレンダーと、複数の人が使うカレンダーは、今までどおりカレンダー名 */
+function calPersonTags(rows){
+ const out=new Map(),list=staffOrder();
+ for(const r of rows||[]){if(!r||r.mode!=="person"||!r.id||!r.person||out.has(r.id))continue;
+  let p=list.find(x=>x&&!x.removed&&x.sheetId===r.person),i=p?list.indexOf(p):-1;
+  if(!p&&r.person===D().sheetId){const o=ownNameProfile(),n=(o&&o.name)||String(RS().name||"").trim();if(n)p={...(o||{}),name:n,sheetId:r.person}}
+  let label="";if(p){try{label=String(personLabel(p)||"").trim()}catch(e){label=String(p.name||"").trim()}}if(label)out.set(r.id,{label,cls:i>=0?"pb"+(i%6):""});}
+ return out;
+}
 function gcalStatus(g){
   g={...g,data:gSafeData(g.data)};
   if(g.state==="kept"){const cals=(g.data&&g.data.calendars)||[];
@@ -1906,6 +1916,7 @@ function vCal(){
   const projected=CPGCalendarScope.project({g:{...raw,data:gSafeData(raw.data)},rows:ui.calendarMapError?[]:calSelfRows(mapping.rows,model),model,cases:scopeSourceCases(),resolvePerson:scopePerson,readable:gConcreteReadable,from:rFrom,to:rTo});
   const g={...raw,data:raw.data?{...raw.data,events:projected.events,sources:(raw.data.sources||[]).filter(s=>projected.approved.some(r=>r.id===s.id)),calendars:[]}:null};
   const gby=g.data?gcalByDay(g.data):{},gday=s=>gcalCovered(g,s)?gby[s]||[]:[];
+  const tags=calPersonTags(projected.approved),evLab=x=>(tags.get(x.calId)||{}).label||gcalLabel(x.cal),evCls=x=>(tags.get(x.calId)||{}).cls||gcalColor(x.cal);
   const isUnknown=s=>projected.unknown(s),dayNotice=s=>({unfetched:'未取得（予定があるか分かりません）',additional:'未取得あり（共有カレンダーを読めていません）',privacy:'同期し直してください（中身を出していない予定あり）',unidentified:'誰の予定か分からない予定あり'})[projected.dayState(s)]||'';
   const unknown=s=>dayNotice(s)?'<span class="note '+(projected.dayState(s)==='unfetched'?'cal-unfetched':'cal-unidentified')+'" role="status">'+dayNotice(s)+'</span>':'';
   const statuses=projected.status(rFrom), pending=statuses.map(p=>!p.ready?p:projected.status(rTo).find(q=>q.id===p.id)||p).filter(p=>!p.ready);
@@ -1931,7 +1942,7 @@ function vCal(){
     for(let i=0;i<7;i++){
       const s=addDays(from,i), d=parseYmd(s), b=day(s), hol=holidayName(s);
       const kind=dayKind(s), cls=["wkd",s===t?"today":"",kind].join(" ");
-      const items=gday(s).map(x=>'<div class="wkev gcev"><span class="ev '+gcalColor(x.cal)+'">'+h(gcalLabel(x.cal))+'</span><span class="t">'+(x.time==="終日"?"":h(x.time.replace(/〜.*$/,"〜"))+' ')+h(x.title)+'</span></div>').join("")+
+      const items=gday(s).map(x=>'<div class="wkev gcev"><span class="ev '+evCls(x)+'">'+h(evLab(x))+'</span><span class="t">'+(x.time==="終日"?"":h(x.time.replace(/〜.*$/,"〜"))+' ')+h(x.title)+'</span></div>').join("")+
         b.td.map(x=>'<button type="button" data-nav="todo" class="wkev td'+(x.due<t?" over":"")+'"><span class="ev td'+(x.due<t?" over":"")+'">ToDo</span><span class="t">'+h(x.title)+'</span>'+dueLabel(x.due)+'</button>').join("");
       rows+='<div class="wkrow '+kind+(s===ui.calDay?" sel":"")+'"><button type="button" class="'+cls+'" data-day="'+s+'" aria-label="'+mdw(s)+(hol?' '+hol:'')+'を日表示で開く"'+(s===t?' aria-current="date"':'')+'><span class="dn">'+d.getDate()+'</span><span class="dw">'+WD[d.getDay()]+'</span></button>'+
         '<div class="wki">'+(hol?'<span class="hol-name">'+hol+'</span>':'')+(items||(!isUnknown(s)?'<span class="wknone">予定なし</span>':''))+unknown(s)+'</div></div>';
@@ -1942,7 +1953,7 @@ function vCal(){
   }
   if(ui.calView==="day"){
     const sel=day(ui.calDay);
-    const gRows=gday(ui.calDay).map(x=>'<div class="card gccard"><div class="row"><span class="ev '+gcalColor(x.cal)+'" style="font-size:12px;padding:1px 6px">'+h(gcalLabel(x.cal))+'</span><span class="note num">'+h(x.time)+'</span></div>'+
+    const gRows=gday(ui.calDay).map(x=>'<div class="card gccard"><div class="row"><span class="ev '+evCls(x)+'" style="font-size:12px;padding:1px 6px">'+h(evLab(x))+'</span><span class="note num">'+h(x.time)+'</span></div>'+
       '<div class="ttl">'+h(x.title)+'</div>'+(x.loc?'<div class="row note"><span style="min-width:0;overflow-wrap:anywhere">'+h(x.loc)+'</span><a class="btn sm" style="display:inline-flex;align-items:center;text-decoration:none" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(x.loc)+'">地図</a></div>':'')+'</div>').join("");
     return '<section class="sec">'+
       nav(1,'<span class="dtitle '+dayKind(ui.calDay)+'">'+mdw(ui.calDay)+'</span>'+(holidayName(ui.calDay)?' <span class="hol-name">'+holidayName(ui.calDay)+'</span>':''),"今日","前の日","次の日")+
@@ -1954,7 +1965,7 @@ function vCal(){
   for(let i=0;i<42;i++){
     const dt=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i), s=ymd(dt), b=day(s), hol=holidayName(s);
     const cls=["d",dt.getMonth()!==m-1?"out":"",s===t?"today":"",s===ui.calDay?"sel":"",dayKind(s)].join(" ");
-    const all=gday(s).map(x=>["ev "+gcalColor(x.cal),gcalLabel(x.cal)+" "+x.title]);
+    const all=gday(s).map(x=>["ev "+evCls(x),evLab(x)+" "+x.title]);
     const shown=all.slice(0,2).map(([cl,l])=>'<span class="'+cl+'">'+h(l)+'</span>').join("");
     const more=all.length>2?'<span class="ev td">ほか'+(all.length-2)+'件</span>':'';
     const tdl=b.td.length?'<span class="ev td'+(b.td.some(x=>x.due<t)?" over":"")+'">ToDo '+b.td.length+'</span>':'';
@@ -2017,7 +2028,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.0";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.1";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2092,7 +2103,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.0" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.0" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.1" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.1" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
