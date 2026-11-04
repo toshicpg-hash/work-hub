@@ -28,11 +28,16 @@ const staff=[
 
 async function main(){
  const T=roleUnit();
- await check('役割：経理・業務管理は担当の会社だけ（その会社だけに所属する人。GMも含む）。よその会社は見ない。タスクリクエスト（指示箱）は全社とGMだけ',async()=>{
+ await check('役割：経理・業務管理は担当の会社の人だけ（GMも、所属のどれかが担当の会社なら複数会社の人も）。よその会社は見ない。GMからは今どおり複数会社の人は対象外。タスクリクエストは全社とGMだけ',async()=>{
   assert.deepEqual([...T.ROLES],['社員','GM','全社','経理','業務管理']);
   const [zen,gm,kei,gyo,ichi,jiro]=staff;
   assert.equal(T.canSee(kei,ichi),true);assert.equal(T.canSee(kei,gm),true,'the GM of the charged company');
-  assert.equal(T.canSee(kei,jiro),false,'not another company');assert.equal(T.canSee(kei,zen),false,'not a multi-company person');assert.equal(T.canSee(kei,gyo),false);
+  assert.equal(T.canSee(kei,jiro),false,'not another company');assert.equal(T.canSee(kei,gyo),false);
+  /* 複数の会社に所属する人（専務）は、所属のどれかが担当の会社なら見える。GMからは今どおり対象外 */
+  assert.equal(T.canSee(kei,zen),true,'charge CPY sees CP,CPY,AT');assert.equal(T.canSee({...kei,charge:'CP'},zen),true,'charge CP');assert.equal(T.canSee({...kei,charge:'AT'},zen),true,'charge AT only');
+  assert.equal(T.canSee({...gyo,charge:'AT'},zen),true,'業務管理 AT only');assert.equal(T.canSee({...gyo,charge:'CP'},zen),true,'業務管理 CP');
+  assert.equal(T.canSee(gm,zen),false,'GM: a multi-company person stays out');assert.equal(T.canSee({...gm,gmCo:'AT',company:'AT'},zen),false);
+  assert.equal(T.canSee({...kei,charge:'CP'},{...zen,company:'CPY,AT'}),false,'no overlap → not seen');
   for(const s of [ichi,jiro,gm,kei])assert.equal(T.canSee(gyo,s),true,'業務管理 with all three companies → '+s.name);
   assert.equal(T.canSee({...gyo,charge:'AT'},ichi),false);assert.equal(T.canSee({...gyo,charge:'AT'},jiro),true);
   assert.equal(T.canSee(kei,kei),false,'not self');
@@ -48,7 +53,7 @@ async function main(){
   assert.deepEqual(mails(ichi),['boss@example.com','zensha@example.com','gm-cpy@example.com','keiri@example.com','gyomu@example.com']);
   assert.deepEqual(mails(jiro),['boss@example.com','zensha@example.com','gyomu@example.com'],'the CPY GM and the CPY 経理 do not get an AT employee');
   assert.deepEqual(mails(gm),['boss@example.com','zensha@example.com','keiri@example.com','gyomu@example.com']);
-  assert.deepEqual(mails(zen),['boss@example.com'],'a multi-company 全社 person');
+  assert.deepEqual(mails(zen),['boss@example.com','keiri@example.com','gyomu@example.com'],'a multi-company 全社 person: 経理・業務管理 with an overlapping charge, not the GM');
   assert.ok(!mails(ichi).includes('old@example.com'),'removed person is not a target');
   assert.equal(T.calShareTargets({...ichi,removed:true},staff).length,0);
   assert.deepEqual([...T.calShareTargets(ichi,staff).map(x=>x.role)],['社長','全社・CP GM','GM（CPY）','経理：CPY','業務管理：3社すべて']);
@@ -58,7 +63,7 @@ async function main(){
   const data=staff.filter(s=>!s.removed).map(s=>({s,ok:true,rc:[],receiptRead:{state:'ready'}}));
   const ids=email=>R.authorized({admin:false,viewList:staff,email},data).map(x=>x.s.sheetId);
   assert.deepEqual(ids('gyomu@example.com'),[],'業務管理');
-  assert.deepEqual(ids('keiri@example.com'),['s-gm','s-kei',OWN],'経理: own + CPY');
+  assert.deepEqual(ids('keiri@example.com'),['s-zen','s-gm','s-kei',OWN],'経理: own + people in CPY (the multi-company person too)');
   assert.deepEqual(ids('zensha@example.com'),staff.filter(s=>!s.removed).map(s=>s.sheetId),'全社 unchanged');
   assert.deepEqual(ids(ME),[],'一般社員 unchanged');
  });
@@ -196,6 +201,7 @@ async function main(){
   const list=[VIEW,...staff.filter(x=>!x.removed).map(x=>[x.name,x.email,x.company,x.role,x.gmCo,x.sheetId,'',x.charge||''])];
   const rec=(n,co)=>({'案件':[CASE,['R'+n,'2026-11-01',co,'見本の依頼主','見本の物件','101','見本の症状','見本']],'入金':[],'立替':[RC,['L'+n,'2026-11-01','見本の店'+n,'見本の品','材料',1000,co,'','','未提出','','','立替','見本']],'情報':[['項目','値'],['最終同期','2026-11-03 09:00']]});
   const extra={'synthetic-view-list-000000001':{'一覧':list}};for(const x of staff.filter(x=>!x.removed))extra[x.sheetId]=rec(x.sheetId.slice(-3),coOf(x));
+  extra['s-zen']['立替'].push(['Lzen2','2026-11-02','見本の店zenCPY','見本の品','材料',2000,'CPY','','','未提出','','','立替','見本'],['Lzen3','2026-11-02','見本の店zenAT','見本の品','材料',3000,'AT','','','未提出','','','立替','見本']);
   function coOf(x){return x.company.split(',')[0]}
   for(const [who,email,sheetId] of [['業務管理','gyomu@example.com','s-gyo'],['経理','keiri@example.com','s-kei']]){
    const d=await device({viewer:{email,sheetId},extraSheets:extra});
@@ -205,11 +211,12 @@ async function main(){
    await d.p.evaluate(()=>CS.go('rcpt'));if(await d.p.locator('main [data-scope-person]').count())await d.p.selectOption('main [data-scope-person]','all');const t=await d.p.textContent('main');
    if(who==='業務管理'){
     assert.deepEqual(rcReads,['s-gyo'],'業務管理 reads only its own 立替 tab');
-    assert.ok(data.length>=4&&data.filter(x=>x.id!=='s-gyo').every(x=>x.rc===0),JSON.stringify(data));assert.ok(!data.some(x=>x.id==='s-zen'),'a multi-company person is not in its range');assert.ok(data.filter(x=>x.id!=='s-gyo').every(x=>x.cases===1),'cases are read');
+    assert.ok(data.length>=4&&data.filter(x=>x.id!=='s-gyo').every(x=>x.rc===0),JSON.stringify(data));assert.ok(data.some(x=>x.id==='s-zen'),'the multi-company person is in its range');assert.ok(data.filter(x=>x.id!=='s-gyo').every(x=>x.cases===1),'cases are read');
     for(const n of ['見本の店zen','見本の店-gm','見本の店kei','見本の店001','見本の店iro'])assert.ok(!t.includes(n),n);
     assert.doesNotMatch(t,/見本 一郎さん（見るだけ）|見本 二郎さん（見るだけ）/);
    }else{
-    assert.deepEqual(data.map(x=>x.id).sort(),['s-gm','s-kei',OWN].sort(),'経理 CPY: own + the CPY people');
+    assert.deepEqual(data.map(x=>x.id).sort(),['s-zen','s-gm','s-kei',OWN].sort(),'経理 CPY: own + the CPY people + the multi-company person');
+    const zen=await d.p.evaluate(()=>CS.ui.corp.data.find(x=>x.s.sheetId==='s-zen').rc.map(r=>r['会社']));assert.deepEqual(zen,['CPY'],'only the receipts for the charged company');
     assert.match(t,/見本 一郎さん（見るだけ）/);assert.doesNotMatch(t,/見本 二郎さん/);
    }
    assert.ok(await d.p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));

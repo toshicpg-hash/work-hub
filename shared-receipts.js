@@ -12,7 +12,7 @@
    /* v1.50.0 経理は担当の会社（charge）に所属する人の分を見る。業務管理は見ない */
    const charge=companyList({company:me&&me.charge});
    if(!me||me.removed||!['全社','GM','経理'].includes(me.role)||me.role==='GM'&&!me.gmCo||me.role==='経理'&&!charge.length)return [];
-   allowed=list.filter(s=>!s.removed&&(s.sheetId===me.sheetId||me.role==='全社'||(me.role==='経理'?(cs=>cs.length===1&&charge.includes(cs[0]))(companyList(s)):companyList(s).includes(me.gmCo))));
+   allowed=list.filter(s=>!s.removed&&(s.sheetId===me.sheetId||me.role==='全社'||(me.role==='経理'?companyList(s).some(c=>charge.includes(c)):companyList(s).includes(me.gmCo))));
   }
   const ids=new Set(allowed.map(s=>str(s.sheetId)).filter(Boolean)),seen=new Set();
   return (Array.isArray(data)?data:[]).filter(x=>{const id=str(x?.s?.sheetId);if(!ids.has(id)||seen.has(id))return false;seen.add(id);return true;});

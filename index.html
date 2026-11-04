@@ -643,7 +643,7 @@ function corpKeepLoad(){
   try{const k=JSON.parse(localStorage.getItem(CKEEP)||"null");
     if(k)ui.receiptCacheState=k.who!==corpWho()?"account":Date.now()-k.at>CKEEP_DAYS*864e5?"expired":"invalid";
     if(!k||!Array.isArray(k.data)||k.who!==corpWho()||Date.now()-k.at>CKEEP_DAYS*864e5){if(k)corpKeepClear();return}
-    ui.receiptCacheState="loaded";if(!D().admin&&k.viewList)ui.viewList=k.viewList;const me=!D().admin&&(ui.viewList||[]).find(v=>eq(v.email,D().viewEmail));const data=D().admin?k.data:k.data.filter(x=>me&&x.s&&canSee(me,x.s)).map(x=>noReceipts(me)?{...x,rc:[],receiptPrevious:null,receiptRead:{state:"hidden"}}:x);ui.corp={data,at:k.at,kept:true};roBuild(data)}catch(err){ui.receiptCacheState="invalid";}
+    ui.receiptCacheState="loaded";if(!D().admin&&k.viewList)ui.viewList=k.viewList;const me=!D().admin&&(ui.viewList||[]).find(v=>eq(v.email,D().viewEmail));const data=D().admin?k.data:k.data.filter(x=>me&&x.s&&canSee(me,x.s)).map(x=>noReceipts(me)?{...x,rc:[],receiptPrevious:null,receiptRead:{state:"hidden"}}:me&&me.role==="経理"&&x.s?{...x,rc:rcFor(me,x.s,x.rc||[]),receiptPrevious:x.receiptPrevious?{...x.receiptPrevious,rc:rcFor(me,x.s,x.receiptPrevious.rc||[])}:x.receiptPrevious}:x);ui.corp={data,at:k.at,kept:true};roBuild(data)}catch(err){ui.receiptCacheState="invalid";}
 }
 const corpErr=err=>err.message==="notviewer"?"全社・GM・経理・業務管理の役割ではなくなっています。前回の内容は消しました":!D().admin&&(err.status===403||err.status===404)?"見る人用一覧を開けません（役割や共有が外れた可能性があります）。前回の内容は消しました":dMsg(err);
 const corpAtText=()=>md(ymd(new Date(ui.corp.at)))+' '+hm(new Date(ui.corp.at));
@@ -2844,7 +2844,8 @@ const staffDup=email=>D().staff.find(s=>!s.removed&&String(s.email).trim().toLow
    見る範囲はGoogleの共有で守る（社長の管理端末で役割を保存したときに、閲覧者の共有を付けたり外したりする） */
 const ROLES=["社員","GM","全社","経理","業務管理"];
 /* v1.50.0 経理・業務管理は、担当の会社（人ごと。「担当の会社」列）に所属する社員の記録を見るだけで見られる。
-   GMと同じく、担当の会社だけに所属する人が対象（複数会社に所属する人は対象外）。GMと違い、その会社のGMも含む。全社の人は全員を見る。
+   所属の会社のどれかが担当の会社に入っていれば対象（複数会社に所属する人＝専務も。電話対応で居場所が要るため）。GMと違い、その会社のGMも含む。全社の人は全員を見る。
+   経理が見る立替・領収書は、担当の会社の分だけ（ほかの人の記録の「会社」が担当の会社の行）。
    指示箱（タスクリクエストを出す）は全社とGMだけ。業務管理は、HUBの画面では立替・領収書を見ない（経理は担当の会社の分を見る） */
 const coList=s=>String((s&&s.company)||"").split(/[,、，\s]+/).filter(x=>COMPANIES.includes(x));
 const CHARGE_ROLES=["経理","業務管理"];
@@ -2854,10 +2855,12 @@ const chargeRole=s=>!!s&&CHARGE_ROLES.includes(s.role);
 const isViewer=s=>!s.removed&&(s.role==="全社"||s.role==="GM"&&!!s.gmCo||chargeRole(s)&&chargeList(s).length>0);
 /* GM対象は同じ単一会社の一般社員のみ。全社/GM役割・兼務管理者・複数会社は対象外。 */
 const gmTarget=(v,s)=>{const cs=String(s.company||"").trim().split(/[,、，\s]+/).filter(Boolean);return s.role==="社員"&&!s.gmCo&&cs.length===1&&COMPANIES.includes(cs[0])&&cs[0]===v.gmCo};
-const chargeTarget=(v,s)=>{const cs=String(s.company||"").trim().split(/[,、，\s]+/).filter(Boolean);return cs.length===1&&COMPANIES.includes(cs[0])&&chargeList(v).includes(cs[0])};
+const chargeTarget=(v,s)=>{const ch=chargeList(v);return coList(s).some(c=>ch.includes(c))};
 const canSee=(v,s)=>isViewer(v)&&!s.removed&&v.sheetId!==s.sheetId&&(v.role==="全社"||(chargeRole(v)?chargeTarget(v,s):gmTarget(v,s)));
 /* 指示箱を出せる（指示箱の編集者になる）のは全社とGM。経理・業務管理は見るだけ */
 const canOrder=(v,s)=>canSee(v,s)&&(v.role==="全社"||v.role==="GM");
+/* 経理の端末：ほかの人の立替・領収書は、担当の会社の行だけ残す（専務のように複数の会社に所属する人の分も、担当の会社にかかる分だけ） */
+const rcFor=(me,s,rows)=>me&&me.role==="経理"&&s.sheetId!==me.sheetId?rows.filter(r=>chargeList(me).includes(String(r["会社"]||""))):rows;
 /* HUBの画面で、ほかの人の立替・領収書を見ない役割（業務管理） */
 const noReceipts=v=>!!v&&v.role==="業務管理";
 const roleLabel=s=>(chargeRole(s)?s.role+"："+(chargeList(s).length===COMPANIES.length?"3社すべて":chargeList(s).join("・")||"担当の会社なし"):s.role==="全社"?"全社":s.role==="GM"?"GM":"社員")+(s.gmCo?(s.role==="GM"?"（"+s.gmCo+"）":"・"+s.gmCo+" GM"):"");
@@ -3201,7 +3204,7 @@ async function corpLoad(){
       let box=null;if(s.boxId&&(!viewer||s.sheetId===me.sheetId||canOrder(me,s))){try{box=objRows((await sheetRead(s.boxId,[BOX_TAB]))[BOX_TAB]).filter(o=>o["指示ID"])}catch(err){if(err.message==="signin")throw err}}
       const info=Object.fromEntries((v["情報"]||[]).slice(1).map(r=>[r[0],r[1]]));
       s.lastSync=String(info["最終同期"]||"");
-      out.push({s,ok:true,calRec:hasCal?objRows(v[CALREC_TAB]).map(r=>String(r["Gmail"]||"").trim()).filter(mailOK):null,receiptRead:noRc?{state:"hidden",at:Date.now(),version:String(info["版"]||"")}:{...(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.parseSheet(v["立替"]):{state:"invalid",message:"領収書の表示機能を読み込めません。"}),at:Date.now(),version:String(info["版"]||"")},cases:objRows(v["案件"]),rc:noRc?[]:objRows(v["立替"]),todo:hasTodo?objRows(v["ToDo"]):null,orders:hasOrd?objRows(v["指示"]).filter(o=>o["指示ID"]):[],box,reports:hasRep?objRows(v[REPORT_TAB]).filter(r=>r["指示ID"]):[]})}
+      out.push({s,ok:true,calRec:hasCal?objRows(v[CALREC_TAB]).map(r=>String(r["Gmail"]||"").trim()).filter(mailOK):null,receiptRead:noRc?{state:"hidden",at:Date.now(),version:String(info["版"]||"")}:{...(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.parseSheet(v["立替"]):{state:"invalid",message:"領収書の表示機能を読み込めません。"}),at:Date.now(),version:String(info["版"]||"")},cases:objRows(v["案件"]),rc:noRc?[]:rcFor(me,s,objRows(v["立替"])),todo:hasTodo?objRows(v["ToDo"]):null,orders:hasOrd?objRows(v["指示"]).filter(o=>o["指示ID"]):[],box,reports:hasRep?objRows(v[REPORT_TAB]).filter(r=>r["指示ID"]):[]})}
     catch(err){if(err.message==="signin")throw err;out.push({s,ok:false,accessDenied:err.status===403||err.status===404,msg:dMsg(err)})}
   }
   save();return out;
@@ -3304,7 +3307,7 @@ function roleForm(p,s){
     '<label class="f">役割<select id="'+p+'_role">'+ROLES.map(r=>'<option'+((s.role||"社員")===r?' selected':'')+'>'+r+'</option>').join("")+'</select></label>'+
     '<label class="f">GMを務める会社<select id="'+p+'_gm"><option value="">なし</option>'+COMPANIES.map(co=>'<option'+(s.gmCo===co?' selected':'')+'>'+co+'</option>').join("")+'</select></label>'+
     '<div class="f full"><span>担当の会社（経理・業務管理のとき）</span><div class="row">'+COMPANIES.map(co=>'<label class="row"><input type="checkbox" id="'+p+'_ch_'+co+'"'+(chargeList(s).includes(co)?' checked':'')+'> '+co+'</label>').join("")+'</div></div>'+
-    '<p class="note full" style="margin:0">全社：全員の記録を見る（例：専務）。GM：同じ1社だけに所属する一般社員の記録を見る（複数会社・全社・GMは対象外）。全社の人がある会社のGMを兼ねるときは、役割を「全社」にしてGMの会社を選びます。経理・業務管理：「担当の会社」に所属する社員の記録を、見るだけで見る（その会社のGMも含みます。複数の会社に所属する人は対象外。タスクリクエストは出せません。業務管理は、立替・領収書は見ません）。どの人も、予定は、その人の予定を見てよい人に共有してもらいます。</p></div>';
+    '<p class="note full" style="margin:0">全社：全員の記録を見る（例：専務）。GM：同じ1社だけに所属する一般社員の記録を見る（複数会社・全社・GMは対象外）。全社の人がある会社のGMを兼ねるときは、役割を「全社」にしてGMの会社を選びます。経理・業務管理：「担当の会社」に所属する社員の記録を、見るだけで見る（その会社のGMと、所属の会社のどれかが担当の会社の人（専務など）も含みます。タスクリクエストは出せません。業務管理は、立替・領収書は見ません。経理が見る立替・領収書は、担当の会社の分だけです）。どの人も、予定は、その人の予定を見てよい人に共有してもらいます。</p></div>';
 }
 function roleVal(p){
   const role=val(p+"_role")||"社員", gmCo=role==="GM"||role==="全社"?val(p+"_gm"):"";
@@ -3358,7 +3361,7 @@ function dSettings(){
       roleForm("da",{company:"",role:"社員",gmCo:"",charge:""})+
       '<div class="row"><button class="btn pri" type="button" data-act="dadd">社員を追加</button></div>'+
       '<p class="note" style="margin:0">追加後、共有一覧を確認してから、その人のGmailに「編集者」で共有します。案内メールは自動送信しません。Google Cloud の「対象」で、その人をテストユーザーに追加しておいてください。</p>'+
-      '<p class="note" style="margin:0">役割が「全社」の人は全員の、「GM」の人は同じ1社だけに所属する一般社員の、「経理」「業務管理」の人は担当の会社に所属する社員の記録を、見るだけで見られます（閲覧者で共有します）。見る人には、下のリンクを送って、CPG HUB の「会社の動きを見る（管理者用）」に貼り付けてもらってください。</p>'+
+      '<p class="note" style="margin:0">役割が「全社」の人は全員の、「GM」の人は同じ1社だけに所属する一般社員の、「経理」「業務管理」の人は担当の会社に所属する社員（複数の会社に所属する人は、そのどれかが担当の会社なら）の記録を、見るだけで見られます（閲覧者で共有します）。見る人には、下のリンクを送って、CPG HUB の「会社の動きを見る（管理者用）」に貼り付けてもらってください。</p>'+
       '<p class="note" style="margin:0">予定の共有先（その人の予定を見てよい人：社長・全社・その人を見られるGM・担当の会社の経理と業務管理）は、会社・役割を保存すると、各社員の記録シートに書きます。社員が自分の端末の「予定の共有」を押すと、足りない相手だけに「見るだけ」で共有します。</p><div class="row"><button class="btn sm" type="button" data-act="dcaltargets"'+(ui.dbusy?' disabled':'')+'>予定の共有先を書く</button></div>'+
       (d.viewListId?'<label class="f">見る人用のリンク<input type="text" id="d_vlink" readonly value="https://docs.google.com/spreadsheets/d/'+h(d.viewListId)+'/edit"></label><div class="row"><button class="btn sm" type="button" data-act="dvcopy">リンクをコピー</button></div>':''))+'</div>':'';
   const view=d.admin?'':'<div class="panel"><h3>会社の動きを見る（管理者用）</h3>'+
