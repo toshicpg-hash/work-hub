@@ -58,7 +58,7 @@ async function main(){
    const rows=await p.$$eval('h2:text-matches("月の担当別")+* tbody tr, .sec:has(h2:text-matches("月の担当別")) tbody tr',a=>[...new Set(a.map(x=>[...x.cells].map(c=>c.textContent).join('|')))]);
    assert.ok(rows.includes('見本 一郎|3件|1件|1件|100,000円|1件 50,000円'),rows.join(' / '));
    assert.ok(rows.includes('例題 花子|1件|1件|0件|200,000円|0件 0円'),rows.join(' / '));
-   assert.ok(rows.includes('トシ|1件|0件|0件|0円|0件 0円'),rows.join(' / '));
+   assert.ok(rows.includes('社長|1件|0件|0件|0円|0件 0円'),rows.join(' / '));
   });
   await check('会社の絞り込み（案件の明示会社・未設定は補完しない） '+width+'px',async()=>{
    await p.locator('[data-scope-company]').selectOption('CP');let s=await sum(p);
