@@ -208,6 +208,29 @@ async function main(){
   assert.deepEqual(A.errors,[]);
  });
  const cached=await viewer(SA,390);
+ await check('v1.50.3 役割の保存：「反映中 i／n：…」と進み具合を出し、社員一覧への保存は共有と見る人用一覧のすぐあと（予定の共有先より前）。最後に「完了しました」',async()=>{
+  const list=byName('CPG HUB_社員一覧'),mark=G.calls.length;
+  await A.p.evaluate(()=>{window.__prog=[];const seen=()=>{const el=document.getElementById('shareProgress');if(el){const t=el.firstChild?el.firstChild.textContent:el.textContent;if(window.__prog.at(-1)!==t)window.__prog.push(t)}};new MutationObserver(seen).observe(document.body,{subtree:true,childList:true,characterData:true});window.__autoShare=true});
+  await A.p.evaluate(async([SB])=>{const s=RB.db.settings.data.staff.find(x=>x.email===SB&&!x.removed);await RB.adminRoleSave(s.sheetId,{company:'CPY',role:'業務管理',gmCo:'',charge:'CPY'},'',()=>{})},[SB]);
+  const prog=await A.p.evaluate(()=>window.__prog);
+  assert.ok(prog.some(t=>/^共有の一覧を読んでいます \d+／\d+$/.test(t)),prog.join(' | '));
+  const steps=prog.filter(t=>/^反映中 \d+／\d+：/.test(t));assert.ok(steps.length>=1,prog.join(' | '));
+  assert.ok(steps.some(t=>/さんの(記録シート|指示箱)に社員 二郎さんを見るだけで共有$|見る人用一覧に社員 二郎さんを見るだけで共有$/.test(t)),steps.join(' | '));
+  const iSave=prog.indexOf('社員一覧に保存しています'),iCal=prog.findIndex(t=>/^予定の共有先を書いています/.test(t)),iLast=prog.lastIndexOf('完了しました');
+  assert.ok(iSave>0&&iCal>iSave&&iLast>iCal,prog.join(' | '));
+  /* Drive上の順番：社員一覧の「社員」タブへの書き込みが、予定の共有先の書き込みより先 */
+  const after=G.calls.slice(mark),w=x=>['PUT','POST','BATCH'].includes(x[1]);
+  const iList=after.findIndex(x=>w(x)&&String(x[2]).includes(list.id)&&/社員'?!?|社員$/.test(String(x[2])+String(x[3]||''))),iTarget=after.findIndex(x=>w(x)&&String(x[2]).includes('予定の共有先'));
+  assert.ok(iList>=0&&iTarget>iList,'list '+iList+' / targets '+iTarget);
+  const row=tab(list,'社員').find(r=>r[1]===SB),h=tab(list,'社員')[0];assert.equal(row[h.indexOf('役割')],'業務管理');assert.equal(row[h.indexOf('担当の会社')],'CPY');
+  assert.ok(await A.p.evaluate(()=>{const el=document.getElementById('shareProgress');return !el||el.getBoundingClientRect().right<=innerWidth}));
+  /* 確認の一覧で「やめる」と、反映中の表示は消える（何も変えていない） */
+  await A.p.evaluate(()=>{window.__autoShare=false;const s=RB.db.settings.data.staff.find(x=>x.role==='業務管理');window.__p2=RB.adminRoleSave(s.sheetId,{company:'CPY',role:'社員',gmCo:'',charge:''},'',()=>{}).catch(e=>e.message)});
+  await A.p.waitForSelector('dialog.share-preview[open]');await A.p.locator('[data-share-no]').click();
+  assert.match(await A.p.evaluate(()=>window.__p2),/中止しました/);
+  await A.p.waitForTimeout(50);assert.equal(await A.p.evaluate(()=>!!document.getElementById('shareProgress')&&!/完了/.test(document.getElementById('shareProgress').textContent)),false);
+  await A.p.evaluate(()=>{window.__autoShare=true});
+ });
  await check('旧キャッシュの複数会社・管理者は再読込でGM表示から除外、保存キャッシュ原本は不変',async()=>{
   await cached.p.evaluate(()=>{const bad={s:{name:'合成全社',email:'cache-only@example.com',sheetId:'cached-multi',company:'CP,CPY,AT',role:'全社',gmCo:'CP'},ok:true,cases:[],rc:[],todo:[],orders:[]};RB.ui.corp.data.push(bad);RB.corpKeepSave()});
   const raw=await cached.p.evaluate(()=>localStorage.getItem('workhub_corp_last_v1'));await cached.p.reload();await cached.p.waitForFunction(()=>!!window.RB);

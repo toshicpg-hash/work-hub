@@ -45,8 +45,10 @@ function plan(specs,rows,list){
 async function execute(planRows,specs,rows,list,io){
  let expected=rows.slice(),snap=new Map(specs.map(s=>[s.id,fingerprint(s.permissions)])),done=0;
  const check=async()=>{await io.guard();const got=await io.readHistory();history(got,list);if(stable(got)!==stable(expected))fail('共有管理履歴が別の操作で変わりました。再確認してください。');};
- for(const x of planRows.filter(x=>['grant','revoke'].includes(x.action))){
+ const ops=planRows.filter(x=>['grant','revoke'].includes(x.action));
+ for(const x of ops){
   if(io.cancelled&&io.cancelled())fail('途中で中止しました。確認済みの変更は残り、未実行分は変更していません。');
+  if(io.step)io.step(x,done+1,ops.length);
   await check();
   const before=await io.permissions(x.file);if(fingerprint(before)!==snap.get(x.file))fail('確認後に共有が変わりました。変更せず再確認してください。');
   const record={list,op:io.id(),action:x.action,file:x.file,email:x.email,role:x.role,permission:x.permission||'',state:'intent',at:io.now()};
@@ -60,8 +62,10 @@ async function execute(planRows,specs,rows,list,io){
   if(x.action==='grant'?(found.length!==1||found[0].id!==pid||found[0].role!==x.role||!direct(found[0])):after.some(p=>p.id===pid))fail('共有変更後の読戻しを確認できません。個別確認してください。');
   // Ensure unrelated entries were not changed during the operation.
   if(fingerprint(before.filter(p=>p.id!==pid))!==fingerprint(after.filter(p=>p.id!==pid)))fail('操作中に別の共有が変わりました。後続の変更を止めました。');
-  await check();const verified={...record,permission:pid,state:'verified',at:io.now()};await io.append(verified);expected.push(verified);await check();snap.set(x.file,fingerprint(after));done++;io.progress(x,done);
+  await check();const verified={...record,permission:pid,state:'verified',at:io.now()};/* v1.50.3 確認済みの記録のすぐあとの読み直しは省き、次の変更の前と最後に確かめる */await io.append(verified);expected.push(verified);snap.set(x.file,fingerprint(after));done++;io.progress(x,done);
  }
+ /* 次の変更の前と、最後に、履歴と社員一覧を確かめる */
+ if(done)await check();
  return {done,review:planRows.filter(x=>x.action==='review').length};
 }
 return {plan,execute,history,fingerprint};
