@@ -406,8 +406,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.4" title="使い方マニュアルを開く">v1.50.4・11/5更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.4" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.5" title="使い方マニュアルを開く">v1.50.5・11/5更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.5" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -469,8 +469,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./request-box-employee.js?v=1.47.1"></script>
 <script src="./share-management.js?v=1.48.6"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.4"></script>
-<script src="./calendar-view-scope.js?v=1.50.4"></script>
+<script src="./view-scope.js?v=1.50.5"></script>
+<script src="./calendar-view-scope.js?v=1.50.5"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -654,7 +654,7 @@ const keptNote=()=>'前回の読み込み（'+corpAtText()+'）の内容です�
 async function corpRun(){
   try{const before=ui.corp?.data||[],data=await corpLoad();
     for(const x of data)if((!x.ok||x.receiptRead?.state==="invalid")&&!x.accessDenied){const old=before.find(y=>y.s.sheetId===x.s.sheetId);if(old){const prior=["ready","cached"].includes(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.state(old):"unknown")?{rc:old.rc,lastSync:old.s.lastSync,readAt:old.receiptRead?.at||ui.corp?.at,receiptRead:old.receiptRead}:old.receiptPrevious;if(prior)x.receiptPrevious=prior;}}
-    ui.corp={data,at:Date.now()};roBuild(data);D().corpAt=new Date(ui.corp.at).toISOString();save();corpKeepSave();return data}
+    ui.corp={data,at:Date.now(),timing:data.timing||null};roBuild(data);D().corpAt=new Date(ui.corp.at).toISOString();save();corpKeepSave();return data}
   catch(err){
     /* 見る人で、一覧の共有が外れた・役割が外れたときは、残した内容を使わず消す */
     if(!D().admin&&(err.status===403||err.status===404||err.message==="notviewer")){corpKeepClear();ui.corp=null;ui.corpRO=null;ui.corpTodo=null}
@@ -2034,7 +2034,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.4";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.5";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2109,7 +2109,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.4" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.4" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.5" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.5" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -2518,18 +2518,21 @@ const D=()=>DB.settings.data;
 const isAdminDevice=()=>D().admin||!!(G.cals&&G.cals.some(c=>c.primary&&c.id===ADMIN_ACCOUNT));
 const dataOn=()=>!!(D().sheetId||D().admin||D().viewListId);
 /* Google APIs other than Calendar (Sheets / Drive). body: JSON, raw: Blob for uploads */
+/* 1回の通信の打ち切り（ミリ秒） */
+let gReqTimeout=45000;
 async function gReq(url,o){
   o=o||{};
   if(caseSaveUncertain&&o.method&&o.method!=="GET")throw Error(CASE_SAVE_NOTICE);
   if(!gSignedIn())throw new Error("signin");
-  const ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(),45000);
+  const ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(),gReqTimeout);
   try{
     const r=await fetch(url,{method:o.method||"GET",signal:ctl.signal,cache:"no-store",credentials:"omit",
       headers:Object.assign({Authorization:"Bearer "+G.token},o.body?{"Content-Type":"application/json"}:{},o.headers||{}),body:o.raw||(o.body?JSON.stringify(o.body):undefined)});
     if(r.status===401){G.token="";G.exp=0;throw new Error("signin")}
-    if(!r.ok){const e=new Error("http");e.status=r.status;throw e}
+    if(!r.ok){const e=new Error("http");e.status=r.status;const ra=Number(r.headers&&r.headers.get&&r.headers.get("Retry-After"));if(r.headers&&r.headers.get&&r.headers.get("Retry-After")!==null&&Number.isFinite(ra)&&ra>=0)e.retryAfter=ra;throw e}
     return r.status===204?null:await r.json();
-  }finally{clearTimeout(tm)}
+  }catch(err){if(err&&err.name==="TypeError"&&!err.status)err.network=true;throw err}
+  finally{clearTimeout(tm)}
 }
 const SHEETS="https://sheets.googleapis.com/v4/spreadsheets", DRIVE="https://www.googleapis.com/drive/v3/files";
 const dMsg=err=>err&&err.status===403?"このシートやフォルダを使う権限がありません":gMsg(err);
@@ -3249,7 +3252,11 @@ async function corpLoad(){
   const me=viewer&&ui.viewList.find(s=>eq(s.email,D().viewEmail));
   if(viewer&&(!me||!isViewer(me)))throw new Error("notviewer");
   const list=viewer?ui.viewList.filter(s=>me&&(canSee(me,s)||s.sheetId===me.sheetId)):D().staff.filter(s=>!s.removed), out=[];
+  const t0=Date.now();
   for(const s of list){
+    const started=Date.now();let tries=0;
+    /* v1.50.5 読めなかった人だけ、少し待って最大2回やり直す（回数制限・Google側の不具合・時間切れ・通信の失敗のとき）。成功した人は読み直さない */
+    for(;;){tries++;const before=out.length;
     try{/* a sheet synced from before v1.29 has no 「ToDo」 tab, and reading a missing tab fails the whole read */
       const tabs=await sheetTabNames(s.sheetId), hasTodo=tabs.includes("ToDo"), hasOrd=tabs.includes("指示"), hasRep=tabs.includes(REPORT_TAB), hasCal=!viewer&&tabs.includes(CALREC_TAB);
       /* v1.50.0 業務管理の端末は、ほかの人の立替・領収書を読まない */
@@ -3260,10 +3267,23 @@ async function corpLoad(){
       const info=Object.fromEntries((v["情報"]||[]).slice(1).map(r=>[r[0],r[1]]));
       s.lastSync=String(info["最終同期"]||"");
       out.push({s,ok:true,calRec:hasCal?objRows(v[CALREC_TAB]).map(r=>String(r["Gmail"]||"").trim()).filter(mailOK):null,receiptRead:noRc?{state:"hidden",at:Date.now(),version:String(info["版"]||"")}:{...(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.parseSheet(v["立替"]):{state:"invalid",message:"領収書の表示機能を読み込めません。"}),at:Date.now(),version:String(info["版"]||"")},cases:objRows(v["案件"]),rc:noRc?[]:rcFor(me,s,objRows(v["立替"])),todo:hasTodo?objRows(v["ToDo"]):null,orders:hasOrd?objRows(v["指示"]).filter(o=>o["指示ID"]):[],box,reports:hasRep?objRows(v[REPORT_TAB]).filter(r=>r["指示ID"]):[]})}
-    catch(err){if(err.message==="signin")throw err;out.push({s,ok:false,accessDenied:err.status===403||err.status===404,msg:dMsg(err)})}
+    catch(err){if(err.message==="signin")throw err;
+      const wait=corpRetryWait(err,tries);if(wait!==null){await corpWait(wait);continue}
+      out.push({s,ok:false,accessDenied:err.status===403||err.status===404,msg:corpReadMsg(err)+(tries>1?"・"+tries+"回試しました":""),status:err.status||(err.name==="AbortError"?"timeout":err.network?"network":"")})}
+    if(out.length>before){const x=out[out.length-1];x.ms=Date.now()-started;x.tries=tries}
+    break}
   }
+  out.timing={ms:Date.now()-t0,n:list.length};
   save();return out;
 }
+/* v1.50.5 読み込めなかった理由を分けて出す（前は 429・5xx・通信の失敗が全部「通信できませんでした」だった） */
+const corpErrKind=err=>!err?"":err.status===429?"rate":err.status>=500&&err.status<600?"server":err.name==="AbortError"?"timeout":err.network||err.name==="TypeError"?"network":"";
+function corpReadMsg(err){const k=corpErrKind(err);return k==="rate"?"Googleの回数制限（429）":k==="server"?"Google側の一時的な不具合（"+err.status+"）":k==="timeout"?"時間切れ（45秒）":k==="network"?"通信の失敗（電波・接続）":dMsg(err)+(err&&err.status?"（"+err.status+"）":"");}
+/* 待つ時間（ミリ秒）。やり直さないときは null。Retry-After があれば従う（60秒まで）、なければ5秒→15秒 */
+function corpRetryWait(err,tries){if(tries>2||!corpErrKind(err))return null;const ra=err&&Number.isFinite(err.retryAfter)?Math.min(60,err.retryAfter)*1000:null;return ra!==null?ra:tries===1?5000:15000;}
+let corpWait=ms=>new Promise(r=>setTimeout(r,ms));
+const secText=ms=>Number.isFinite(ms)?(ms<10000?(Math.round(ms/100)/10):Math.round(ms/1000))+"秒":"";
+function corpTimingText(data){const t=data&&data.timing;if(!t||!t.n)return "";return "読み込み：全体 "+secText(t.ms)+"・1人あたり "+secText(t.ms/t.n);}
 const objRows=rows=>{const [head,...rest]=rows||[];return head?rest.map(r=>Object.fromEntries(head.map((k,i)=>[k,r[i]??""]))):[]};
 /* 会社の動き：社員の案件を1件ずつカードで見せる（見るだけ） */
 function corpCaseCard(r){
@@ -3340,7 +3360,7 @@ function corpView(){
     const trow=([k,g])=>'<tr><td>'+h(k)+'</td><td class="num">'+g.n+'件</td><td class="num">'+yen(g.sum)+'</td><td class="num"'+(g.late?' style="color:var(--red);font-weight:700"':'')+'>'+(g.late?g.late+'日':'—')+'</td></tr>';
     const tbl=(hd,rows)=>'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>'+hd+'</th><th>件数</th><th>未入金</th><th>最長の遅れ</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
     body='<div class="panel"><h3>同期の状況</h3><ul class="dl">'+c0.data.filter(x=>x.s&&scopeContext().canView(x.s)).map(x=>{const ls=x.ok&&x.s.lastSync?x.s.lastSync:"", old=!ls||String(ls).slice(0,10)!==t; /* 1日3回の同期（v1.47）：今日の同期が無い人を赤 */
-        return '<li'+(x.ok&&old?' style="color:var(--red)"':'')+'>'+personBadge(x.s.name)+' '+(x.ok?(ls?'最終同期 '+h(ls):'まだ同期していません')+(old?' <b style="color:var(--red)">（今日まだ同期していません）</b>':''):'<b style="color:var(--red)">読めませんでした（'+h(x.msg)+'）</b>')+'</li>'}).join("")+'</ul></div>'+
+        return '<li'+(x.ok&&old?' style="color:var(--red)"':'')+'>'+personBadge(x.s.name)+' '+(x.ok?(ls?'最終同期 '+h(ls):'まだ同期していません')+(old?' <b style="color:var(--red)">（今日まだ同期していません）</b>':''):'<b style="color:var(--red)">読めませんでした（'+h(x.msg)+'）</b>')+(x.ok&&x.tries>1?' <span class="note">（'+x.tries+'回目で読めました）</span>':'')+'</li>'}).join("")+'</ul>'+(c0.timing&&!c0.kept?'<p class="note num" style="margin:0">'+h(corpTimingText({timing:c0.timing}))+'</p>':'')+'</div>'+
       (scopeState().usable?'<div class="panel"><h3>動いている案件 '+active.length+'件</h3>'+(byStage.length?'<p class="note num" style="margin:0">'+byStage.map(([l,n])=>h(l)+' '+n).join("・")+'</p>':'')+
         byTan.map(([n,rs])=>'<details open><summary>'+personBadge(n)+'（'+rs.length+'件）</summary><div class="list" style="margin-top:6px">'+rs.slice().sort((a,b)=>corpLastMove(b).localeCompare(corpLastMove(a))).map(corpCaseCard).join("")+'</div></details>').join("")+'</div>'+
       '<div class="panel"><h3>ToDo</h3>'+(ok.length?c.data.map(x=>x.ok?corpTodos(x,x._i):'').join(""):'<p class="note" style="margin:0">読めた社員がいません</p>')+'</div>'+

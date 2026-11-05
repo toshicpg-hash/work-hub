@@ -3,7 +3,7 @@
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
 const {chromium}=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const root=path.resolve(__dirname,'..'),out=path.resolve(root,'..','shared-test-output'),KEY='workhub_proto_v1',CK='workhub_corp_last_v1';
-const hook='window.SH={get db(){return DB},ui,go,render,emptyDB,RECEIPT_DEFAULTS,photoPut,photoGet,corpRun,corpKeepLoad,authorize(){G.token="SYNTHETIC";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000;}};';
+const hook='window.SH={get db(){return DB},ui,go,render,emptyDB,RECEIPT_DEFAULTS,photoPut,photoGet,corpRun,corpKeepLoad,authorize(){G.token="SYNTHETIC";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000;/* v1.50.5 やり直しの待ち時間は試験では待たない */if(typeof corpWait!=="undefined")corpWait=async()=>{};}};';
 let browser,server,origin,fixture,headers;const results=[];
 const staff=[{sheetId:'source-a',name:'検証社員A',email:'a@example.invalid',company:'CP',role:'社員',lastSync:'2026-10-27 21:28'},{sheetId:'source-b',name:'検証社員B',email:'b@example.invalid',company:'CPY',role:'社員',lastSync:'2026-10-27 21:28'}];
 const row=(id,price,method='法人カード',company='CP')=>({'受付ID':id,'日付':'2026-10-27','支払先':'SYNTHETIC '+id,'内容':'検証用の明細','区分':'駐車場代','金額':price,'会社':company,'現場':'SYNTHETIC SITE','仕事番号':'TEST-JOB','状態':method==='法人カード'?'締め前':'未提出','精算書番号':'','写真リンク':'https://drive.google.com/file/d/SYNTHETIC-'+id+'/view?usp=drivesdk','支払い方法':method,'提出者':'SYNTHETIC'});
