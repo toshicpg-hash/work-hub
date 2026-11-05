@@ -170,7 +170,7 @@ async function main(){
   const rows=staff.map(s=>({...s,addedAt:'2026-11-01',lastSync:''}));
   const {c,p,errors,sheets}=await device({admin:true,staffRows:rows});
   await p.evaluate(()=>CS.signIn());
-  const n=await p.evaluate(()=>CS.calShareTargetsWrite(CS.db.settings.data.staff));assert.equal(n,6,'active staff only');
+  const r=await p.evaluate(()=>CS.calShareTargetsWrite(CS.db.settings.data.staff));assert.equal(r.n,6,'active staff only');assert.ok(r.changes.every(c=>c.removed.length===0&&c.added.length>=1),'first write: everyone added');
   assert.equal(sheets['s-old']['予定の共有先'],undefined,'not for a removed person');
   const boss=await p.evaluate(()=>CS.ADMIN_ACCOUNT);
   assert.deepEqual(sheets[OWN]['予定の共有先'],[SHARE_COLS,['社長',boss,'社長'],['見本 全社','zensha@example.com','全社・CP GM'],['見本 GM','gm-cpy@example.com','GM（CPY）'],['見本 経理','keiri@example.com','経理：CPY'],['見本 業務','gyomu@example.com','業務管理：3社すべて']]);

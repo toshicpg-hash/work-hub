@@ -45,7 +45,7 @@ async function google(route){
   if(vm){const range=vm[1],t=f.tabs.find(x=>x.title===tabName(range));if(!t)return no(400);
    if(vm[2]===':clear'){t.rows=[];return J({})}
    if(vm[2]===':append'){t.rows.push(...req.postDataJSON().values);return J({})}
-   if(m==='PUT'){put(t,range,req.postDataJSON().values);return J({})}}
+   if(m==='PUT'){if(G.failTab&&t.title===G.failTab&&(!G.failFile||G.failFile===f.id))return no(500);put(t,range,req.postDataJSON().values);return J({})}}
  }
  return no(404);
 }
@@ -230,6 +230,30 @@ async function main(){
   assert.match(await A.p.evaluate(()=>window.__p2),/中止しました/);
   await A.p.waitForTimeout(50);assert.equal(await A.p.evaluate(()=>!!document.getElementById('shareProgress')&&!/完了/.test(document.getElementById('shareProgress').textContent)),false);
   await A.p.evaluate(()=>{window.__autoShare=true});
+ });
+ await check('v1.50.4「予定の共有先を書く」：進み具合・人ごとの変化・変更なし・止まった所を画面下に出し、押している間はボタンを止める',async()=>{
+  const open=async()=>{await A.p.evaluate(()=>{RB.go('stats');document.querySelectorAll('details[data-fold]').forEach(x=>x.open=true)})};
+  await A.p.evaluate(()=>{window.__prog=[];const seen=()=>{const el=document.getElementById('shareProgress');if(el){const t=el.firstChild?el.firstChild.textContent:el.textContent;if(window.__prog.at(-1)!==t)window.__prog.push(t)}};new MutationObserver(seen).observe(document.body,{subtree:true,childList:true,characterData:true})});
+  const run=async()=>{await A.p.evaluate(()=>{window.__prog=[]});await open();await A.p.click('[data-act=dcaltargets]');
+   assert.equal(await A.p.evaluate(()=>RB.ui.dbusy),true);assert.equal(await A.p.locator('[data-act=dcaltargets]').isDisabled(),true,'disabled while running');
+   await A.p.waitForFunction(()=>!RB.ui.dbusy);return A.p.evaluate(()=>window.__prog)};
+  /* 1回目：役割の保存で書いてあるので変更なし */
+  let prog=await run();
+  assert.ok(prog.some(t=>/^予定の共有先を書いています 1／\d+：.+さん$/.test(t)),prog.join(' | '));
+  assert.match(prog.at(-1),/^完了しました（\d+人分を書きました。変更はありませんでした）$/);
+  /* 一郎さんの記録シートの共有先から1人消しておくと、2回目は「＋その人」と出る */
+  const sA=byName('CPG HUB_社員 一郎'),tabA=sA.tabs.find(t=>t.title==='予定の共有先'),removed=tabA.rows.splice(tabA.rows.length-1,1)[0];
+  prog=await run();
+  assert.match(prog.at(-1),new RegExp('変わった人：社員 一郎さん（＋'+removed[0]+'）／変わらなかった人 \\d+人'),prog.at(-1));
+  assert.ok(tabA.rows.some(r=>r[1]===removed[1]),'written back');
+  assert.match(await A.p.textContent('main'),/社員 一郎：予定の共有先 \d+人（＋/);
+  /* 途中で失敗：二郎さんの記録シートへの書き込みを止める */
+  G.failTab='予定の共有先';G.failFile=byName('CPG HUB_社員 二郎').id;
+  prog=await run();G.failTab='';G.failFile='';
+  const err=await A.p.textContent('#shareProgress');assert.match(err,/ここで止まりました：社員 二郎さん/);assert.match(err,/それまでの分は書けています。もう一度押すと、続きから書き直します/);
+  assert.equal(await A.p.locator('#shareProgress button').textContent(),'閉じる');await A.p.click('#shareProgress button');assert.equal(await A.p.locator('#shareProgress').count(),0);
+  prog=await run();assert.match(prog.at(-1),/^完了しました/);
+  assert.ok(await A.p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  });
  await check('旧キャッシュの複数会社・管理者は再読込でGM表示から除外、保存キャッシュ原本は不変',async()=>{
   await cached.p.evaluate(()=>{const bad={s:{name:'合成全社',email:'cache-only@example.com',sheetId:'cached-multi',company:'CP,CPY,AT',role:'全社',gmCo:'CP'},ok:true,cases:[],rc:[],todo:[],orders:[]};RB.ui.corp.data.push(bad);RB.corpKeepSave()});
