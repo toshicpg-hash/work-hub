@@ -5,7 +5,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
-const hook='window.HO={get db(){return DB},get ui(){return ui},G,go,save,render,scopeIdentity,gReadOne,calHubOwner,authorize(){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000}};';
+const hook='window.HO={get db(){return DB},get ui(){return ui},G,go,save,render,scopeIdentity,gReadOne,calHubOwner,get ADMIN(){return ADMIN_ACCOUNT},authorize(){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000}};';
 const A='synthetic-a-sheet-0000000001',B='synthetic-b-sheet-0000000002',C='synthetic-c-sheet-0000000003',D2='synthetic-d-sheet-0000000004';
 const HUB='hub-shared@group.example.com',SELF_A='a@example.com',SELF_B='b@example.com';
 let server,browser,origin;const results=[];
@@ -19,12 +19,14 @@ const E=(id,title,extra)=>Object.assign({private:false,calendarId:HUB,calendar:'
 const EVENTS=[
  E('e1','【退去立会】見本荘 103',{hub:'U-0101',owner:'見本 二郎',creator:'b@example.com'}),
  E('e2','【リフォーム】見本ハイツ 201',{hub:'U-0102',owner:'試験',creator:'b@example.com'}),           // 名字だけ（1人に決まる）
- E('e3','【修繕】見本コート 301',{hub:'U-0103',owner:'見本',creator:'b@example.com'}),                // 名字だけ（2人いて決まらない）
+ E('e3','【修繕】見本コート 301',{hub:'U-0103',owner:'見本',creator:'zz@example.com'}),               // 名字だけ（2人いて決まらない）・作成者も社員一覧にいない
  E('e4','見本の月例会議',{}),                                                                           // HUB外（担当の行なし）
  E('e5','【清掃】見本ビル 401',{hub:'U-0104',owner:'',creator:'d@example.com'}),                      // 担当の行がない → 作成者で補助
  E('e6','【退去立会】見本荘 104',{hub:'U-0105',owner:'工事主任',creator:'b@example.com'}),             // 表示名
  E('e7','予定あり',{private:true,hub:'U-0106',owner:'見本 二郎'}),                                        // 非公開は今までどおり出さない
- E('e8','【修繕】見本ビル 501',{hub:'U-0107',owner:'不明 太郎',creator:'zz@example.com'})];             // 一致しない
+ E('e8','【修繕】見本ビル 501',{hub:'U-0107',owner:'不明 太郎',creator:'zz@example.com'}),             // 一致しない
+ E('e9','見本の打合せ',{creator:'c@example.com'}),                                                   // v1.50.13 HUB外から直接入れた予定（担当の行なし）→ 作成者
+ E('e10','【修繕】見本タワー 601',{hub:'U-0108',owner:'見本',creator:'d@example.com'})];             // v1.50.13 担当が1人に決まらない → 作成者
 async function device({self=A,rows,admin=true,width=400}){
  const c=await browser.newContext({viewport:{width,height:900},timezoneId:'Asia/Tokyo',locale:'ja-JP',serviceWorkers:'block'});
  await c.route('**/*',r=>{const u=new URL(r.request().url());if(u.origin===origin){if(u.pathname==='/'||u.pathname==='/index.html')return r.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(root,'index.html'),'utf8').replace('corpKeepLoad();\nrender();',hook+'\ncorpKeepLoad();\nrender();')});return r.continue()}return r.fulfill({status:200,body:'{}'})});
@@ -52,7 +54,7 @@ async function main(){
   await check('対応設定が「'+label+'」でも：人で「見本 二郎」に絞ると、担当が見本 二郎の「CPG HUB」の予定が出て、札も見本 二郎',async()=>{
    const d=await device({rows});all.push(d);
    await pick(d.p,B);const t=await titles(d.p);
-   assert.match(t,/見本荘 103/);assert.doesNotMatch(t,/見本ハイツ 201|見本コート 301|月例会議|見本ビル 401|見本荘 104|見本ビル 501/);
+   assert.match(t,/見本荘 103/);assert.doesNotMatch(t,/見本ハイツ 201|見本コート 301|月例会議|見本ビル 401|見本荘 104|見本ビル 501|見本の打合せ|見本タワー 601/);
    const card=(await cards(d.p)).find(x=>/見本荘 103/.test(x.text));assert.equal(card.tag,'見本 二郎');
    assert.doesNotMatch(t,/見本荘 104（非公開）|e7/);
   });
@@ -61,6 +63,9 @@ async function main(){
    await pick(d.p,C);let t=await titles(d.p);assert.match(t,/見本ハイツ 201/);assert.match(t,/見本荘 104/);assert.doesNotMatch(t,/見本荘 103/);
    assert.ok((await cards(d.p)).filter(x=>/見本ハイツ 201|見本荘 104/.test(x.text)).every(x=>x.tag==='工事主任'),'tag is the display name');
    await pick(d.p,D2);t=await titles(d.p);assert.match(t,/見本ビル 401/);
+   /* v1.50.13 HUB外から直接入れた予定・担当が1人に決まらない予定は、作成者の人 */
+   assert.match(t,/見本タワー 601/,'ambiguous owner falls back to the creator');
+   await pick(d.p,C);t=await titles(d.p);assert.match(t,/見本の打合せ/,'a direct event goes to its creator');assert.ok((await cards(d.p)).filter(x=>/見本の打合せ/.test(x.text)).every(x=>x.tag==='工事主任'));
   });
   await check('「'+label+'」：決まらない担当（名字が2人・一致なし）とHUB外の予定は、今までどおり（人に割り当てない）',async()=>{
    const d=all[all.length-1];
@@ -80,7 +85,7 @@ async function main(){
   const t=await titles(d.p);assert.match(t,/見本荘 103/);assert.doesNotMatch(t,/見本ハイツ 201|見本荘 104|見本ビル 401/,'other people are not shown');
   const card=(await cards(d.p)).find(x=>/見本荘 103/.test(x.text));assert.equal(card.tag,'見本 二郎');
  });
- await check('読み込み：「CPG HUB」でHUBから登録した予定だけ、説明の「担当」と作成者を控える（説明は残さない）。ほかのカレンダー・HUB外・非公開には付けない',async()=>{
+ await check('読み込み：「CPG HUB」でHUBから登録した予定は説明の「担当」と作成者、HUB外は作成者だけを控える（説明は残さない）。ほかのカレンダー・非公開には付けない。社長が作った予定・非公開は割り当てない',async()=>{
   const d=all[0];
   const items=[
    {id:'g1',status:'confirmed',summary:'【退去立会】見本荘 103',visibility:'default',start:{dateTime:'2026-11-07T10:00:00+09:00'},end:{dateTime:'2026-11-07T11:00:00+09:00'},extendedProperties:{private:{cpgHubCase:'U-0101'}},description:'受付番号：U-0101\n依頼の種類：退去立会\n担当：見本 二郎\n（CPG HUBから登録）',creator:{email:'b@example.com'}},
@@ -93,7 +98,11 @@ async function main(){
   assert.match(fields[0],/description,creator\(email\)/);assert.doesNotMatch(fields[1],/description/,'only the shared calendar asks for descriptions');
   const [g1,g2,g3,g4]=out.hub;
   assert.equal(g1.owner,'見本 二郎');assert.equal(g1.creator,'b@example.com');assert.ok(!('description' in g1));
-  assert.ok(!('owner' in g2),'not from HUB');assert.ok(!('owner' in g3),'hidden private event');assert.equal(g4.owner,'試験 三郎');
+  assert.ok(!('owner' in g2),'not from HUB');assert.equal(g2.creator,'x@example.com','v1.50.13 the creator is kept for direct events');assert.ok(!('owner' in g3)&&!('creator' in g3),'hidden private event');assert.equal(g4.owner,'試験 三郎');
+  /* v1.50.13 社長が作った予定・非公開の予定は、作成者がいても割り当てない */
+  const r=await d.p.evaluate(()=>{const ctx={people:[{sheetId:'boss-sheet',email:HO.ADMIN,name:'社長役'},{sheetId:'s',email:'s@example.com',name:'見本 社員'}]},m={people:[]};
+   return [HO.calHubOwner({private:false,creator:HO.ADMIN},ctx,m,[]),HO.calHubOwner({private:true,creator:'s@example.com'},ctx,m,[]),HO.calHubOwner({private:false,creator:'s@example.com'},ctx,m,[])?.person,HO.calHubOwner({private:false,owner:'見本 社員',creator:HO.ADMIN},ctx,m,[])?.person]});
+  assert.deepEqual(r,[null,null,'s','s']);
   assert.ok(out.other.every(e=>!('owner' in e)),'other calendars unchanged');
  });
  await check('400px・360pxで横にはみ出さない・スクリプトのエラーなし',async()=>{

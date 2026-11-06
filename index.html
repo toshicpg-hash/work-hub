@@ -406,8 +406,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.12" title="使い方マニュアルを開く">v1.50.12・11/6更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.12" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.13" title="使い方マニュアルを開く">v1.50.13・11/7更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.13" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -467,10 +467,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.12"></script>
+<script src="./share-management.js?v=1.50.13"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.12"></script>
-<script src="./calendar-view-scope.js?v=1.50.12"></script>
+<script src="./view-scope.js?v=1.50.13"></script>
+<script src="./calendar-view-scope.js?v=1.50.13"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1697,7 +1697,8 @@ async function gReadOne(cal,from,to,mine){
       /* v1.50.8 共有カレンダー「CPG HUB」の、HUBから登録した予定だけ：説明の「担当：○○」と作成者のGmailを控える（説明そのものは残さない）。
          HUB外から入れた予定（担当の行・印がないもの）と、中身を出さない予定には付けない */
       const fromHub=cal.name===GSHARED&&!hide&&(!!hub||/（CPG HUBから登録）/.test(String(e.description||""))),
-        hubOwner=fromHub?{owner:((String(e.description||"").match(/^担当：(.+)$/m)||[])[1]||"").trim(),creator:String(e.creator&&e.creator.email||"")}:{};
+        hubOwner=cal.name===GSHARED&&!hide?{...(fromHub?{owner:((String(e.description||"").match(/^担当：(.+)$/m)||[])[1]||"").trim()}:{}),creator:String(e.creator&&e.creator.email||"")}:{};
+      /* v1.50.13 「CPG HUB」に直接入れた予定（HUB外）も、作成者のGmailは控える（担当の行は HUBから登録した予定だけ） */
       out.push({...hubOwner,private:["private","confidential"].includes(e.visibility),id:e.id||"",hub:hub||"",calendarId,calendar:cal.name,title:hide?"予定あり":e.summary,location:hide?"":e.location||"",allDay,start:allDay?e.start.date:e.start.dateTime,end:allDay?(e.end&&e.end.date)||addDays(e.start.date,1):(e.end&&e.end.dateTime)||e.start.dateTime});
     }
     page=(v&&v.nextPageToken)||"";
@@ -1889,15 +1890,16 @@ function gcalStatus(g){
 }
 /* v1.49.5 本人の端末では、本人の主カレンダーは対応設定がなくても本人の予定として出す（初めて使う人が予定0件に見えないように）。
    この端末の本人の記録シートがあるときだけ。社長のマイカレンダーは今までどおり読まない。対応設定で結び付けていれば、そちらを使う */
-/* v1.50.8 「CPG HUB」の予定の持ち主：HUBから登録した予定の説明の「担当：○○」を、社員一覧の氏名・表示名で照らす（1人に決まるときだけ。「黒木」のような名字だけも、1人に決まれば可）。
-   担当の行がないときだけ、作成者のGmailが社員一覧と一致すれば補助に使う。決まらなければ null（今までどおりカレンダーの予定として扱い、推測で人に割り当てない）。
+/* v1.50.8（v1.50.13 で作成者の扱いを広げた） 「CPG HUB」の予定の持ち主：HUBから登録した予定の説明の「担当：○○」を、社員一覧の氏名・表示名で照らす（1人に決まるときだけ。「黒木」のような名字だけも、1人に決まれば可）。
+   担当の行がない・1人に決まらないときは、作成者のGmailが社員一覧と一致すればその人（社長が作った予定は除く）。決まらなければ null（今までどおりカレンダーの予定として扱い、推測で人に割り当てない）。
    会社は、その案件（受付番号）がその人の記録にあればその会社、なければその人の会社が1社ならその会社、ほかは「会社未特定」 */
 function calHubOwner(e,ctx,model,cases){
- if(!e||e.private!==false||!("owner" in e))return null;
+ if(!e||e.private!==false||!("owner" in e)&&!("creator" in e))return null;
  const people=(ctx.people||[]).filter(p=>p&&p.sheetId),raw=String(e.owner||"").replace(/[（(][^（）()]*[）)]\s*$/,"").trim();
  let hit=[];
  if(raw){hit=CPGNames.matches(people,raw,STAFF);if(!hit.length)hit=people.filter(p=>CPGNames.flat(p.displayName)&&CPGNames.flat(p.displayName)===CPGNames.flat(raw));}
- else if(e.creator)hit=people.filter(p=>eq(p.email,e.creator));
+ /* v1.50.13 担当の行がない・1人に決まらないときは、作成者のGmailが社員一覧の人と一致すればその人（HUB外から直接入れた予定も）。社長が作った予定（来社・会議など）は割り当てない */
+ if(new Set(hit.map(p=>p.sheetId)).size!==1&&e.creator&&!eq(e.creator,ADMIN_ACCOUNT))hit=people.filter(p=>eq(p.email,e.creator));
  const sids=[...new Set(hit.map(p=>p.sheetId))];if(sids.length!==1)return null;
  const p=hit[0],own=(cases||[]).filter(c=>e.hub&&(c.srcId===e.hub||c.id===e.hub)&&c._scopeOwner===p.sheetId&&COMPANIES.includes(c.company));
  const cos=(model.people||[]).find(x=>x.sheetId===p.sheetId)?.companies||[];
@@ -2091,7 +2093,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.12";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.13";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2253,7 +2255,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.12" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.12" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.13" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.13" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
