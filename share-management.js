@@ -28,7 +28,13 @@ function plan(specs,rows,list){
    const base={file:s.id,label:s.label,email,before:p?p.role:'なし',after:role||'なし',permission:p&&p.id,role:role||p&&p.role};
    const owned=last&&last.state==='verified'&&last.action==='grant'&&p&&last.permission===p.id&&last.role===p.role&&direct(p);
    let action,reason;
-   if(events.some(r=>r.state==='intent')){action='review';reason='過去の操作結果が不明。再付与・解除せず個別確認してください';}
+   /* v1.50.12 結果が不明な付与でも、今その人の共有が1つも無く、前に確認済みの付与も無ければ「付与されなかった」と分かるので、もう一度付与してよい（重複しない）。
+      共有が残っているとき・解除の結果が不明なときは、今までどおり個別確認 */
+   /* あとで確認済みになった付与（読戻しで共有がちょうど1つと確かめた）より前の、結果不明の付与は、もう考えなくてよい */
+   const live=events.filter((r,i)=>!(r.state==='intent'&&r.action==='grant'&&events.slice(i+1).some(v=>v.state==='verified'&&v.action==='grant')));
+   const unknown=live.filter(r=>r.state==='intent'),notGranted=unknown.length>0&&unknown.every(r=>r.action==='grant')&&!ps.length&&!live.some(r=>r.state==='verified');
+   if(unknown.length&&!notGranted){action='review';reason='過去の操作結果が不明。再付与・解除せず個別確認してください';}
+   else if(notGranted&&role){action='grant';reason='前回の付与は届いていませんでした（共有なし）。もう一度付与（履歴に記録）';}
    else if(ps.length>1){action='review';reason='同じ付与先の権限が複数あります';}
    else if(role&&!p&&last&&last.state==='verified'&&last.action==='grant'){action='review';reason='以前の付与が見つかりません。外部解除の可能性があるため再付与しません';}
    else if(role&&!p){action='grant';reason='新規付与（履歴に記録）';}

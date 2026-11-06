@@ -248,6 +248,8 @@ async function main(){
   assert.ok(tabA.rows.some(r=>r[1]===removed[1]),'written back');
   assert.match(await A.p.textContent('main'),/社員 一郎：予定の共有先 \d+人（＋/);
   /* 途中で失敗：二郎さんの記録シートへの書き込みを止める */
+  /* v1.50.12 変わらない人は書かないので、二郎さんの共有先を1人消して書く必要がある状態にしてから止める */
+  {const tB=byName('CPG HUB_社員 二郎').tabs.find(t=>t.title==='予定の共有先');const k=tB.rows.map((r,i)=>i>0&&r[1]?i:-1).filter(i=>i>0).pop();assert.ok(k>0,'a target row to remove');tB.rows.splice(k,1);}
   G.failTab='予定の共有先';G.failFile=byName('CPG HUB_社員 二郎').id;
   prog=await run();G.failTab='';G.failFile='';
   const err=await A.p.textContent('#shareProgress');assert.match(err,/ここで止まりました：社員 二郎さん/);assert.match(err,/それまでの分は書けています。もう一度押すと、続きから書き直します/);
