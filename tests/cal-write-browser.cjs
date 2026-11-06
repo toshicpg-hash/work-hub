@@ -1,4 +1,4 @@
-/* v1.50.6 社員（社長以外）の案件の日程は、全員「自分」のカレンダーに登録する。社長の端末は今までどおり。
+/* v1.50.7 案件の日程の登録先は、設定で選んだカレンダー、なければ共有の「CPG HUB」（v1.50.6 の「社員は自分に固定」をやめて元に戻した）。
    あわせて、社長の共有の付け替えで止まったときの文言と、共有の一覧の読み直し。
    Synthetic fixtures only (fictional names, example.com). Google APIs are mocked; no live accounts. */
 'use strict';
@@ -38,41 +38,35 @@ async function main(){
  await new Promise(r=>server.once('listening',r));origin='http://127.0.0.1:'+server.address().port;
  browser=await playwright.chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
  const all=[];
- await check('社員：設定で何も選んでいない・「CPG HUB」に書けない人も、自分のカレンダーに登録する',async()=>{
+ await check('設定で何も選んでいない社員は、共有の「CPG HUB」に登録する（v1.50.5 までと同じ。自分のカレンダーには入れない）',async()=>{
+  const d=await device({cals:staffCals(true)});all.push(d);
+  assert.match(await d.p.textContent('#case-google-calendar'),/登録先：CPG HUB/);
+  await reg(d.p);const post=d.calls.find(x=>x.method==='POST');assert.equal(post.path,'/calendar/v3/calendars/'+SHARED+'/events');
+  assert.ok(!d.calls.some(x=>x.path.includes(OWN)),'never writes to the personal calendar');assert.equal((await one(d.p)).gcal.cal,SHARED);
+ });
+ await check('設定で選んだカレンダーがあれば、そこに登録する（自分を選んだ人は自分）',async()=>{
+  for(const gWrite of [OWN,OTHER]){const d=await device({cals:staffCals(true),gWrite});all.push(d);
+   await reg(d.p);assert.equal(d.calls.find(x=>x.method==='POST').path,'/calendar/v3/calendars/'+gWrite+'/events',gWrite);}
+ });
+ await check('「CPG HUB」の共有がまだで設定もないときは、登録せず「共有がまだです。社長に共有してもらい、招待メールで承諾」と出す',async()=>{
   const d=await device({cals:staffCals(false)});all.push(d);
-  assert.match(await d.p.textContent('#case-google-calendar'),/登録先：自分/);
-  await reg(d.p);const post=d.calls.find(x=>x.method==='POST');assert.ok(post,'created');assert.equal(post.path,'/calendar/v3/calendars/'+OWN+'/events');
-  assert.ok(!d.calls.some(x=>x.path.includes(SHARED)),'never touches the shared calendar');assert.equal((await one(d.p)).gcal.cal,OWN);
-  assert.match(await d.p.textContent('#case-google-calendar'),/登録済み：自分/);
+  await reg(d.p);assert.equal(d.calls.length,0,'no calendar call');assert.equal((await one(d.p)).gcal,null);
+  const t=await d.p.evaluate(()=>document.body.innerText);assert.match(t,/「CPG HUB」カレンダーの共有がまだです。社長に共有してもらい、Gmailの招待メールで承諾してから/);assert.doesNotMatch(t,/書き込めるカレンダーがありません/);
  });
- await check('社員：前に「CPG HUB」やほかのカレンダーを選んでいても、書ける人でも、新しい登録は自分に（設定の操作は不要）',async()=>{
-  for(const gWrite of [SHARED,OTHER]){const d=await device({cals:staffCals(true),gWrite});all.push(d);
-   await reg(d.p);const post=d.calls.find(x=>x.method==='POST');assert.equal(post.path,'/calendar/v3/calendars/'+OWN+'/events',gWrite);}
+ await check('設定画面：登録先を選ぶ欄は社員にも出す。「CPG HUB」が使えないときだけ共有の案内を出す',async()=>{
+  let d=await device({cals:staffCals(true)});all.push(d);
+  let html=await d.p.evaluate(()=>PT.gSettings());assert.ok(html.includes('id="g_write"'));assert.ok(!html.includes('g_write_hint'));assert.match(html,/<option value="shared-hub@group\.example\.com" selected>CPG HUB<\/option>/);
+  d=await device({cals:staffCals(false)});all.push(d);
+  html=await d.p.evaluate(()=>PT.gSettings());assert.ok(html.includes('id="g_write"'));assert.match(html,/共有カレンダー「CPG HUB」がまだ使えません/);
  });
- await check('社員の設定画面：登録先は「自分（自分のカレンダー）」の表示だけで、選ぶ欄は出さない。保存しても登録先の設定は変えない',async()=>{
-  const d=await device({cals:staffCals(true),gWrite:SHARED});all.push(d);
-  const html=await d.p.evaluate(()=>PT.gSettings());assert.ok(!html.includes('id="g_write"'));assert.match(html,/自分（自分のカレンダー）/);assert.match(html,/社員は全員、自分のカレンダーに登録します/);
- });
- await check('社員：前に「CPG HUB」へ送ろうとして登録できなかった案件（日付なし）は、自分のカレンダーに作り直す',async()=>{
-  const d=await device({cals:staffCals(false),gcal:{cal:SHARED,calName:'CPG HUB',id:'cpghubsynthetic0001',date:'',link:''}});all.push(d);
-  await reg(d.p);assert.ok(!d.calls.some(x=>x.path.includes(SHARED)));const post=d.calls.find(x=>x.method==='POST');assert.equal(post.path,'/calendar/v3/calendars/'+OWN+'/events');
-  const k=await one(d.p);assert.equal(k.gcal.cal,OWN);assert.notEqual(k.gcal.id,'cpghubsynthetic0001');
- });
- await check('社員：「CPG HUB」に登録済みで今は書けない予定は、消さず・作り直さず、社長に直してもらうよう伝える',async()=>{
-  const g={cal:SHARED,calName:'CPG HUB',id:'cpghubsynthetic0002',date:'2026-11-09',when:'2026-11-09',link:''};
-  const d=await device({cals:staffCals(false),gcal:g});all.push(d);
-  await reg(d.p);assert.equal(d.calls.length,0,'no calendar call at all');assert.deepEqual((await one(d.p)).gcal,g);
-  assert.match(await d.p.textContent('body'),/前に共有カレンダー「CPG HUB」に登録したもので、この端末からは直せません/);
- });
- await check('社員：「CPG HUB」に登録済みで今も書ける人（専務など）は、今までどおりその予定を直す',async()=>{
+ await check('前に「CPG HUB」に登録した予定は、今までどおりその予定を直す',async()=>{
   const d=await device({cals:staffCals(true),gcal:{cal:SHARED,calName:'CPG HUB',id:'cpghubsynthetic0003',date:'2026-11-09',when:'2026-11-09',link:''}});all.push(d);
   await reg(d.p);const patch=d.calls.find(x=>x.method==='PATCH');assert.equal(patch.path,'/calendar/v3/calendars/'+SHARED+'/events/cpghubsynthetic0003');
  });
- await check('社長の端末は今までどおり：設定がなければ「CPG HUB」、設定があればそのカレンダー。選ぶ欄も出る',async()=>{
+ await check('社長の端末も同じ：設定がなければ「CPG HUB」、設定があればそのカレンダー',async()=>{
   const cals=[{id:'boss-own@example.com',name:'自分',primary:true,owner:true,write:true},{id:SHARED,name:'CPG HUB',primary:false,owner:true,write:true},{id:OTHER,name:'見本の仕事',primary:false,owner:true,write:true}];
   let d=await device({cals,admin:true});all.push(d);
   await reg(d.p);assert.equal(d.calls.find(x=>x.method==='POST').path,'/calendar/v3/calendars/'+SHARED+'/events');
-  assert.ok((await d.p.evaluate(()=>PT.gSettings())).includes('id="g_write"'));
   d=await device({cals,admin:true,gWrite:OTHER});all.push(d);
   await reg(d.p);assert.equal(d.calls.find(x=>x.method==='POST').path,'/calendar/v3/calendars/'+OTHER+'/events');
  });
@@ -97,7 +91,7 @@ async function main(){
   for(const width of [400,360]){const d=await device({cals:staffCals(false),width});all.push(d);
    await d.p.evaluate(()=>PT.go('settings'));await d.p.waitForTimeout(100);
    const o=await d.p.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);assert.ok(o<=0,width+' overflow '+o);
-   if(width===400)await d.p.screenshot({path:path.join(root,'docs/preview/cal-own-write-400.png'),fullPage:false});}
+   if(width===400)await d.p.screenshot({path:path.join(root,'docs/preview/cal-write-400.png'),fullPage:false});}
   for(const d of all)assert.deepEqual(d.errors,[]);
  });
  for(const d of all)await d.c.close();
