@@ -99,6 +99,10 @@ async function main(){
   assert.match(t,/未入金/);assert.match(t,/見本荘A-2/);assert.doesNotMatch(t,/自分の見本荘/,'own local cases are not mixed in');
   assert.doesNotMatch(t,/CPY|見本荘B-2|見本荘C-1/,'no other company');assert.doesNotMatch(t,/経理に入金確認を依頼/,'no accounting action in company view');
   assert.equal(await d.p.locator('[data-stats-numco]').count(),0,'one company: no company switch');
+  /* 会社全体では、未入金（担当者別・物件別・最長の遅れ）を一番上に */
+  const order=await d.p.evaluate(()=>[...document.querySelectorAll('main section.sec')].map(x=>x.id||x.querySelector('h2')?.textContent||''));
+  assert.ok(order.indexOf('stats-unpaid')>=0&&order.indexOf('stats-unpaid')<order.indexOf('stats-won'),JSON.stringify(order));
+  const up=await d.p.evaluate(()=>document.getElementById('stats-unpaid').innerText);assert.match(up,/最長の遅れ \d+日/);assert.match(up,/担当者別/);assert.match(up,/物件別/);assert.match(up,/見本荘A-2/);
  });
  await check('社員：ほかの画面（案件・ToDo・予定・領収書）は今までどおり自分の分だけ',async()=>{
   const d=all[all.length-1];

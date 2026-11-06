@@ -2218,18 +2218,20 @@ function vStats(){
   const group=key=>{const m=new Map();for(const c of un){const k=key(c);const g=m.get(k)||{n:0,sum:0,late:0};g.n++;g.sum+=remainOf(c);g.late=Math.max(g.late,lateDays(c));m.set(k,g)}return [...m.entries()].sort((a,b)=>b[1].late-a[1].late||b[1].sum-a[1].sum)};
   const row=([k,g])=>'<tr><td>'+h(k)+'</td><td class="num">'+g.n+'件</td><td class="num">'+yen(g.sum)+'</td><td class="num"'+(g.late?' style="color:var(--red);font-weight:700"':'')+'>'+(g.late?g.late+'日':'—')+'</td></tr>';
   const tbl=(head,rows)=>'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>'+head+'</th><th>件数</th><th>未入金</th><th>最長の遅れ</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
-  const unpaidSec='<section class="sec" id="stats-unpaid"><div class="sec-h"><h2>未入金</h2><span class="note num">'+un.length+'件 '+yen(un.reduce((s,c)=>s+remainOf(c),0))+'</span><span class="note">現在残高</span></div>'+
+  /* v1.50.10 会社全体では、未入金（回収の遅れ）を一番上に。最長の遅れも見出しに出す */
+  const maxLate=un.reduce((m,c)=>Math.max(m,lateDays(c)),0);
+  const unpaidSec='<section class="sec" id="stats-unpaid"><div class="sec-h"><h2>未入金</h2><span class="note num">'+un.length+'件 '+yen(un.reduce((s,c)=>s+remainOf(c),0))+'</span><span class="note">現在残高</span>'+(coMode&&maxLate?'<span class="note num" style="color:var(--red);font-weight:700">最長の遅れ '+maxLate+'日</span>':'')+'</div>'+
     (un.length?'<div class="panel"><h3>担当者別</h3>'+tbl("担当",group(tl).map(row).join(""))+'</div>'+(!coMode&&acctList().length?acctPanel():'')+
       '<div class="panel"><h3>物件別</h3>'+tbl("物件",group(c=>c.property||"（物件名なし）").map(row).join(""))+'<p class="note" style="margin:0">遅れの長い順です。案件一覧の「入金待ちだけ」でも確認できます。</p></div>'
       :'<div class="empty">未入金の案件はありません</div>')+'</section>';
   return (hasExamples()?'<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>':'')+
   statsWhoSeg()+(coMode&&!coMode.cases?statsCompanyEmpty(coMode):
-  (coMode||scopeState().usable)?(coMode?'<section class="sec">'+statsCompanyNote(coMode)+'</section>':statsNote()?'<section class="sec">'+statsNote()+'</section>':'')+
+  (coMode||scopeState().usable)?(coMode?'<section class="sec">'+statsCompanyNote(coMode)+'</section>'+unpaidSec:statsNote()?'<section class="sec">'+statsNote()+'</section>':'')+
   '<section class="sec" id="stats-won">'+statsPeriodControls()+(undatedLost.length?'<p class="banner stats-undated">失注日が未入力の案件 '+undatedLost.length+'件（案件を開いて日付を入れてください）</p>':'')+'<div class="sec-h"><h2'+(statsStaffDevice()?' class="sr"':'')+'>'+(coMode?h(coMode.co)+' 会社全体の':'')+periodLabel+'の見積と受注</h2>'+statsModeSeg()+'</div>'+
   '<div class="panel"><div class="row" style="align-items:flex-end;gap:18px"><div><div class="note">見積決定率（受注 ÷ 結論が出た件数）</div><div class="big">'+(rate==null?"—":rate+"%")+'</div></div>'+
   '<div class="note num">受注 '+won.length+'件 ／ 失注 '+lost.length+'件</div></div>'+
   '<div class="sum"><div><div class="k">見積提出</div><div class="v">'+sent.length+'件</div></div><div><div class="k">受注</div><div class="v">'+won.length+'件</div></div><div><div class="k">受注額（見積額）</div><div class="v">'+yen(wonAmt)+'</div></div></div></div></section>'+
-  unpaidSec+
+  (coMode?'':unpaidSec)+
   '<section class="sec"><div class="sec-h"><h2>'+periodLabel+'の担当別</h2></div><div class="panel">'+byTanTbl+'</div></section>'+
   '<section class="sec"><div class="sec-h"><h2>失注の理由</h2></div><div class="panel">'+
     reasons.map(([r,n])=>'<div class="brk"><span>'+r+'</span><span class="bar"><i style="width:'+(n/maxR*100)+'%"></i></span><span class="num">'+n+'件</span></div>').join("")+'</div></section>'+
