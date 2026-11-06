@@ -406,8 +406,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.6" title="使い方マニュアルを開く">v1.50.6・11/6更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.6" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.7" title="使い方マニュアルを開く">v1.50.7・11/6更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.7" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -469,8 +469,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./request-box-employee.js?v=1.47.1"></script>
 <script src="./share-management.js?v=1.48.6"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.6"></script>
-<script src="./calendar-view-scope.js?v=1.50.6"></script>
+<script src="./view-scope.js?v=1.50.7"></script>
+<script src="./calendar-view-scope.js?v=1.50.7"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1168,7 +1168,7 @@ function refreshItemTotals(c){
 }
 function gcalPreview(c){
   const s=TYPES[c.type].site, g=c.gcal&&c.gcal.id?c.gcal:null, w=gWriteCal();
-  const where=g?(g.calName||"Googleカレンダー"):w?w.name:isAdminDevice()?GSHARED:"自分のカレンダー";
+  const where=g?(g.calName||"Googleカレンダー"):w?w.name:GSHARED;
   let st, btn="";
   if(!c.planDate)st='日程を決めると登録できます。';
   else if(!g||!g.date){st='まだ登録していません（登録先：'+h(where)+'）。';btn='<button class="btn pri" type="button" data-act="greg">Googleカレンダーに登録</button>'}
@@ -1618,7 +1618,7 @@ async function gApi(path,opt){
   }finally{clearTimeout(tm)}
 }
 const gMsg=err=>{const m=err&&err.message;return m==="gis"?"Googleの読み込みができません。通信を確認してください":m==="denied"?"許可されませんでした":m==="popup"?"Googleの画面を開けませんでした（ポップアップを許可してください）":m==="closed"?"Googleの画面が閉じられました":
-  m==="signin"?"もう一度「Googleとまとめて同期」を押してください":m==="nowrite"?"書き込めるカレンダーがありません":m==="oldshared"?"この予定は前に共有カレンダー「"+GSHARED+"」に登録したもので、この端末からは直せません。社長に直してもらってください":err&&err.name==="AbortError"?"時間切れ":err&&err.status===403?"権限がありません":err&&err.status===404?"見つかりません":"通信できませんでした"};
+  m==="signin"?"もう一度「Googleとまとめて同期」を押してください":m==="nowrite"?"「"+GSHARED+"」カレンダーの共有がまだです。社長に共有してもらい、Gmailの招待メールで承諾してから、もう一度「Googleとまとめて同期」を押してください":err&&err.name==="AbortError"?"時間切れ":err&&err.status===403?"権限がありません":err&&err.status===404?"見つかりません":"通信できませんでした"};
 const gCalName=c=>c.primary?"自分":GNAMES[c.id]||c.summaryOverride||c.summary||c.id;
 async function gLoadCalendars(){
   G.calsLoading=true;try{return await gLoadCalendarsRun()}finally{G.calsLoading=false}
@@ -1661,12 +1661,9 @@ function gSafeData(data){
   return {...data,events,sources,calendars:[...new Set(sources.map(c=>c.name))]};
 }
 const gWritable=()=>(G.cals||[]).filter(c=>c.write);
-/* v1.50.6 案件の日程の登録先。社員（社長以外。専務も含む）は全員「自分」（その人のメインのカレンダー）に固定する。
-   共有カレンダー「CPG HUB」は社長だけが書ける運用のため、社員が選んでいた・何も選んでいない場合も、自分に書く（社員に設定の操作はお願いしない）。
-   社長の端末だけ、今までどおり設定で選んだカレンダー（なければ「CPG HUB」）。社長のマイカレンダーには書かない */
-const gOwnWrite=()=>gWritable().find(c=>c.primary)||null;
-const gWriteCal=()=>{const w=gWritable();if(!isAdminDevice())return gOwnWrite();return w.find(c=>c.id===DB.settings.gWrite)||w.find(c=>c.name===GSHARED)||null};
-const gCanWrite=id=>gWritable().some(c=>gIdKey(c.id)===gIdKey(id));
+/* 案件の日程の登録先：設定で選んだカレンダー、なければ共有カレンダー「CPG HUB」（v1.50.7 で v1.50.6 の「社員は自分に固定」をやめて元に戻した。
+   仕事と私用を分けるため、会社の予定は「CPG HUB」に入れる。社員には社長が「予定の変更」で共有する） */
+const gWriteCal=()=>{const w=gWritable();return w.find(c=>c.id===DB.settings.gWrite)||w.find(c=>c.name===GSHARED)||null};
 const gCalOf=id=>(G.cals||[]).find(c=>gIdKey(c.id)===gIdKey(gReadId(id)));
 /* カレンダーごとの読み込みは同時に行う（PAPA HUBと同じく並行で、待ち時間を短くする） */
 async function gReadOne(cal,from,to,mine){
@@ -1812,12 +1809,6 @@ async function gRegister(c){
   const body={summary:gTitle(c),location:c.addr||"",description:gDesc(c),status:"confirmed",...when,extendedProperties:{private:{cpgHubCase:c.id}}},sig=planSig(c);
   /* 新しく作るときは null を送らない（null は PATCH で前の値を消すときだけ） */
   const post=JSON.parse(JSON.stringify(body,(k,v)=>v===null?undefined:v));
-  /* v1.50.6 社員の端末で、前の登録先（「CPG HUB」など）に今は書けないとき。
-     まだ一度も登録できていない（date が空）なら、自分のカレンダーに作り直す。登録済みの予定は消さず、直せないことを伝える */
-  if(c.gcal&&c.gcal.id&&c.gcal.cal&&!isAdminDevice()&&!gCanWrite(c.gcal.cal)){
-    if(!c.gcal.date){c.gcal=null;save()}
-    else throw new Error("oldshared");
-  }
   if(c.gcal&&c.gcal.id&&c.gcal.cal){
     const path="calendars/"+encodeURIComponent(c.gcal.cal)+"/events/"+encodeURIComponent(c.gcal.id);
     try{const r=await gApi(path,{method:"PATCH",body});c.gcal=Object.assign({},c.gcal,{date:c.planDate,when:sig,link:r&&r.htmlLink||c.gcal.link||""});save();return "updated"}
@@ -2045,7 +2036,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.6";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.7";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2120,7 +2111,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.6" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.6" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.7" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.7" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -2130,8 +2121,8 @@ function gSettings(){
   return F('<form id="gsetForm" class="panel">'+
     '<fieldset class="gcals" style="border:0;padding:0;margin:0"><legend class="note">予定画面に表示するカレンダー</legend>'+
     G.cals.map((c,i)=>!gReadable(c)?"":'<label><input type="checkbox" name="gshow" value="'+i+'" data-keep-key="gshow:'+h(c.id)+'"'+(show.has(c.id)?' checked':'')+'>'+h(c.name)+'</label>').join("")+'</fieldset><p class="note" style="margin:0">社長のマイカレンダーは、このアプリでは読み込みません。予定画面で仕事用・会社・人を確認したカレンダーだけ表示します。</p>'+
-    (isAdminDevice()?'<label class="f">案件の日程を登録するカレンダー<select id="g_write">'+(gWritable().map(c=>'<option value="'+h(c.id)+'"'+(w&&w.id===c.id?' selected':'')+'>'+h(c.name)+'</option>').join("")||'<option value="">書き込めるカレンダーがありません</option>')+'</select></label>'
-      :'<div class="f"><span class="note">案件の日程を登録するカレンダー</span><div class="ro" id="g_write_own">'+(w?h(w.name)+'（自分のカレンダー）':'自分のカレンダー（見つかりません。Googleに入り直してください）')+'</div><p class="note" style="margin:0">社員は全員、自分のカレンダーに登録します（選ぶ必要はありません）。</p></div>')+
+    '<label class="f">案件の日程を登録するカレンダー<select id="g_write">'+(gWritable().map(c=>'<option value="'+h(c.id)+'"'+(w&&w.id===c.id?' selected':'')+'>'+h(c.name)+'</option>').join("")||'<option value="">書き込めるカレンダーがありません</option>')+'</select></label>'+
+    (gWritable().some(c=>c.name===GSHARED)?'':'<p class="note" style="margin:0" id="g_write_hint">共有カレンダー「'+GSHARED+'」がまだ使えません。社長に共有してもらい、Gmailの招待メールで承諾してから、もう一度「Googleとまとめて同期」を押してください。</p>')+
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div></form>');
 }
 
@@ -3903,7 +3894,7 @@ document.addEventListener("submit",e=>{
   if(f.id==="rsetForm"){const S=RS();S.name=val("rs_name").trim();COMPANIES.forEach(co=>{S.payDays[co]=Number(val("rs_pd_"+co));S.to[co]=val("rs_to_"+co).trim()});S.useCard=document.getElementById("rs_card").checked;save();render();toast("領収書の設定を保存しました");return}
   if(f.id==="todoForm"){DB.todos.push({id:"T"+Date.now(),title:val("td_title").trim(),due:val("td_due"),tantou:val("td_tantou"),done:false});save();render();toast("ToDoを追加しました");return}
   if(f.id==="gsetForm"){const picked=[...f.querySelectorAll('input[name="gshow"]:checked')].map(x=>G.cals[Number(x.value)]).filter(Boolean).map(c=>c.id);
-    DB.settings.gShow=gFilterReadIds(picked);if(document.getElementById("g_write"))DB.settings.gWrite=val("g_write");gResetReads(true);save();render();toast("Googleカレンダーの設定を保存しました");return}
+    DB.settings.gShow=gFilterReadIds(picked);DB.settings.gWrite=val("g_write");gResetReads(true);save();render();toast("Googleカレンダーの設定を保存しました");return}
   if(f.id==="setForm"){for(const k of ["schedule","quote","reply","jobno","billAfter","acctWait"]){const v=Number(val("s_"+k));if(!isNaN(v)&&v>=0)DB.settings[k]=v}if(PAY_RULES[val("s_payRule")])DB.settings.payRule=val("s_payRule");save();render();toast("期限の日数を保存しました");return}
 });
 /* 予定画面：横にスワイプして前後へ（日表示は1日、週表示は1週、月表示は1か月） */
