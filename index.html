@@ -406,8 +406,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.10" title="使い方マニュアルを開く">v1.50.10・11/6更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.10" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.11" title="使い方マニュアルを開く">v1.50.11・11/6更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.11" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -469,8 +469,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./request-box-employee.js?v=1.47.1"></script>
 <script src="./share-management.js?v=1.48.6"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.10"></script>
-<script src="./calendar-view-scope.js?v=1.50.10"></script>
+<script src="./view-scope.js?v=1.50.11"></script>
+<script src="./calendar-view-scope.js?v=1.50.11"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1042,9 +1042,10 @@ function scopeCompanyData(){
 function scopeOwnReceipts(){const s=scopeState();return s.usable&&(s.selection.person==='all'||s.selection.person===(D().sheetId||'local:self'));}
 function scopeReceiptRows(rows){return scopeOwnReceipts()?rows.filter(r=>scopeCompanyMatch(r.company)):[];}
 
+/* v1.50.11 会社で絞ったときは、その会社に所属する人（社員一覧の会社）の欄だけ出す。所属していなくても、その会社の明細がある人は出す（会社の動きと同じ） */
 function scopeSharedReceiptGroups(method=''){
  const s=scopeState();if(!s.usable||!globalThis.WorkHubSharedReceipts)return [];
- return WorkHubSharedReceipts.project(sharedReceiptContext(),ui.corp?.data||[],{source:s.selection.person==='all'?'':s.selection.person,company:['all','none'].includes(s.selection.company)?'':s.selection.company}).filter(g=>g.source.s.sheetId!==D().sheetId&&s.context.canView(g.source.s)).map(g=>{const rows=g.rows.filter(r=>scopeCompanyMatch(r.company));return {...g,rows:method?rows.filter(r=>r.method===method):rows,summary:WorkHubSharedReceipts.summary(rows)};});
+ return WorkHubSharedReceipts.project(sharedReceiptContext(),ui.corp?.data||[],{source:s.selection.person==='all'?'':s.selection.person,company:['all','none'].includes(s.selection.company)?'':s.selection.company}).filter(g=>g.source.s.sheetId!==D().sheetId&&s.context.canView(g.source.s)).map(g=>{const rows=g.rows.filter(r=>scopeCompanyMatch(r.company));return {...g,_coRows:rows.length,rows:method?rows.filter(r=>r.method===method):rows,summary:WorkHubSharedReceipts.summary(rows)};}).filter(g=>scopeRecipientMatch(g.source.s.sheetId)||g._coRows>0);
 }
 function scopeHomeReceipts(statuses){return scopeReceiptRows(DB.receipts).concat(scopeSharedReceiptGroups().filter(g=>['ready','cached'].includes(g.state)&&!g.previous).flatMap(g=>g.rows)).filter(r=>r.method==='立替'&&statuses.includes(r.status));}
 const infoBtn=(k,label)=>'<button type="button" class="ibtn" data-info="'+k+'" aria-expanded="'+!!(ui.info&&ui.info[k])+'" aria-label="'+(label||'説明')+'を開く" title="説明">ⓘ</button>';
@@ -2090,7 +2091,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.10";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.11";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2218,18 +2219,20 @@ function vStats(){
   const group=key=>{const m=new Map();for(const c of un){const k=key(c);const g=m.get(k)||{n:0,sum:0,late:0};g.n++;g.sum+=remainOf(c);g.late=Math.max(g.late,lateDays(c));m.set(k,g)}return [...m.entries()].sort((a,b)=>b[1].late-a[1].late||b[1].sum-a[1].sum)};
   const row=([k,g])=>'<tr><td>'+h(k)+'</td><td class="num">'+g.n+'件</td><td class="num">'+yen(g.sum)+'</td><td class="num"'+(g.late?' style="color:var(--red);font-weight:700"':'')+'>'+(g.late?g.late+'日':'—')+'</td></tr>';
   const tbl=(head,rows)=>'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>'+head+'</th><th>件数</th><th>未入金</th><th>最長の遅れ</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
-  const unpaidSec='<section class="sec" id="stats-unpaid"><div class="sec-h"><h2>未入金</h2><span class="note num">'+un.length+'件 '+yen(un.reduce((s,c)=>s+remainOf(c),0))+'</span><span class="note">現在残高</span></div>'+
+  /* v1.50.10 会社全体では、未入金（回収の遅れ）を一番上に。最長の遅れも見出しに出す */
+  const maxLate=un.reduce((m,c)=>Math.max(m,lateDays(c)),0);
+  const unpaidSec='<section class="sec" id="stats-unpaid"><div class="sec-h"><h2>未入金</h2><span class="note num">'+un.length+'件 '+yen(un.reduce((s,c)=>s+remainOf(c),0))+'</span><span class="note">現在残高</span>'+(coMode&&maxLate?'<span class="note num" style="color:var(--red);font-weight:700">最長の遅れ '+maxLate+'日</span>':'')+'</div>'+
     (un.length?'<div class="panel"><h3>担当者別</h3>'+tbl("担当",group(tl).map(row).join(""))+'</div>'+(!coMode&&acctList().length?acctPanel():'')+
       '<div class="panel"><h3>物件別</h3>'+tbl("物件",group(c=>c.property||"（物件名なし）").map(row).join(""))+'<p class="note" style="margin:0">遅れの長い順です。案件一覧の「入金待ちだけ」でも確認できます。</p></div>'
       :'<div class="empty">未入金の案件はありません</div>')+'</section>';
   return (hasExamples()?'<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>':'')+
   statsWhoSeg()+(coMode&&!coMode.cases?statsCompanyEmpty(coMode):
-  (coMode||scopeState().usable)?(coMode?'<section class="sec">'+statsCompanyNote(coMode)+'</section>':statsNote()?'<section class="sec">'+statsNote()+'</section>':'')+
+  (coMode||scopeState().usable)?(coMode?'<section class="sec">'+statsCompanyNote(coMode)+'</section>'+unpaidSec:statsNote()?'<section class="sec">'+statsNote()+'</section>':'')+
   '<section class="sec" id="stats-won">'+statsPeriodControls()+(undatedLost.length?'<p class="banner stats-undated">失注日が未入力の案件 '+undatedLost.length+'件（案件を開いて日付を入れてください）</p>':'')+'<div class="sec-h"><h2'+(statsStaffDevice()?' class="sr"':'')+'>'+(coMode?h(coMode.co)+' 会社全体の':'')+periodLabel+'の見積と受注</h2>'+statsModeSeg()+'</div>'+
   '<div class="panel"><div class="row" style="align-items:flex-end;gap:18px"><div><div class="note">見積決定率（受注 ÷ 結論が出た件数）</div><div class="big">'+(rate==null?"—":rate+"%")+'</div></div>'+
   '<div class="note num">受注 '+won.length+'件 ／ 失注 '+lost.length+'件</div></div>'+
   '<div class="sum"><div><div class="k">見積提出</div><div class="v">'+sent.length+'件</div></div><div><div class="k">受注</div><div class="v">'+won.length+'件</div></div><div><div class="k">受注額（見積額）</div><div class="v">'+yen(wonAmt)+'</div></div></div></div></section>'+
-  unpaidSec+
+  (coMode?'':unpaidSec)+
   '<section class="sec"><div class="sec-h"><h2>'+periodLabel+'の担当別</h2></div><div class="panel">'+byTanTbl+'</div></section>'+
   '<section class="sec"><div class="sec-h"><h2>失注の理由</h2></div><div class="panel">'+
     reasons.map(([r,n])=>'<div class="brk"><span>'+r+'</span><span class="bar"><i style="width:'+(n/maxR*100)+'%"></i></span><span class="num">'+n+'件</span></div>').join("")+'</div></section>'+
@@ -2250,7 +2253,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.10" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.10" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.11" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.11" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -2542,7 +2545,7 @@ function vSharedReceipts(){
     }
     body+='</section>';
   }
-  for(const s of pending.filter(s=>!filter.source||s.sheetId===filter.source))body+='<div class="panel" role="status"><h3>'+h(dispName(s))+'さん</h3><p>この端末ではまだ読み込めていません。件数・金額は未確認です。</p></div>';
+  for(const s of pending.filter(s=>(!filter.source||s.sheetId===filter.source)&&scopeRecipientMatch(s.sheetId)))body+='<div class="panel" role="status"><h3>'+h(dispName(s))+'さん</h3><p>この端末ではまだ読み込めていません。件数・金額は未確認です。</p></div>';
   body+='<p class="note" style="margin:0">共有元の最終同期以降に本人端末で追加・編集した未同期分は確認できません。原本はDriveの既存の共有権限で開きます。開けない場合も、共有権限を自動で変更しません。</p></section>';
   return body;
 }
