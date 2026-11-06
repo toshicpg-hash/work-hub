@@ -21,7 +21,7 @@ async function device(width=390){
   D.settings.data.ob={legacy:true};D.settings.rcpt.name='見本 一郎';
   D.cases=[C({id:'U-0201',type:'taikyo',stage:'new',client:'見本管理',clientKind:'管理会社',property:'見本荘',room:'101',tantou:'見本',receivedAt:'2026-11-02T01:00:00.000Z'}),
    C({id:'U-0202',type:'kinkyu',stage:'new',client:'見本管理',clientKind:'管理会社',property:'見本荘',room:'102',tantou:'見本',receivedAt:'2026-11-03T00:00:00.000Z',symptom:'水漏れ'})];
-  D.settings.gWrite='work-cal@example.com';PT.G.cals=[{id:'work-cal@example.com',name:'見本の仕事',primary:false,owner:true,write:true}];PT.authorize();PT.save();PT.go('detail',{caseId:'U-0201'})});
+  D.settings.gWrite='work-cal@example.com';PT.G.cals=[{id:'work-cal@example.com',name:'見本の仕事',primary:true,owner:true,write:true}];PT.authorize();PT.save();PT.go('detail',{caseId:'U-0201'})});
  return {c,p,errors,calls};
 }
 const one=p=>p.evaluate(()=>JSON.parse(JSON.stringify(PT.db.cases.find(c=>c.id==='U-0201'))));

@@ -406,8 +406,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.5" title="使い方マニュアルを開く">v1.50.5・11/5更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.5" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.6" title="使い方マニュアルを開く">v1.50.6・11/6更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.6" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -469,8 +469,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./request-box-employee.js?v=1.47.1"></script>
 <script src="./share-management.js?v=1.48.6"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.5"></script>
-<script src="./calendar-view-scope.js?v=1.50.5"></script>
+<script src="./view-scope.js?v=1.50.6"></script>
+<script src="./calendar-view-scope.js?v=1.50.6"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1168,7 +1168,7 @@ function refreshItemTotals(c){
 }
 function gcalPreview(c){
   const s=TYPES[c.type].site, g=c.gcal&&c.gcal.id?c.gcal:null, w=gWriteCal();
-  const where=g?(g.calName||"Googleカレンダー"):w?w.name:GSHARED;
+  const where=g?(g.calName||"Googleカレンダー"):w?w.name:isAdminDevice()?GSHARED:"自分のカレンダー";
   let st, btn="";
   if(!c.planDate)st='日程を決めると登録できます。';
   else if(!g||!g.date){st='まだ登録していません（登録先：'+h(where)+'）。';btn='<button class="btn pri" type="button" data-act="greg">Googleカレンダーに登録</button>'}
@@ -1618,7 +1618,7 @@ async function gApi(path,opt){
   }finally{clearTimeout(tm)}
 }
 const gMsg=err=>{const m=err&&err.message;return m==="gis"?"Googleの読み込みができません。通信を確認してください":m==="denied"?"許可されませんでした":m==="popup"?"Googleの画面を開けませんでした（ポップアップを許可してください）":m==="closed"?"Googleの画面が閉じられました":
-  m==="signin"?"もう一度「Googleとまとめて同期」を押してください":m==="nowrite"?"書き込めるカレンダーがありません":err&&err.name==="AbortError"?"時間切れ":err&&err.status===403?"権限がありません":err&&err.status===404?"見つかりません":"通信できませんでした"};
+  m==="signin"?"もう一度「Googleとまとめて同期」を押してください":m==="nowrite"?"書き込めるカレンダーがありません":m==="oldshared"?"この予定は前に共有カレンダー「"+GSHARED+"」に登録したもので、この端末からは直せません。社長に直してもらってください":err&&err.name==="AbortError"?"時間切れ":err&&err.status===403?"権限がありません":err&&err.status===404?"見つかりません":"通信できませんでした"};
 const gCalName=c=>c.primary?"自分":GNAMES[c.id]||c.summaryOverride||c.summary||c.id;
 async function gLoadCalendars(){
   G.calsLoading=true;try{return await gLoadCalendarsRun()}finally{G.calsLoading=false}
@@ -1661,7 +1661,12 @@ function gSafeData(data){
   return {...data,events,sources,calendars:[...new Set(sources.map(c=>c.name))]};
 }
 const gWritable=()=>(G.cals||[]).filter(c=>c.write);
-const gWriteCal=()=>{const w=gWritable();return w.find(c=>c.id===DB.settings.gWrite)||w.find(c=>c.name===GSHARED)||null};
+/* v1.50.6 案件の日程の登録先。社員（社長以外。専務も含む）は全員「自分」（その人のメインのカレンダー）に固定する。
+   共有カレンダー「CPG HUB」は社長だけが書ける運用のため、社員が選んでいた・何も選んでいない場合も、自分に書く（社員に設定の操作はお願いしない）。
+   社長の端末だけ、今までどおり設定で選んだカレンダー（なければ「CPG HUB」）。社長のマイカレンダーには書かない */
+const gOwnWrite=()=>gWritable().find(c=>c.primary)||null;
+const gWriteCal=()=>{const w=gWritable();if(!isAdminDevice())return gOwnWrite();return w.find(c=>c.id===DB.settings.gWrite)||w.find(c=>c.name===GSHARED)||null};
+const gCanWrite=id=>gWritable().some(c=>gIdKey(c.id)===gIdKey(id));
 const gCalOf=id=>(G.cals||[]).find(c=>gIdKey(c.id)===gIdKey(gReadId(id)));
 /* カレンダーごとの読み込みは同時に行う（PAPA HUBと同じく並行で、待ち時間を短くする） */
 async function gReadOne(cal,from,to,mine){
@@ -1807,6 +1812,12 @@ async function gRegister(c){
   const body={summary:gTitle(c),location:c.addr||"",description:gDesc(c),status:"confirmed",...when,extendedProperties:{private:{cpgHubCase:c.id}}},sig=planSig(c);
   /* 新しく作るときは null を送らない（null は PATCH で前の値を消すときだけ） */
   const post=JSON.parse(JSON.stringify(body,(k,v)=>v===null?undefined:v));
+  /* v1.50.6 社員の端末で、前の登録先（「CPG HUB」など）に今は書けないとき。
+     まだ一度も登録できていない（date が空）なら、自分のカレンダーに作り直す。登録済みの予定は消さず、直せないことを伝える */
+  if(c.gcal&&c.gcal.id&&c.gcal.cal&&!isAdminDevice()&&!gCanWrite(c.gcal.cal)){
+    if(!c.gcal.date){c.gcal=null;save()}
+    else throw new Error("oldshared");
+  }
   if(c.gcal&&c.gcal.id&&c.gcal.cal){
     const path="calendars/"+encodeURIComponent(c.gcal.cal)+"/events/"+encodeURIComponent(c.gcal.id);
     try{const r=await gApi(path,{method:"PATCH",body});c.gcal=Object.assign({},c.gcal,{date:c.planDate,when:sig,link:r&&r.htmlLink||c.gcal.link||""});save();return "updated"}
@@ -2034,7 +2045,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.5";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.6";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2109,7 +2120,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.5" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.5" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.6" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.6" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -2119,7 +2130,8 @@ function gSettings(){
   return F('<form id="gsetForm" class="panel">'+
     '<fieldset class="gcals" style="border:0;padding:0;margin:0"><legend class="note">予定画面に表示するカレンダー</legend>'+
     G.cals.map((c,i)=>!gReadable(c)?"":'<label><input type="checkbox" name="gshow" value="'+i+'" data-keep-key="gshow:'+h(c.id)+'"'+(show.has(c.id)?' checked':'')+'>'+h(c.name)+'</label>').join("")+'</fieldset><p class="note" style="margin:0">社長のマイカレンダーは、このアプリでは読み込みません。予定画面で仕事用・会社・人を確認したカレンダーだけ表示します。</p>'+
-    '<label class="f">案件の日程を登録するカレンダー<select id="g_write">'+(gWritable().map(c=>'<option value="'+h(c.id)+'"'+(w&&w.id===c.id?' selected':'')+'>'+h(c.name)+'</option>').join("")||'<option value="">書き込めるカレンダーがありません</option>')+'</select></label>'+
+    (isAdminDevice()?'<label class="f">案件の日程を登録するカレンダー<select id="g_write">'+(gWritable().map(c=>'<option value="'+h(c.id)+'"'+(w&&w.id===c.id?' selected':'')+'>'+h(c.name)+'</option>').join("")||'<option value="">書き込めるカレンダーがありません</option>')+'</select></label>'
+      :'<div class="f"><span class="note">案件の日程を登録するカレンダー</span><div class="ro" id="g_write_own">'+(w?h(w.name)+'（自分のカレンダー）':'自分のカレンダー（見つかりません。Googleに入り直してください）')+'</div><p class="note" style="margin:0">社員は全員、自分のカレンダーに登録します（選ぶ必要はありません）。</p></div>')+
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div></form>');
 }
 
@@ -2940,7 +2952,10 @@ function shareValidateStaff(staff){
  if(staff.some(s=>!s.sheetId)||new Set(ids).size!==ids.length)throw Error("社員のファイルIDが重複または不明です。履歴の帰属を確認してください。");
 }
 /* v1.50.3 共有の付け替え・社員一覧への保存の「反映中」表示。どこまで進んだか・どこで止まったかを出す */
-let shareProg=null,shareStage="",shareDoneText="";
+let shareProg=null,shareStage="",shareDoneText="",shareChanging=false;
+/* 読むだけの呼び出しを、回数制限・Google側の不具合・時間切れ・通信の失敗のときだけ、少し待って最大2回読み直す（書き込みには使わない） */
+async function shareRead(fn){for(let tries=1;;tries++){try{return await fn()}catch(err){const wait=corpRetryWait(err,tries);if(wait===null)throw err;await corpWait(wait)}}}
+const shareErrText=err=>err&&err.message==="http"&&!corpErrKind(err)?dMsg(err):corpErrKind(err)?corpReadMsg(err):err&&err.message||String(err);
 function shareProgress(text,{error=false,done=false}={}){
  if(!error)shareStage=text;
  if(!shareProg){shareProg=document.createElement("div");shareProg.id="shareProgress";shareProg.setAttribute("role","status");shareProg.setAttribute("aria-live","polite");
@@ -2961,15 +2976,19 @@ async function adminShareSync(log,staff=D().staff){
  }
  const list=d.listId,token=G.token;if(!list)throw Error("社員一覧がありません。共有を変更できません。");
  const source=JSON.stringify((await sheetRead(list,["社員"]))["社員"]||[]), specs=[],managed=staff.map(s=>s.email);
- for(const s of staff){
-  const recordTabs=await sheetTabNames(s.sheetId);if(!["案件","情報"].every(t=>recordTabs.includes(t)))throw Error(s.name+"：記録シートの初期化を確認できません。");
-  if(s.boxId){const box=(await sheetRead(s.boxId,[BOX_TAB]))[BOX_TAB]||[];if(JSON.stringify(box[0])!==JSON.stringify(BOX_COLS))throw Error(s.name+"：指示箱の見出しを確認できません。");}
+ {let i=0;for(const s of staff){
+  shareProgress("記録シートと指示箱を確かめています "+(++i)+"／"+staff.length+"："+dispName(s)+"さん");
+  const recordTabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!["案件","情報"].every(t=>recordTabs.includes(t)))throw Error(s.name+"：記録シートの初期化を確認できません。");
+  if(s.boxId){const box=(await shareRead(()=>sheetRead(s.boxId,[BOX_TAB])))[BOX_TAB]||[];if(JSON.stringify(box[0])!==JSON.stringify(BOX_COLS))throw Error(s.name+"：指示箱の見出しを確認できません。");}
   specs.push({id:s.sheetId,label:s.name+"／記録シート",managed,want:(s.removed?[]:[{email:s.email,role:"writer"}]).concat(vs.filter(v=>canSee(v,s)).map(v=>({email:v.email,role:"reader"})))});
   if(s.boxId)specs.push({id:s.boxId,label:s.name+"／指示箱",managed,want:(s.removed?[]:[{email:s.email,role:"reader"}]).concat(vs.filter(v=>canOrder(v,s)).map(v=>({email:v.email,role:"writer"})))});
- }
+ }}
  if(d.viewListId)specs.push({id:d.viewListId,label:"見る人用一覧",managed,want:vs.map(v=>({email:v.email,role:"reader"}))});
  if(new Set(specs.map(x=>x.id)).size!==specs.length)throw Error("共有先IDが重複しています。変更を止めました。");
- {let i=0;for(const x of specs){shareProgress("共有の一覧を読んでいます "+(++i)+"／"+specs.length);x.permissions=await permList(x.id);}}
+ /* v1.50.6 共有の一覧は読むだけなので、3件ずつ同時に読み、回数制限・時間切れ・通信の失敗は少し待って最大2回読み直す（前は1件ずつで、1回の時間切れで止まった） */
+ {let done=0,next=0;shareProgress("共有の一覧を読んでいます 0／"+specs.length);
+  const worker=async()=>{while(next<specs.length){const x=specs[next++];x.permissions=await shareRead(()=>permList(x.id));shareProgress("共有の一覧を読んでいます "+(++done)+"／"+specs.length)}};
+  await Promise.all(Array.from({length:Math.min(3,specs.length)},worker));}
  shareProgress("変更の一覧を確認してください（まだ何も変えていません）");
  const history=await shareHistory(list),plan=CPGShares.plan(specs,history,list);
  const roleChanges=staff.filter(s=>{const old=d.staff.find(x=>x.sheetId===s.sheetId);return old&&(old.role!==s.role||old.gmCo!==s.gmCo||(old.charge||"")!==(s.charge||"")||(old.displayName||"")!==(s.displayName||"")||old.company!==s.company||old.removed!==s.removed)}).map(s=>{const old=d.staff.find(x=>x.sheetId===s.sheetId);return "役割："+s.name+"（"+s.email+"） "+roleLabel(old)+" → "+(s.removed?"役割を外す":roleLabel(s))+"／所属会社："+s.company+((s.displayName||"")!==(old.displayName||"")?"／表示名："+(s.displayName||"（なし・氏名）"):"")});
@@ -2979,6 +2998,7 @@ async function adminShareSync(log,staff=D().staff){
  await guard();if(JSON.stringify(await shareHistory(list))!==JSON.stringify(history))throw Error("共有履歴が変わりました。再確認してください。");
  for(const x of specs)if(CPGShares.fingerprint(await permList(x.id))!==CPGShares.fingerprint(x.permissions))throw Error("共有が変わりました。再確認してください。");
  await shareJournalInit(list);
+ shareChanging=true;
  let result;const stop=document.createElement("button");stop.className="btn danger";stop.textContent="共有変更を中止（次の変更から）";stop.style.cssText="position:fixed;z-index:10000;bottom:80px;left:12px;max-width:calc(100vw - 24px);white-space:normal";stop.onclick=()=>{shareAbort=true;stop.disabled=true;stop.textContent="現在の結果を確認してから中止します"};document.body.appendChild(stop);
  try{result=await CPGShares.execute(plan,specs,history,list,{guard,cancelled:()=>shareAbort,readHistory:()=>shareHistory(list),permissions:permList,append:r=>shareAppend(list,r),id:()=>crypto.randomUUID(),now:()=>new Date().toISOString(),grant:(id,email,role)=>driveShare(id,email,role,""),revoke:(id,pid)=>gReq(DRIVE+"/"+encodeURIComponent(id)+"/permissions/"+encodeURIComponent(pid),{method:"DELETE"}),progress:x=>log(x.label+" → "+x.email+"："+(x.action==="grant"?"付与":"解除")+"を読戻し確認しました"),step:(x,i,n)=>shareProgress("反映中 "+i+"／"+n+"："+shareStepText(x,staff))});}finally{stop.remove()}
  if(shareAbort)throw Error("途中で中止しました。実行済みの共有は戻しません。役割は保存していません。");
@@ -3002,9 +3022,9 @@ function shareStepText(x,staff){
  const where=l=>String(l||"").replace(/^(.+)／(記録シート|指示箱)$/,"$1さんの$2");
  return x.action==="grant"?where(x.label)+"に"+who(x.email)+"を"+(x.role==="writer"?"編集者":"見るだけ")+"で共有":where(x.label)+"から"+who(x.email)+"の共有を外す";
 }
-async function adminShareOperation(run){if(shareRunning||ui.gsync?.busy||ui.gbusy||ui.oBusy)throw Error("共有・同期の処理中です。終わるまでお待ちください。");shareRunning=true;shareAbort=false;
+async function adminShareOperation(run){if(shareRunning||ui.gsync?.busy||ui.gbusy||ui.oBusy)throw Error("共有・同期の処理中です。終わるまでお待ちください。");shareRunning=true;shareAbort=false;shareChanging=false;
  try{shareLocalCheck();await gAuthorize(true);if(!eq(await myEmail(),ADMIN_ACCOUNT))throw Error("社長の管理アカウントで確認してください。");const r=await run();if(shareProg){shareProgress(shareDoneText||"完了しました",{done:true});shareDoneText="";const el=shareProg;setTimeout(()=>{if(shareProg===el)shareProgressEnd()},6000)}return r}
- catch(err){shareDoneText="";if(shareProg&&/^中止しました。/.test(err&&err.message||""))shareProgressEnd();else if(shareProg&&err&&err.progressShown){}else if(shareProg){const at=shareStage;shareProgress("ここで止まりました："+(at||"（始める前）")+"\n理由："+(err&&err.message==="http"?dMsg(err):err&&err.message||String(err))+"\nできたところまでは残っています。もう一度保存すると、続きから確かめて進めます。",{error:true})}throw err}
+ catch(err){shareDoneText="";if(shareProg&&/^中止しました。/.test(err&&err.message||""))shareProgressEnd();else if(shareProg&&err&&err.progressShown){}else if(shareProg){const at=shareStage;shareProgress("ここで止まりました："+(at||"（始める前）")+"\n理由："+shareErrText(err)+"\n"+(shareChanging?"止まる前に反映した共有は、そのまま残っています（戻していません）。記録は社員一覧の「共有管理履歴」にあります。\n続ける場合だけ、もう一度はじめから操作してください。変える前に、変更の一覧で確かめられます。":"共有を変える処理は止まりました。共有はまだ何も変えていません（外していません）。\n続ける場合だけ、もう一度「共有を外す」など、はじめの操作からやり直してください。"),{error:true})}throw err}
  finally{shareRunning=false}}
 /* ===== v1.50.0 予定の共有：本人のメインのカレンダーを、その人の予定を見てよい人に「見るだけ」で共有する。
    共有先は社長の端末で社員一覧の役割から決め（社長・全社・その人を見られるGM・担当の会社の経理と業務管理。canSee と同じ判定）、各社員の記録シートの「予定の共有先」タブに書く。
@@ -3883,7 +3903,7 @@ document.addEventListener("submit",e=>{
   if(f.id==="rsetForm"){const S=RS();S.name=val("rs_name").trim();COMPANIES.forEach(co=>{S.payDays[co]=Number(val("rs_pd_"+co));S.to[co]=val("rs_to_"+co).trim()});S.useCard=document.getElementById("rs_card").checked;save();render();toast("領収書の設定を保存しました");return}
   if(f.id==="todoForm"){DB.todos.push({id:"T"+Date.now(),title:val("td_title").trim(),due:val("td_due"),tantou:val("td_tantou"),done:false});save();render();toast("ToDoを追加しました");return}
   if(f.id==="gsetForm"){const picked=[...f.querySelectorAll('input[name="gshow"]:checked')].map(x=>G.cals[Number(x.value)]).filter(Boolean).map(c=>c.id);
-    DB.settings.gShow=gFilterReadIds(picked);DB.settings.gWrite=val("g_write");gResetReads(true);save();render();toast("Googleカレンダーの設定を保存しました");return}
+    DB.settings.gShow=gFilterReadIds(picked);if(document.getElementById("g_write"))DB.settings.gWrite=val("g_write");gResetReads(true);save();render();toast("Googleカレンダーの設定を保存しました");return}
   if(f.id==="setForm"){for(const k of ["schedule","quote","reply","jobno","billAfter","acctWait"]){const v=Number(val("s_"+k));if(!isNaN(v)&&v>=0)DB.settings[k]=v}if(PAY_RULES[val("s_payRule")])DB.settings.payRule=val("s_payRule");save();render();toast("期限の日数を保存しました");return}
 });
 /* 予定画面：横にスワイプして前後へ（日表示は1日、週表示は1週、月表示は1か月） */
