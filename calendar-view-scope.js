@@ -32,7 +32,12 @@ function project({g,rows,model,cases=[],resolvePerson,readable,from='',to='9999-
  }
  const sources=g.data?.sources||[],readyState=['ok','kept'].includes(g.state);
  const coverage=(r,day)=>readyState&&sources.some(s=>s.id===r.id&&(s.from||g.from)<=day&&(s.to||g.to)>=day);
- const status=day=>people.map(p=>{const assigned=approved.filter(r=>r.mode==='person'&&r.person===p.sheetId&&(co==='all'||r.company===co));return {id:p.sheetId,name:p.name,ready:model.usable&&assigned.length>0&&assigned.every(r=>coverage(r,day)),reason:!assigned.length?'仕事用カレンダー未設定':assigned.every(r=>coverage(r,day))?'取得済み':'未取得・読取失敗または保存範囲外',missing:assigned.filter(r=>!coverage(r,day)).map(r=>r.id)};});
+ /* v1.50.15 案件の予定は全員「CPG HUB」（複数の人が使う仕事用）に入れる決まり。本人のカレンダーをどの会社でも結び付けていない人は、
+    複数の人が使う仕事用カレンダーがその日まで読めていれば「取得済み」とする（本人のカレンダーを結び付けた人は、今までどおりそれが読めたかで決める） */
+ const sharedOK=day=>approved.some(r=>r.mode==='mixed')&&approved.filter(r=>r.mode==='mixed').every(r=>coverage(r,day));
+ const status=day=>people.map(p=>{const assigned=approved.filter(r=>r.mode==='person'&&r.person===p.sheetId&&(co==='all'||r.company===co));
+  if(!approved.some(r=>r.mode==='person'&&r.person===p.sheetId)){const ok=model.usable&&sharedOK(day);return {id:p.sheetId,name:p.name,ready:ok,viaShared:ok,reason:ok?'共有カレンダーで取得済み（本人のカレンダーは未設定）':'仕事用カレンダー未設定',missing:[]};}
+  return {id:p.sheetId,name:p.name,ready:model.usable&&assigned.length>0&&assigned.every(r=>coverage(r,day)),reason:!assigned.length?'仕事用カレンダー未設定':assigned.every(r=>coverage(r,day))?'取得済み':'未取得・読取失敗または保存範囲外',missing:assigned.filter(r=>!coverage(r,day)).map(r=>r.id)};});
  const onDay=(list,day)=>list.some(e=>{const [first,last]=span(e);return first<=day&&last>=day});
  const unfetched=day=>!model.usable||!people.length||status(day).some(p=>!p.ready);
  const mixedMissing=day=>approved.filter(r=>r.mode==='mixed'&&!coverage(r,day));

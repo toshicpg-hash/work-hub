@@ -406,8 +406,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.14" title="使い方マニュアルを開く">v1.50.14・11/6更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.14" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.15" title="使い方マニュアルを開く">v1.50.15・11/6更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.15" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -467,10 +467,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.14"></script>
+<script src="./share-management.js?v=1.50.15"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.14"></script>
-<script src="./calendar-view-scope.js?v=1.50.14"></script>
+<script src="./view-scope.js?v=1.50.15"></script>
+<script src="./calendar-view-scope.js?v=1.50.15"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1997,6 +1997,7 @@ function vCal(){
   /* v1.49.3 予定の読み込み状況：困ったことがあるときだけ、短い言葉で出す。設定の欄は予定の下へ */
   const calProblems=[!model.usable?'選んだ会社・人を確認できません。':'',model.usable&&!statuses.length?'選んだ人の予定は未取得です（まだ読み込んでいません）。':'',pending.length?'未取得 '+pending.length+'人：'+pending.map(p=>h(p.name)+'（'+(p.reason==='仕事用カレンダー未設定'?'この端末の「仕事用カレンダーの対応設定」で、この人のカレンダーがまだ結び付いていません':'読めていないカレンダー：'+h((p.missing||[]).map(calMapLabelOf).join('・')||'不明')+'。「予定画面に表示するカレンダー」に入っているか、Googleカレンダーに追加してあるか確かめて「↻」')+'）').join('、')+'。予定があるかは分かりません。':'',
     (raw.data&&raw.data.missing)?'読み込めなかったカレンダー '+raw.data.missing+'件（Googleカレンダーに追加していない・共有が外れた、など）。':'',
+    (()=>{const v=statuses.filter(p=>p.viaShared);return v.length?v.map(p=>h(p.name)).join('、')+'：本人のカレンダーを結び付けていないので、共有カレンダー（CPG HUB）の予定だけを出しています（本人のカレンダーだけに入れた予定は出ません）。':''})(),
     raw.state==='error'?'Googleの予定を読めませんでした。未取得として出しています。':'',raw.state==='kept'?'前回の同期のときの予定です。':'',mixedMissingCount?'共有カレンダー '+mixedMissingCount+'件を読めていません（未取得）。':'',
     projected.privacyUnconfirmed.length?'同期し直してください：中身を出していない予定が '+projected.privacyUnconfirmed.length+'件あります。':'',projected.unidentified.length?'誰の予定か分からない予定が '+projected.unidentified.length+'件あります（中身は出しません）。':'',mapping.state==='invalid'?'仕事用カレンダーの設定を読み戻せません。設定を確かめてください。':''].filter(Boolean);
   /* v1.49.3 予定の読み込みの説明は上の「ⓘ」の中へ（scopeHeader が ui.calInfo を出す）。画面に出すのは小さな札だけ：持ち主の分からない予定の件数と、読めなかった・同期し直しが要るとき */
@@ -2102,7 +2103,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.14";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.15";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2264,7 +2265,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.14" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.14" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.15" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.15" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
