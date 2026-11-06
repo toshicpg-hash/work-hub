@@ -406,8 +406,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.9" title="使い方マニュアルを開く">v1.50.9・11/6更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.9" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.10" title="使い方マニュアルを開く">v1.50.10・11/6更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.10" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -469,8 +469,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./request-box-employee.js?v=1.47.1"></script>
 <script src="./share-management.js?v=1.48.6"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.9"></script>
-<script src="./calendar-view-scope.js?v=1.50.9"></script>
+<script src="./view-scope.js?v=1.50.10"></script>
+<script src="./calendar-view-scope.js?v=1.50.10"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -654,7 +654,10 @@ const keptNote=()=>'前回の読み込み（'+corpAtText()+'）の内容です�
 async function corpRun(){
   try{const before=ui.corp?.data||[],data=await corpLoad();
     for(const x of data)if((!x.ok||x.receiptRead?.state==="invalid")&&!x.accessDenied){const old=before.find(y=>y.s.sheetId===x.s.sheetId);if(old){const prior=["ready","cached"].includes(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.state(old):"unknown")?{rc:old.rc,lastSync:old.s.lastSync,readAt:old.receiptRead?.at||ui.corp?.at,receiptRead:old.receiptRead}:old.receiptPrevious;if(prior)x.receiptPrevious=prior;}}
-    ui.corp={data,at:Date.now(),timing:data.timing||null};roBuild(data);D().corpAt=new Date(ui.corp.at).toISOString();save();corpKeepSave();return data}
+    ui.corp={data,at:Date.now(),timing:data.timing||null};roBuild(data);D().corpAt=new Date(ui.corp.at).toISOString();save();corpKeepSave();
+    /* v1.50.10 社長の端末：会社ごとの数字を書き出す（失敗しても読み込みは成功のまま。結果は数字の画面に出す） */
+    if(D().admin&&D().numbers){try{ui.numWrite=await numWriteAll(data)}catch(err){ui.numWrite=[{ok:false,text:"会社の数字を書き出せませんでした（"+(err.message==="http"?dMsg(err):err.message)+"）"}]}}
+    return data}
   catch(err){
     /* 見る人で、一覧の共有が外れた・役割が外れたときは、残した内容を使わず消す */
     if(!D().admin&&(err.status===403||err.status===404||err.message==="notviewer")){corpKeepClear();ui.corp=null;ui.corpRO=null;ui.corpTodo=null}
@@ -2087,11 +2090,12 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.9";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.10";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
 const corpCoNow=()=>statsGmCo()||ui.corpCo||"all";
+const numWriteText=()=>D().admin&&Array.isArray(ui.numWrite)&&ui.numWrite.length?'<p>社員に見せる会社の数字：'+ui.numWrite.map(x=>h(x.text)).join('／')+'</p>':'';
 function statsReadText(){const c=ui.corp;if(!D().admin&&!D().viewListId||!(c&&Array.isArray(c.data)))return "";return '<p>社員の記録（'+corpAtText()+' 読み込み'+(c.kept?'・前回の内容':'')+'）を含めた'+(statsGmCo()?h(statsGmCo())+'の':'会社全体の')+'数字です。</p>';}
 function statsNote(){
   if(!D().admin&&!D().viewListId)return "";
@@ -2104,12 +2108,95 @@ const statsHasDate=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&Number
 /* v1.49.3 月の選択は「‹ 前月｜2026年11月｜翌月 ›」の1行。真ん中を押すと月を選べる（端末の月の選択画面） */
 function statsPeriodControls(){const m=statsMonth(),all=ui.statsPeriod==='all',ml=Number(m.slice(0,4))+'年'+Number(m.slice(5))+'月';return '<div id="stats-period">'+
  (!all?'<div class="monthbar"><button class="btn" type="button" data-stats-step="-1" aria-label="前月">‹ 前月</button><label class="monthpick"><span class="mlabel num" aria-hidden="true">'+h(ml)+'</span><input id="stats-month" type="month" min="0001-01" max="9999-12" value="'+h(m)+'" aria-label="集計年月（押すと月を選べます）"></label><button class="btn" type="button" data-stats-step="1" aria-label="翌月">翌月 ›</button></div>':'')+
- infoBox('stats','<p>見積は見積提出日、受注は受注日、失注は失注日の月で数えます。日付が入っていない実績は数えません。未入金は今の残高で、選んだ月とは関係ありません。</p><p>失注にした案件は、受注日が残っていても受注には数えません。受注後に取り消した案件は、受注の実績として残します。失注日が入っていない案件の注意は、月に関係なく出します。</p>'+statsReadText()+'<p>下の数字は、上で選んだ会社・人の分です。経理への確認の操作は、選んだ会社・人に関係なく、この端末の案件すべてが対象です。</p>')+'</div>';}
-const statsModeSeg=()=>{const all=ui.statsPeriod==='all';return '<span class="hgrp"><div class="seg" role="group" aria-label="集計期間"><button type="button" data-stats-mode="month" aria-pressed="'+!all+'">月別</button><button type="button" data-stats-mode="all" aria-pressed="'+all+'">全期間</button></div>'+infoBtn('stats','数字の説明')+'</span>';};
+ infoBox('stats','<p>見積は見積提出日、受注は受注日、失注は失注日の月で数えます。日付が入っていない実績は数えません。未入金は今の残高で、選んだ月とは関係ありません。</p><p>失注にした案件は、受注日が残っていても受注には数えません。受注後に取り消した案件は、受注の実績として残します。失注日が入っていない案件の注意は、月に関係なく出します。</p>'+statsReadText()+'<p>下の数字は、上で選んだ会社・人の分です。経理への確認の操作は、選んだ会社・人に関係なく、この端末の案件すべてが対象です。</p>'+numWriteText()+(statsStaffDevice()?'<p>「会社全体」は、あなたの所属する会社の数字です（社長の端末で読み込んだ時点）。ほかの会社の数字は出ません。</p>':''))+'</div>';}
+/* v1.50.10 社員の端末だけ：「自分／会社全体」を「月別／全期間」と同じ見た目で並べる */
+const statsWhoBtns=()=>{if(!statsStaffDevice())return "";const co=ui.statsWho==="company";return '<div class="seg" role="group" aria-label="だれの数字" id="stats-who-seg"><button type="button" data-stats-who="self" aria-pressed="'+!co+'">自分</button><button type="button" data-stats-who="company" aria-pressed="'+co+'">会社全体</button></div>'};
+const statsModeSeg=()=>{const all=ui.statsPeriod==='all';return '<span class="hgrp">'+statsWhoBtns()+'<div class="seg" role="group" aria-label="集計期間"><button type="button" data-stats-mode="month" aria-pressed="'+!all+'">月別</button><button type="button" data-stats-mode="all" aria-pressed="'+all+'">全期間</button></div>'+infoBtn('stats','数字の説明')+'</span>';};
+/* ===== v1.50.10 会社全体の数字（社員の端末）
+   社長の端末で「社員の記録を読み込む」をしたときに、会社ごとの非公開シート「CPG HUB_会社の数字_CP」などへ、その会社の案件の「数字に使う列だけ」を書き出す。
+   シートは、その会社に所属する社員にだけ「閲覧者」で共有する（共有の確認の一覧で付ける）。社員の記録シートそのものは共有しない（領収書・立替のタブがあるため）。
+   社員の端末は、自分の記録シートの「会社の数字の場所」タブ（社長が書く）から読む先を知り、「数字」の「会社全体」でだけ使う。案件・予定・ToDo・領収書の画面には使わない */
+const NUM_TAB="会社の数字", NUM_INFO_TAB="情報", NUMPTR_TAB="会社の数字の場所", NUMPTR_COLS=["会社","ファイルID"];
+const NUM_COLS=["種類","段階","段階キー","会社","担当","物件","部屋","依頼元","見積額","見積提出日","受注日","失注日","失注理由","受注後取消日時","請求日","請求額","入金予定日","入金済額","入金日"];
+const NUM_KEY="workhub_company_numbers_v1";
+const statsStaffDevice=()=>!D().admin&&!D().viewListId;
+/* 社長の端末：1件の案件を、会社の数字の1行に（お客様の連絡先・住所・メモ・症状・領収書は入れない） */
+function numRow(c){
+  const tl=(c.ro?c.tantou:tantouLabel(c.tantou))||"未設定";
+  return [(TYPES[c.type]||TYPES.reno).label,STAGES[c.stage]||"",c.stage||"",c.company||"",tl,c.property||"",c.room||"",c.client||"",estOf(c)??"",c.estSentDate||"",c.orderDate||"",c.lossDate||"",c.lossReason||"",c.cancelledAt||"",c.billDate||"",c.billAmount??"",c.payDue||"",paidSum(c)||"",c.paidDate||""];
+}
+/* 社員の端末：会社の数字の1行を、数字の計算に使う形に */
+function numCase(r,co,i){
+  const v=k=>String(r[k]==null?"":r[k]),d=k=>v(k).slice(0,10),num=k=>v(k)===""||!Number.isFinite(Number(v(k)))?null:Number(v(k));
+  const stage=STAGES[v("段階キー")]?v("段階キー"):Object.keys(STAGES).find(k=>STAGES[k]===v("段階"))||"new",paid=Number(v("入金済額"))||0;
+  return Object.assign(CASE_DEFAULTS(),{ro:true,id:"会社の数字・"+co+"・"+i,company:co,type:typeKeyOf(v("種類")),stage,tantou:v("担当")||"未設定",property:v("物件"),room:v("部屋"),client:v("依頼元"),
+    estAmount:num("見積額"),estSentDate:d("見積提出日"),orderDate:d("受注日"),lossDate:d("失注日"),lossReason:v("失注理由"),cancelledAt:v("受注後取消日時"),
+    billDate:d("請求日"),billAmount:num("請求額"),payDue:d("入金予定日"),payments:paid?[{date:d("入金日")||d("請求日"),amount:paid}]:[],paidDate:stage==="paid"?d("入金日"):""});
+}
+const numRowsToObjs=rows=>{if(!rows||!rows.length||JSON.stringify((rows[0]||[]).map(String))!==JSON.stringify(NUM_COLS))return null;return rows.slice(1).filter(r=>r&&r.some(x=>String(x??"")!=="")).map(r=>Object.fromEntries(NUM_COLS.map((k,i)=>[k,r[i]])))};
+function numKeep(){try{const v=JSON.parse(localStorage.getItem(NUM_KEY)||"null");return v&&v.sheetId===D().sheetId&&Array.isArray(v.list)?v:null}catch(e){return null}}
+function numKeepSave(v){try{localStorage.setItem(NUM_KEY,JSON.stringify(v))}catch(e){}}
+function statsCompanyMode(){
+  if(!statsStaffDevice()||ui.statsWho!=="company")return null;
+  const v=ui.coNums||numKeep(),list=(v&&v.list)||[],co=list.some(x=>x.co===ui.statsNumCo)?ui.statsNumCo:(list[0]||{}).co||"";
+  const x=list.find(x=>x.co===co);
+  return {co,list,at:v&&v.at||0,x,cases:x?x.rows.map((r,i)=>numCase(r,co,i)):null};
+}
+function statsWhoSeg(){
+  if(!statsStaffDevice())return "";
+  const co=ui.statsWho==="company",m=co?statsCompanyMode():null;
+  if(!co)return "";
+  return '<section class="sec" id="stats-who">'+
+    (m&&m.list.length>1?'<div class="seg" role="group" aria-label="会社">'+m.list.map(x=>'<button type="button" data-stats-numco="'+h(x.co)+'" aria-pressed="'+(x.co===m.co)+'">'+h(x.co)+'</button>').join("")+'</div>':'')+
+    '<div class="row" style="margin-top:8px"><button class="btn sm" type="button" data-act="numload"'+(ui.numBusy?' disabled':'')+'>'+(ui.numBusy?'読み込み中…':'会社の数字を読み直す')+'</button></div>'+(ui.numMsg?'<p class="note" role="status" style="margin:0">'+h(ui.numMsg)+'</p>':'')+'</section>';
+}
+const numAtText=iso=>{const t=Date.parse(iso||"");return Number.isFinite(t)?new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(t)):"（不明）"};
+function statsCompanyNote(m){return '<p class="note" style="margin:0">'+h(m.co)+'の会社全体の数字です（社長の端末で '+h(numAtText(m.x&&m.x.writtenAt))+' に読み込んだ記録）。社長が「社員の記録を読み込む」をすると新しくなります。</p>';}
+function statsCompanyEmpty(m){return '<section class="sec"><div class="empty">'+(m.list.length?'':'会社全体の数字がまだ届いていません。')+'上の「会社の数字を読み直す」を押してください。届いていないときは、社長が会社の数字の共有をまだ合わせていないか、「社員の記録を読み込む」をまだしていません。</div></section>';}
+/* 社員の端末：自分の記録シートの「会社の数字の場所」から、共有された会社の数字を読む（読むだけ） */
+async function numLoad(){
+  if(!statsStaffDevice()||!D().sheetId)throw Error("記録シートにつないでから読み込めます。");
+  await gAuthorize(true);
+  const tabs=await sheetTabNames(D().sheetId);if(!tabs.includes(NUMPTR_TAB)){ui.coNums={sheetId:D().sheetId,at:Date.now(),list:[]};numKeepSave(ui.coNums);return ui.coNums}
+  const ptr=((await sheetRead(D().sheetId,[NUMPTR_TAB]))[NUMPTR_TAB]||[]);
+  if(JSON.stringify((ptr[0]||[]).map(String))!==JSON.stringify(NUMPTR_COLS))throw Error("「"+NUMPTR_TAB+"」の見出しが違います。社長に伝えてください。");
+  const list=[],errs=[];
+  for(const r of ptr.slice(1)){const co=String(r[0]||"").trim(),id=sheetIdOf(String(r[1]||""));if(!COMPANIES.includes(co)||!id)continue;
+    try{const v=await sheetRead(id,[NUM_TAB,NUM_INFO_TAB]),info=Object.fromEntries((v[NUM_INFO_TAB]||[]).slice(1).map(x=>[String(x[0]||""),String(x[1]??"")]));
+      if(info["会社"]!==co)throw Error("会社が一致しません");
+      const rows=numRowsToObjs(v[NUM_TAB]);if(!rows)throw Error("まだ書き出されていません");
+      if(rows.some(x=>String(x["会社"])!==co))throw Error("ほかの会社の行があります");
+      list.push({co,writtenAt:info["書き出し日時"]||"",rows});}
+    catch(err){errs.push(co+"："+(err.message==="http"?dMsg(err):err.message))}}
+  ui.coNums={sheetId:D().sheetId,at:Date.now(),list};numKeepSave(ui.coNums);
+  ui.numMsg=errs.length?"読めなかった会社があります（"+errs.join("・")+"）":"";
+  return ui.coNums;
+}
+/* 社長の端末：社員の記録を読み込んだあと、会社ごとの数字を書き出す。その会社の社員を全員読めたときだけ書く（一部だけの数字で上書きしない） */
+async function numWriteAll(data){
+  const d=D();if(!d.admin||!d.numbers)return [];
+  const out=[],at=new Date().toISOString(),src=scopeSourceCases();
+  for(const co of COMPANIES){const id=d.numbers[co];if(!id)continue;
+    const members=(d.staff||[]).filter(s=>!s.removed&&s.sheetId&&coList(s).includes(co)&&s.sheetId!==d.sheetId);
+    const miss=members.filter(s=>!(data||[]).some(x=>x.s&&x.s.sheetId===s.sheetId&&x.ok));
+    if(miss.length){out.push({co,ok:false,text:co+"：読めなかった人がいるので、会社の数字は前のままです（"+miss.map(dispName).join("・")+"）"});continue}
+    try{const rows=[NUM_COLS,...src.filter(c=>c.company===co).map(numRow)];
+      const info=[["項目","値"],["会社",co],["書き出し日時",at],["件数",String(rows.length-1)]];
+      const tabs=await sheetTabNames(id);for(const t of [NUM_TAB,NUM_INFO_TAB])if(!tabs.includes(t))await addTab(id,t);
+      const prev=await sheetRead(id,[NUM_TAB,NUM_INFO_TAB]);
+      await sheetWrite(id,NUM_TAB,rows,prev[NUM_TAB]||[]);await sheetWrite(id,NUM_INFO_TAB,info,prev[NUM_INFO_TAB]||[]);
+      const back=(await sheetRead(id,[NUM_TAB]))[NUM_TAB]||[];
+      if(back.filter(r=>r&&r.some(x=>String(x??"")!=="")).length!==rows.length)throw Error("書き出したあとの確認ができません");
+      out.push({co,ok:true,text:co+"：会社の数字を書き出しました（"+(rows.length-1)+"件）"});}
+    catch(err){out.push({co,ok:false,text:co+"：会社の数字を書き出せませんでした（"+(err.message==="http"?dMsg(err):err.message)+"）"})}}
+  return out;
+}
 function vStats(){
   const mk=statsMonth(),periodLabel=ui.statsPeriod==='all'?'全期間':Number(mk.slice(0,4))+'年'+Number(mk.slice(5))+'月';
   const inM=s=>statsHasDate(s)&&(ui.statsPeriod==='all'||s.slice(0,7)===mk);
-  const all=scopeCases(), sco=scopeState().selection.company, gmCo=statsGmCo();
+  /* v1.50.10 社員の端末の「会社全体」：社長の端末が書き出した会社の数字（その会社の案件の、数字に使う列だけ）で、同じ計算をする */
+  const coMode=statsCompanyMode();
+  const all=coMode?(coMode.cases||[]):scopeCases(), sco=coMode?coMode.co:scopeState().selection.company, gmCo=coMode?"":statsGmCo();
   const sent=all.filter(c=>inM(c.estSentDate));
   const won=all.filter(c=>(c.stage!=="lost"||c.cancelledAt)&&inM(c.orderDate));
   const lost=all.filter(c=>c.stage==="lost"&&!c.cancelledAt&&inM(c.lossDate));
@@ -2132,12 +2219,13 @@ function vStats(){
   const row=([k,g])=>'<tr><td>'+h(k)+'</td><td class="num">'+g.n+'件</td><td class="num">'+yen(g.sum)+'</td><td class="num"'+(g.late?' style="color:var(--red);font-weight:700"':'')+'>'+(g.late?g.late+'日':'—')+'</td></tr>';
   const tbl=(head,rows)=>'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>'+head+'</th><th>件数</th><th>未入金</th><th>最長の遅れ</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   const unpaidSec='<section class="sec" id="stats-unpaid"><div class="sec-h"><h2>未入金</h2><span class="note num">'+un.length+'件 '+yen(un.reduce((s,c)=>s+remainOf(c),0))+'</span><span class="note">現在残高</span></div>'+
-    (un.length?'<div class="panel"><h3>担当者別</h3>'+tbl("担当",group(tl).map(row).join(""))+'</div>'+(acctList().length?acctPanel():'')+
+    (un.length?'<div class="panel"><h3>担当者別</h3>'+tbl("担当",group(tl).map(row).join(""))+'</div>'+(!coMode&&acctList().length?acctPanel():'')+
       '<div class="panel"><h3>物件別</h3>'+tbl("物件",group(c=>c.property||"（物件名なし）").map(row).join(""))+'<p class="note" style="margin:0">遅れの長い順です。案件一覧の「入金待ちだけ」でも確認できます。</p></div>'
       :'<div class="empty">未入金の案件はありません</div>')+'</section>';
   return (hasExamples()?'<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>':'')+
-  (scopeState().usable?(statsNote()?'<section class="sec">'+statsNote()+'</section>':'')+
-  '<section class="sec" id="stats-won">'+statsPeriodControls()+(undatedLost.length?'<p class="banner stats-undated">失注日が未入力の案件 '+undatedLost.length+'件（案件を開いて日付を入れてください）</p>':'')+'<div class="sec-h"><h2>'+periodLabel+'の見積と受注</h2>'+statsModeSeg()+'</div>'+
+  statsWhoSeg()+(coMode&&!coMode.cases?statsCompanyEmpty(coMode):
+  (coMode||scopeState().usable)?(coMode?'<section class="sec">'+statsCompanyNote(coMode)+'</section>':statsNote()?'<section class="sec">'+statsNote()+'</section>':'')+
+  '<section class="sec" id="stats-won">'+statsPeriodControls()+(undatedLost.length?'<p class="banner stats-undated">失注日が未入力の案件 '+undatedLost.length+'件（案件を開いて日付を入れてください）</p>':'')+'<div class="sec-h"><h2'+(statsStaffDevice()?' class="sr"':'')+'>'+(coMode?h(coMode.co)+' 会社全体の':'')+periodLabel+'の見積と受注</h2>'+statsModeSeg()+'</div>'+
   '<div class="panel"><div class="row" style="align-items:flex-end;gap:18px"><div><div class="note">見積決定率（受注 ÷ 結論が出た件数）</div><div class="big">'+(rate==null?"—":rate+"%")+'</div></div>'+
   '<div class="note num">受注 '+won.length+'件 ／ 失注 '+lost.length+'件</div></div>'+
   '<div class="sum"><div><div class="k">見積提出</div><div class="v">'+sent.length+'件</div></div><div><div class="k">受注</div><div class="v">'+won.length+'件</div></div><div><div class="k">受注額（見積額）</div><div class="v">'+yen(wonAmt)+'</div></div></div></div></section>'+
@@ -2162,7 +2250,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.9" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.9" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.10" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.10" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3016,6 +3104,12 @@ async function adminShareSync(log,staff=D().staff){
   for(const s of needed){const f=await driveCreate({name:"CPG HUB_指示箱_"+s.name,mimeType:"application/vnd.google-apps.spreadsheet",parents:[d.folder]});s.boxId=f.id;const old=d.staff.find(x=>x.sheetId===s.sheetId);if(old)old.boxId=f.id;shareSave();await shareWriteList();await sheetTabs(f.id,BOX_TAB,[]);await sheetWrite(f.id,BOX_TAB,[BOX_COLS]);log(s.name+"：指示箱を作成しました（共有は確認後）")}
   if(needView){const f=await driveCreate({name:"CPG HUB_見る人用一覧",mimeType:"application/vnd.google-apps.spreadsheet",parents:[d.folder]});d.viewListId=f.id;shareSave();await sheetTabs(f.id,"一覧",[])}
  }
+ /* v1.50.10 会社の数字：所属する社員がいる会社ごとに1つ。前に作ったもの（ほかの端末で作ったものも）があればそれを使う */
+ {const cos=COMPANIES.filter(co=>staff.some(s=>!s.removed&&s.sheetId&&coList(s).includes(co))),miss=[];d.numbers=d.numbers||{};
+  for(const co of cos){if(d.numbers[co])continue;const found=d.folder?await driveFind("name="+dq("CPG HUB_会社の数字_"+co)+" and mimeType='application/vnd.google-apps.spreadsheet' and "+dq(d.folder)+" in parents"):[];if(found.length){d.numbers[co]=found[0].id;shareSave()}else miss.push(co)}
+  if(miss.length&&!d.folder)log("会社の数字：データのフォルダがまだないため作りません（管理をはじめてから合わせてください）",false);
+  else if(miss.length){if(!await shareConfirm("共有用ファイルの作成確認",miss.map(co=>"会社の数字（"+co+"）：新規作成（この段階では共有しません）"),"作成後に実際のファイルIDと付与先を再確認します。作成したファイルは中止しても削除しません。"))throw Error("中止しました。共有は変更していません。");
+   shareLocalCheck();for(const co of miss){const f=await driveCreate({name:"CPG HUB_会社の数字_"+co,mimeType:"application/vnd.google-apps.spreadsheet",parents:[d.folder]});d.numbers[co]=f.id;shareSave();await sheetTabs(f.id,NUM_TAB,[NUM_INFO_TAB]);await sheetWrite(f.id,NUM_INFO_TAB,[["項目","値"],["会社",co]]);log("会社の数字（"+co+"）を作成しました（共有は確認後）")}}}
  const list=d.listId,token=G.token;if(!list)throw Error("社員一覧がありません。共有を変更できません。");
  const source=JSON.stringify((await sheetRead(list,["社員"]))["社員"]||[]), specs=[],managed=staff.map(s=>s.email);
  {let i=0;for(const s of staff){
@@ -3026,6 +3120,8 @@ async function adminShareSync(log,staff=D().staff){
   if(s.boxId)specs.push({id:s.boxId,label:s.name+"／指示箱",managed,want:(s.removed?[]:[{email:s.email,role:"reader"}]).concat(vs.filter(v=>canOrder(v,s)).map(v=>({email:v.email,role:"writer"})))});
  }}
  if(d.viewListId)specs.push({id:d.viewListId,label:"見る人用一覧",managed,want:vs.map(v=>({email:v.email,role:"reader"}))});
+ /* v1.50.10 会社の数字は、その会社に所属する社員にだけ「閲覧者」で */
+ specs.push(...numSpecs(staff,d.numbers,managed));
  if(new Set(specs.map(x=>x.id)).size!==specs.length)throw Error("共有先IDが重複しています。変更を止めました。");
  /* v1.50.6 共有の一覧は読むだけなので、3件ずつ同時に読み、回数制限・時間切れ・通信の失敗は少し待って最大2回読み直す（前は1件ずつで、1回の時間切れで止まった） */
  {let done=0,next=0;shareProgress("共有の一覧を読んでいます 0／"+specs.length);
@@ -3054,9 +3150,19 @@ async function adminShareSync(log,staff=D().staff){
  const boxes=staff.filter(s=>s.boxId&&!s.removed);
  await tail("指示箱のお知らせ",async()=>{let i=0;for(const s of boxes){shareProgress("指示箱のお知らせを書いています "+(++i)+"／"+boxes.length);await noticeWrite(s)}});
  if(d.viewListId)await tail("正式な氏名の履歴",async()=>{shareProgress("正式な氏名の履歴を写しています");await namesCopyConfirmed(list,d.viewListId)});
+ /* v1.50.10 各社員の記録シートに「会社の数字の場所」（その人の会社の分だけ）を書く */
+ if(d.numbers)await tail("会社の数字の場所",async()=>{const list=staff.filter(s=>!s.removed&&s.sheetId);let i=0;for(const s of list){shareProgress("会社の数字の場所を書いています "+(++i)+"／"+list.length);await numPtrWrite(s,d.numbers)}});
  /* v1.50.0 役割が変わったら、各社員の「予定の共有先」も書き直す（共有そのものは、本人が自分の端末でボタンを押して足す） */
  {const n=staff.filter(x=>!x.removed&&x.sheetId).length;let i=0;await tail("予定の共有先",()=>calShareTargetsWrite(staff,(t,ok)=>{shareProgress("予定の共有先を書いています "+(++i)+"／"+n);log(t,ok)}));}
  return result;
+}
+function numSpecs(staff,numbers,managed){return COMPANIES.filter(co=>numbers&&numbers[co]).map(co=>({id:numbers[co],label:"会社の数字（"+co+"）",managed,want:staff.filter(s=>!s.removed&&s.sheetId&&coList(s).includes(co)).map(s=>({email:s.email,role:"reader"}))}));}
+async function numPtrWrite(s,numbers){
+ const rows=[NUMPTR_COLS,...coList(s).filter(co=>numbers&&numbers[co]).map(co=>[co,numbers[co]])];
+ const tabs=await sheetTabNames(s.sheetId);if(!tabs.includes(NUMPTR_TAB))await addTab(s.sheetId,NUMPTR_TAB);
+ const prev=(await sheetRead(s.sheetId,[NUMPTR_TAB]))[NUMPTR_TAB]||[];await sheetWrite(s.sheetId,NUMPTR_TAB,rows,prev);
+ const back=((await sheetRead(s.sheetId,[NUMPTR_TAB]))[NUMPTR_TAB]||[]).map(r=>r.map(x=>String(x??""))).filter(r=>r.some(Boolean));
+ if(JSON.stringify(back)!==JSON.stringify(rows))throw Error(s.name+"：会社の数字の場所を保存確認できません。");
 }
 /* 「反映中 3／8：見本 一郎さんの記録シートに見本 二郎さんを見るだけで共有」 */
 function shareStepText(x,staff){
@@ -3501,6 +3607,7 @@ function dSettings(){
       '<p class="note" style="margin:0">追加後、共有一覧を確認してから、その人のGmailに「編集者」で共有します。案内メールは自動送信しません。Google Cloud の「対象」で、その人をテストユーザーに追加しておいてください。</p>'+
       '<p class="note" style="margin:0">役割が「全社」の人は全員の、「GM」の人は同じ1社だけに所属する一般社員の、「経理」「業務管理」の人は担当の会社に所属する社員（複数の会社に所属する人は、そのどれかが担当の会社なら）の記録を、見るだけで見られます（閲覧者で共有します）。見る人には、下のリンクを送って、CPG HUB の「会社の動きを見る（管理者用）」に貼り付けてもらってください。</p>'+
       '<p class="note" style="margin:0">予定の共有先（その人の予定を見てよい人：社長・全社・その人を見られるGM・担当の会社の経理と業務管理）は、会社・役割を保存すると、各社員の記録シートに書きます。社員が自分の端末の「予定の共有」を押すと、足りない相手だけに「見るだけ」で共有します。</p><div class="row"><button class="btn sm" type="button" data-act="dcaltargets"'+(ui.dbusy?' disabled':'')+'>予定の共有先を書く</button></div>'+
+      '<p class="note" style="margin:0">社員の「数字」の「会社全体」：会社ごとの「会社の数字」シートを、その会社の社員にだけ「見るだけ」で共有します。最初の1回と、社員の会社を変えたときは下のボタンで共有を合わせてください（会社・役割の保存でも合わせます）。数字は「社員の記録を読み込む」をするたびに書き直します。</p><div class="row"><button class="btn sm" type="button" data-act="dnumshare"'+(ui.dbusy?' disabled':'')+'>会社の数字の共有を合わせる</button></div>'+
       (d.viewListId?'<label class="f">見る人用のリンク<input type="text" id="d_vlink" readonly value="https://docs.google.com/spreadsheets/d/'+h(d.viewListId)+'/edit"></label><div class="row"><button class="btn sm" type="button" data-act="dvcopy">リンクをコピー</button></div>':''))+'</div>':'';
   const view=d.admin?'':'<div class="panel"><h3>会社の動きを見る（管理者用）</h3>'+
     (d.viewListId?'<p style="margin:0">つないでいます（'+h(d.viewEmail||"")+'）。ホームの「会社の動き」で見られます。</p><div class="row"><button class="btn sm" type="button" data-act="dvunlink">つなぐのをやめる</button></div>':
@@ -3642,6 +3749,10 @@ document.addEventListener("click",e=>{
   if(el.dataset.ccf){ui.cCo=el.dataset.ccf;render();return}
   if(el.dataset.gco){ui.gCo=el.dataset.gco;render();return}
   if(el.dataset.statsMode){if(['month','all'].includes(el.dataset.statsMode)){ui.statsPeriod=el.dataset.statsMode;render();}return}
+  if(el.dataset.statsWho){if(['self','company'].includes(el.dataset.statsWho)&&statsStaffDevice()){ui.statsWho=el.dataset.statsWho;
+    if(ui.statsWho==="company"&&!ui.coNums&&!ui.numBusy&&gSignedIn()){ui.numBusy=true;numLoad().catch(err=>{ui.numMsg=err.message==="signin"?"Googleにログインしてから読み込めます":err.message==="http"?dMsg(err):err.message}).finally(()=>{ui.numBusy=false;render()})}
+    render();}return}
+  if(el.dataset.statsNumco){ui.statsNumCo=el.dataset.statsNumco;render();return}
   if(el.dataset.statsStep){const m=statsMonth(),n=Number(m.slice(0,4))*12+Number(m.slice(5))-1+Number(el.dataset.statsStep),y=Math.floor(n/12);if(y>=1&&y<=9999){ui.statsMonth=String(y).padStart(4,'0')+'-'+pad(n%12+1);render();}return}
   if(el.dataset.sco){ui.sCo=el.dataset.sco;render();return}
   if(el.dataset.cco){ui.corpCo=el.dataset.cco;if(ui.corp&&ui.corp.data)roBuild(ui.corp.data);render();return}
@@ -3687,6 +3798,8 @@ document.addEventListener("click",e=>{
   if(a==="exno"){ui.exAsk=false;render();return}
   if(a==="exdo"){const r=removeExamples();ui.exAsk=false;ui.exDone="練習用の例を消しました（案件 "+r.cases+"件・領収書 "+r.receipts+"件）。"+(r.cal?"カレンダーに登録済みの例が"+r.cal+"件あります。必要ならGoogleカレンダーで消してください。":"");render();toast("練習用の例を消しました");return}
   if(a==="acct"){ui.acct=true;render();return}
+  if(a==="numload"){if(ui.numBusy)return;ui.numBusy=true;ui.numMsg="";render();
+    numLoad().then(v=>{if(!ui.numMsg)ui.numMsg=v.list.length?"読み込みました（"+v.list.map(x=>x.co).join("・")+"）":"会社の数字はまだ共有されていません"},err=>{ui.numMsg=err.message==="signin"?"Googleにログインできませんでした。もう一度押してください":err.message==="http"?dMsg(err):err.message}).finally(()=>{ui.numBusy=false;render()});return}
   if(a==="acctclose"){ui.acct=false;render();return}
   if(a==="acctmark"){acctMark();return}
   if(a==="acctcopy"){const ta=document.getElementById("acctOut");
@@ -3721,6 +3834,8 @@ document.addEventListener("click",e=>{
       try{const r=await calShareTargetsWrite(D().staff,(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()},(i,n,s)=>{cur=s;shareProgress("予定の共有先を書いています "+i+"／"+n+"："+dispName(s)+"さん")});shareDoneText=calTargetsDoneText(r);return r}
       catch(err){if(err&&err.message!=="signin"&&!/^中止しました。/.test(err.message||"")){shareProgress("ここで止まりました："+(cur?dispName(cur)+"さん":"（始める前）")+"\n理由："+(err.message==="http"?dMsg(err):err.message||String(err))+"\nそれまでの分は書けています。もう一度押すと、続きから書き直します。",{error:true});err.progressShown=true}throw err}})
      .then(r=>{log.push({ok:true,text:calTargetsDoneText(r)})},err=>{log.push({ok:false,text:"途中で止まりました："+dMsg(err)})}).finally(()=>{ui.dbusy=false;render()});return}
+  if(a==="dnumshare"){if(ui.dbusy)return;const log=[];ui.dbusy=true;ui.dview="";ui.dmsg=log;render();
+    adminShareOperation(()=>adminShareSync((text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()})).then(r=>{log.push({ok:true,text:"会社の数字の共有を合わせました。「社員の記録を読み込む」をすると、数字を書き出します"})},err=>{log.push({ok:false,text:"止まりました："+(err.message==="http"?dMsg(err):err.message)})}).finally(()=>{ui.dbusy=false;render()});return}
   if(a==="droleno"){ui.dRole=null;render();return}
   if(a==="droledo"){const s=D().staff[ui.dRole];if(!s||ui.dbusy)return;const v=roleVal("dr");
     if(v.role==="GM"&&!v.gmCo){ui.dview="";ui.dmsg=[{ok:false,text:"GMを務める会社を選んでください"}];render();return}
