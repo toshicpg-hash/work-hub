@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
-const hook='window.CN={get db(){return DB},get ui(){return ui},go,render,save,dataSync,newCaseCode,caseCodesAssign,caseCodeWrite,codeNorm,casePrefix,'+
+const hook='window.CN={get db(){return DB},get ui(){return ui},go,render,save,dataSync,newCaseCode,caseCodesAssign,caseCodeWrite,codeCheck,codeSuggest,roleVal,codeNorm,casePrefix,'+
  'setup(){gAuthorize=async()=>{G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000};gAuthorize();adminSync=async()=>({});corpWait=async()=>{}}};';
 const A='synthetic-a-sheet-0000000001',B='synthetic-b-sheet-0000000002',C='synthetic-c-sheet-0000000003',DX='synthetic-d-sheet-0000000004';
 const LIST='synthetic-list-0000000000001';
@@ -50,14 +50,14 @@ async function main(){
  browser=await playwright.chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
  const store=seed(),all=[];
  const admin=async()=>{const d=await device({store});all.push(d);await d.p.evaluate(({staff,LIST})=>{CN.setup();const d=CN.db.settings.data;d.admin=true;d.ob={legacy:true};d.listId=LIST;d.staff=JSON.parse(JSON.stringify(staff));CN.save()},{staff,LIST});return d};
- await check('記号の作り方：アルファベット2文字・I/Oなし・CP/ATなし・使い済みは避ける',async()=>{
+ await check('記号の作り方：自動はアルファベット2文字・I/Oなし・CP/ATなし・使い済みは避ける。手で入れる記号は I/O も可',async()=>{
   const d=await admin();
   const r=await d.p.evaluate(()=>{const out=[];for(let i=0;i<300;i++)out.push(CN.newCaseCode([{caseCode:'QX'}]));
    const full=[];for(const x of 'ABCDEFGHJKLMNPQRSTUVWXYZ')for(const y of 'ABCDEFGHJKLMNPQRSTUVWXYZ')if(!(x+y==='ZZ'))full.push({caseCode:x+y});
-   return {out,last:CN.newCaseCode(full),none:CN.newCaseCode(full.concat({caseCode:'ZZ'})),norm:[CN.codeNorm(' qx '),CN.codeNorm('CP'),CN.codeNorm('IO'),CN.codeNorm('Q1'),CN.codeNorm('ABC')]}});
+   return {out,last:CN.newCaseCode(full),none:CN.newCaseCode(full.concat({caseCode:'ZZ'})),norm:[CN.codeNorm(' qx '),CN.codeNorm('CP'),CN.codeNorm('OH'),CN.codeNorm('Q1'),CN.codeNorm('ABC'),CN.codeNorm('ｏｈ'),CN.codeNorm('at')]}});
   for(const c of r.out){assert.match(c,/^[A-HJ-NP-Z]{2}$/);assert.ok(!['CP','AT','QX'].includes(c),c)}
   assert.ok(new Set(r.out).size>50,'random');assert.equal(r.last,'ZZ');assert.equal(r.none,'');
-  assert.deepEqual(r.norm,['QX','','','','']);
+  assert.deepEqual(r.norm,['QX','','OH','','','OH',''],'manual codes may use I/O; full-width and lower case are accepted');
  });
  await check('社長：共有を合わせるときに、記号のない人に振る。共有を外した人・決まっている人の記号は変えない。重なりは下の人だけ振り直す',async()=>{
   const d=all[0];
@@ -81,6 +81,27 @@ async function main(){
   const puts=[];d.p.on('request',r=>{if(r.method()!=='GET')puts.push(r.url())});
   const w2=await d.p.evaluate(async()=>{const out=[];for(const s of CN.db.settings.data.staff.filter(s=>!s.removed))out.push(await CN.caseCodeWrite(s));return out});
   assert.deepEqual(w2,[false,false,false]);assert.deepEqual(puts,[]);
+  assert.deepEqual(d.errors,[]);
+ });
+ await check('社長：「役割を変える」で名前から決めた記号を入れられる。案は今の記号、なければGmailの頭2文字。重なり・形の違いは保存の前に止める',async()=>{
+  const d=all[0];
+  const r=await d.p.evaluate(()=>{const st=CN.db.settings.data.staff;
+   return {cur:CN.codeSuggest(st[1]),mail:CN.codeSuggest({email:'oh.sample@example.com',sheetId:'zz'}),taken:CN.codeSuggest({email:'qx.sample@example.com',sheetId:'zz'}),digits:CN.codeSuggest({email:'12ab@example.com',sheetId:'zz'}),
+    dup:CN.codeCheck({caseCode:'QX'},st[0].sheetId),dupRemoved:CN.codeCheck({caseCode:'MK'},st[0].sheetId),self:CN.codeCheck({caseCode:'QX'},st[1].sheetId),bad:CN.codeCheck({codeBad:'1A'},st[0].sheetId),ok:CN.codeCheck({caseCode:'KH'},st[0].sheetId)}});
+  assert.equal(r.cur,'QX');assert.equal(r.mail,'OH');assert.equal(r.taken,'','already used by someone else');assert.equal(r.digits,'AB');
+  assert.match(r.dup,/「QX」は、見本 二郎さんが使っています/);assert.match(r.dupRemoved,/見本 四郎さん/,'removed staff codes are not reused');
+  assert.equal(r.self,'');assert.match(r.bad,/アルファベット2文字/);assert.equal(r.ok,'');
+  /* 画面：役割を変える → 欄に今の記号。重なる記号では保存を始めない */
+  await d.p.evaluate(()=>{CN.ui.dRole=0;CN.go('stats')});
+  assert.equal(await d.p.$eval('#dr_code',e=>e.value),await d.p.evaluate(()=>CN.db.settings.data.staff[0].caseCode));
+  assert.ok(await overflow(d.p)<=1);
+  await d.p.fill('#dr_code','qx');await d.p.evaluate(()=>document.querySelector('[data-act="droledo"]').click());
+  assert.match(await d.p.evaluate(()=>document.body.textContent),/「QX」は、見本 二郎さんが使っています/);
+  assert.equal(await d.p.evaluate(()=>!!CN.ui.dbusy),false,'not started');
+  await d.p.evaluate(()=>{CN.ui.dRole=0;CN.render()});await d.p.fill('#dr_code','ｋｈ');
+  assert.deepEqual(await d.p.evaluate(()=>{const v=CN.roleVal('dr');return [v.caseCode,v.codeBad||'']}),['KH','']);
+  await d.p.fill('#dr_code','');assert.equal(await d.p.evaluate(()=>'caseCode' in CN.roleVal('dr')),false,'empty keeps the current code');
+  await d.p.evaluate(()=>{CN.ui.dRole=null;CN.render()});
   assert.deepEqual(d.errors,[]);
  });
  await check('社長の社員一覧に記号が出る（400px ではみ出さない）',async()=>{
