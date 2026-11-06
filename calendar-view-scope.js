@@ -32,7 +32,7 @@ function project({g,rows,model,cases=[],resolvePerson,readable,from='',to='9999-
  }
  const sources=g.data?.sources||[],readyState=['ok','kept'].includes(g.state);
  const coverage=(r,day)=>readyState&&sources.some(s=>s.id===r.id&&(s.from||g.from)<=day&&(s.to||g.to)>=day);
- const status=day=>people.map(p=>{const assigned=approved.filter(r=>r.mode==='person'&&r.person===p.sheetId&&(co==='all'||r.company===co));return {id:p.sheetId,name:p.name,ready:model.usable&&assigned.length>0&&assigned.every(r=>coverage(r,day)),reason:!assigned.length?'仕事用カレンダー未設定':assigned.every(r=>coverage(r,day))?'取得済み':'未取得・読取失敗または保存範囲外'};});
+ const status=day=>people.map(p=>{const assigned=approved.filter(r=>r.mode==='person'&&r.person===p.sheetId&&(co==='all'||r.company===co));return {id:p.sheetId,name:p.name,ready:model.usable&&assigned.length>0&&assigned.every(r=>coverage(r,day)),reason:!assigned.length?'仕事用カレンダー未設定':assigned.every(r=>coverage(r,day))?'取得済み':'未取得・読取失敗または保存範囲外',missing:assigned.filter(r=>!coverage(r,day)).map(r=>r.id)};});
  const onDay=(list,day)=>list.some(e=>{const [first,last]=span(e);return first<=day&&last>=day});
  const unfetched=day=>!model.usable||!people.length||status(day).some(p=>!p.ready);
  const mixedMissing=day=>approved.filter(r=>r.mode==='mixed'&&!coverage(r,day));
