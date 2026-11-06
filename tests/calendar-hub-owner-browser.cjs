@@ -26,7 +26,8 @@ const EVENTS=[
  E('e7','予定あり',{private:true,hub:'U-0106',owner:'見本 二郎'}),                                        // 非公開は今までどおり出さない
  E('e8','【修繕】見本ビル 501',{hub:'U-0107',owner:'不明 太郎',creator:'zz@example.com'}),             // 一致しない
  E('e9','見本の打合せ',{creator:'c@example.com'}),                                                   // v1.50.13 HUB外から直接入れた予定（担当の行なし）→ 作成者
- E('e10','【修繕】見本タワー 601',{hub:'U-0108',owner:'見本',creator:'d@example.com'})];             // v1.50.13 担当が1人に決まらない → 作成者
+ E('e10','【修繕】見本タワー 601',{hub:'U-0108',owner:'見本',creator:'d@example.com'}),            // v1.50.13 担当「見本」が2人・作成者は候補にいない → 割り当てない（U-0004 の例）
+ E('e11','【修繕】見本タワー 602',{hub:'U-0109',owner:'見本',creator:'b@example.com'})];            // v1.50.13 担当「見本」が2人・作成者が候補の1人 → その人（専務の古い分の例）
 async function device({self=A,rows,admin=true,width=400}){
  const c=await browser.newContext({viewport:{width,height:900},timezoneId:'Asia/Tokyo',locale:'ja-JP',serviceWorkers:'block'});
  await c.route('**/*',r=>{const u=new URL(r.request().url());if(u.origin===origin){if(u.pathname==='/'||u.pathname==='/index.html')return r.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(root,'index.html'),'utf8').replace('corpKeepLoad();\nrender();',hook+'\ncorpKeepLoad();\nrender();')});return r.continue()}return r.fulfill({status:200,body:'{}'})});
@@ -54,7 +55,7 @@ async function main(){
   await check('対応設定が「'+label+'」でも：人で「見本 二郎」に絞ると、担当が見本 二郎の「CPG HUB」の予定が出て、札も見本 二郎',async()=>{
    const d=await device({rows});all.push(d);
    await pick(d.p,B);const t=await titles(d.p);
-   assert.match(t,/見本荘 103/);assert.doesNotMatch(t,/見本ハイツ 201|見本コート 301|月例会議|見本ビル 401|見本荘 104|見本ビル 501|見本の打合せ|見本タワー 601/);
+   assert.match(t,/見本荘 103/);assert.doesNotMatch(t,/見本ハイツ 201|見本コート 301|月例会議|見本ビル 401|見本荘 104|見本ビル 501|見本の打合せ|見本タワー 601/);assert.match(t,/見本タワー 602/,'creator among the owner candidates');
    const card=(await cards(d.p)).find(x=>/見本荘 103/.test(x.text));assert.equal(card.tag,'見本 二郎');
    assert.doesNotMatch(t,/見本荘 104（非公開）|e7/);
   });
@@ -64,17 +65,17 @@ async function main(){
    assert.ok((await cards(d.p)).filter(x=>/見本ハイツ 201|見本荘 104/.test(x.text)).every(x=>x.tag==='工事主任'),'tag is the display name');
    await pick(d.p,D2);t=await titles(d.p);assert.match(t,/見本ビル 401/);
    /* v1.50.13 HUB外から直接入れた予定・担当が1人に決まらない予定は、作成者の人 */
-   assert.match(t,/見本タワー 601/,'ambiguous owner falls back to the creator');
+   assert.doesNotMatch(t,/見本タワー 601/,'creator outside the owner candidates is not used');
    await pick(d.p,C);t=await titles(d.p);assert.match(t,/見本の打合せ/,'a direct event goes to its creator');assert.ok((await cards(d.p)).filter(x=>/見本の打合せ/.test(x.text)).every(x=>x.tag==='工事主任'));
   });
   await check('「'+label+'」：決まらない担当（名字が2人・一致なし）とHUB外の予定は、今までどおり（人に割り当てない）',async()=>{
    const d=all[all.length-1];
-   for(const who of [B,C,D2]){await pick(d.p,who);const t=await titles(d.p);assert.doesNotMatch(t,/見本コート 301|月例会議|見本ビル 501/,who);}
+   for(const who of [B,C,D2]){await pick(d.p,who);const t=await titles(d.p);assert.doesNotMatch(t,/見本コート 301|月例会議|見本ビル 501|見本タワー 601/,who);}
    await pick(d.p,'all');const t=await titles(d.p);
    if(rows[0].mode==='person'){/* 人物に結び付けた設定では、決まらない予定は今までどおりその人（本人）の予定 */
-    assert.match(t,/見本コート 301/);assert.match(t,/月例会議/);assert.match(t,/見本ビル 501/);
+    assert.match(t,/見本コート 301/);assert.match(t,/月例会議/);assert.match(t,/見本ビル 501/);assert.match(t,/見本タワー 601/,'unassigned: stays with the mapped person as before');
     await pick(d.p,A);const ta=await titles(d.p);assert.match(ta,/月例会議/);assert.doesNotMatch(ta,/見本荘 103|見本ハイツ 201/);
-   }else{assert.doesNotMatch(t,/見本コート 301|月例会議|見本ビル 501/);assert.match(await d.p.textContent('main'),/持ち主不明の予定 3件/);}
+   }else{assert.doesNotMatch(t,/見本コート 301|月例会議|見本ビル 501/);assert.match(await d.p.textContent('main'),/持ち主不明の予定 4件/);assert.doesNotMatch(t,/見本タワー 601/);}
    assert.match(t,/見本荘 103/);assert.match(t,/見本ハイツ 201/);
    assert.doesNotMatch(await d.p.textContent('main'),/e7/);
   });
