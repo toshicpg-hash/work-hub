@@ -90,7 +90,10 @@ async function main(){
   const sB=byName('CPG HUB_社員 二郎');
   assert.equal(shares(sB)[GM],'reader','GM stays a reader of the record sheet');assert.equal(shares(sB)[SB],'writer');
   assert.deepEqual(tab(sB,'連絡')[0],['指示箱ID','指示箱のリンク','書いた日時']);assert.equal(tab(sB,'連絡')[1][0],bB.id);
-  const list=tab(byName('CPG HUB_社員一覧'),'社員');assert.deepEqual(list[0].slice(-3),['指示箱ID','担当の会社','表示名']);
+  const list=tab(byName('CPG HUB_社員一覧'),'社員');assert.deepEqual(list[0].slice(-4),['指示箱ID','担当の会社','表示名','受付番号の記号']);
+  /* v1.50.17 共有を合わせると、受付番号の記号（2文字・重ならない）が社員一覧と各社員の記録シートに入る */
+  {const ci=list[0].indexOf('受付番号の記号'),si=list[0].indexOf('シートID'),codes=list.slice(1).map(r=>r[ci]);assert.ok(codes.every(c=>/^[A-HJ-NP-Z]{2}$/.test(c)),codes.join());assert.equal(new Set(codes).size,codes.length);
+   assert.deepEqual(tab(sB,'受付番号の記号'),[['受付番号の記号'],[list.find(r=>r[si]===sB.id)[ci]]]);}
   const vl=tab(byName('CPG HUB_見る人用一覧'),'一覧'),bi=vl[0].indexOf('指示箱ID');assert.deepEqual(vl[0].slice(-3),['指示箱ID','担当の会社','表示名']);assert.ok(vl.some(r=>r[1]===SB&&r[bi]===bB.id));
  });
  await check('共有プレビュー：中止・Escape・再読込、390px/360px文字150%、旧共有保持',async()=>{
