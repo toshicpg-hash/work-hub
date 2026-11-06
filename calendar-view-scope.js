@@ -10,21 +10,25 @@ function span(e){
  if(e.allDay){const end=new Date((e.end||e.start)+'T00:00:00Z');return [e.start,Number.isFinite(+end)?new Date(+end-86400000).toISOString().slice(0,10):e.start]}
  return [jst(e.start),jst(new Date(+new Date(e.end||e.start)-1))];
 }
-function project({g,rows,model,cases=[],resolvePerson,readable,from='',to='9999-12-31'}){
+/* v1.50.8 attribute(e)：共有カレンダーの予定の持ち主（{person,company}）が説明の「担当」などで決まるときは、その人の予定として扱う。
+   見られない人の予定は出さない。決まらなければ今までどおり（カレンダーの対応設定のとおり） */
+function project({g,rows,model,cases=[],resolvePerson,readable,from='',to='9999-12-31',attribute=null}){
  const people=model.candidates.filter(p=>model.selection.person==='all'||p.sheetId===model.selection.person),allowed=new Set(model.people.map(p=>p.sheetId));
  const approved=valid(rows)?rows.filter(r=>readable(r.id)&&(r.mode==='mixed'||allowed.has(r.person)&&(r.company==='unknown'||model.people.find(p=>p.sheetId===r.person)?.companies.includes(r.company)))):[];
  const co=model.selection.company,person=model.selection.person,match=(company,id)=>(co==='all'||co===company)&&(person==='all'||person===id);
  const maps=new Map(approved.map(r=>[r.id,r])),events=[],unidentified=[],privacyUnconfirmed=[];
  for(const e of g.data?.events||[]){const r=maps.get(e.calendarId),[first,last]=span(e);if(!r||!model.usable||e.private===true||!first||last<from||first>to)continue;let company=r.company,id=r.person;
   if(e.private!==false){if(r.mode==='mixed'||match(company,id)||(company==='unknown'&&(person==='all'||person===id)))privacyUnconfirmed.push(e);continue}
-  if(r.mode==='mixed'){
+  const a=typeof attribute==='function'?attribute(e):null;
+  if(a&&a.person){if(!allowed.has(a.person))continue;company=['CP','CPY','AT'].includes(a.company)?a.company:'unknown';id=a.person;}
+  else if(r.mode==='mixed'){
    // A bare case number is not provenance. Require exact saved event+calendar identity.
    const hit=cases.filter(c=>e.id&&e.hub&&c.id===e.hub&&c.gcal?.id===e.id&&c.gcal?.cal===e.calendarId);
    if(hit.length!==1){unidentified.push(e);continue}company=hit[0].company;id=resolvePerson(hit[0]);
    if(!['CP','CPY','AT'].includes(company)||!allowed.has(id)){unidentified.push(e);continue}
   }
   if(company==='unknown'&&co!=='all'){if(person==='all'||person===id)unidentified.push(e);continue}
-  if(match(company,id))events.push(e);
+  if(match(company,id))events.push(a&&a.person?{...e,person:id}:e);
  }
  const sources=g.data?.sources||[],readyState=['ok','kept'].includes(g.state);
  const coverage=(r,day)=>readyState&&sources.some(s=>s.id===r.id&&(s.from||g.from)<=day&&(s.to||g.to)>=day);
