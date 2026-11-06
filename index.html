@@ -406,8 +406,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.15" title="使い方マニュアルを開く">v1.50.15・11/6更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.15" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.16" title="使い方マニュアルを開く">v1.50.16・11/7更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.16" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -467,10 +467,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.15"></script>
+<script src="./share-management.js?v=1.50.16"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.15"></script>
-<script src="./calendar-view-scope.js?v=1.50.15"></script>
+<script src="./view-scope.js?v=1.50.16"></script>
+<script src="./calendar-view-scope.js?v=1.50.16"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -711,7 +711,17 @@ function tantouOptions(){
  for(const p of list)if(!p.removed&&!taken.has(pk(p))){const v=p.nameKey||p.registeredName||p.name;out.push({v,l:personLabel(p),disabled:CPGNames.matches(list,v,STAFF).length>1});taken.add(pk(p))}
  const seen=new Set();return out.filter(o=>!seen.has(o.v)&&seen.add(o.v));
 }
-const tantouOptsHtml=()=>tantouOptions().map(o=>'<option value="'+h(o.v)+'"'+(o.disabled?' disabled':'')+'>'+h(o.l)+(o.disabled?'（氏名重複・選択不可）':'')+'</option>').join("");
+/* v1.50.16 受付・ToDoの「担当」は、最初からこの端末の本人を選んでおく（前は一番上の「黒木」のままになり、担当を変え忘れて二重に受付することがあった）。
+   本人が分からないときは今までどおり（一番上） */
+function ownTantouValue(){
+ const opts=tantouOptions().filter(o=>!o.disabled),own=D().sheetId,me=String(RS().name||"").trim();
+ const hit=o=>{try{const p=personOf(o.v,ownOwner());return !!p&&(own?p.sheetId===own:!!me&&CPGNames.flat(p.name)===CPGNames.flat(me))}catch(e){return false}};
+ let o=opts.find(hit);
+ if(!o&&me)o=opts.find(x=>CPGNames.flat(x.v)===CPGNames.flat(me));
+ if(!o&&D().admin)o=opts.find(x=>x.v===BOSS_TANTOU);
+ return o?o.v:"";
+}
+const tantouOptsHtml=(sel)=>tantouOptions().map(o=>'<option value="'+h(o.v)+'"'+(o.disabled?' disabled':'')+(sel&&o.v===sel&&!o.disabled?' selected':'')+'>'+h(o.l)+(o.disabled?'（氏名重複・選択不可）':'')+'</option>').join("");
 const isEizen=c=>c.type==="eizen";
 const isTaikyo=c=>c.type==="taikyo";
 const itemsSum=(c,b)=>c.items.filter(i=>!b||i.burden===b).reduce((s,i)=>s+(Number(i.amount)||0),0);
@@ -1118,7 +1128,7 @@ function vNew(){
     '<label class="f">物件<input type="text" id="n_prop" required placeholder="物件名"></label>'+
     '<label class="f">部屋<input type="text" id="n_room" placeholder="例：203"></label>'+
     '<label class="f full">住所（Googleカレンダーの「場所」に入ります）<input type="text" id="n_addr" placeholder="例：神奈川県相模原市中央区…"></label>'+
-    '<label class="f">担当<select id="n_tantou">'+tantouOptsHtml()+'</select></label>'+
+    '<label class="f">担当<select id="n_tantou">'+tantouOptsHtml(ownTantouValue())+'</select></label>'+
     '<label class="f">受付日時<input type="datetime-local" id="n_at"><span class="note">実際に依頼を受けた日時を入れてください（後から入力するときは過去の日時に）</span></label>'+
     '<label class="f full">状況・メモ<textarea id="n_note" placeholder="連絡してきた人、入居者の連絡先、詳しい状況など"></textarea></label>'+
     '<div class="full row"><button class="btn pri" type="submit">受付する</button><span class="note">受付すると仮の受付番号が付きます。仕事番号は受注後にAccessで振られます。</span></div>'+
@@ -1431,7 +1441,7 @@ function vTodo(){
   '<section class="panel"><h3>ToDoを手で追加</h3><form id="todoForm" class="form">'+
     '<label class="f full">内容<input type="text" id="td_title" required placeholder="例：管理会社へ挨拶まわり"></label>'+
     '<label class="f">期限<input type="date" id="td_due" value="'+t+'"></label>'+
-    '<label class="f">担当<select id="td_tantou">'+tantouOptsHtml()+'</select></label>'+
+    '<label class="f">担当<select id="td_tantou">'+tantouOptsHtml(ownTantouValue())+'</select></label>'+
     '<div class="full"><button class="btn pri" type="submit">追加する</button></div></form></section>';
 }
 
@@ -2103,7 +2113,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.15";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.16";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2265,7 +2275,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.15" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.15" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.16" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.16" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);

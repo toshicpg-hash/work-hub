@@ -80,7 +80,7 @@ async function main(){
   const d=all[0];assert.ok((await d.p.evaluate(()=>HO.gShowIds())).includes(BCAL));
   assert.deepEqual(await d.p.evaluate(()=>{HO.db.settings.gShow=[];return HO.gShowIds()}),[]);await d.p.evaluate(()=>{HO.db.settings.gShow=null});
  });
- await check('版の表示の日付は今日（11/6）',async()=>{const d=all[0];assert.match(await d.p.evaluate(()=>document.querySelector('.ver').textContent),/・11\/6更新$/)});
+ await check('版の表示は「v版・月/日更新」の形',async()=>{const d=all[0];assert.match(await d.p.evaluate(()=>document.querySelector('.ver').textContent),/^v\d+\.\d+\.\d+・\d{1,2}\/\d{1,2}更新$/)});
  await check('スクリプトのエラーなし・400pxで横にはみ出さない',async()=>{for(const d of all){assert.deepEqual(d.errors,[]);assert.ok(await d.p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth))}});
  for(const d of all)await d.c.close();
  console.log('ALL PASS',results.length);
