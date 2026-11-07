@@ -953,7 +953,11 @@ function loadProblemBanner(){
           :'<p class="note" style="margin:0">控えに移せなかったため、前の記録を上書きしないように、この端末での保存を止めています。</p>');
   else body='<p style="margin:0"><b>この端末の記録が見つかりません。</b></p>'+
     (p.meta&&p.meta.savedAt?'<p class="note" style="margin:0">最後に保存したのは '+h(at(p.meta.savedAt))+'（'+(p.meta.admin?'社長の管理端末':p.meta.sheet?'記録シートにつないだ端末':'記録シートなし')+'・案件 '+(Number(p.meta.cases)||0)+'件）です。</p>':'')+
-    '<p class="note" style="margin:0">'+(p.keys.length?'Googleと同期したときの控えなど、ほかのCPG HUBのデータは残っています（'+p.keys.length+'件）。ブラウザのデータ全体が消えたのではなく、この端末の記録だけが見つからない状態です。':'ほかのCPG HUBのデータも残っていません。')+'</p>';
+    /* v1.50.22 決め手は保存のメモだけ（メモは記録を保存したときにだけ書くので、メモがあって記録がなければ、この記録だけが消えた）。
+       Googleとの同期の控え（workhub_gcal_last_v1 など）は、記録が消えたあとでも、ログインや同期をすると新しく作られるので、決め手にしない */
+    '<p class="note" style="margin:0">'+(p.meta&&p.meta.savedAt?'記録を保存したときのメモは残っているので、ブラウザのデータ全体が消えたのではなく、この端末の記録だけが見つからない状態です。'
+      :p.keys.length?'Googleとの同期の控えなどは残っています（'+p.keys.length+'件）。ただし、この控えは記録が消えたあとでも、ログインや同期をすると新しく作られるため、ブラウザのデータ全体が消えたのかどうかは、ここからは分かりません。'
+      :'ほかのCPG HUBのデータも残っていません。')+'</p>';
   return '<section class="sec" id="load-problem"><div class="banner" role="alert" style="display:flex;flex-direction:column;gap:6px">'+body+
     '<p class="note" style="margin:0">初期設定のボタンや同期は押さずに、管理者に知らせてください。</p></div></section>';
 }
