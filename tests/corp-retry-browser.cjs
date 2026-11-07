@@ -39,7 +39,8 @@ async function main(){
   assert.deepEqual([by('見本 五郎').ok,by('見本 五郎').tries],[true,2],'Retry-After then success');
   assert.equal(by('見本 四郎').ok,false);assert.equal(by('見本 四郎').msg,'Google側の一時的な不具合（503）・3回試しました');assert.equal(by('見本 四郎').tries,3);assert.equal(by('見本 四郎').status,503);assert.equal(by('見本 四郎').cases,null,'not shown as 0 cases');
   assert.equal(by('見本 六郎').ok,false);assert.equal(by('見本 六郎').tries,1,'403 is not retried');assert.match(by('見本 六郎').msg,/権限がありません（403）/);
-  assert.deepEqual(await p.evaluate(()=>window.__waits),[5000,5000,5000,15000,2000],'429: 5s; timeout: 5s; 503: 5s→15s; Retry-After: 2s (in staff order)');
+  /* v1.50.18 3人ずつ同時に読むので、待つ順番は人の順とは限らない。待つ長さの組み合わせで確かめる */
+  assert.deepEqual((await p.evaluate(()=>window.__waits)).slice().sort((a,b)=>a-b),[2000,5000,5000,5000,15000],'429: 5s; timeout: 5s; 503: 5s→15s; Retry-After: 2s');
   assert.equal(calls['synthetic-ok-sheet-0000000001'],2,'a person read once is not read again (tabs + values)');
   assert.equal(calls['synthetic-503-sheet-000000004'],3);
  });
