@@ -613,11 +613,15 @@ let loadProblem=null, loadBlocked=false;
    const used=keys.filter(k=>/^workhub_(gcal_last_v1|corp_last_v1|corp_tabs_v1|company_numbers_v1)$|^workhub_proto_v1_broken:/.test(k));
    if(meta&&typeof meta==="object"||used.length)loadProblem={kind:"missing",meta:meta&&typeof meta==="object"?meta:null,keys};
  }}
+/* v1.50.21 ブラウザに、このサイトのデータを自動では消さないよう頼む（容量が足りないときの自動削除を避けるため）。
+   認めるかはブラウザが決める（Chromeはホーム画面のアプリ・よく使うサイトなら認めることが多い）。人がデータを消したときは防げない */
+let storagePersist=null;
+try{const sm=navigator.storage;if(sm&&sm.persist&&sm.persisted)sm.persisted().then(p=>p||sm.persist()).then(ok=>{storagePersist=!!ok},()=>{storagePersist=false})}catch(e){storagePersist=false}
 let upgraded=false;
 if(!DB||!Array.isArray(DB.cases))DB=emptyDB();
 else{upgraded=DB.schemaVersion!==SCHEMA_VERSION;upgrade(DB)}
 /* The failure toast is deferred so it replaces the success toast the same handler shows after save() */
-const save=()=>{if(caseSaveGuard())return false;if(loadBlocked){manualStorageNotice("この端末の前の記録を読めず、控えにも移せなかったため、上書きしないように保存を止めています。何も操作せず、管理者に知らせてください。");return false}try{if(localStorage.getItem(KEY)!==dbPersistedRaw){manualStorageNotice("別のCPG HUB画面で記録が更新されました。古い内容で上書きしないため保存を止めています。入力を控え、ほかの画面を閉じて再読み込みしてください。");return false}const next=JSON.stringify(DB);localStorage.setItem(KEY,next);if(localStorage.getItem(KEY)!==next){manualStorageNotice("保存後の内容を確認できません。再保存せず、入力を控えて最新の記録を確認してください。");return false}dbPersistedRaw=next;try{localStorage.setItem(META_KEY,JSON.stringify({savedAt:new Date().toISOString(),bytes:next.length,admin:!!(DB.settings&&DB.settings.data&&DB.settings.data.admin),sheet:!!(DB.settings&&DB.settings.data&&DB.settings.data.sheetId),cases:DB.cases.length}))}catch(e){}return true}catch(e){setTimeout(()=>toast("保存できませんでした。端末の空き容量やブラウザの設定を確認してください",6000),0);return false}};
+const save=()=>{if(caseSaveGuard())return false;if(loadBlocked){manualStorageNotice("この端末の前の記録を読めず、控えにも移せなかったため、上書きしないように保存を止めています。何も操作せず、管理者に知らせてください。");return false}try{if(localStorage.getItem(KEY)!==dbPersistedRaw){manualStorageNotice("別のCPG HUB画面で記録が更新されました。古い内容で上書きしないため保存を止めています。入力を控え、ほかの画面を閉じて再読み込みしてください。");return false}const next=JSON.stringify(DB);localStorage.setItem(KEY,next);if(localStorage.getItem(KEY)!==next){manualStorageNotice("保存後の内容を確認できません。再保存せず、入力を控えて最新の記録を確認してください。");return false}dbPersistedRaw=next;try{localStorage.setItem(META_KEY,JSON.stringify({savedAt:new Date().toISOString(),bytes:next.length,admin:!!(DB.settings&&DB.settings.data&&DB.settings.data.admin),sheet:!!(DB.settings&&DB.settings.data&&DB.settings.data.sheetId),cases:DB.cases.length,persisted:storagePersist}))}catch(e){}return true}catch(e){setTimeout(()=>toast("保存できませんでした。端末の空き容量やブラウザの設定を確認してください",6000),0);return false}};
 if(upgraded)save();
 const photos={};
 const ui={view:"home",caseId:null,q:"",type:"all",showEnded:false,tTantou:"all",tPeriod:"week",csv:false,calMonth:todayS().slice(0,7),calDay:todayS(),calView:"week"};
@@ -3750,6 +3754,7 @@ function dSettings(){
   const d=D(), msg=ui.dview==="corp"?'':dMsgList();
   const mine='<div class="panel"><h3>記録シート（社員用）</h3>'+
     (d.sheetId?'<p style="margin:0">つないでいるシート：<b>'+h(d.sheetName||d.sheetId)+'</b>'+(d.lastSync?'（最終同期 '+md(ymd(new Date(d.lastSync)))+' '+hm(new Date(d.lastSync))+'）':'（まだ同期していません）')+'</p>'+
+      '<p class="note" style="margin:0">この端末のデータの保護：'+(storagePersist===true?'オン（ブラウザが自動では消しません）':storagePersist===false?'オフ（ブラウザが認めませんでした。容量が足りないと消されることがあります。こまめに同期してください）':'確かめています')+'</p>'+
       '<p class="note" style="margin:0">「Googleとまとめて同期」のたびに、案件・入金・立替・ToDoの要点と領収書の写真の控えを送ります。メモ・症状・住所の詳細と（架空）の例は送りません。</p>'+
       '<p class="note" style="margin:0">受付番号の記号：<b class="num">'+h(casePrefix())+'-</b>'+(casePrefix()==="U"?'（社長の端末で記号が決まると、次の同期から新しい受付番号に付きます）':'（社長の端末で自動で決まりました。今までの番号は変わりません）')+'</p>'+
       sheetGuardPanel()+'<div class="row"><button class="btn sm" type="button" data-act="dunlink">つなぐのをやめる</button></div>'

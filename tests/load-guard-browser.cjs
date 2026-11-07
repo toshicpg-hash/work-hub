@@ -5,16 +5,17 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
 const KEY='workhub_proto_v1',META='workhub_proto_v1_meta',BP='workhub_proto_v1_broken:';
-const hook='window.LG={get db(){return DB},save,get problem(){return loadProblem},get blocked(){return loadBlocked}};';
+const hook='window.LG={get db(){return DB},save,get problem(){return loadProblem},get blocked(){return loadBlocked},get persist(){return storagePersist}};';
 let server,browser,origin;const results=[];
 const check=async(name,fn)=>{await fn();results.push(name);console.log('PASS',name)};
-async function open(seed,{failBackup=false}={}){
+async function open(seed,{failBackup=false,storage=null}={}){
  const c=await browser.newContext({viewport:{width:400,height:900},timezoneId:'Asia/Tokyo',serviceWorkers:'block',acceptDownloads:true});
  await c.route('**/*',async r=>{const u=r.request().url();
   if(u===origin+'/'||u===origin+'/index.html')return r.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(root,'index.html'),'utf8').replace('corpKeepLoad();\nrender();',hook+'\ncorpKeepLoad();\nrender();')});
   if(u.startsWith(origin+'/'))return r.continue();return r.fulfill({status:200,body:''})});
- await c.addInitScript(({seed,failBackup,BP})=>{if(!sessionStorage.getItem('seeded')){sessionStorage.setItem('seeded','1');localStorage.clear();for(const [k,v] of Object.entries(seed))localStorage.setItem(k,v)}
-   if(failBackup){const o=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(String(k).startsWith(BP))throw new DOMException('full','QuotaExceededError');return o.call(this,k,v)}}},{seed,failBackup,BP});
+ await c.addInitScript(({seed,failBackup,BP,storage})=>{if(!sessionStorage.getItem('seeded')){sessionStorage.setItem('seeded','1');localStorage.clear();for(const [k,v] of Object.entries(seed))localStorage.setItem(k,v)}
+   if(storage){const calls=window.__persistCalls=[];const st=storage==='none'?undefined:{persisted:async()=>{calls.push('persisted');return storage==='already'},persist:async()=>{calls.push('persist');return storage==='grant'}};Object.defineProperty(navigator,'storage',{get:()=>st,configurable:true})}
+   if(failBackup){const o=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(String(k).startsWith(BP))throw new DOMException('full','QuotaExceededError');return o.call(this,k,v)}}},{seed,failBackup,BP,storage});
  const p=await c.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));
  await p.clock.install({time:new Date('2026-11-08T00:00:00Z')});await p.goto(origin+'/');await p.waitForFunction(()=>!!window.LG);
  return {c,p,errors};
@@ -64,6 +65,14 @@ async function main(){
   const m=JSON.parse((await store(p))[META]);assert.equal(m.admin,true);assert.ok(Date.parse(m.savedAt));assert.equal(typeof m.cases,'number');
   assert.equal(await p.evaluate(()=>LG.db.settings.data.admin),true,'data kept');
   assert.deepEqual(errors,[]);await c.close();
+ });
+ await check('データの保護：起動時にブラウザへ「自動で消さない」よう頼む。認められた・すでに認められている・使えないブラウザでも止まらない',async()=>{
+  for(const [mode,calls,val] of [['grant',['persisted','persist'],true],['already',['persisted'],true],['deny',['persisted','persist'],false],['none',[],null]]){
+   const {c,p,errors}=await open({},{storage:mode});await p.waitForFunction(()=>window.LG.persist!==null||!navigator.storage,null,{timeout:5000});
+   assert.deepEqual(await p.evaluate(()=>window.__persistCalls),calls,mode);
+   assert.equal(await p.evaluate(()=>LG.persist),mode==='none'?null:val,mode);
+   if(mode==='grant'){await p.evaluate(()=>LG.save());assert.equal(JSON.parse((await store(p))[META]).persisted,true)}
+   assert.deepEqual(errors,[],mode);await c.close();}
  });
  console.log('ALL PASS',results.length);
 }
