@@ -406,8 +406,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.21" title="使い方マニュアルを開く">v1.50.21・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.21" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.23" title="使い方マニュアルを開く">v1.50.23・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.23" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -467,10 +467,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.21"></script>
+<script src="./share-management.js?v=1.50.23"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.21"></script>
-<script src="./calendar-view-scope.js?v=1.50.21"></script>
+<script src="./view-scope.js?v=1.50.23"></script>
+<script src="./calendar-view-scope.js?v=1.50.23"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2151,7 +2151,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.21";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.23";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2313,7 +2313,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.21" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.21" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.23" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.23" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -2925,7 +2925,7 @@ async function sharedRestore(){
   st.forEach((r,i)=>{const title=str(r["内容"]),due=str(r["期限"]).slice(0,10),tantou=str(r["担当"]);
     if(next.todos.some(t=>!t.done&&!t.cancelled&&t.title===title&&(t.due||"")===due))return;
     const tid="T"+(Date.now()+i);next.todos.push({id:tid,title,due,tantou,done:false});added.todos.push(tid);});
-  next.seq=Math.max(next.seq||0,...next.cases.filter(c=>/^(U|[A-Z]{2})-\d+$/.test(c.id)).map(c=>numOf(c.id)));
+  next.seq=Math.max(next.seq||0,...next.cases.filter(c=>/^(U|[A-Z]{2,3})-\d+$/.test(c.id)).map(c=>numOf(c.id)));
   next.rseq=Math.max(next.rseq||0,...next.receipts.filter(r=>/^R-/.test(r.id)).map(r=>numOf(r.id)));
   /* 取り込んだあとの内容を、記録シートに送るときと同じ形にして、共有の行と1つずつ比べる（その日に決まる「遅れ日数」「最終の動き」と、端末ごとの「提出者」は比べない） */
   const prev=DB;let out;DB=next;try{out=dataRows()}finally{DB=prev}
@@ -3040,8 +3040,9 @@ const staffRow=s=>[s.registeredName||s.name,s.email,s.sheetId,sheetLink(s.sheetI
    会社の略称（CP・AT）は使わない。自動で振るときは、見分けにくい I・O も使わない（社長が名前から入れる記号は I・O も可。例：大平→OH）。
    一度振った記号は、共有を外した人の分も含めて、ほかの人には使わない。
    社長は「役割を変える」（社員の追加も）の「受付番号の記号」で、名前から決めた記号を入れられる（例：黒木が2人なら KH・KY）。空の人は自動で振る */
-const CODE_TAB="受付番号の記号", CODE_COLS=["受付番号の記号"], CODE_ABC="ABCDEFGHJKLMNPQRSTUVWXYZ", CODE_NG=["CP","AT"];
-const codeNorm=x=>{const v=String(x??"").normalize("NFKC").trim().toUpperCase();return /^[A-Z]{2}$/.test(v)&&!CODE_NG.includes(v)?v:""};
+const CODE_TAB="受付番号の記号", CODE_COLS=["受付番号の記号"], CODE_ABC="ABCDEFGHJKLMNPQRSTUVWXYZ", CODE_NG=["CP","AT","CPY","CPG"];
+/* v1.50.23 手で入れる記号は2文字か3文字（空港コードのように。例：小泉→KOI）。会社名と紛れる CP・AT・CPY・CPG は使わない。自動で振る記号は2文字のまま */
+const codeNorm=x=>{const v=String(x??"").normalize("NFKC").trim().toUpperCase();return /^[A-Z]{2,3}$/.test(v)&&!CODE_NG.includes(v)?v:""};
 /* その記号をほかの人（共有を外した人も）が使っていれば、その人 */
 const codeOwner=(code,sheetId,staff=D().staff)=>!!code&&staff.find(x=>x.sheetId!==sheetId&&codeNorm(x.caseCode)===code)||null;
 /* 「役割を変える」の欄の案：今の記号。なければ Gmail の頭2文字（英字で、だれも使っていないときだけ） */
@@ -3701,7 +3702,7 @@ function roleForm(p,s){
     '<label class="f">GMを務める会社<select id="'+p+'_gm"><option value="">なし</option>'+COMPANIES.map(co=>'<option'+(s.gmCo===co?' selected':'')+'>'+co+'</option>').join("")+'</select></label>'+
     '<label class="f full row"><input type="checkbox" id="'+p+'_lead"'+(gmLeadOn(s)?' checked':'')+'> 統括GM（役割がGMのとき。同じ会社のほかのGMの記録も見る。会社ごとに1人）</label>'+
     '<label class="f">表示名（任意。画面に出す名前。例：専務）<input type="text" id="'+p+'_disp" maxlength="20" value="'+h(s.displayName||"")+'" placeholder="空なら氏名"></label>'+
-    '<label class="f">受付番号の記号（アルファベット2文字。例：大平→OH）<input type="text" id="'+p+'_code" maxlength="2" autocapitalize="characters" autocomplete="off" spellcheck="false" value="'+h(codeSuggest(s))+'" placeholder="空なら自動"></label>'+
+    '<label class="f">受付番号の記号（アルファベット2〜3文字。例：大平→OH、小泉→KOI）<input type="text" id="'+p+'_code" maxlength="3" autocapitalize="characters" autocomplete="off" spellcheck="false" value="'+h(codeSuggest(s))+'" placeholder="空なら自動"></label>'+
     '<div class="f full"><span>担当の会社（経理・業務管理のとき）</span><div class="row">'+COMPANIES.map(co=>'<label class="row"><input type="checkbox" id="'+p+'_ch_'+co+'"'+(chargeList(s).includes(co)?' checked':'')+'> '+co+'</label>').join("")+'</div></div>'+
     '<p class="note full" style="margin:0">全社：全員の記録を見る（例：専務）。GM：同じ1社だけに所属する一般社員の記録を見る（複数会社・全社・GMは対象外）。1つの会社にGMを2人以上置けます（見られる範囲は同じ）。全社の人がある会社のGMを兼ねるときは、役割を「全社」にしてGMの会社を選びます。経理・業務管理：「担当の会社」に所属する社員の記録を、見るだけで見る（その会社のGMと、所属の会社のどれかが担当の会社の人（専務など）も含みます。タスクリクエストは出せません。業務管理は、立替・領収書は見ません。経理が見る立替・領収書は、担当の会社の分だけです）。どの人も、予定は、その人の予定を見てよい人に共有してもらいます。</p></div>';
 }
@@ -3726,7 +3727,7 @@ function leadCheck(v,sheetId,staff=D().staff){
   return o?v.gmCo+"の統括GMはすでに"+o.name+"さんです。統括GMは会社ごとに1人です。先に"+o.name+"さんの「統括GM」の印を外してください":"";
 }
 function codeCheck(v,sheetId,staff=D().staff){
-  if(v.codeBad)return "受付番号の記号は、アルファベット2文字で入れてください（CP・AT は使えません）";
+  if(v.codeBad)return "受付番号の記号は、アルファベット2〜3文字で入れてください（CP・AT・CPY・CPG は使えません）";
   const o=codeOwner(v.caseCode,sheetId,staff);return o?"受付番号の記号「"+v.caseCode+"」は、"+o.name+"さんが使っています。ほかの2文字にしてください":"";
 }
 const dMsgList=()=>{const m=ui.dmsg;return m?'<ul class="gres" role="status">'+m.map(x=>'<li class="'+(x.ok===false?'ng':x.ok==="warn"?'warn':'ok')+'">'+(x.ok===false?'× ':x.ok==="warn"?'！ ':'✓ ')+h(x.text)+'</li>').join("")+'</ul>':''};

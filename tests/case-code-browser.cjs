@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
-const hook='window.CN={get db(){return DB},get ui(){return ui},go,render,save,dataSync,newCaseCode,caseCodesAssign,caseCodeWrite,codeCheck,codeSuggest,roleVal,codeNorm,casePrefix,'+
+const hook='window.CN={get db(){return DB},get ui(){return ui},go,render,save,dataSync,sharedRestore,corpRun,roBuild,gDesc,numRow,dataRows,newCaseCode,caseCodesAssign,caseCodeWrite,codeCheck,codeSuggest,roleVal,codeNorm,casePrefix,'+
  'setup(){gAuthorize=async()=>{G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000};gAuthorize();adminSync=async()=>({});corpWait=async()=>{}}};';
 const A='synthetic-a-sheet-0000000001',B='synthetic-b-sheet-0000000002',C='synthetic-c-sheet-0000000003',DX='synthetic-d-sheet-0000000004';
 const LIST='synthetic-list-0000000000001';
@@ -28,8 +28,8 @@ async function device({store,deny=new Set(),width=400,fail=new Set()}){
   if(deny.has(id))return J(r,{error:{code:403}},403);
   if(fail.has(id))return J(r,{error:{code:404}},404);
   const sh=store[id];if(!sh)return J(r,{error:{code:404}},404);
-  if(rest===''&&method==='GET')return J(r,{sheets:Object.keys(sh).map(title=>({properties:{title,sheetId:1}}))});
-  if(rest===':batchUpdate'){for(const q of r.request().postDataJSON().requests||[])if(q.addSheet)sh[q.addSheet.properties.title]=[];return J(r,{})}
+  if(rest===''&&method==='GET')return J(r,{sheets:Object.keys(sh).map(title=>({properties:{title,sheetId:1,gridProperties:{rowCount:1000,columnCount:40}}}))});
+  if(rest===':batchUpdate'){for(const q of r.request().postDataJSON().requests||[]){if(q.addSheet)sh[q.addSheet.properties.title]=[];if(q.updateCells)sh['案件']=q.updateCells.rows.map(x=>(x.values||[]).map(v=>v.userEnteredValue?Object.values(v.userEnteredValue)[0]:'')).filter(x=>x.some(y=>y!==''))}return J(r,{})}
   if(rest==='/values:batchGet')return J(r,{valueRanges:u.searchParams.getAll('ranges').map(x=>({values:sh[tabOf(x)]||[]}))});
   const v=rest.match(/^\/values\/([^:]+)(:clear)?$/);if(v){const t=tabOf(v[1]);if(v[2]){sh[t]=[];return J(r,{})}const body=r.request().postDataJSON();const vals=body.values.map(x=>x.map(y=>y));while(vals.length&&vals[vals.length-1].every(y=>y===''))vals.pop();sh[t]=vals.map(x=>{const a=x.slice();while(a.length&&a[a.length-1]==='')a.pop();return a});return J(r,{})}
   return J(r,{});
@@ -57,7 +57,7 @@ async function main(){
    return {out,last:CN.newCaseCode(full),none:CN.newCaseCode(full.concat({caseCode:'ZZ'})),norm:[CN.codeNorm(' qx '),CN.codeNorm('CP'),CN.codeNorm('OH'),CN.codeNorm('Q1'),CN.codeNorm('ABC'),CN.codeNorm('ｏｈ'),CN.codeNorm('at')]}});
   for(const c of r.out){assert.match(c,/^[A-HJ-NP-Z]{2}$/);assert.ok(!['CP','AT','QX'].includes(c),c)}
   assert.ok(new Set(r.out).size>50,'random');assert.equal(r.last,'ZZ');assert.equal(r.none,'');
-  assert.deepEqual(r.norm,['QX','','OH','','','OH',''],'manual codes may use I/O; full-width and lower case are accepted');
+  assert.deepEqual(r.norm,['QX','','OH','','ABC','OH',''],'manual codes may use I/O; full-width and lower case are accepted; 3 letters allowed since v1.50.23');
  });
  await check('社長：共有を合わせるときに、記号のない人に振る。共有を外した人・決まっている人の記号は変えない。重なりは下の人だけ振り直す',async()=>{
   const d=all[0];
@@ -90,7 +90,7 @@ async function main(){
     dup:CN.codeCheck({caseCode:'QX'},st[0].sheetId),dupRemoved:CN.codeCheck({caseCode:'MK'},st[0].sheetId),self:CN.codeCheck({caseCode:'QX'},st[1].sheetId),bad:CN.codeCheck({codeBad:'1A'},st[0].sheetId),ok:CN.codeCheck({caseCode:'KH'},st[0].sheetId)}});
   assert.equal(r.cur,'QX');assert.equal(r.mail,'OH');assert.equal(r.taken,'','already used by someone else');assert.equal(r.digits,'AB');
   assert.match(r.dup,/「QX」は、見本 二郎さんが使っています/);assert.match(r.dupRemoved,/見本 四郎さん/,'removed staff codes are not reused');
-  assert.equal(r.self,'');assert.match(r.bad,/アルファベット2文字/);assert.equal(r.ok,'');
+  assert.equal(r.self,'');assert.match(r.bad,/アルファベット2〜3文字/);assert.equal(r.ok,'');
   /* 画面：役割を変える → 欄に今の記号。重なる記号では保存を始めない */
   await d.p.evaluate(()=>{CN.ui.dRole=0;CN.go('stats')});
   assert.equal(await d.p.$eval('#dr_code',e=>e.value),await d.p.evaluate(()=>CN.db.settings.data.staff[0].caseCode));
@@ -126,6 +126,51 @@ async function main(){
  await check('社員の端末：別の記録シートにつなぎ直すと、前の記号は使わない（U に戻る）',async()=>{
   const d=all[all.length-1];await d.p.evaluate(C=>{CN.db.settings.data.sheetId=C;CN.save()},C);
   assert.equal(await d.p.evaluate(()=>CN.casePrefix()),'U');
+ });
+ /* v1.50.23 記号は2文字か3文字（例：小泉→KOI） */
+ await check('3文字の記号：形の確認（全角・小文字をそろえる、CP・AT・CPY・CPG と4文字は使えない）。KH と KHI は別の記号。同じ3文字は止める',async()=>{
+  const d=all[0];
+  const r=await d.p.evaluate(()=>({norm:['koi','ＫＯＩ',' Khi ','CPY','cpg','CP','ABCD','K1I','OH'].map(CN.codeNorm),
+   kh:CN.codeCheck({caseCode:'KHI'},'x',[{name:'甲',sheetId:'y',caseCode:'KH'}]),dup:CN.codeCheck({caseCode:'KOI'},'x',[{name:'乙',sheetId:'y',caseCode:'KOI'}]),
+   bad:(()=>{document.body.insertAdjacentHTML('beforeend','<input id="zz_code" value="cpy">');const v=CN.roleVal('zz');document.getElementById('zz_code').remove();return CN.codeCheck(v,'x',[])})(),
+   auto:Array.from({length:100},()=>CN.newCaseCode([])).every(c=>/^[A-HJ-NP-Z]{2}$/.test(c))}));
+  assert.deepEqual(r.norm,['KOI','KOI','KHI','','','','','','OH']);
+  assert.equal(r.kh,'','KH and KHI are different codes');assert.match(r.dup,/「KOI」は、乙さんが使っています/);
+  assert.match(r.bad,/アルファベット2〜3文字/);assert.equal(r.auto,true,'automatic codes stay 2 letters');
+ });
+ const K='synthetic-koi-sheet-00000000001';store[K]={'案件':[['受付番号']],'情報':info,'受付番号の記号':[['受付番号の記号'],['KOI']]};
+ await check('3文字の記号の社員の端末：受付番号は「KOI-0001」。案件一覧・番号で探す・カレンダーの説明・記録シートへの書き出し・数字の画面で壊れない（400px）',async()=>{
+  const d=await device({store});all.push(d);
+  await d.p.evaluate(K=>{CN.setup();const x=CN.db.settings.data;x.ob={legacy:true};x.sheetId=K;CN.db.settings.rcpt.name='見本 小三';CN.save()},K);
+  await d.p.evaluate(async()=>{await CN.dataSync(()=>{})});assert.equal(await d.p.evaluate(()=>CN.casePrefix()),'KOI');
+  assert.equal(await newCase(d.p,'見本荘こ1'),'KOI-0001');assert.equal(await newCase(d.p,'見本荘こ2'),'KOI-0002');
+  await d.p.evaluate(()=>{CN.ui.q='';CN.go('cases')});let t=await d.p.textContent('main');assert.match(t,/KOI-0001/);assert.match(t,/KOI-0002/);
+  await d.p.fill('#q','KOI-0002');t=await d.p.textContent('main');assert.match(t,/見本荘こ2/);assert.doesNotMatch(t,/見本荘こ1/,'search by the 3-letter number');
+  assert.match(await d.p.evaluate(()=>CN.gDesc(CN.db.cases.find(c=>c.id==='KOI-0002'))),/^受付番号：KOI-0002\n/);
+  await d.p.evaluate(async()=>{await CN.dataSync(()=>{})});
+  assert.deepEqual(store[K]['案件'].slice(1).map(r=>r[0]).sort(),['KOI-0001','KOI-0002'],'written to the record sheet');
+  await d.p.evaluate(()=>{CN.ui.q='';CN.go('stats')});assert.ok(await overflow(d.p)<=1);
+  await d.p.evaluate(()=>CN.go('cases'));assert.ok(await overflow(d.p)<=1);
+  assert.deepEqual(d.errors,[]);
+ });
+ await check('3文字の記号：空の端末で共有の記録から取り込むと、番号の続き（KOI-0003）から付く',async()=>{
+  const d=await device({store});all.push(d);
+  await d.p.evaluate(K=>{CN.setup();const x=CN.db.settings.data;x.ob={legacy:true};x.sheetId=K;CN.db.settings.rcpt.name='見本 小三';CN.save()},K);
+  await d.p.evaluate(async()=>{await CN.dataSync(()=>{})});
+  assert.ok(await d.p.evaluate(()=>!!CN.ui.sheetGuard),'empty device is stopped before writing');
+  await d.p.evaluate(async()=>{await CN.sharedRestore()});
+  assert.deepEqual(await d.p.evaluate(()=>CN.db.cases.map(c=>c.id).sort()),['KOI-0001','KOI-0002']);assert.equal(await d.p.evaluate(()=>CN.db.seq),2);
+  await d.p.evaluate(async()=>{await CN.dataSync(()=>{})});assert.equal(await newCase(d.p,'見本荘こ3'),'KOI-0003');await d.p.evaluate(async()=>{await CN.dataSync(()=>{})});
+  assert.deepEqual(d.errors,[]);
+ });
+ await check('3文字の記号：社長の端末で社員の記録を読み込むと、案件一覧に KOI の番号で出て、会社の数字の行も作れる',async()=>{
+  const d=all[0];
+  await d.p.evaluate(K=>{const x=CN.db.settings.data;x.staff=[{name:'見本 小三',email:'koi@example.com',sheetId:K,company:'CP',role:'社員',caseCode:'KOI'}];CN.save()},K);
+  const data=await d.p.evaluate(async()=>(await CN.corpRun()).map(x=>[x.ok,(x.cases||[]).map(r=>r['受付番号']).sort()]));
+  assert.deepEqual(data,[[true,['KOI-0001','KOI-0002','KOI-0003']]]);
+  await d.p.evaluate(()=>{CN.ui.q='';CN.go('cases')});await require('./scope-selection-helper').allPeople(d.p);const t=await d.p.textContent('main');assert.match(t,/KOI-0001/);assert.match(t,/KOI-0003/);
+  const n=await d.p.evaluate(()=>(CN.ui.corpRO||[]).filter(c=>/^KOI-/.test(c.id)).map(c=>CN.numRow(c).length));assert.ok(n.length===3&&n.every(x=>x>0),'company-number rows: '+JSON.stringify(n));
+  assert.ok(await overflow(d.p)<=1);assert.deepEqual(d.errors,[]);
  });
  for(const d of all)await d.c.close();
  console.log('ALL PASS',results.length);
