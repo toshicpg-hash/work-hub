@@ -33,7 +33,13 @@ function plan(specs,rows,list){
    /* あとで確認済みになった付与（読戻しで共有がちょうど1つと確かめた）より前の、結果不明の付与は、もう考えなくてよい */
    const live=events.filter((r,i)=>!(r.state==='intent'&&r.action==='grant'&&events.slice(i+1).some(v=>v.state==='verified'&&v.action==='grant')));
    const unknown=live.filter(r=>r.state==='intent'),notGranted=unknown.length>0&&unknown.every(r=>r.action==='grant')&&!ps.length&&!live.some(r=>r.state==='verified');
-   if(unknown.length&&!notGranted){action='review';reason='過去の操作結果が不明。再付与・解除せず個別確認してください';}
+   /* v1.50.24 結果が不明な付与の後始末：付与を決めたとき（意図の記録）にその人の共有が無く（permission が空）、今その人の共有がちょうど1つで、
+      直接のユーザー共有・意図と同じ役割・今も予定どおりの役割なら、前の付与は届いていたと見て「維持」にする（要確認を出し続けない）。
+      ただし、その共有を当機能の付与とはみなさない（確認済みの記録は書かない）ので、あとで予定から外れても自動では解除しない（そのときは要確認）。
+      もう一度付与することもない。確認済みの記録が前にある人・解除の記録がある人・役割が違う人は、今までどおり個別確認 */
+   const arrived=unknown.length>0&&!live.some(r=>r.state==='verified')&&unknown.every(r=>r.action==='grant'&&!r.permission&&r.role===role)&&ps.length===1&&direct(p)&&!!role&&p.role===role;
+   if(arrived){action='keep';reason='前回の付与は届いていました（共有がちょうど1つ・予定の役割）。維持します（当機能では解除しません）';}
+   else if(unknown.length&&!notGranted){action='review';reason='過去の操作結果が不明。再付与・解除せず個別確認してください';}
    else if(notGranted&&role){action='grant';reason='前回の付与は届いていませんでした（共有なし）。もう一度付与（履歴に記録）';}
    else if(ps.length>1){action='review';reason='同じ付与先の権限が複数あります';}
    else if(role&&!p&&last&&last.state==='verified'&&last.action==='grant'){action='review';reason='以前の付与が見つかりません。外部解除の可能性があるため再付与しません';}
