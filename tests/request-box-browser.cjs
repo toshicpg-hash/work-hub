@@ -90,7 +90,7 @@ async function main(){
   const sB=byName('CPG HUB_社員 二郎');
   assert.equal(shares(sB)[GM],'reader','GM stays a reader of the record sheet');assert.equal(shares(sB)[SB],'writer');
   assert.deepEqual(tab(sB,'連絡')[0],['指示箱ID','指示箱のリンク','書いた日時']);assert.equal(tab(sB,'連絡')[1][0],bB.id);
-  const list=tab(byName('CPG HUB_社員一覧'),'社員');assert.deepEqual(list[0].slice(-4),['指示箱ID','担当の会社','表示名','受付番号の記号']);
+  const list=tab(byName('CPG HUB_社員一覧'),'社員');assert.deepEqual(list[0].slice(-5),['指示箱ID','担当の会社','表示名','受付番号の記号','GM統括']);
   /* v1.50.17 共有を合わせると、受付番号の記号（2文字・重ならない）が社員一覧と各社員の記録シートに入る */
   {const ci=list[0].indexOf('受付番号の記号'),si=list[0].indexOf('シートID'),codes=list.slice(1).map(r=>r[ci]);assert.ok(codes.every(c=>/^[A-HJ-NP-Z]{2}$/.test(c)),codes.join());assert.equal(new Set(codes).size,codes.length);
    assert.deepEqual(tab(sB,'受付番号の記号'),[['受付番号の記号'],[list.find(r=>r[si]===sB.id)[ci]]]);
@@ -100,7 +100,7 @@ async function main(){
    assert.match(dup,new RegExp('「'+other+'」は、.*さんが使っています'));assert.notEqual(tab(sB,'受付番号の記号')[1][0],other);
    assert.equal(await A.p.evaluate(async id=>{await RB.adminRoleSave(id,{company:'CPY',role:'社員',gmCo:'',caseCode:'OH'},'',()=>{});return 'saved'},sB.id),'saved');
    const list2=tab(byName('CPG HUB_社員一覧'),'社員');assert.equal(list2.find(r=>r[si]===sB.id)[ci],'OH');assert.deepEqual(tab(sB,'受付番号の記号'),[['受付番号の記号'],['OH']]);}
-  const vl=tab(byName('CPG HUB_見る人用一覧'),'一覧'),bi=vl[0].indexOf('指示箱ID');assert.deepEqual(vl[0].slice(-3),['指示箱ID','担当の会社','表示名']);assert.ok(vl.some(r=>r[1]===SB&&r[bi]===bB.id));
+  const vl=tab(byName('CPG HUB_見る人用一覧'),'一覧'),bi=vl[0].indexOf('指示箱ID');assert.deepEqual(vl[0].slice(-4),['指示箱ID','担当の会社','表示名','GM統括']);assert.ok(vl.some(r=>r[1]===SB&&r[bi]===bB.id));
  });
  await check('共有プレビュー：中止・Escape・再読込、390px/360px文字150%、旧共有保持',async()=>{
   const before=G.calls.filter(x=>['POST','PATCH','DELETE','PUT'].includes(x[1])).length;
@@ -301,6 +301,31 @@ async function main(){
   assert.ok(!(G1 in shares(bB)),'removed GM loses the request box');
   assert.equal(shares(sB)[GM2],'reader');assert.equal(shares(bB)[GM2],'writer');assert.equal(shares(vl)[GM2],'reader');
   assert.ok(tab(sB,'予定の共有先').some(r=>r[1]===GM2));assert.ok(!tab(sB,'予定の共有先').some(r=>r[1]===G1),'removed GM is no longer a target');
+  assert.deepEqual(A.errors,[]);
+ });
+ await check('v1.50.19 統括GM：同じ会社のほかのGMの記録シートも見る（一方向）。統括は会社ごとに1人。印を外すと共有が外れる',async()=>{
+  const GM2='test-gm2-cpy@example.com';
+  const ids=await A.p.evaluate(([SA,GM2])=>{const f=e=>RB.db.settings.data.staff.find(x=>x.email===e&&!x.removed);return {sa:f(SA).sheetId,saCo:f(SA).company,lead:f(GM2).sheetId,view:RB.db.settings.data.viewListId}},[SA,GM2]);
+  /* 2人目のGM（GM2）に統括の印、SA をもう一度 CPY のGMに（印なし） */
+  await A.p.evaluate(async([id])=>{await RB.adminRoleSave(id,{company:'CPY',role:'GM',gmCo:'CPY',gmLead:true},'',()=>{})},[ids.lead]);
+  await A.p.evaluate(async([id,co])=>{await RB.adminRoleSave(id,{company:co,role:'GM',gmCo:'CPY'},'',()=>{})},[ids.sa,ids.saCo]);
+  const sa=G.files[ids.sa],lead=G.files[ids.lead],vl=G.files[ids.view];
+  assert.equal(shares(sa)[GM2],'reader','lead reads the other GM');
+  assert.ok(!(SA in shares(lead)),'the other GM never reads the lead');
+  assert.ok(tab(sa,'予定の共有先').some(r=>r[1]===GM2),'lead is a calendar target of the other GM');
+  assert.ok(!tab(lead,'予定の共有先').some(r=>r[1]===SA),'not the reverse');
+  const list=tab(vl,'一覧'),li=list[0].indexOf('GM統括');assert.ok(li>=0,'viewer list has the mark column');
+  assert.equal(list.find(r=>r[1]===GM2)[li],'統括');assert.equal(list.find(r=>r[1]===SA)[li]||'','');
+  const sl=tab(byName('CPG HUB_社員一覧'),'社員'),si=sl[0].indexOf('GM統括');assert.equal(sl.find(r=>r[1]===GM2&&r[4]==='共有中')[si],'統括');
+  /* 統括は会社ごとに1人：SA にも付けようとすると止まる（共有は変わらない） */
+  const err=await A.p.evaluate(async([id,co])=>{try{await RB.adminRoleSave(id,{company:co,role:'GM',gmCo:'CPY',gmLead:true},'',()=>{});return 'saved'}catch(e){return e.message}},[ids.sa,ids.saCo]);
+  assert.match(err,/CPYの統括GMはすでに見本 室長さんです/);assert.ok(!(SA in shares(lead)));
+  /* 印を外すと、統括GMが付けた共有（ほかのGMの記録シート）は外れる。社員の記録はGMとして見たまま */
+  await A.p.evaluate(async([id])=>{await RB.adminRoleSave(id,{company:'CPY',role:'GM',gmCo:'CPY',gmLead:false},'',()=>{})},[ids.lead]);
+  assert.ok(!(GM2 in shares(sa)),'mark removed: the share is removed '+JSON.stringify(shares(sa)));
+  assert.ok(!tab(sa,'予定の共有先').some(r=>r[1]===GM2));
+  const cur=await A.p.evaluate(SB=>RB.db.settings.data.staff.find(x=>x.email===SB&&!x.removed).sheetId,SB);
+  assert.equal(shares(G.files[cur])[GM2],'reader','still sees the employees as a GM');
   assert.deepEqual(A.errors,[]);
  });
  await check('複数有効同Gmailの異常は社員追加/役割変更/削除の前に停止、新ファイルも作らない',async()=>{
