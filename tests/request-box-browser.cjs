@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
-const hook='window.RB={get db(){return DB},ui,go,render,roBuild,adminAdd,adminRoleSave,adminRemove,corpRun,boxState,corpKeepSave,permList};';
+const hook='window.RB={get db(){return DB},ui,go,render,roBuild,adminAdd,adminRoleSave,adminRemove,corpRun,boxState,corpKeepSave,permList,adminLightSave,adminCodesSave,noWait(){corpWait=async()=>{}}};';
 const ADMIN='toshi.cpg@gmail.com',SA='test-staff-a@example.com',SB='test-staff-b@example.com',GM='test-gm-cpy@example.com',ZEN='test-zensha@example.com';
 const TODAY='2026-10-30';
 /* ---- in-memory Google ---- */
@@ -45,7 +45,7 @@ async function google(route){
   if(vm){const range=vm[1],t=f.tabs.find(x=>x.title===tabName(range));if(!t)return no(400);
    if(vm[2]===':clear'){t.rows=[];return J({})}
    if(vm[2]===':append'){t.rows.push(...req.postDataJSON().values);return J({})}
-   if(m==='PUT'){if(G.failTab&&t.title===G.failTab&&(!G.failFile||G.failFile===f.id))return no(500);put(t,range,req.postDataJSON().values);return J({})}}
+   if(m==='PUT'){if(G.failTab&&t.title===G.failTab&&(!G.failFile||G.failFile===f.id)&&(G.failLeft===undefined||G.failLeft>0&&G.failLeft--))return no(500);put(t,range,req.postDataJSON().values);return J({})}}
  }
  return no(404);
 }
@@ -326,6 +326,35 @@ async function main(){
   assert.ok(!tab(sa,'予定の共有先').some(r=>r[1]===GM2));
   const cur=await A.p.evaluate(SB=>RB.db.settings.data.staff.find(x=>x.email===SB&&!x.removed).sheetId,SB);
   assert.equal(shares(G.files[cur])[GM2],'reader','still sees the employees as a GM');
+  assert.deepEqual(A.errors,[]);
+ });
+ await check('v1.50.24 記号・表示名だけの保存は共有を付け替えない：社員一覧と記録シートの「受付番号の記号」だけを書く。会社が変わっていれば止める',async()=>{
+  const cur=await A.p.evaluate(SB=>{const s=RB.db.settings.data.staff.find(x=>x.email===SB&&!x.removed);return {id:s.sheetId,company:s.company,role:s.role,gmCo:s.gmCo||'',charge:s.charge||''}},SB);
+  const before=G.calls.length,perm=()=>G.calls.slice(before).filter(x=>/permissions/.test(String(x[2]))&&x[1]!=='GET').length;
+  const log=await A.p.evaluate(async c=>{const out=[];await RB.adminLightSave(c.id,{company:c.company,role:c.role,gmCo:c.gmCo,charge:c.charge,displayName:'見本の表示',caseCode:'KOI'},(t,ok)=>out.push(t));return out},cur);
+  assert.equal(perm(),0,'no permission writes');assert.ok(!G.calls.slice(before).some(x=>/permissions/.test(String(x[2]))),'no permission reads either');
+  assert.match(log.join('/'),/表示名を「見本の表示」に、受付番号の記号を KOI にしました（共有は変えていません）/);
+  const sl=tab(byName('CPG HUB_社員一覧'),'社員'),si=sl[0].indexOf('シートID'),ci=sl[0].indexOf('受付番号の記号'),di=sl[0].indexOf('表示名');
+  const row=sl.find(r=>r[si]===cur.id);assert.equal(row[ci],'KOI');assert.equal(row[di],'見本の表示');
+  assert.deepEqual(tab(G.files[cur.id],'受付番号の記号'),[['受付番号の記号'],['KOI']]);
+  const vl=tab(G.files[await A.p.evaluate(()=>RB.db.settings.data.viewListId)],'一覧');assert.equal(vl.find(r=>r[5]===cur.id)[vl[0].indexOf('表示名')],'見本の表示');
+  const err=await A.p.evaluate(async c=>{try{await RB.adminLightSave(c.id,{company:'CP',role:c.role,gmCo:c.gmCo,charge:c.charge,displayName:'',caseCode:'KOJ'},()=>{});return 'saved'}catch(e){return e.message}},cur);
+  assert.match(err,/会社・役割が変わっています/);assert.equal(tab(G.files[cur.id],'受付番号の記号')[1][0],'KOI','nothing written');
+  assert.deepEqual(A.errors,[]);
+ });
+ await check('v1.50.24 記号をまとめて保存：共有を付け替えず、社員一覧と各人の記録シートに書く。重なりは止める。通信の失敗は待ってやり直す',async()=>{
+  await A.p.evaluate(()=>RB.noWait());
+  const ids=await A.p.evaluate(()=>RB.db.settings.data.staff.filter(x=>!x.removed).map(x=>({id:x.sheetId,name:x.name,code:x.caseCode})));
+  const [a,b]=ids;const before=G.calls.length;
+  const bad=await A.p.evaluate(async([a,b])=>{try{await RB.adminCodesSave([{sheetId:a.id,name:a.name,code:'XYZ'},{sheetId:b.id,name:b.name,code:'XYZ'}],()=>{});return 'saved'}catch(e){return e.message}},[a,b]);
+  assert.match(bad,/XYZ」は.*さんと重なります/);assert.notEqual(tab(G.files[a.id],'受付番号の記号')[1][0],'XYZ');
+  G.failTab='受付番号の記号';G.failFile=b.id;G.failLeft=1;
+  const log=await A.p.evaluate(async([a,b])=>{const out=[];await RB.adminCodesSave([{sheetId:a.id,name:a.name,code:'AAX'},{sheetId:b.id,name:b.name,code:'BBX'}],t=>out.push(t));return out},[a,b]);
+  assert.equal(G.failLeft,0,'the injected failure was hit');G.failTab='';G.failFile='';delete G.failLeft;
+  assert.equal(G.calls.slice(before).filter(x=>/permissions/.test(String(x[2]))).length,0,'no sharing calls');
+  assert.match(log.join('/'),/2人分の受付番号の記号を保存しました/);assert.match(log.join('/'),/2人の記録シートに受付番号の記号を書きました/);
+  assert.deepEqual(tab(G.files[a.id],'受付番号の記号')[1],['AAX']);assert.deepEqual(tab(G.files[b.id],'受付番号の記号')[1],['BBX'],'retried after one failure');
+  const sl=tab(byName('CPG HUB_社員一覧'),'社員'),si=sl[0].indexOf('シートID'),ci=sl[0].indexOf('受付番号の記号');assert.equal(sl.find(r=>r[si]===a.id)[ci],'AAX');assert.equal(sl.find(r=>r[si]===b.id)[ci],'BBX');
   assert.deepEqual(A.errors,[]);
  });
  await check('複数有効同Gmailの異常は社員追加/役割変更/削除の前に停止、新ファイルも作らない',async()=>{

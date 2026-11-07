@@ -406,8 +406,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.23" title="使い方マニュアルを開く">v1.50.23・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.23" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.24" title="使い方マニュアルを開く">v1.50.24・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.24" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -467,10 +467,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.23"></script>
+<script src="./share-management.js?v=1.50.24"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.23"></script>
-<script src="./calendar-view-scope.js?v=1.50.23"></script>
+<script src="./view-scope.js?v=1.50.24"></script>
+<script src="./calendar-view-scope.js?v=1.50.24"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2155,7 +2155,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.23";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.24";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2317,7 +2317,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.23" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.23" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.24" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.24" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3256,7 +3256,7 @@ async function adminShareSync(log,staff=D().staff){
  if(shareAbort)throw Error("途中で中止しました。実行済みの共有は戻しません。役割は保存していません。");
  for(const x of plan.filter(x=>x.action==="review"))log("要確認（共有を残しました）："+x.label+" → "+x.email+"／"+x.reason,false);
  await guard();
- if(d.viewListId){shareProgress("見る人用一覧を書き直しています");await sheetWrite(d.viewListId,"一覧",[VIEW_COLS,...staff.filter(s=>!s.removed).map(s=>[s.name,s.email,s.company||"",s.role||"社員",s.gmCo||"",s.sheetId,s.boxId||"",s.charge||"",s.displayName||"",gmLeadOn(s)?"統括":""])]);}
+ if(d.viewListId){shareProgress("見る人用一覧を書き直しています");await viewListWrite(d.viewListId,staff);}
  /* v1.50.3 共有と見る人用一覧のすぐあとに、役割を社員一覧に保存する（前は、指示箱のお知らせ・予定の共有先を全員分書いたあとの最後だったため、
     そのあいだ社員一覧が古い役割のまま長く残り、途中で止まると共有と一覧がずれた）。ここから先は、失敗しても役割と共有は保存済み */
  const codes=caseCodesAssign(staff);
@@ -3265,11 +3265,11 @@ async function adminShareSync(log,staff=D().staff){
  const tail=async(label,run)=>{try{await run()}catch(err){if(err.message==="signin")throw err;log(label+"を書けませんでした："+(err.message==="http"?dMsg(err):err.message)+"（役割と共有は保存済みです。もう一度保存すると書き直します）",false)}};
  const boxes=staff.filter(s=>s.boxId&&!s.removed);
  await tail("指示箱のお知らせ",async()=>{let i=0;shareProgress("指示箱のお知らせを書いています 0／"+boxes.length);await sharePool(boxes,async s=>{await noticeWrite(s);shareProgress("指示箱のお知らせを書いています "+(++i)+"／"+boxes.length)})});
- if(d.viewListId)await tail("正式な氏名の履歴",async()=>{shareProgress("正式な氏名の履歴を写しています");await namesCopyConfirmed(list,d.viewListId)});
+ if(d.viewListId)await tail("正式な氏名の履歴",async()=>{shareProgress("正式な氏名の履歴を写しています");/* v1.50.24 通信の失敗・時間切れ・回数制限は少し待って最大2回やり直す（同じ記録は二重に書かない作り） */await shareRead(()=>namesCopyConfirmed(list,d.viewListId))});
  /* v1.50.10 各社員の記録シートに「会社の数字の場所」（その人の会社の分だけ）を書く */
  if(d.numbers)await tail("会社の数字の場所",async()=>{const list=staff.filter(s=>!s.removed&&s.sheetId);let i=0,w=0;shareProgress("会社の数字の場所を確かめています 0／"+list.length);await sharePool(list,async s=>{if(await numPtrWrite(s,d.numbers))w++;shareProgress("会社の数字の場所を確かめています "+(++i)+"／"+list.length)});log("会社の数字の場所："+list.length+"人を確かめ、"+w+"人分を書きました（変わらない人は書きません）")});
  /* v1.50.17 各社員の記録シートに「受付番号の記号」を書く（変わらない人は書かない） */
- await tail("受付番号の記号",async()=>{const list=staff.filter(s=>!s.removed&&s.sheetId&&s.caseCode);let i=0,w=0;shareProgress("受付番号の記号を確かめています 0／"+list.length);await sharePool(list,async s=>{if(await caseCodeWrite(s))w++;shareProgress("受付番号の記号を確かめています "+(++i)+"／"+list.length)});log("受付番号の記号："+list.length+"人を確かめ、"+w+"人分を書きました（変わらない人は書きません）")});
+ await tail("受付番号の記号",async()=>{const list=staff.filter(s=>!s.removed&&s.sheetId&&s.caseCode);let i=0,w=0;shareProgress("受付番号の記号を確かめています 0／"+list.length);await sharePool(list,async s=>{if(await shareRead(()=>caseCodeWrite(s)))w++;shareProgress("受付番号の記号を確かめています "+(++i)+"／"+list.length)});log("受付番号の記号："+list.length+"人を確かめ、"+w+"人分を書きました（変わらない人は書きません）")});
  /* v1.50.0 役割が変わったら、各社員の「予定の共有先」も書き直す（共有そのものは、本人が自分の端末でボタンを押して足す） */
  {const n=staff.filter(x=>!x.removed&&x.sheetId).length;let i=0;await tail("予定の共有先",()=>calShareTargetsWrite(staff,(t,ok)=>{shareProgress("予定の共有先を書いています "+(++i)+"／"+n);log(t,ok)}));}
  return result;
@@ -3469,6 +3469,61 @@ async function boxOrderCancel(x,oid){
   x.box=back;
 }
 /* 役割の保存。swap: 同じ会社のGMを入れ替えるときの前のGM */
+/* 見る人用一覧の中身（共有を合わせるときと、記号・表示名だけの保存で同じ） */
+const viewListWrite=(id,staff)=>sheetWrite(id,"一覧",[VIEW_COLS,...staff.filter(s=>!s.removed).map(s=>[s.name,s.email,s.company||"",s.role||"社員",s.gmCo||"",s.sheetId,s.boxId||"",s.charge||"",s.displayName||"",gmLeadOn(s)?"統括":""])]);
+/* v1.50.24 共有に関係する項目（会社・役割・GMの会社・担当の会社・統括GM）が変わったか */
+const shareFieldsChanged=(s,v)=>coList(s).join(",")!==coList(v).join(",")||(s.role||"社員")!==(v.role||"社員")||(s.gmCo||"")!==(v.gmCo||"")||chargeNorm(s.charge)!==chargeNorm(v.charge)||gmLeadOn(s)!==gmLeadOn(v);
+/* v1.50.24 受付番号の記号・表示名だけを変えたときの速い保存：共有の付け替えはせず、社員一覧（と見る人用一覧）と、その人の記録シートの「受付番号の記号」だけを書く。
+   最新の社員一覧を読んだうえで、共有に関係する項目が変わっていないこと・記号が重ならないことを確かめてから書く */
+async function adminLightSave(sheetId,v,log){return adminShareOperation(async()=>{
+  await adminSync(()=>{});shareSave();shareLocalCheck();shareValidateStaff(D().staff);
+  const staff=structuredClone(D().staff),s=staff.find(x=>x.sheetId===sheetId);if(!s||s.removed)throw Error("nostaff");
+  if(shareFieldsChanged(s,v))throw Error("ほかの端末で会社・役割が変わっています。開き直して、もう一度保存してください。");
+  {const bad=roleCheck(v,sheetId,staff);if(bad)throw Error(bad)}
+  const disp=(s.displayName||"")!==(v.displayName||""),code=!!v.caseCode&&v.caseCode!==s.caseCode;
+  if(!disp&&!code){log(s.name+"さん：変わったところはありません");return {review:0}}
+  if(disp)s.displayName=v.displayName||"";if(code)s.caseCode=v.caseCode;
+  shareProgress("社員一覧に保存しています");D().staff=staff;shareSave();await shareWriteList();
+  log(s.name+"さん："+[disp?"表示名を「"+(s.displayName||"（なし・氏名）")+"」に":"",code?"受付番号の記号を "+s.caseCode+" に":""].filter(Boolean).join("、")+"しました（共有は変えていません）");
+  const d=D();if(disp&&d.viewListId){shareProgress("見る人用一覧を書き直しています");try{await shareRead(()=>viewListWrite(d.viewListId,staff))}catch(err){if(err.message==="signin")throw err;log("見る人用一覧を書けませんでした："+shareErrText(err)+"（もう一度保存すると書き直します）",false)}}
+  if(code){shareProgress("受付番号の記号を書いています");try{await shareRead(()=>caseCodeWrite(s));log(s.name+"さんの記録シートに受付番号の記号を書きました。次の同期から使われます")}catch(err){if(err.message==="signin")throw err;log("受付番号の記号を書けませんでした："+shareErrText(err)+"（社員一覧には保存済み。もう一度保存すると書き直します）",false)}}
+  return {review:0};
+})}
+/* v1.50.24 受付番号の記号をまとめて入れる画面（共有を外していない人の一覧。3文字。空の欄は今のまま） */
+function codesForm(){
+  const list=D().staff.filter(s=>!s.removed);
+  return '<div class="panel" id="codes-form" style="display:flex;flex-direction:column;gap:8px"><h4 style="margin:0">受付番号の記号をまとめて入れる</h4>'+
+    '<p class="note" style="margin:0">アルファベット3文字（例：大平→OHI、小泉→KOI）。空の欄は今の記号のままです。保存しても共有は変えません（社員一覧と、各人の記録シートの「受付番号の記号」だけを書きます）。</p>'+
+    list.map(s=>'<label class="f" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="min-width:7em;overflow-wrap:anywhere">'+h(personLabel(s)||s.name)+'</span><input type="text" data-code-sheet="'+h(s.sheetId)+'" maxlength="3" autocapitalize="characters" autocomplete="off" spellcheck="false" style="width:6em" value="'+h(ui.dCodesDraft&&s.sheetId in ui.dCodesDraft?ui.dCodesDraft[s.sheetId]:codeLegacy(s.caseCode)?"":s.caseCode||"")+'" placeholder="'+(codeLegacy(s.caseCode)?'今は '+h(s.caseCode):'3文字')+'"></label>').join("")+
+    '<div class="row"><button class="btn pri" type="button" data-act="dcodesave"'+(ui.dbusy?' disabled':'')+'>まとめて保存する</button><button class="btn" type="button" data-act="dcodesno">やめる</button></div></div>';
+}
+/* 画面の入力を読む。形の違い・入力どうしの重なり・ほかの人の記号との重なりを確かめる。{changes:[{sheetId,code}],bad:""} */
+function codesRead(staff=D().staff){
+  const changes=[],bad=[];
+  for(const el of document.querySelectorAll("[data-code-sheet]")){const raw=String(el.value||"").trim();if(!raw)continue;const s=staff.find(x=>x.sheetId===el.dataset.codeSheet);if(!s)continue;
+    const code=codeInput(raw);if(!code){bad.push(s.name+"：「"+raw+"」は使えません（アルファベット3文字。CPY・CPG は不可）");continue}
+    if(code!==s.caseCode)changes.push({sheetId:s.sheetId,name:s.name,code});}
+  return {changes,bad:bad.concat(codesConflicts(changes,staff))};
+}
+/* 変えたあとの記号が、ほかの人（共有を外した人も）と重ならないか */
+function codesConflicts(changes,staff){
+  const after=new Map(staff.map(s=>[s.sheetId,codeNorm(s.caseCode)]));for(const c of changes)after.set(c.sheetId,c.code);
+  const out=[];for(const c of changes){const o=staff.find(x=>x.sheetId!==c.sheetId&&after.get(x.sheetId)===c.code);if(o)out.push(c.name+"：「"+c.code+"」は"+o.name+"さんと重なります")}
+  return out;
+}
+async function adminCodesSave(changes,log){return adminShareOperation(async()=>{
+  await adminSync(()=>{});shareSave();shareLocalCheck();shareValidateStaff(D().staff);
+  const staff=structuredClone(D().staff),list=changes.map(c=>({...c,s:staff.find(x=>x.sheetId===c.sheetId&&!x.removed)})).filter(c=>c.s&&c.s.caseCode!==c.code);
+  {const bad=codesConflicts(list,staff);if(bad.length)throw Error(bad.join("／"))}
+  if(!list.length){log("変わった記号はありません");return {review:0}}
+  for(const c of list)c.s.caseCode=c.code;
+  shareProgress("社員一覧に保存しています");D().staff=staff;shareSave();await shareWriteList();log("社員一覧に "+list.length+"人分の受付番号の記号を保存しました（共有は変えていません）");
+  let i=0;const failed=[];shareProgress("受付番号の記号を書いています 0／"+list.length);
+  await sharePool(list,async c=>{try{await shareRead(()=>caseCodeWrite(c.s))}catch(err){if(err.message==="signin")throw err;failed.push(c.s.name)}shareProgress("受付番号の記号を書いています "+(++i)+"／"+list.length)});
+  if(failed.length)log("記録シートに書けなかった人："+failed.join("・")+"（社員一覧には保存済み。もう一度「まとめて保存する」を押すと書き直します）",false);
+  else log(list.length+"人の記録シートに受付番号の記号を書きました。それぞれの次の同期から使われます");
+  return {review:0};
+})}
 async function adminRoleSave(sheetId,v,swapId,log){return adminShareOperation(async()=>{
   await gAuthorize(true);await adminSync(()=>{});shareSave();shareLocalCheck();shareValidateStaff(D().staff);
   const staff=structuredClone(D().staff),s=staff.find(x=>x.sheetId===sheetId);if(!s)throw Error("nostaff");
@@ -3774,6 +3829,7 @@ function dSettings(){
   const admin=isAdminDevice()?'<div class="panel"><h3>管理（社長用）</h3>'+
       (!d.admin?'<p class="note" style="margin:0">社員ごとの記録シートを、社長のドライブのフォルダ「CPG HUB データ」に作ります。</p><div class="row"><button class="btn pri" type="button" data-act="dadmin">管理をはじめる</button></div>':
       ((n=>n?'<p class="note" role="status" style="margin:0;color:var(--amber)">受付番号の記号が2文字のままの人が '+n+'人います。「役割を変える」で3文字（例：大平→OHI）を入れて保存してください。入れ直すまでは、今の2文字で受付番号が付きます。</p>':'')(d.staff.filter(s=>!s.removed&&codeLegacy(s.caseCode)).length))+
+      (d.staff.some(s=>!s.removed)?(ui.dCodes?codesForm():'<div class="row"><button class="btn sm" type="button" data-act="dcodes"'+(ui.dbusy?' disabled':'')+'>受付番号の記号をまとめて入れる</button></div>'):'')+
       (d.staff.length?'<ul class="dl">'+d.staff.map((s,i)=>'<li><div class="row staff-id"><b>'+h(s.name)+'</b>'+(s.displayName?'<span class="chip">表示名 '+h(s.displayName)+'</span>':'')+'<span class="note">'+h(s.email)+'</span></div><div class="row staff-acts">'+(s.removed?'<span class="note">役割解除済み（要確認の共有は別途確認）</span>':'<button class="btn sm" type="button" data-dname="'+h(s.sheetId)+'">正規氏名</button><button class="btn sm" type="button" data-drole="'+i+'">会社・役割</button><button class="btn sm danger" type="button" data-dunshare="'+i+'">共有を外す</button>')+'</div>'+
         '<div class="row note"><span class="chip">'+h(coList(s).join("・")||"会社なし")+'</span><span class="chip'+(isViewer(s)?' ro':'')+'">'+h(roleLabel(s))+'</span>'+(s.caseCode?'<span class="chip num">受付番号 '+h(s.caseCode)+'-</span>'+(codeLegacy(s.caseCode)&&!s.removed?'<span class="chip nco">2文字・3文字に入れ直してください</span>':''):'')+'</div>'+
         '<div class="note num">シート '+h(s.sheetId.slice(0,10))+'…・追加 '+md(s.addedAt)+'・'+h(staffSyncText(s))+'</div>'+((t=>t?'<div class="note">'+h(t.text)+'</div>'+(t.review?'<div class="note cal-review" style="color:var(--amber);overflow-wrap:anywhere">'+h(t.review)+'</div>':''):'')(staffCalText(s)))+
@@ -3796,7 +3852,7 @@ function dSettings(){
      '<p class="note" style="margin:0">全社・GM・経理・業務管理の役割の人だけが使います。社長から届いた「見る人用のリンク」を貼り付けて「つなぐ」を押してください。</p>'+
      '<label class="f">見る人用のリンク<input type="url" id="d_view" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://docs.google.com/spreadsheets/d/…/edit"></label>'+
      '<div class="row"><button class="btn pri" type="button" data-act="dvlink">つなぐ</button></div>')+'</div>';
-  const force=!!(msg||ui.dName!=null||ui.dUnshare!=null||ui.dRole!=null||ui.dAsk||ui.dbusy);
+  const force=!!(msg||ui.dName!=null||ui.dUnshare!=null||ui.dRole!=null||ui.dAsk||ui.dCodes||ui.dbusy);
   return (msg?'<section class="sec">'+msg+'</section>':'')+
     (d.admin?'':foldSec("dataSheet","記録の送り先（Googleドライブ）",mine,force)+foldSec("dataView","会社の動きを見る（管理者用）",view,force))+
     foldSec("dataAdmin","管理（社長用）",admin,force);
@@ -4006,6 +4062,15 @@ document.addEventListener("click",e=>{
     gAuthorize(true).then(()=>adminSync((text,ok)=>log.push({ok:ok===false?"warn":true,text}))).then(f=>{log.unshift(f.list?{ok:true,text:"社員一覧を読み直しました（社員"+f.n+"人）"}:{ok:"warn",text:"「CPG HUB_社員一覧」がまだありません"});ui.dmsg=log},
       err=>{ui.dmsg=[{ok:false,text:"読み直せませんでした："+dMsg(err)}]}).finally(()=>{ui.dbusy=false;render()});return}
   if(a==="daskno"){ui.dAsk=null;render();return}
+  if(a==="dcodes"){ui.dCodes=true;ui.dCodesDraft=null;ui.dmsg=null;render();return}
+  if(a==="dcodesno"){ui.dCodes=false;ui.dCodesDraft=null;render();return}
+  if(a==="dcodesave"){if(ui.dbusy)return;
+    /* 入れた値は、エラーの表示で画面を描き直しても消えないように残す */
+    ui.dCodesDraft=Object.fromEntries([...document.querySelectorAll("[data-code-sheet]")].map(e=>[e.dataset.codeSheet,e.value]));
+    const r=codesRead();if(r.bad.length){ui.dview="";ui.dmsg=r.bad.map(text=>({ok:false,text}));render();return}
+    if(!r.changes.length){ui.dmsg=[{ok:true,text:"変わった記号はありません"}];render();return}
+    const log=[];ui.dbusy=true;ui.dview="";ui.dmsg=log;render();
+    adminCodesSave(r.changes,(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()}).then(()=>{ui.dCodes=false;ui.dCodesDraft=null},err=>{log.push({ok:false,text:"途中で止まりました："+(err.message==="http"?dMsg(err):err.message||dMsg(err))})}).finally(()=>{ui.dbusy=false;render()});return}
   if(a==="loadbackup"){const k=loadProblem&&loadProblem.key;let raw=null;try{raw=k?localStorage.getItem(k):null}catch(e){}
     if(raw===null){toast("控えを読めませんでした");return}
     const url=URL.createObjectURL(new Blob([raw],{type:"application/json"})),a2=document.createElement("a");a2.href=url;a2.download="cpg-hub-backup-"+ymd(new Date())+".json";document.body.append(a2);a2.click();a2.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);return}
@@ -4027,8 +4092,9 @@ document.addEventListener("click",e=>{
     {const bad=roleCheck(v,s.sheetId);if(bad){ui.dview="";ui.dmsg=[{ok:false,text:bad}];render();return}}
     if(v.role==="GM"&&!v.gmCo){ui.dview="";ui.dmsg=[{ok:false,text:"GMを務める会社を選んでください"}];render();return}
     if(CHARGE_ROLES.includes(v.role)&&!v.charge){ui.dview="";ui.dmsg=[{ok:false,text:"担当の会社を選んでください"}];render();return}
+    const light=!shareFieldsChanged(s,v);
     const run=swapId=>{const log=[];ui.dRole=null;ui.dbusy=true;ui.dview="";ui.dmsg=log;render();
-      adminRoleSave(s.sheetId,v,swapId,(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()}).catch(err=>{log.push({ok:false,text:"途中で止まりました："+dMsg(err)})}).finally(()=>{ui.dbusy=false;render()})};
+      (light&&!swapId?adminLightSave(s.sheetId,v,(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()}):adminRoleSave(s.sheetId,v,swapId,(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()})).catch(err=>{log.push({ok:false,text:"途中で止まりました："+(err.message==="http"?dMsg(err):err.message||dMsg(err))})}).finally(()=>{ui.dbusy=false;render()})};
     /* v1.50.19 同じ会社のGMは何人でも置ける。すでにGMがいるときは「〇人目のGMとして追加」か「入れ替え」を選ぶ（その会社のGMのままの人を保存するときは聞かない） */
     const others=v.gmCo&&s.gmCo!==v.gmCo?D().staff.filter(x=>!x.removed&&x.sheetId!==s.sheetId&&x.gmCo===v.gmCo):[];
     if(others.length){ui.dAsk=gmAsk(v.gmCo,others,run);render();showAlert();return}

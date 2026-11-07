@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
-const hook='window.MG={get db(){return DB},ui,go,render,save,canSee,viewerList,roleVal,stubRead(rows){sheetRead=async()=>({"一覧":rows});namesRead=async()=>[]},stub(){window.__calls=[];adminRoleSave=async(id,v,swap)=>{window.__calls.push(["role",id,v.role,v.gmCo,swap])};adminAdd=async(name,mail,log,rv,swap)=>{window.__calls.push(["add",mail,rv.role,rv.gmCo,swap])}}};';
+const hook='window.MG={get db(){return DB},ui,go,render,save,canSee,viewerList,roleVal,stubRead(rows){sheetRead=async()=>({"一覧":rows});namesRead=async()=>[]},stub(){window.__calls=[];adminLightSave=async(id,v)=>{window.__calls.push(["light",id,v.displayName||"",v.caseCode||""])};adminCodesSave=async(ch)=>{window.__calls.push(["codes",ch.map(c=>c.sheetId+"="+c.code).join(",")])};adminRoleSave=async(id,v,swap)=>{window.__calls.push(["role",id,v.role,v.gmCo,swap])};adminAdd=async(name,mail,log,rv,swap)=>{window.__calls.push(["add",mail,rv.role,rv.gmCo,swap])}}};';
 const staff=[
  {name:'見本 一',email:'gm-a@example.com',sheetId:'sheetGA0000000000000000001',company:'CPY',role:'GM',gmCo:'CPY'},
  {name:'見本 二',email:'emp-b@example.com',sheetId:'sheetEB0000000000000000002',company:'CPY',role:'社員',gmCo:''},
@@ -45,7 +45,7 @@ async function main(){
  await check('GMが2人いる会社：GMのままの人を保存しても聞かない。3人目は2人の名前と入れ替えの相手を出す',async()=>{
   await reset(two);await p.evaluate(()=>{MG.ui.dRole=0;MG.render()});await p.fill('#dr_disp','見本の表示名');await p.evaluate(()=>document.querySelector('[data-act="droledo"]').click());
   assert.equal(await p.locator('[data-act="daskadd"]').count(),0,'no question');
-  assert.deepEqual(await calls(),[['role','sheetGA0000000000000000001','GM','CPY','']]);
+  assert.deepEqual(await calls(),[['light','sheetGA0000000000000000001','見本の表示名','GMA']],'only the display name changed: the fast save (no share re-sync)');
   await reset(two);await editAsGm(1);
   assert.match(await p.textContent('main'),/CPYのGMはすでに見本 一さん・見本 三さんです。3人目のGMとして追加しますか？/);
   assert.deepEqual(await p.locator('[data-act="daskswap"]').allTextContents(),['見本 一さんと入れ替える','見本 三さんと入れ替える']);
@@ -92,6 +92,26 @@ async function main(){
   const old=rows.map(x=>x.slice(0,9));
   const r2=await p.evaluate(async rows=>{MG.stubRead(rows);const l=await MG.viewerList();const f=e=>l.find(x=>x.email===e);return MG.canSee(f('gm-a@example.com'),f('emp-c@example.com'))},old);
   assert.equal(r2,false);
+ });
+ await check('v1.50.24 役割の画面：記号・表示名だけなら速い保存、会社・役割を変えたら今までどおりの保存',async()=>{
+  await reset(staff);await p.evaluate(()=>{MG.ui.dRole=1;MG.render()});await p.fill('#dr_code','abc');await p.evaluate(()=>document.querySelector('[data-act="droledo"]').click());
+  assert.deepEqual(await calls(),[['light','sheetEB0000000000000000002','','ABC']]);
+  await reset(staff);await p.evaluate(()=>{MG.ui.dRole=1;MG.render()});await p.check('#dr_co_CP');await p.evaluate(()=>document.querySelector('[data-act="droledo"]').click());
+  assert.equal((await calls())[0][0],'role','company changed: full share sync');
+ });
+ await check('v1.50.24 記号をまとめて入れる画面：共有を外していない人ごとに欄、2文字の人は「今は ○○」。形の違い・重なりは止め、変わった人だけ保存（400px）',async()=>{
+  const list=staff.map((s,i)=>({...s,caseCode:['QX','KOI','',''][i]})).concat([{name:'見本 外',email:'gone@example.com',sheetId:'sheetGO0000000000000000009',company:'CPY',role:'社員',removed:true,caseCode:'ZZZ'}]);
+  await reset(list);await p.click('[data-act="dcodes"]');
+  const inputs=await p.$$eval('[data-code-sheet]',els=>els.map(e=>[e.dataset.codeSheet.slice(0,7),e.value,e.placeholder]));
+  assert.deepEqual(inputs,[['sheetGA','','今は QX'],['sheetEB','KOI','3文字'],['sheetEC','','3文字'],['sheetAD','','3文字']]);
+  assert.ok(await overflow(p)<=1);
+  const f=p.locator('[data-code-sheet]');
+  await f.nth(0).fill('qx');await p.click('[data-act="dcodesave"]');assert.match(await p.textContent('main'),/「qx」は使えません/);assert.deepEqual(await calls(),[]);
+  await f.nth(0).fill('zzz');await p.click('[data-act="dcodesave"]');assert.match(await p.textContent('main'),/「ZZZ」は見本 外さんと重なります/,'removed staff codes are not reused');
+  await f.nth(0).fill('ohi');await f.nth(2).fill('ＯＨＩ');await p.click('[data-act="dcodesave"]');assert.match(await p.textContent('main'),/「OHI」は見本 .さんと重なります/);assert.deepEqual(await calls(),[]);
+  assert.equal(await f.nth(0).inputValue(),'ohi','typed values survive the error message');
+  await f.nth(2).fill('mzs');await p.click('[data-act="dcodesave"]');
+  assert.deepEqual(await calls(),[['codes','sheetGA0000000000000000001=OHI,sheetEC0000000000000000003=MZS']],'unchanged KOI and empty fields are not sent');
  });
  assert.deepEqual(errors,[]);await c.close();
  console.log('ALL PASS',results.length);
