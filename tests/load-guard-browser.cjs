@@ -51,8 +51,15 @@ async function main(){
   const meta=JSON.stringify({savedAt:'2026-11-07T12:34:00Z',bytes:1000,admin:true,sheet:true,cases:12});
   const {c,p,errors}=await open({[META]:meta,workhub_gcal_last_v1:'{}',workhub_corp_tabs_v1:'{}'});
   const t=await p.textContent('#load-problem');
-  assert.match(t,/この端末の記録が見つかりません/);assert.match(t,/最後に保存したのは 11\/7 21:34（社長の管理端末・案件 12件）/);assert.match(t,/ほかのCPG HUBのデータは残っています（2件）/);
+  assert.match(t,/この端末の記録が見つかりません/);assert.match(t,/最後に保存したのは 11\/7 21:34（社長の管理端末・案件 12件）/);assert.match(t,/保存したときのメモは残っているので、ブラウザのデータ全体が消えたのではなく、この端末の記録だけが見つからない/);
   assert.ok(await overflow(p)<=1);assert.deepEqual(errors,[]);await c.close();
+ });
+ await check('v1.50.22 同期の控えだけが残っている（メモなし）：控えはログインや同期で新しく作られるので「この記録だけ」とは言わない',async()=>{
+  const {c,p,errors}=await open({workhub_gcal_last_v1:'{}'});
+  const t=await p.textContent('#load-problem');
+  assert.match(t,/この端末の記録が見つかりません/);assert.match(t,/同期の控えなどは残っています（1件）/);assert.match(t,/ブラウザのデータ全体が消えたのかどうかは、ここからは分かりません/);
+  assert.doesNotMatch(t,/この端末の記録だけが見つからない/);assert.doesNotMatch(t,/最後に保存したのは/);
+  assert.deepEqual(errors,[]);await c.close();
  });
  await check('はじめての端末（何もない・畳み方の記録だけ）には出さない',async()=>{
   for(const seed of [{},{workhub_fold_v1:'{}'}]){const {c,p}=await open(seed);assert.equal(await p.locator('#load-problem').count(),0);assert.equal(await p.evaluate(()=>LG.problem),null);await c.close();}
