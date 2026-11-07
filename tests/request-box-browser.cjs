@@ -283,6 +283,26 @@ async function main(){
   await A.p.evaluate(async email=>{const s=RB.db.settings.data.staff.find(x=>x.email===email&&!x.removed);await RB.adminRoleSave(s.sheetId,{company:'CPY',role:'社員',gmCo:''},'',()=>{})},SB);
   const records=tab(byName('CPG HUB_社員一覧'),'共有管理履歴').slice(1).map(r=>JSON.parse(r[2]));assert.ok(records.some(x=>x.file===old.id&&x.email===SB&&x.action==='revoke'&&x.state==='verified'));assert.ok(records.some(x=>x.file===fresh.id&&x.email===SB&&x.action==='grant'&&x.state==='verified'));
  });
+ await check('v1.50.19 同じ会社のGMを2人に（追加）：記録シート・指示箱・見る人用一覧・予定の共有先が2人とも同じ。片方を外しても、もう片方は残る',async()=>{
+  const GM2='test-gm2-cpy@example.com';
+  const first=await A.p.evaluate(()=>{const g=RB.db.settings.data.staff.filter(x=>!x.removed&&x.gmCo==='CPY');return g.map(x=>x.email)});
+  assert.equal(first.length,1,'one CPY GM before: '+first.join());const G1=first[0];
+  await A.p.evaluate(async GM2=>{await RB.adminAdd('見本 室長',GM2,()=>{},{company:'CPY',role:'GM',gmCo:'CPY'},'')},GM2);
+  const gms=await A.p.evaluate(()=>RB.db.settings.data.staff.filter(x=>!x.removed&&x.gmCo==='CPY').map(x=>x.email).sort());
+  assert.deepEqual(gms,[G1,GM2].sort(),'both stay GM');
+  const cur=await A.p.evaluate(SB=>{const s=RB.db.settings.data.staff.find(x=>x.email===SB&&!x.removed);return {sheet:s.sheetId,box:s.boxId,view:RB.db.settings.data.viewListId}},SB);
+  const sB=G.files[cur.sheet],bB=G.files[cur.box],vl=G.files[cur.view];assert.ok(sB&&bB&&vl,'current files');
+  for(const g of [G1,GM2]){assert.equal(shares(sB)[g],'reader',g+' reads the record sheet');assert.equal(shares(bB)[g],'writer',g+' can send requests');assert.equal(shares(vl)[g],'reader',g+' reads the viewer list');
+   assert.ok(tab(sB,'予定の共有先').some(r=>r[1]===g),g+' is a calendar share target');}
+  const list=tab(vl,'一覧'),ri=list[0].indexOf('役割'),gi=list[0].indexOf('GMの会社');
+  assert.deepEqual(list.slice(1).filter(r=>r[ri]==='GM'&&r[gi]==='CPY').map(r=>r[1]).sort(),[G1,GM2].sort());
+  /* 片方（最初のGM）を外す */
+  await A.p.evaluate(async G1=>{const s=RB.db.settings.data.staff.find(x=>x.email===G1&&!x.removed);await RB.adminRoleSave(s.sheetId,{company:s.company,role:'社員',gmCo:''},'',()=>{})},G1);
+  assert.ok(!(G1 in shares(bB)),'removed GM loses the request box');
+  assert.equal(shares(sB)[GM2],'reader');assert.equal(shares(bB)[GM2],'writer');assert.equal(shares(vl)[GM2],'reader');
+  assert.ok(tab(sB,'予定の共有先').some(r=>r[1]===GM2));assert.ok(!tab(sB,'予定の共有先').some(r=>r[1]===G1),'removed GM is no longer a target');
+  assert.deepEqual(A.errors,[]);
+ });
  await check('複数有効同Gmailの異常は社員追加/役割変更/削除の前に停止、新ファイルも作らない',async()=>{
   const table=tab(byName('CPG HUB_社員一覧'),'社員'),saved=structuredClone(table),duplicate=structuredClone(table.find((r,i)=>i&&r[1]===SB&&r[4]==='共有中'));duplicate[2]='synthetic-conflict-record';duplicate[11]='';table.push(duplicate);
   const before=G.calls.filter(x=>['POST','PUT','PATCH','DELETE'].includes(x[1])).length,files=Object.keys(G.files).length;

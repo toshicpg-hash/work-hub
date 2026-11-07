@@ -16,6 +16,12 @@ assert.equal(ctx.can({...gm,role:'社員',gmCo:''},employee),false);
 const all={...gm,role:'全社',gmCo:'CP'};
 for(const s of [employee,{...employee,company:'CP,CPY,AT',role:'GM',gmCo:'AT'}])assert.equal(ctx.can(all,s),true);
 console.log('PASS single-company employee scope; multi-company/management exclusions; self/removed/nonviewer; all-company scope preserved');
+/* v1.50.19 同じ会社のGMが2人：2人とも同じ一般社員を見られ、GM同士はおたがいを見ない。片方を外しても、もう片方は見られる */
+{const gm2={sheetId:'gm2',role:'GM',gmCo:'CPY',company:'CPY'};
+ assert.equal(ctx.can(gm2,employee),true);assert.equal(ctx.can(gm,employee),true);
+ assert.equal(ctx.can(gm,gm2),false);assert.equal(ctx.can(gm2,gm),false);
+ assert.equal(ctx.can({...gm,role:'社員',gmCo:''},employee),false);assert.equal(ctx.can(gm2,employee),true,'removing one GM keeps the other');
+ console.log('PASS two GMs of one company see the same employees, not each other');}
 const validation=html.slice(html.indexOf('function shareValidateStaff('),html.indexOf('async function adminShareSync('));
 const guard={D:()=>({viewListId:'view-list'})};vm.createContext(guard);vm.runInContext(validation+';this.check=shareValidateStaff',guard);
 const row={sheetId:'active-file',email:'same@example.com',removed:false};

@@ -406,8 +406,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.17" title="使い方マニュアルを開く">v1.50.17・11/7更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.17" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.19" title="使い方マニュアルを開く">v1.50.19・11/7更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.19" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -467,10 +467,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.17"></script>
+<script src="./share-management.js?v=1.50.19"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.17"></script>
-<script src="./calendar-view-scope.js?v=1.50.17"></script>
+<script src="./view-scope.js?v=1.50.19"></script>
+<script src="./calendar-view-scope.js?v=1.50.19"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2113,7 +2113,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.17";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.19";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2275,7 +2275,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.17" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.17" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.19" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.19" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3075,6 +3075,12 @@ const rcFor=(me,s,rows)=>me&&me.role==="経理"&&s.sheetId!==me.sheetId?rows.fil
 /* HUBの画面で、ほかの人の立替・領収書を見ない役割（業務管理） */
 const noReceipts=v=>!!v&&v.role==="業務管理";
 const roleLabel=s=>(chargeRole(s)?s.role+"："+(chargeList(s).length===COMPANIES.length?"3社すべて":chargeList(s).join("・")||"担当の会社なし"):s.role==="全社"?"全社":s.role==="GM"?"GM":"社員")+(s.gmCo?(s.role==="GM"?"（"+s.gmCo+"）":"・"+s.gmCo+" GM"):"");
+/* v1.50.19 GMがすでにいる会社にGMを置くときの確認。追加（swapId なし）か、選んだ1人と入れ替え（その人はGMから外れる） */
+function gmAsk(co,others,run){
+  const n=others.length+1;
+  return {text:co+"のGMはすでに"+others.map(x=>x.name+"さん").join("・")+"です。"+n+"人目のGMとして追加しますか？ 入れ替えますか？（追加すると、"+others.map(x=>x.name+"さん").join("・")+"もGMのままで、見られる範囲は同じです。入れ替えると、入れ替えた人はGMから外れ、"+"役割が「GM」なら「社員」に戻ります。「全社」なら「全社」のままです）",
+    addLabel:n+"人目のGMとして追加する",swaps:others.map(x=>({name:x.name,sheetId:x.sheetId})),run};
+}
 const gmLine=list=>COMPANIES.map(co=>{const g=list.filter(s=>!s.removed&&s.gmCo===co);return g.length?co+" GM："+g.map(x=>x.name).join("・"):""}).filter(Boolean).join("　");
 const VIEW_COLS=["氏名","Gmail","会社","役割","GMの会社","シートID","指示箱ID","担当の会社","表示名"];
 const eq=(a,b)=>String(a||"").toLowerCase()===String(b||"").toLowerCase();
@@ -3636,7 +3642,7 @@ function roleForm(p,s){
     '<label class="f">表示名（任意。画面に出す名前。例：専務）<input type="text" id="'+p+'_disp" maxlength="20" value="'+h(s.displayName||"")+'" placeholder="空なら氏名"></label>'+
     '<label class="f">受付番号の記号（アルファベット2文字。例：大平→OH）<input type="text" id="'+p+'_code" maxlength="2" autocapitalize="characters" autocomplete="off" spellcheck="false" value="'+h(codeSuggest(s))+'" placeholder="空なら自動"></label>'+
     '<div class="f full"><span>担当の会社（経理・業務管理のとき）</span><div class="row">'+COMPANIES.map(co=>'<label class="row"><input type="checkbox" id="'+p+'_ch_'+co+'"'+(chargeList(s).includes(co)?' checked':'')+'> '+co+'</label>').join("")+'</div></div>'+
-    '<p class="note full" style="margin:0">全社：全員の記録を見る（例：専務）。GM：同じ1社だけに所属する一般社員の記録を見る（複数会社・全社・GMは対象外）。全社の人がある会社のGMを兼ねるときは、役割を「全社」にしてGMの会社を選びます。経理・業務管理：「担当の会社」に所属する社員の記録を、見るだけで見る（その会社のGMと、所属の会社のどれかが担当の会社の人（専務など）も含みます。タスクリクエストは出せません。業務管理は、立替・領収書は見ません。経理が見る立替・領収書は、担当の会社の分だけです）。どの人も、予定は、その人の予定を見てよい人に共有してもらいます。</p></div>';
+    '<p class="note full" style="margin:0">全社：全員の記録を見る（例：専務）。GM：同じ1社だけに所属する一般社員の記録を見る（複数会社・全社・GMは対象外）。1つの会社にGMを2人以上置けます（見られる範囲は同じ）。全社の人がある会社のGMを兼ねるときは、役割を「全社」にしてGMの会社を選びます。経理・業務管理：「担当の会社」に所属する社員の記録を、見るだけで見る（その会社のGMと、所属の会社のどれかが担当の会社の人（専務など）も含みます。タスクリクエストは出せません。業務管理は、立替・領収書は見ません。経理が見る立替・領収書は、担当の会社の分だけです）。どの人も、予定は、その人の予定を見てよい人に共有してもらいます。</p></div>';
 }
 function roleVal(p){
   const role=val(p+"_role")||"社員", gmCo=role==="GM"||role==="全社"?val(p+"_gm"):"";
@@ -3694,7 +3700,7 @@ function dSettings(){
         (ui.dRole===i?roleForm("dr",s)+'<div class="row"><button class="btn pri" type="button" data-act="droledo"'+(ui.dbusy?' disabled':'')+'>保存する</button><button class="btn" type="button" data-act="droleno">やめる</button></div>':'')+
         (ui.dUnshare===i?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><span>'+h(s.name)+'さんの役割を外します。共有は次の一覧で確認します。旧共有・帰属不明の共有は残り、アクセスが続く場合があります。シートは消しません。</span><div class="row"><button class="btn danger" type="button" data-act="dunsharedo">共有を外す</button><button class="btn" type="button" data-act="dunshareno">やめる</button></div></div>':'')+'</li>').join("")+'</ul>':'<p class="note" style="margin:0">まだ社員はいません。</p>')+
       '<div class="row"><button class="btn sm" type="button" data-act="dreload"'+(ui.dbusy?' disabled':'')+'>一覧を読み直す</button><span class="note">ほかの端末で追加・共有を外した社員を反映します</span></div>'+
-      (ui.dAsk?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><span>'+h(ui.dAsk.text)+'</span><div class="row"><button class="btn danger" type="button" data-act="daskyes">入れ替える</button><button class="btn" type="button" data-act="daskno">やめる</button></div></div>':'')+
+      (ui.dAsk?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><span>'+h(ui.dAsk.text)+'</span><div class="row"><button class="btn pri" type="button" data-act="daskadd">'+h(ui.dAsk.addLabel)+'</button>'+ui.dAsk.swaps.map((x,i)=>'<button class="btn danger" type="button" data-act="daskswap" data-i="'+i+'">'+h(x.name)+'さんと入れ替える</button>').join("")+'<button class="btn" type="button" data-act="daskno">やめる</button></div></div>':'')+
       '<div class="form"><label class="f">氏名<input type="text" id="d_name" placeholder="例：山田"></label><label class="f">Gmail<input type="email" id="d_mail" inputmode="email" autocomplete="off" placeholder="例：yamada@gmail.com"></label></div>'+
       roleForm("da",{company:"",role:"社員",gmCo:"",charge:"",displayName:""})+
       '<div class="row"><button class="btn pri" type="button" data-act="dadd">社員を追加</button></div>'+
@@ -3918,7 +3924,8 @@ document.addEventListener("click",e=>{
     gAuthorize(true).then(()=>adminSync((text,ok)=>log.push({ok:ok===false?"warn":true,text}))).then(f=>{log.unshift(f.list?{ok:true,text:"社員一覧を読み直しました（社員"+f.n+"人）"}:{ok:"warn",text:"「CPG HUB_社員一覧」がまだありません"});ui.dmsg=log},
       err=>{ui.dmsg=[{ok:false,text:"読み直せませんでした："+dMsg(err)}]}).finally(()=>{ui.dbusy=false;render()});return}
   if(a==="daskno"){ui.dAsk=null;render();return}
-  if(a==="daskyes"){const q=ui.dAsk;ui.dAsk=null;if(q)q.run();return}
+  if(a==="daskadd"){const q=ui.dAsk;ui.dAsk=null;if(q)q.run("");return}
+  if(a==="daskswap"){const q=ui.dAsk,x=q&&q.swaps[Number(el.dataset.i)];ui.dAsk=null;if(x)q.run(x.sheetId);return}
   if(a==="dn-cancel"){ui.dNameDraft=null;ui.dName=null;render();return}
   if(a==="dn-save"){const target=D().staff.find(s=>s.sheetId===ui.dName),name=val("dn_name");if(!target||shareRunning)return;ui.dNameDraft=name;const log=[];ui.dmsg=log;adminNameSave(target.sheetId,name,t=>{log.push({ok:true,text:t});render()}).then(()=>{ui.dName=null;ui.dNameDraft=null;log.push({ok:true,text:"正規氏名を保存・読戻し確認しました。社員・閲覧者は次の同期で表示に反映します。"})},e=>log.push({ok:false,text:e.message})).finally(render);return}
   if(a==="dcaltargets"){if(ui.dbusy)return;const log=[];ui.dbusy=true;ui.dview="";ui.dmsg=log;render();
@@ -3937,8 +3944,9 @@ document.addEventListener("click",e=>{
     if(CHARGE_ROLES.includes(v.role)&&!v.charge){ui.dview="";ui.dmsg=[{ok:false,text:"担当の会社を選んでください"}];render();return}
     const run=swapId=>{const log=[];ui.dRole=null;ui.dbusy=true;ui.dview="";ui.dmsg=log;render();
       adminRoleSave(s.sheetId,v,swapId,(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()}).catch(err=>{log.push({ok:false,text:"途中で止まりました："+dMsg(err)})}).finally(()=>{ui.dbusy=false;render()})};
-    const other=v.gmCo&&D().staff.find(x=>!x.removed&&x.sheetId!==s.sheetId&&x.gmCo===v.gmCo);
-    if(other){ui.dAsk={text:v.gmCo+"のGMはすでに"+other.name+"さんです。入れ替えますか？（"+other.name+"さんはGMから外れ、"+(other.role==="GM"?"役割は「社員」に戻ります":"役割は「全社」のままです")+"）",run:()=>run(other.sheetId)};render();showAlert();return}
+    /* v1.50.19 同じ会社のGMは何人でも置ける。すでにGMがいるときは「〇人目のGMとして追加」か「入れ替え」を選ぶ（その会社のGMのままの人を保存するときは聞かない） */
+    const others=v.gmCo&&s.gmCo!==v.gmCo?D().staff.filter(x=>!x.removed&&x.sheetId!==s.sheetId&&x.gmCo===v.gmCo):[];
+    if(others.length){ui.dAsk=gmAsk(v.gmCo,others,run);render();showAlert();return}
     run("");return}
   if(a==="dvcopy"){const el=document.getElementById("d_vlink");try{navigator.clipboard.writeText(el.value).then(()=>toast("コピーしました"),()=>{el.select();toast("選択しました。長押しでコピーしてください")})}catch(err){el.select()}return}
   if(a==="dvlink"){const b=obBefore("view");if(b){ui.dmsg=[{ok:false,text:"先に「"+b+"」をしてください（ホームの初期設定）。逆の順番だと、会社・人の選択肢から自分が外れます。"}];render();return}
@@ -3953,8 +3961,8 @@ document.addEventListener("click",e=>{
     if(CHARGE_ROLES.includes(rv.role)&&!rv.charge){ui.dview="";ui.dmsg=[{ok:false,text:"担当の会社を選んでください"}];render();return}
     const run=swapId=>{const log=[];ui.dview="";ui.dmsg=log;const add=(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()};
       adminAdd(name,mail,add,rv,swapId).catch(err=>{log.push({ok:false,text:err.message==="dup"?err.who+"さんはすでに追加されています（ほかの端末で追加済み）":"途中で止まりました："+dMsg(err)});render()})};
-    const other=rv.gmCo&&D().staff.find(x=>!x.removed&&x.gmCo===rv.gmCo);
-    if(other){ui.dAsk={text:rv.gmCo+"のGMはすでに"+other.name+"さんです。入れ替えますか？（"+other.name+"さんはGMから外れ、"+(other.role==="GM"?"役割は「社員」に戻ります":"役割は「全社」のままです")+"）",run:()=>run(other.sheetId)};render();showAlert();return}
+    const others=rv.gmCo?D().staff.filter(x=>!x.removed&&x.gmCo===rv.gmCo):[];
+    if(others.length){ui.dAsk=gmAsk(rv.gmCo,others,run);render();showAlert();return}
     run("");return}
   if(a==="dunshareno"){ui.dUnshare=null;render();return}
   if(a==="dunsharedo"){const s=D().staff[ui.dUnshare];ui.dUnshare=null;if(!s)return;
