@@ -60,7 +60,8 @@ async function main(){
   await p.click('[data-drole="0"]');assert.equal(await p.inputValue('#dr_disp'),'専務');
   await p.fill('#dr_disp','  役員　代理  ');assert.equal(await p.evaluate(()=>DN.roleVal('dr').displayName),'役員 代理');
   await p.fill('#dr_disp','');assert.equal(await p.evaluate(()=>DN.roleVal('dr').displayName),'');
-  assert.ok(/"指示箱ID","担当の会社","表示名"\]/.test(html)&&/"シートID","指示箱ID","担当の会社","表示名"\]/.test(html),'both lists end with 表示名');
+  /* v1.50.19 表示名のあとに列を足すのは末尾だけ（社員一覧：受付番号の記号・GM統括、見る人用一覧：GM統括） */
+  assert.ok(/STAFF_COLS=\[[^\]]*"指示箱ID","担当の会社","表示名","受付番号の記号","GM統括"\]/.test(html)&&/VIEW_COLS=\[[^\]]*"シートID","指示箱ID","担当の会社","表示名","GM統括"\]/.test(html),'表示名 stays after 担当の会社; new columns are only appended');
   assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await p.locator('[data-fold=dataAdmin]').screenshot({path:path.join(root,'docs/preview/display-names-admin-400.png')});
   assert.deepEqual(errors,[]);await c.close();
