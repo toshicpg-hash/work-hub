@@ -67,12 +67,15 @@ async function main(){
   const i=await info(d.p);assert.match(i,/未取得 1人：見本 二郎（読めていないカレンダー：見本 二郎（b）/);assert.match(i,/予定画面に表示するカレンダー/);
  });
  await check('v1.50.15 本人のカレンダーを結び付けていない人は、「CPG HUB」が読めていれば未取得を出さず、ⓘ に「CPG HUB の予定だけ」と出す',async()=>{
-  const d=await device({rows:[{id:HUB,work:true,mode:'mixed'}],cals,events,sources:[{id:HUB},{id:SELF_A},{id:BCAL}]});all.push(d);
+  /* v1.50.25 本人のカレンダーがこの端末の一覧にあれば自動で結び付く（calendar-person-auto）。ここでは本人のカレンダーが共有されていない端末で確かめる */
+  const noB=cals.filter(c=>c.id!==BCAL);
+  const d=await device({rows:[{id:HUB,work:true,mode:'mixed'}],cals:noB,events,sources:[{id:HUB},{id:SELF_A}]});all.push(d);
   await pick(d.p,B);const t=await month(d.p);assert.match(t,/見本荘 201/);assert.doesNotMatch(t,/未取得/);
   assert.match(await info(d.p),/見本 二郎：本人のカレンダーを結び付けていないので、共有カレンダー（CPG HUB）の予定だけを出しています/);
  });
  await check('v1.50.15 本人のカレンダーを結び付けておらず、「CPG HUB」も読めていないときは未取得（理由は「結び付いていない」）',async()=>{
-  const d=await device({rows:[{id:HUB,work:true,mode:'mixed'}],cals,events,sources:[{id:SELF_A},{id:BCAL}]});all.push(d);
+  /* v1.50.25 本人のカレンダーが共有されていない端末で確かめる（あれば自動で結び付く） */
+  const d=await device({rows:[{id:HUB,work:true,mode:'mixed'}],cals:cals.filter(c=>c.id!==BCAL),events,sources:[{id:SELF_A}]});all.push(d);
   await pick(d.p,B);const t=await month(d.p);assert.match(t,/未取得/);
   assert.match(await info(d.p),/見本 二郎（この端末の「仕事用カレンダーの対応設定」で、この人のカレンダーがまだ結び付いていません）/);
  });
