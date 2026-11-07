@@ -92,14 +92,14 @@ async function main(){
   assert.deepEqual(tab(sB,'連絡')[0],['指示箱ID','指示箱のリンク','書いた日時']);assert.equal(tab(sB,'連絡')[1][0],bB.id);
   const list=tab(byName('CPG HUB_社員一覧'),'社員');assert.deepEqual(list[0].slice(-5),['指示箱ID','担当の会社','表示名','受付番号の記号','GM統括']);
   /* v1.50.17 共有を合わせると、受付番号の記号（2文字・重ならない）が社員一覧と各社員の記録シートに入る */
-  {const ci=list[0].indexOf('受付番号の記号'),si=list[0].indexOf('シートID'),codes=list.slice(1).map(r=>r[ci]);assert.ok(codes.every(c=>/^[A-HJ-NP-Z]{2}$/.test(c)),codes.join());assert.equal(new Set(codes).size,codes.length);
+  {const ci=list[0].indexOf('受付番号の記号'),si=list[0].indexOf('シートID'),codes=list.slice(1).map(r=>r[ci]);assert.ok(codes.every(c=>/^[A-HJ-NP-Z]{3}$/.test(c)),codes.join());assert.equal(new Set(codes).size,codes.length);
    assert.deepEqual(tab(sB,'受付番号の記号'),[['受付番号の記号'],[list.find(r=>r[si]===sB.id)[ci]]]);
    /* 社長が名前から決めた記号（例：OH）を役割の保存で入れると、社員一覧と記録シートの両方が変わる。ほかの人の記号とは重ねられない */
    const other=list.slice(1).find(r=>r[si]!==sB.id)[ci];
    const dup=await A.p.evaluate(async([id,c])=>{try{await RB.adminRoleSave(id,{company:'CPY',role:'社員',gmCo:'',caseCode:c},'',()=>{});return 'saved'}catch(e){return e.message}},[sB.id,other]);
    assert.match(dup,new RegExp('「'+other+'」は、.*さんが使っています'));assert.notEqual(tab(sB,'受付番号の記号')[1][0],other);
-   assert.equal(await A.p.evaluate(async id=>{await RB.adminRoleSave(id,{company:'CPY',role:'社員',gmCo:'',caseCode:'OH'},'',()=>{});return 'saved'},sB.id),'saved');
-   const list2=tab(byName('CPG HUB_社員一覧'),'社員');assert.equal(list2.find(r=>r[si]===sB.id)[ci],'OH');assert.deepEqual(tab(sB,'受付番号の記号'),[['受付番号の記号'],['OH']]);}
+   assert.equal(await A.p.evaluate(async id=>{await RB.adminRoleSave(id,{company:'CPY',role:'社員',gmCo:'',caseCode:'OHI'},'',()=>{});return 'saved'},sB.id),'saved');
+   const list2=tab(byName('CPG HUB_社員一覧'),'社員');assert.equal(list2.find(r=>r[si]===sB.id)[ci],'OHI');assert.deepEqual(tab(sB,'受付番号の記号'),[['受付番号の記号'],['OHI']]);}
   const vl=tab(byName('CPG HUB_見る人用一覧'),'一覧'),bi=vl[0].indexOf('指示箱ID');assert.deepEqual(vl[0].slice(-4),['指示箱ID','担当の会社','表示名','GM統括']);assert.ok(vl.some(r=>r[1]===SB&&r[bi]===bB.id));
  });
  await check('共有プレビュー：中止・Escape・再読込、390px/360px文字150%、旧共有保持',async()=>{

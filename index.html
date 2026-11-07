@@ -406,8 +406,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.22" title="使い方マニュアルを開く">v1.50.22・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.22" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.23" title="使い方マニュアルを開く">v1.50.23・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.23" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -467,10 +467,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.22"></script>
+<script src="./share-management.js?v=1.50.23"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.22"></script>
-<script src="./calendar-view-scope.js?v=1.50.22"></script>
+<script src="./view-scope.js?v=1.50.23"></script>
+<script src="./calendar-view-scope.js?v=1.50.23"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2155,7 +2155,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.22";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.23";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2317,7 +2317,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.22" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.22" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.23" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.23" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -2929,7 +2929,7 @@ async function sharedRestore(){
   st.forEach((r,i)=>{const title=str(r["内容"]),due=str(r["期限"]).slice(0,10),tantou=str(r["担当"]);
     if(next.todos.some(t=>!t.done&&!t.cancelled&&t.title===title&&(t.due||"")===due))return;
     const tid="T"+(Date.now()+i);next.todos.push({id:tid,title,due,tantou,done:false});added.todos.push(tid);});
-  next.seq=Math.max(next.seq||0,...next.cases.filter(c=>/^(U|[A-Z]{2})-\d+$/.test(c.id)).map(c=>numOf(c.id)));
+  next.seq=Math.max(next.seq||0,...next.cases.filter(c=>/^(U|[A-Z]{2,3})-\d+$/.test(c.id)).map(c=>numOf(c.id)));
   next.rseq=Math.max(next.rseq||0,...next.receipts.filter(r=>/^R-/.test(r.id)).map(r=>numOf(r.id)));
   /* 取り込んだあとの内容を、記録シートに送るときと同じ形にして、共有の行と1つずつ比べる（その日に決まる「遅れ日数」「最終の動き」と、端末ごとの「提出者」は比べない） */
   const prev=DB;let out;DB=next;try{out=dataRows()}finally{DB=prev}
@@ -3044,16 +3044,22 @@ const staffRow=s=>[s.registeredName||s.name,s.email,s.sheetId,sheetLink(s.sheetI
    会社の略称（CP・AT）は使わない。自動で振るときは、見分けにくい I・O も使わない（社長が名前から入れる記号は I・O も可。例：大平→OH）。
    一度振った記号は、共有を外した人の分も含めて、ほかの人には使わない。
    社長は「役割を変える」（社員の追加も）の「受付番号の記号」で、名前から決めた記号を入れられる（例：黒木が2人なら KH・KY）。空の人は自動で振る */
-const CODE_TAB="受付番号の記号", CODE_COLS=["受付番号の記号"], CODE_ABC="ABCDEFGHJKLMNPQRSTUVWXYZ", CODE_NG=["CP","AT"];
-const codeNorm=x=>{const v=String(x??"").normalize("NFKC").trim().toUpperCase();return /^[A-Z]{2}$/.test(v)&&!CODE_NG.includes(v)?v:""};
+const CODE_TAB="受付番号の記号", CODE_COLS=["受付番号の記号"], CODE_ABC="ABCDEFGHJKLMNPQRSTUVWXYZ", CODE_NG=["CP","AT","CPY","CPG"];
+/* v1.50.23 記号は全員3文字にそろえる（空港コードのように。例：大平→OHI、小泉→KOI）。手で入れるのも、自動で振るのも3文字。
+   会社名と紛れる CPY・CPG は使わない。
+   すでに入っている2文字の記号（v1.50.17〜）は、読むときは今までどおり有効（codeNorm）で、社長が3文字を入れ直すまで、その人の新しい受付番号に使い続ける。
+   入れ直すまでのあいだ、社長の社員一覧に「3文字に入れ直してください」と出す（codeLegacy）。手で入れるときは3文字だけ（codeInput） */
+const codeNorm=x=>{const v=String(x??"").normalize("NFKC").trim().toUpperCase();return /^[A-Z]{2,3}$/.test(v)&&!CODE_NG.includes(v)?v:""};
+const codeInput=x=>{const v=codeNorm(x);return v.length===3?v:""};
+const codeLegacy=c=>codeNorm(c).length===2;
 /* その記号をほかの人（共有を外した人も）が使っていれば、その人 */
 const codeOwner=(code,sheetId,staff=D().staff)=>!!code&&staff.find(x=>x.sheetId!==sheetId&&codeNorm(x.caseCode)===code)||null;
 /* 「役割を変える」の欄の案：今の記号。なければ Gmail の頭2文字（英字で、だれも使っていないときだけ） */
-const codeSuggest=s=>{if(s.caseCode)return s.caseCode;const c=codeNorm(String(s.email||"").replace(/[^A-Za-z]/g,"").slice(0,2));return c&&!codeOwner(c,s.sheetId)?c:""};
+const codeSuggest=s=>{if(s.caseCode&&!codeLegacy(s.caseCode))return s.caseCode;const c=codeInput(String(s.email||"").split("@")[0].replace(/[^A-Za-z]/g,"").slice(0,3));return c&&!codeOwner(c,s.sheetId)?c:""};
 function newCaseCode(staff){
   const used=new Set(staff.map(s=>s.caseCode).filter(Boolean)),ok=c=>!used.has(c)&&!CODE_NG.includes(c),b=new Uint32Array(1);
-  for(let i=0;i<200;i++){crypto.getRandomValues(b);const c=CODE_ABC[b[0]%24]+CODE_ABC[Math.floor(b[0]/24)%24];if(ok(c))return c}
-  for(const x of CODE_ABC)for(const y of CODE_ABC)if(ok(x+y))return x+y;
+  for(let i=0;i<200;i++){crypto.getRandomValues(b);const n=b[0],c=CODE_ABC[n%24]+CODE_ABC[Math.floor(n/24)%24]+CODE_ABC[Math.floor(n/576)%24];if(ok(c))return c}
+  for(const x of CODE_ABC)for(const y of CODE_ABC)for(const z of CODE_ABC)if(ok(x+y+z))return x+y+z;
   return "";
 }
 /* この端末の受付番号の頭（記号が届いていなければ今までどおり U） */
@@ -3705,7 +3711,7 @@ function roleForm(p,s){
     '<label class="f">GMを務める会社<select id="'+p+'_gm"><option value="">なし</option>'+COMPANIES.map(co=>'<option'+(s.gmCo===co?' selected':'')+'>'+co+'</option>').join("")+'</select></label>'+
     '<label class="f full row"><input type="checkbox" id="'+p+'_lead"'+(gmLeadOn(s)?' checked':'')+'> 統括GM（役割がGMのとき。同じ会社のほかのGMの記録も見る。会社ごとに1人）</label>'+
     '<label class="f">表示名（任意。画面に出す名前。例：専務）<input type="text" id="'+p+'_disp" maxlength="20" value="'+h(s.displayName||"")+'" placeholder="空なら氏名"></label>'+
-    '<label class="f">受付番号の記号（アルファベット2文字。例：大平→OH）<input type="text" id="'+p+'_code" maxlength="2" autocapitalize="characters" autocomplete="off" spellcheck="false" value="'+h(codeSuggest(s))+'" placeholder="空なら自動"></label>'+
+    '<label class="f">受付番号の記号（アルファベット3文字。例：大平→OHI、小泉→KOI）<input type="text" id="'+p+'_code" maxlength="3" autocapitalize="characters" autocomplete="off" spellcheck="false" value="'+h(codeSuggest(s))+'" placeholder="'+(codeLegacy(s.caseCode)?'今は '+h(s.caseCode)+'（2文字）。3文字で入れ直してください':'空なら自動')+'"></label>'+
     '<div class="f full"><span>担当の会社（経理・業務管理のとき）</span><div class="row">'+COMPANIES.map(co=>'<label class="row"><input type="checkbox" id="'+p+'_ch_'+co+'"'+(chargeList(s).includes(co)?' checked':'')+'> '+co+'</label>').join("")+'</div></div>'+
     '<p class="note full" style="margin:0">全社：全員の記録を見る（例：専務）。GM：同じ1社だけに所属する一般社員の記録を見る（複数会社・全社・GMは対象外）。1つの会社にGMを2人以上置けます（見られる範囲は同じ）。全社の人がある会社のGMを兼ねるときは、役割を「全社」にしてGMの会社を選びます。経理・業務管理：「担当の会社」に所属する社員の記録を、見るだけで見る（その会社のGMと、所属の会社のどれかが担当の会社の人（専務など）も含みます。タスクリクエストは出せません。業務管理は、立替・領収書は見ません。経理が見る立替・領収書は、担当の会社の分だけです）。どの人も、予定は、その人の予定を見てよい人に共有してもらいます。</p></div>';
 }
@@ -3717,7 +3723,7 @@ function roleVal(p){
   const lead=document.getElementById(p+"_lead");
   const v={company:COMPANIES.filter(co=>cs.includes(co)).join(","),role,gmCo,charge,displayName:dispNorm(val(p+"_disp")),gmLead:role==="GM"&&!!gmCo&&!!(lead&&lead.checked)};
   /* v1.50.17 受付番号の記号：入れたときだけ（空なら今の記号のまま。なければ自動）。形が違えば codeBad */
-  const raw=String(val(p+"_code")||"").trim();if(raw){v.caseCode=codeNorm(raw);if(!v.caseCode)v.codeBad=raw}
+  const raw=String(val(p+"_code")||"").trim();if(raw){v.caseCode=codeInput(raw);if(!v.caseCode)v.codeBad=raw}
   return v;
 }
 /* v1.50.17 受付番号の記号の確認（保存の前）。問題がなければ "" */
@@ -3730,7 +3736,7 @@ function leadCheck(v,sheetId,staff=D().staff){
   return o?v.gmCo+"の統括GMはすでに"+o.name+"さんです。統括GMは会社ごとに1人です。先に"+o.name+"さんの「統括GM」の印を外してください":"";
 }
 function codeCheck(v,sheetId,staff=D().staff){
-  if(v.codeBad)return "受付番号の記号は、アルファベット2文字で入れてください（CP・AT は使えません）";
+  if(v.codeBad)return "受付番号の記号は、アルファベット3文字で入れてください（CPY・CPG は使えません）";
   const o=codeOwner(v.caseCode,sheetId,staff);return o?"受付番号の記号「"+v.caseCode+"」は、"+o.name+"さんが使っています。ほかの2文字にしてください":"";
 }
 const dMsgList=()=>{const m=ui.dmsg;return m?'<ul class="gres" role="status">'+m.map(x=>'<li class="'+(x.ok===false?'ng':x.ok==="warn"?'warn':'ok')+'">'+(x.ok===false?'× ':x.ok==="warn"?'！ ':'✓ ')+h(x.text)+'</li>').join("")+'</ul>':''};
@@ -3767,8 +3773,9 @@ function dSettings(){
       '<div class="row"><button class="btn pri" type="button" data-act="dlink">つなぐ</button></div>')+'</div>';
   const admin=isAdminDevice()?'<div class="panel"><h3>管理（社長用）</h3>'+
       (!d.admin?'<p class="note" style="margin:0">社員ごとの記録シートを、社長のドライブのフォルダ「CPG HUB データ」に作ります。</p><div class="row"><button class="btn pri" type="button" data-act="dadmin">管理をはじめる</button></div>':
+      ((n=>n?'<p class="note" role="status" style="margin:0;color:var(--amber)">受付番号の記号が2文字のままの人が '+n+'人います。「役割を変える」で3文字（例：大平→OHI）を入れて保存してください。入れ直すまでは、今の2文字で受付番号が付きます。</p>':'')(d.staff.filter(s=>!s.removed&&codeLegacy(s.caseCode)).length))+
       (d.staff.length?'<ul class="dl">'+d.staff.map((s,i)=>'<li><div class="row staff-id"><b>'+h(s.name)+'</b>'+(s.displayName?'<span class="chip">表示名 '+h(s.displayName)+'</span>':'')+'<span class="note">'+h(s.email)+'</span></div><div class="row staff-acts">'+(s.removed?'<span class="note">役割解除済み（要確認の共有は別途確認）</span>':'<button class="btn sm" type="button" data-dname="'+h(s.sheetId)+'">正規氏名</button><button class="btn sm" type="button" data-drole="'+i+'">会社・役割</button><button class="btn sm danger" type="button" data-dunshare="'+i+'">共有を外す</button>')+'</div>'+
-        '<div class="row note"><span class="chip">'+h(coList(s).join("・")||"会社なし")+'</span><span class="chip'+(isViewer(s)?' ro':'')+'">'+h(roleLabel(s))+'</span>'+(s.caseCode?'<span class="chip num">受付番号 '+h(s.caseCode)+'-</span>':'')+'</div>'+
+        '<div class="row note"><span class="chip">'+h(coList(s).join("・")||"会社なし")+'</span><span class="chip'+(isViewer(s)?' ro':'')+'">'+h(roleLabel(s))+'</span>'+(s.caseCode?'<span class="chip num">受付番号 '+h(s.caseCode)+'-</span>'+(codeLegacy(s.caseCode)&&!s.removed?'<span class="chip nco">2文字・3文字に入れ直してください</span>':''):'')+'</div>'+
         '<div class="note num">シート '+h(s.sheetId.slice(0,10))+'…・追加 '+md(s.addedAt)+'・'+h(staffSyncText(s))+'</div>'+((t=>t?'<div class="note">'+h(t.text)+'</div>'+(t.review?'<div class="note cal-review" style="color:var(--amber);overflow-wrap:anywhere">'+h(t.review)+'</div>':''):'')(staffCalText(s)))+
         (s.nameHistory?.length?'<details><summary>氏名の変更履歴</summary><ul>'+s.nameHistory.map(r=>'<li>'+h(r.before)+' → '+h(r.after)+'（'+h(new Date(r.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+' JST）</li>').join("")+'</ul></details>':'')+
         (ui.dName===s.sheetId?'<label class="f">正規氏名<input id="dn_name" maxlength="100" value="'+h(ui.dNameDraft??s.name)+'"></label><div class="row"><button class="btn pri" data-act="dn-save">変更内容を確認</button><button class="btn" data-act="dn-cancel">やめる</button></div><p class="note">過去の担当キー・案件・履歴は置換しません。同姓同名はGmailとシートIDで対象を確認してください。</p>':'')+
@@ -3782,7 +3789,7 @@ function dSettings(){
       '<p class="note" style="margin:0">追加後、共有一覧を確認してから、その人のGmailに「編集者」で共有します。案内メールは自動送信しません。Google Cloud の「対象」で、その人をテストユーザーに追加しておいてください。</p>'+
       '<p class="note" style="margin:0">役割が「全社」の人は全員の、「GM」の人は同じ1社だけに所属する一般社員の、「経理」「業務管理」の人は担当の会社に所属する社員（複数の会社に所属する人は、そのどれかが担当の会社なら）の記録を、見るだけで見られます（閲覧者で共有します）。見る人には、下のリンクを送って、CPG HUB の「会社の動きを見る（管理者用）」に貼り付けてもらってください。</p>'+
       '<p class="note" style="margin:0">予定の共有先（その人の予定を見てよい人：社長・全社・その人を見られるGM・担当の会社の経理と業務管理）は、会社・役割を保存すると、各社員の記録シートに書きます。社員が自分の端末の「予定の共有」を押すと、足りない相手だけに「見るだけ」で共有します。</p><div class="row"><button class="btn sm" type="button" data-act="dcaltargets"'+(ui.dbusy?' disabled':'')+'>予定の共有先を書く</button></div>'+
-      '<p class="note" style="margin:0">社員の「数字」の「会社全体」：会社ごとの「会社の数字」シートを、その会社の社員にだけ「見るだけ」で共有します。最初の1回と、社員の会社を変えたときは下のボタンで共有を合わせてください（会社・役割の保存でも合わせます）。数字は「社員の記録を読み込む」をするたびに書き直します。受付番号の記号（人ごとのアルファベット2文字）も、このボタンで記号のない人に自動で決めて、各社員に届けます。</p><div class="row"><button class="btn sm" type="button" data-act="dnumshare"'+(ui.dbusy?' disabled':'')+'>会社の数字の共有を合わせる</button></div>'+
+      '<p class="note" style="margin:0">社員の「数字」の「会社全体」：会社ごとの「会社の数字」シートを、その会社の社員にだけ「見るだけ」で共有します。最初の1回と、社員の会社を変えたときは下のボタンで共有を合わせてください（会社・役割の保存でも合わせます）。数字は「社員の記録を読み込む」をするたびに書き直します。受付番号の記号（人ごとのアルファベット3文字）も、このボタンで記号のない人に自動で決めて、各社員に届けます。</p><div class="row"><button class="btn sm" type="button" data-act="dnumshare"'+(ui.dbusy?' disabled':'')+'>会社の数字の共有を合わせる</button></div>'+
       (d.viewListId?'<label class="f">見る人用のリンク<input type="text" id="d_vlink" readonly value="https://docs.google.com/spreadsheets/d/'+h(d.viewListId)+'/edit"></label><div class="row"><button class="btn sm" type="button" data-act="dvcopy">リンクをコピー</button></div>':''))+'</div>':'';
   const view=d.admin?'':'<div class="panel"><h3>会社の動きを見る（管理者用）</h3>'+
     (d.viewListId?'<p style="margin:0">つないでいます（'+h(d.viewEmail||"")+'）。ホームの「会社の動き」で見られます。</p><div class="row"><button class="btn sm" type="button" data-act="dvunlink">つなぐのをやめる</button></div>':
