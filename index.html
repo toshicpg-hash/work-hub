@@ -406,8 +406,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.20" title="使い方マニュアルを開く">v1.50.20・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.20" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.21" title="使い方マニュアルを開く">v1.50.21・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.21" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -467,10 +467,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.20"></script>
+<script src="./share-management.js?v=1.50.21"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.20"></script>
-<script src="./calendar-view-scope.js?v=1.50.20"></script>
+<script src="./view-scope.js?v=1.50.21"></script>
+<script src="./calendar-view-scope.js?v=1.50.21"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -592,12 +592,32 @@ function saveCaseChange(c,fields){
   for(const k of Object.keys(c))delete c[k];Object.assign(c,before);
   caseSaveUncertain=true;manualStorageNotice(CASE_SAVE_NOTICE);return false;
 }
-try{const raw=localStorage.getItem(KEY);dbPersistedRaw=raw;DB=raw?JSON.parse(raw):null}catch(e){DB=null}
+/* v1.50.21 端末の記録が読めないとき・見つからないときは、黙って空で始めない。
+   読めない（壊れている・形が違う）ときは、元の文字列を消さずに控えのキー（workhub_proto_v1_broken:時刻）に移し、ホームに理由を出す。
+   控えに移せなかったときは、上書きしないように保存を止める。
+   見つからないときは、前に使っていた印（最後に保存した時刻のメモ・Googleと同期したときの控え）が残っていれば、ホームに出す（ブラウザのデータ全体が消えたのか、この記録だけが消えたのかを見分けるため） */
+const META_KEY="workhub_proto_v1_meta", BROKEN_PREFIX="workhub_proto_v1_broken:";
+let loadProblem=null, loadBlocked=false;
+{let raw=null,readErr=null;
+ try{raw=localStorage.getItem(KEY);dbPersistedRaw=raw;DB=raw?JSON.parse(raw):null}catch(e){DB=null;readErr=e}
+ if(raw!==null&&(!DB||typeof DB!=="object"||!Array.isArray(DB.cases))){
+   /* 同じ中身の控えがすでにあれば、それを使う（開き直すたびに控えを増やさない） */
+   let bk="",ok=false;
+   try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(BROKEN_PREFIX)&&localStorage.getItem(k)===raw){bk=k;ok=true;break}}}catch(e){}
+   if(!ok){bk=BROKEN_PREFIX+new Date().toISOString();try{localStorage.setItem(bk,raw);ok=localStorage.getItem(bk)===raw}catch(e){ok=false}}
+   loadBlocked=!ok;loadProblem={kind:"broken",len:raw.length,key:ok?bk:"",why:readErr?"読み取れない形（"+String(readErr.message||readErr).slice(0,80)+"）":"記録の形が違う"};
+ }else if(raw===null){
+   let meta=null,keys=[];
+   try{meta=JSON.parse(localStorage.getItem(META_KEY)||"null")}catch(e){meta=null}
+   try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith("workhub_")&&k!==META_KEY)keys.push(k)}}catch(e){}
+   const used=keys.filter(k=>/^workhub_(gcal_last_v1|corp_last_v1|corp_tabs_v1|company_numbers_v1)$|^workhub_proto_v1_broken:/.test(k));
+   if(meta&&typeof meta==="object"||used.length)loadProblem={kind:"missing",meta:meta&&typeof meta==="object"?meta:null,keys};
+ }}
 let upgraded=false;
 if(!DB||!Array.isArray(DB.cases))DB=emptyDB();
 else{upgraded=DB.schemaVersion!==SCHEMA_VERSION;upgrade(DB)}
 /* The failure toast is deferred so it replaces the success toast the same handler shows after save() */
-const save=()=>{if(caseSaveGuard())return false;try{if(localStorage.getItem(KEY)!==dbPersistedRaw){manualStorageNotice("別のCPG HUB画面で記録が更新されました。古い内容で上書きしないため保存を止めています。入力を控え、ほかの画面を閉じて再読み込みしてください。");return false}const next=JSON.stringify(DB);localStorage.setItem(KEY,next);if(localStorage.getItem(KEY)!==next){manualStorageNotice("保存後の内容を確認できません。再保存せず、入力を控えて最新の記録を確認してください。");return false}dbPersistedRaw=next;return true}catch(e){setTimeout(()=>toast("保存できませんでした。端末の空き容量やブラウザの設定を確認してください",6000),0);return false}};
+const save=()=>{if(caseSaveGuard())return false;if(loadBlocked){manualStorageNotice("この端末の前の記録を読めず、控えにも移せなかったため、上書きしないように保存を止めています。何も操作せず、管理者に知らせてください。");return false}try{if(localStorage.getItem(KEY)!==dbPersistedRaw){manualStorageNotice("別のCPG HUB画面で記録が更新されました。古い内容で上書きしないため保存を止めています。入力を控え、ほかの画面を閉じて再読み込みしてください。");return false}const next=JSON.stringify(DB);localStorage.setItem(KEY,next);if(localStorage.getItem(KEY)!==next){manualStorageNotice("保存後の内容を確認できません。再保存せず、入力を控えて最新の記録を確認してください。");return false}dbPersistedRaw=next;try{localStorage.setItem(META_KEY,JSON.stringify({savedAt:new Date().toISOString(),bytes:next.length,admin:!!(DB.settings&&DB.settings.data&&DB.settings.data.admin),sheet:!!(DB.settings&&DB.settings.data&&DB.settings.data.sheetId),cases:DB.cases.length}))}catch(e){}return true}catch(e){setTimeout(()=>toast("保存できませんでした。端末の空き容量やブラウザの設定を確認してください",6000),0);return false}};
 if(upgraded)save();
 const photos={};
 const ui={view:"home",caseId:null,q:"",type:"all",showEnded:false,tTantou:"all",tPeriod:"week",csv:false,calMonth:todayS().slice(0,7),calDay:todayS(),calView:"week"};
@@ -919,8 +939,22 @@ function obCheck(){
   obSet({check:D().sheetId});return n;
 }
 const accessWaiting=c=>c.stage==="won"&&!c.cancelledAt&&!String(c.jobNo??"").trim();
+/* v1.50.21 端末の記録が読めない・見つからないときの知らせ（ホームの一番上）。記録は消していないことと、次にすることを出す */
+function loadProblemBanner(){
+  const p=loadProblem;if(!p)return "";
+  const at=iso=>{const t=Date.parse(iso||"");return Number.isFinite(t)?new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(t)):""};
+  let body;
+  if(p.kind==="broken")body='<p style="margin:0"><b>この端末の記録を読めませんでした</b>（'+h(p.why)+'・'+p.len+'文字）。</p>'+
+    (p.key?'<p class="note" style="margin:0">元の記録は消さずに、控え（'+h(p.key)+'）に移しました。下のボタンでファイルに保存できます。</p><div class="row"><button class="btn sm" type="button" data-act="loadbackup">控えをファイルに保存</button></div>'
+          :'<p class="note" style="margin:0">控えに移せなかったため、前の記録を上書きしないように、この端末での保存を止めています。</p>');
+  else body='<p style="margin:0"><b>この端末の記録が見つかりません。</b></p>'+
+    (p.meta&&p.meta.savedAt?'<p class="note" style="margin:0">最後に保存したのは '+h(at(p.meta.savedAt))+'（'+(p.meta.admin?'社長の管理端末':p.meta.sheet?'記録シートにつないだ端末':'記録シートなし')+'・案件 '+(Number(p.meta.cases)||0)+'件）です。</p>':'')+
+    '<p class="note" style="margin:0">'+(p.keys.length?'Googleと同期したときの控えなど、ほかのCPG HUBのデータは残っています（'+p.keys.length+'件）。ブラウザのデータ全体が消えたのではなく、この端末の記録だけが見つからない状態です。':'ほかのCPG HUBのデータも残っていません。')+'</p>';
+  return '<section class="sec" id="load-problem"><div class="banner" role="alert" style="display:flex;flex-direction:column;gap:6px">'+body+
+    '<p class="note" style="margin:0">初期設定のボタンや同期は押さずに、管理者に知らせてください。</p></div></section>';
+}
 function vHome(){
- if(!scopeState().usable)return obPanel()+'<section class="sec" id="home-sync">'+homeSyncNotice()+gSyncPanel(true)+'</section>'+scopeUnconfirmed()+((D().admin||D().viewListId)?homeCorpTile():'');
+ if(!scopeState().usable)return loadProblemBanner()+obPanel()+'<section class="sec" id="home-sync">'+homeSyncNotice()+gSyncPanel(true)+'</section>'+scopeUnconfirmed()+((D().admin||D().viewListId)?homeCorpTile():'');
   const todos=genTodos(), t=todayS(), all=scopeCases(), tdAll=scopeTodos(); /* 社長の管理端末では、読み込んだ社員の分も含めた会社全体の数字 */
   const over=tdAll.filter(x=>x.due&&x.due<t), todayT=tdAll.filter(x=>x.due===t);
   const urgent=all.filter(c=>c.type==="kinkyu"&&(c.stage==="new"||c.stage==="site"));
@@ -928,7 +962,7 @@ function vHome(){
   const rp=scopeHomeReceipts(['未提出','差戻し']), rsub=scopeHomeReceipts(['提出済']), rnotes=rcptNotices();
   const un=all.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   const ord=scopeTodos().filter(x=>x.order), ordOver=ord.filter(x=>x.due&&x.due<t).length;
-  return obPanel()+'<section class="sec" id="home-sync">'+homeSyncNotice()+gSyncPanel(true)+'</section>'+
+  return loadProblemBanner()+obPanel()+'<section class="sec" id="home-sync">'+homeSyncNotice()+gSyncPanel(true)+'</section>'+
   (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）のサンプルを含みます。</div>':'')+
   '<section class="sec" id="home-summary"><div class="sec-h"><h2>今日のまとめ</h2></div><div class="tiles">'+
 
@@ -2113,7 +2147,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.20";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.21";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2275,7 +2309,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.20" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.20" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.21" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.21" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3956,6 +3990,9 @@ document.addEventListener("click",e=>{
     gAuthorize(true).then(()=>adminSync((text,ok)=>log.push({ok:ok===false?"warn":true,text}))).then(f=>{log.unshift(f.list?{ok:true,text:"社員一覧を読み直しました（社員"+f.n+"人）"}:{ok:"warn",text:"「CPG HUB_社員一覧」がまだありません"});ui.dmsg=log},
       err=>{ui.dmsg=[{ok:false,text:"読み直せませんでした："+dMsg(err)}]}).finally(()=>{ui.dbusy=false;render()});return}
   if(a==="daskno"){ui.dAsk=null;render();return}
+  if(a==="loadbackup"){const k=loadProblem&&loadProblem.key;let raw=null;try{raw=k?localStorage.getItem(k):null}catch(e){}
+    if(raw===null){toast("控えを読めませんでした");return}
+    const url=URL.createObjectURL(new Blob([raw],{type:"application/json"})),a2=document.createElement("a");a2.href=url;a2.download="cpg-hub-backup-"+ymd(new Date())+".json";document.body.append(a2);a2.click();a2.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);return}
   if(a==="daskadd"){const q=ui.dAsk;ui.dAsk=null;if(q)q.run("");return}
   if(a==="daskswap"){const q=ui.dAsk,x=q&&q.swaps[Number(el.dataset.i)];ui.dAsk=null;if(x)q.run(x.sheetId);return}
   if(a==="dn-cancel"){ui.dNameDraft=null;ui.dName=null;render();return}
