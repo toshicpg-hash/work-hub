@@ -406,8 +406,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.25" title="使い方マニュアルを開く">v1.50.25・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.25" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.26" title="使い方マニュアルを開く">v1.50.26・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.26" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -467,10 +467,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.25"></script>
+<script src="./share-management.js?v=1.50.26"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.25"></script>
-<script src="./calendar-view-scope.js?v=1.50.25"></script>
+<script src="./view-scope.js?v=1.50.26"></script>
+<script src="./calendar-view-scope.js?v=1.50.26"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -632,7 +632,16 @@ const editCase=id=>{const c=findCase(id);return c&&!c.ro?c:null};
    案件のデータ（DB）には混ぜない。最後に読んだ内容は別のキー（CKEEP）に残し、開き直したらそれを表示する */
 const roOn=()=>!!((D().admin||D().viewListId)&&ui.corpRO);
 const allCases=()=>roOn()?DB.cases.concat(ui.corpRO):DB.cases;
-const roTodos=()=>roOn()?ui.corpTodo:[];
+const roTodos=()=>roOn()?(ui.corpTodo||[]).filter(t=>!bossDoneHas(t)):[];
+/* v1.50.26 担当が社長の、社員の記録の ToDo（見るだけ）を、社長の端末で「済み」にする。社員の記録は書き換えない。
+   済みの印は、この端末と、社長の社員一覧のファイルの「社長の済み」タブに残す（社長のほかの端末でも消えるように）。印は 記録シートID・内容・期限 で照らす */
+const BOSSDONE_TAB="社長の済み", BOSSDONE_COLS=["記録シートID","内容","期限","済みにした日時"];
+const bossDoneKey=(sheetId,title,due)=>[String(sheetId||""),String(title||"").trim(),String(due||"").slice(0,10)].join("\t");
+const bossDoneList=()=>Array.isArray(D().bossDone)?D().bossDone:[];
+const bossDoneable=t=>!!t&&t.ro&&!isReqKind(t.kind)&&bossKey(t._scopeRaw)&&!!D().admin;
+const bossDoneHas=t=>bossDoneable(t)&&bossDoneList().some(x=>x.key===bossDoneKey(t._scopeOwner,t.title,t.due));
+/* 見るだけの ToDo の持ち主（だれの記録か）。表示名があれば表示名 */
+const roOwnerLabel=t=>{const p=(staffOrder()||[]).find(s=>s.sheetId===t._scopeOwner);return p?dispName(p):String(t.owner||"")};
 const roHub=()=>new Set(roOn()?ui.corpRO.map(c=>c.srcId):[]);
 const typeKeyOf=l=>Object.keys(TYPES).find(k=>TYPES[k].label===l)||"reno";
 function roCase(r,x){
@@ -679,6 +688,8 @@ async function corpRun(){
   try{const before=ui.corp?.data||[],data=await corpLoad();
     for(const x of data)if((!x.ok||x.receiptRead?.state==="invalid")&&!x.accessDenied){const old=before.find(y=>y.s.sheetId===x.s.sheetId);if(old){const prior=["ready","cached"].includes(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.state(old):"unknown")?{rc:old.rc,lastSync:old.s.lastSync,readAt:old.receiptRead?.at||ui.corp?.at,receiptRead:old.receiptRead}:old.receiptPrevious;if(prior)x.receiptPrevious=prior;}}
     ui.corp={data,at:Date.now(),timing:data.timing||null};roBuild(data);D().corpAt=new Date(ui.corp.at).toISOString();save();corpKeepSave();
+    /* v1.50.26 社長の済みの印で、社員一覧にまだ保存できていないものがあれば保存する */
+    if(D().admin&&bossDoneList().some(x=>!x.synced)){try{await bossDoneWrite()}catch(err){if(err.message==="signin")throw err}}
     /* v1.50.10 社長の端末：会社ごとの数字を書き出す（失敗しても読み込みは成功のまま。結果は数字の画面に出す） */
     if(D().admin&&D().numbers){try{ui.numWrite=await numWriteAll(data)}catch(err){ui.numWrite=[{ok:false,text:"会社の数字を書き出せませんでした（"+(err.message==="http"?dMsg(err):err.message)+"）"}]}}
     return data}
@@ -876,7 +887,9 @@ function todoRow(t,expanded=false){
   const c=t.caseId?findCase(t.caseId):null;
   if(t.ro)return '<div class="card'+(isReqKind(t.kind)?' boss':'')+'" style="cursor:default">'+
     todoCardHeading(t,isReqKind(t.kind)?'<span class="chip boss">'+(t.from?h(t.from)+'から':'リクエスト')+'</span>':'')+
-    '<div class="row note">'+personBadge(t.tantou)+(t.property?'<span>'+h(t.property)+' '+h(t.room)+'</span>':'')+roChip()+'<span class="sp"></span>'+(c?'<button class="btn sm" type="button" data-open="'+h(c.id)+'">案件を開く</button>':'')+'</div></div>';
+    '<div class="row note">'+personBadge(t.tantou)+(t.property?'<span>'+h(t.property)+' '+h(t.room)+'</span>':'')+roChip()+(roOwnerLabel(t)?'<span class="note ro-owner">'+h(roOwnerLabel(t))+'さんの記録</span>':'')+'<span class="sp"></span>'+(c?'<button class="btn sm" type="button" data-open="'+h(c.id)+'">案件を開く</button>':'')+
+      (bossDoneable(t)?'<button class="btn sm" type="button" data-bossdone="'+h(bossDoneKey(t._scopeOwner,t.title,t.due))+'">済みにする</button>':'')+'</div>'+
+      (bossDoneable(t)?'<p class="note" style="margin:0">'+h(roOwnerLabel(t))+'さんの端末で作った ToDo です。「済みにする」と社長の画面から消えます（'+h(roOwnerLabel(t))+'さんの記録はそのまま）。</p>':'')+'</div>';
   if(t.boxRequest)return requestBoxRow(t);
   if(t.order)return '<div class="card boss" style="cursor:default">'+
     todoCardHeading(t,'<span class="chip boss">リクエスト</span>')+
@@ -1077,7 +1090,7 @@ function scopeTodoMatch(t){
 }
 function scopeAvailableTodos(){
  const ctx=scopeContext(),data=(ui.corp?.data||[]).filter(x=>x.ok&&x.s&&x.s.sheetId!==D().sheetId&&ctx.canView(x.s));
- return genTodos().concat(roTodoRows(data));
+ return genTodos().concat(roTodoRows(data).filter(t=>!bossDoneHas(t)));
 }
 function scopeTodos(){return scopeAvailableTodos().filter(scopeTodoMatch);
 }
@@ -2186,7 +2199,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.25";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.26";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2348,7 +2361,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.25" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.25" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.26" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.26" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3100,6 +3113,24 @@ async function sheetTabs(id,first,more){
   const v=await gReq(SHEETS+"/"+encodeURIComponent(id)+"?fields=sheets.properties");
   await gReq(SHEETS+"/"+encodeURIComponent(id)+":batchUpdate",{method:"POST",body:{requests:[{updateSheetProperties:{properties:{sheetId:v.sheets[0].properties.sheetId,title:first},fields:"title"}},...more.map(title=>({addSheet:{properties:{title}}}))]}});
 }
+/* v1.50.26 社員一覧の「社長の済み」タブの行を、この端末の印に足す（消さない） */
+function bossDoneMerge(rows){
+  const d=D(),have=bossDoneList().slice();
+  for(const r of objRows(rows)){const key=bossDoneKey(r["記録シートID"],r["内容"],r["期限"]);if(!String(r["記録シートID"]||"")||!String(r["内容"]||"").trim()||have.some(x=>x.key===key))continue;have.push({key,sheetId:String(r["記録シートID"]),title:String(r["内容"]).trim(),due:String(r["期限"]||"").slice(0,10),at:String(r["済みにした日時"]||""),synced:true})}
+  for(const x of have)if(rows.some((r,i)=>i>0&&bossDoneKey(r[0],r[1],r[2])===x.key))x.synced=true;
+  d.bossDone=have;
+}
+/* この端末の印を、社員一覧の「社長の済み」タブに書く（全部を書き直す。読み戻して確かめる） */
+async function bossDoneWrite(){
+  const d=D();if(!d.admin||!d.listId)return false;
+  const list=bossDoneList(),rows=[BOSSDONE_COLS,...list.map(x=>[x.sheetId,x.title,x.due,x.at])];
+  const tabs=await shareRead(()=>sheetTabNames(d.listId));if(!tabs.includes(BOSSDONE_TAB))await addTab(d.listId,BOSSDONE_TAB);
+  const prev=(await shareRead(()=>sheetRead(d.listId,[BOSSDONE_TAB])))[BOSSDONE_TAB]||[];
+  await shareRead(()=>sheetWrite(d.listId,BOSSDONE_TAB,rows,prev));
+  const back=(await sheetRead(d.listId,[BOSSDONE_TAB]))[BOSSDONE_TAB]||[];
+  if(list.some(x=>!back.some((r,i)=>i>0&&bossDoneKey(r[0],r[1],r[2])===x.key)))throw Error("社員一覧に保存できたか確かめられません");
+  for(const x of list)x.synced=true;save();return true;
+}
 async function adminWriteList(){
   if(!D().listId){const f=await driveCreate({name:"CPG HUB_社員一覧",mimeType:"application/vnd.google-apps.spreadsheet",parents:[D().folder]});await sheetTabs(f.id,"社員",[]);D().listId=f.id;save()}
   return sheetWrite(D().listId,"社員",[STAFF_COLS,...D().staff.map(staffRow)]);
@@ -3124,7 +3155,10 @@ async function adminSync(log){
     if(!ls.length)return found;
     d.listId=ls[0].id;save();
   }
-  const rows=objRows((await sheetRead(d.listId,["社員"]))["社員"]).filter(r=>r["シートID"]);
+  /* v1.50.26 「社長の済み」タブも一緒に読む（まだタブがなければ「社員」だけ） */
+  let listV;try{listV=await sheetRead(d.listId,["社員",BOSSDONE_TAB])}catch(err){if(err.status!==400)throw err;listV=await sheetRead(d.listId,["社員"])}
+  if(Array.isArray(listV[BOSSDONE_TAB]))bossDoneMerge(listV[BOSSDONE_TAB]);
+  const rows=objRows(listV["社員"]).filter(r=>r["シートID"]);
   const local=d.staff.filter(s=>!rows.some(r=>String(r["シートID"])===s.sheetId)); /* added here, but the list sheet was not written yet */
   const next=rows.map(r=>{const old=d.staff.find(s=>s.sheetId===String(r["シートID"]))||{};
     return {name:String(r["氏名"]),email:String(r["Gmail"]),sheetId:String(r["シートID"]),permId:String(r["共有ID"]||old.permId||""),addedAt:String(r["追加日"]),removed:r["状態"]==="共有を外した",lastSync:String(r["最終同期"]||old.lastSync||""),
@@ -4007,6 +4041,12 @@ document.addEventListener("click",e=>{
   if(el.dataset.rdelph){(ui.rDel=ui.rDel||[]).push(el.dataset.rdelph);rPhotoPreview();return}
   if(el.dataset.rnewx!=null){const x=ui.rNew.splice(Number(el.dataset.rnewx),1)[0];if(x)URL.revokeObjectURL(x.url);rPhotoPreview();return}
   if(el.dataset.type&&ui.view==="cases"){ui.type=el.dataset.type;render();return}
+  if(el.dataset.bossdone!=null){const key=el.dataset.bossdone,t=(ui.corpTodo||[]).find(x=>bossDoneable(x)&&bossDoneKey(x._scopeOwner,x.title,x.due)===key);if(!t)return;
+    if(!confirm("「"+t.title+"」を済みにしますか？\n社長の画面から消えます。"+roOwnerLabel(t)+"さんの記録は変わりません。"))return;
+    const d=D();d.bossDone=bossDoneList().concat({key,sheetId:t._scopeOwner,title:String(t.title).trim(),due:String(t.due||"").slice(0,10),at:new Date().toISOString(),synced:false});
+    if(!save()){d.bossDone=d.bossDone.filter(x=>x.key!==key);return}
+    render();toast("済みにしました");
+    gAuthorize(true).then(()=>bossDoneWrite()).catch(err=>{if(err&&err.message==="signin")return;toast("社長のほかの端末にはまだ届いていません（次の同期でもう一度保存します）",6000)});return}
   if(el.dataset.day){ui.calDay=el.dataset.day;ui.calMonth=ui.calDay.slice(0,7);ui.calView="day";render();return}
   if(el.dataset.cv){ui.calView=el.dataset.cv;render();return}
   if(el.dataset.shift!=null){ui.calDay=el.dataset.shift==="today"?todayS():addDays(ui.calDay,el.dataset.shift);ui.calMonth=ui.calDay.slice(0,7);render();return}
