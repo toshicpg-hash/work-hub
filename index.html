@@ -1834,9 +1834,12 @@ async function gReadRange(from,to){
   const res=await Promise.allSettled(cals.map(cal=>cal?gReadOne(cal,from,to,mine):Promise.reject(new Error("nocal"))));
   if(epoch!==G.readEpoch)throw new Error("stale");
   if(res.some(r=>r.status==="rejected"&&r.reason&&r.reason.message==="signin"))throw new Error("signin");
-  const events=[], sources=[];let missing=0;
-  res.forEach((r,i)=>{if(r.status==="fulfilled"){events.push(...r.value);sources.push({id:gReadId(cals[i].id),name:cals[i].name,from,to})}else missing++});
-  return gSafeData({events,sources,missing});
+  /* v1.50.29 自動で足した社員本人のカレンダー（calPersonAutoList）が読めなくても、同期の「読めないカレンダー」には数えない
+     （設定で選んだカレンダーではなく、読めなければ今までどおり「CPG HUB」の予定で出すだけなので。数えると毎回の同期が注意になる） */
+  const autoIds=new Set(calPersonAutoList().map(a=>gIdKey(a.id))),picked=Array.isArray(DB.settings.gShow)?new Set(DB.settings.gShow.map(gIdKey)):null;
+  const events=[], sources=[];let missing=0,autoMissing=0;
+  res.forEach((r,i)=>{if(r.status==="fulfilled"){events.push(...r.value);sources.push({id:gReadId(cals[i].id),name:cals[i].name,from,to})}else if(autoIds.has(gIdKey(ids[i]))&&!(picked&&picked.has(gIdKey(ids[i]))))autoMissing++;else missing++});
+  return gSafeData({events,sources,missing,autoMissing});
 }
 const GCAL_TTL=5*60000, GCAL_ERR_TTL=60000, gcalCache={}, gcalColorIdx={};
 /* 前の月の初めから次の月の終わりまでを一度に読み、日・週・月の移動やスワイプでは読み直さない */
