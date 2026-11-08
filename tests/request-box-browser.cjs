@@ -9,6 +9,8 @@ const ADMIN='toshi.cpg@gmail.com',SA='test-staff-a@example.com',SB='test-staff-b
 const TODAY='2026-10-30';
 /* ---- in-memory Google ---- */
 const G={files:{},n:0,perm:0,calls:[]};
+/* v1.50.31 Googleドライブの更新日時（modifiedTime）：シートに書くたびに進む */
+let mtN=0;const touch=f=>{f.mt=new Date(Date.UTC(2026,9,30,3)+(++mtN)*1000).toISOString()};
 const nid=p=>p+String(++G.n).padStart(24,'0');
 const roleOf=(f,a)=>!f?'':f.owner===a?'owner':((f.perms.find(p=>p.email===a)||{}).role||'');
 const canRead=(f,a)=>!!roleOf(f,a);
@@ -25,7 +27,8 @@ async function google(route){
  if(p.startsWith('/calendar/v3/users/me/calendarList'))return J({items:[{id:acct,primary:true,accessRole:'owner',summary:acct}]});
  if(p.startsWith('/calendar/v3/'))return J({items:[]});
  if(p==='/drive/v3/about')return J({user:{emailAddress:acct}});
- if(p==='/drive/v3/files'&&m==='GET'){const q=u.searchParams.get('q')||'',nm=(q.match(/name='([^']*)'/)||[])[1];return J({files:Object.values(G.files).filter(f=>f.owner===acct&&(!nm||f.name===nm)).map(f=>({id:f.id,name:f.name,createdTime:f.created}))})}
+ if(p==='/drive/v3/files'&&m==='GET'&&G.failList)return no(500);
+ if(p==='/drive/v3/files'&&m==='GET'){const q=u.searchParams.get('q')||'',nm=(q.match(/name='([^']*)'/)||[])[1];return J({files:Object.values(G.files).filter(f=>f.owner===acct&&(!nm||f.name===nm)).map(f=>({id:f.id,name:f.name,createdTime:f.created,modifiedTime:f.mime&&f.mime.includes('spreadsheet')?(f.mt||f.created):undefined}))})}
  if(p==='/drive/v3/files'&&m==='POST'){const b=req.postDataJSON(),id=nid(b.mimeType.includes('folder')?'fold':'shet');if(b.parents&&!canWrite(G.files[b.parents[0]],acct))return no(403);
   G.files[id]={id,created:new Date(Date.UTC(2026,9,1)+G.n*60000).toISOString(),name:b.name,mime:b.mimeType,parents:b.parents||[],owner:acct,perms:[],tabs:b.mimeType.includes('spreadsheet')?[{title:'シート1',sheetId:0,rows:[]}]:null};return J({id,name:b.name})}
  let mm=p.match(/^\/drive\/v3\/files\/([^/]+)\/permissions\/?([^/]*)$/);
@@ -35,7 +38,7 @@ async function google(route){
   if(m==='PATCH'){const x=f.perms.find(x=>x.id===mm[2]);if(!x)return no(404);x.role=req.postDataJSON().role;return J({id:x.id})}
   if(m==='DELETE'){f.perms=f.perms.filter(x=>x.id!==mm[2]);return route.fulfill({status:204,headers:{'access-control-allow-origin':'*'}})}}
  mm=p.match(/^\/v4\/spreadsheets\/([^/:]+)(.*)$/);
- if(mm){const f=G.files[mm[1]],rest=mm[2];if(!f)return no(404);
+ if(mm){const f=G.files[mm[1]],rest=mm[2];if(!f)return no(404);if(m!=='GET')touch(f);
   if(m==='GET'&&!rest){if(!canRead(f,acct))return no(403);return J({properties:{title:f.name},sheets:f.tabs.map(t=>({properties:{title:t.title,sheetId:t.sheetId}}))})}
   if(rest==='/values:batchGet'){if(!canRead(f,acct))return no(403);const ts=u.searchParams.getAll('ranges').map(r=>f.tabs.find(t=>t.title===tabName(r)));if(ts.some(t=>!t))return no(400);return J({valueRanges:ts.map(t=>({values:t.rows}))})}
   if(!canWrite(f,acct))return no(403);
@@ -161,7 +164,7 @@ async function main(){
   const bB=byName('CPG HUB_指示箱_社員 二郎'),sB=byName('CPG HUB_社員 二郎');
   const [r1,r2]=tab(bB,'指示').slice(1);
   /* 社員の端末（v1.47.1）が書く「指示の報告」を、形のとおりに置く */
-  sB.tabs.push({title:'指示の報告',sheetId:300,rows:[['指示ID','状態','完了日','完了メモ','書いた日時'],[r1[0],'完了','2026-10-30','先方に送付済み（テスト）','2026-10-30T02:00:00.000Z']]});
+  touch(sB);sB.tabs.push({title:'指示の報告',sheetId:300,rows:[['指示ID','状態','完了日','完了メモ','書いた日時'],[r1[0],'完了','2026-10-30','先方に送付済み（テスト）','2026-10-30T02:00:00.000Z']]});
   const g=await viewer(GM,400);
   let t=await g.p.textContent('main');
   assert.ok(t.includes('あなたが出したタスクリクエスト')&&t.includes('✓ 10/30完了')&&t.includes('メモ：先方に送付済み（テスト）'),t.slice(0,600));
@@ -422,6 +425,39 @@ async function main(){
   assert.match(log.join('/'),/2人分の受付番号の記号を保存しました/);assert.match(log.join('/'),/2人の記録シートに受付番号の記号を書きました/);
   assert.deepEqual(tab(G.files[a.id],'受付番号の記号')[1],['AAX']);assert.deepEqual(tab(G.files[b.id],'受付番号の記号')[1],['BBX'],'retried after one failure');
   const sl=tab(byName('CPG HUB_社員一覧'),'社員'),si=sl[0].indexOf('シートID'),ci=sl[0].indexOf('受付番号の記号');assert.equal(sl.find(r=>r[si]===a.id)[ci],'AAX');assert.equal(sl.find(r=>r[si]===b.id)[ci],'BBX');
+  assert.deepEqual(A.errors,[]);
+ });
+ await check('v1.50.31 同期：変わっていない人の記録シート・指示箱は読み直さず前の内容を使う。書いた人・指示箱が変わった人だけ読む。12時間たつと全部読む',async()=>{
+  const sheetReads=(from,ids)=>G.calls.slice(from).filter(c=>c[1]==='GET'&&ids.some(id=>c[2].startsWith('/v4/spreadsheets/'+id))).map(c=>c[2].split('/')[3]);
+  await A.p.evaluate(()=>RB.corpRun());
+  const info=await A.p.evaluate(()=>RB.ui.corp.data.filter(x=>x.ok).map(x=>({id:x.s.sheetId,box:x.s.boxId||'',name:x.s.name,cases:JSON.stringify(x.cases),box2:JSON.stringify(x.box)})));
+  const ids=info.flatMap(x=>[x.id,x.box]).filter(Boolean);assert.ok(info.length>=3,JSON.stringify(info));
+  /* 何も変わっていない：読まない（更新日時の一覧は読む） */
+  let mark=G.calls.length;await A.p.evaluate(()=>RB.corpRun());
+  assert.deepEqual(sheetReads(mark,ids),[],'no record sheet / box read when nothing changed');
+  assert.ok(G.calls.slice(mark).some(c=>c[1]==='GET'&&c[2]==='/drive/v3/files'),'modified times are listed');
+  let now=await A.p.evaluate(()=>({t:RB.ui.corp.timing,d:RB.ui.corp.data.filter(x=>x.ok).map(x=>({id:x.s.sheetId,cases:JSON.stringify(x.cases),box2:JSON.stringify(x.box),reused:!!x.reused}))}));
+  assert.equal(now.t.reused,info.length);assert.ok(now.d.every(x=>x.reused));
+  for(const x of info){const y=now.d.find(z=>z.id===x.id);assert.equal(y.cases,x.cases);assert.equal(y.box2,x.box2)}
+  /* 管理 見本の記録シートが変わった：その人だけ読み直して、新しい行が出る */
+  const sB=G.files[info.find(x=>x.name==='管理 見本').id],caseTab=sB.tabs.find(t=>t.title==='案件');
+  if(!caseTab.rows.length)caseTab.rows.push(['受付番号','物件']);const hdr=caseTab.rows[0];touch(sB);caseTab.rows.push(hdr.map(k=>k==='受付番号'?'TEST-0001':k==='物件'||k==='物件名'?'見本ハイツ（テスト）':''));
+  mark=G.calls.length;await A.p.evaluate(()=>RB.corpRun());
+  {const m=info.find(x=>x.id===sB.id);assert.deepEqual([...new Set(sheetReads(mark,ids))].sort(),[m.id,m.box].filter(Boolean).sort(),'only that person (sheet and box)')}
+  assert.ok(await A.p.evaluate(id=>RB.ui.corp.data.find(x=>x.s.sheetId===id).cases.some(r=>r['受付番号']==='TEST-0001'),sB.id));
+  /* 社員 一郎の指示箱だけ変わった：その人（記録シートと指示箱）を読み直す */
+  const a=info.find(x=>x.name==='社員 一郎'),bA=G.files[a.box];touch(bA);tab(bA,'指示').push(['B-TEST-0001','箱だけ変わった（テスト）','','2026-10-30','未完了',ZEN,'見本 太郎','','']);
+  mark=G.calls.length;await A.p.evaluate(()=>RB.corpRun());
+  assert.deepEqual([...new Set(sheetReads(mark,ids))].sort(),[a.id,a.box].sort());
+  assert.ok(await A.p.evaluate(id=>RB.ui.corp.data.find(x=>x.s.sheetId===id).box.some(o=>o['指示ID']==='B-TEST-0001'),a.id));
+  /* 更新日時が取れないファイルは読む（一覧の取得に失敗したとき） */
+  G.failList=true;mark=G.calls.length;await A.p.evaluate(()=>RB.corpRun());G.failList=false;
+  assert.equal(new Set(sheetReads(mark,ids)).size,ids.length,'all read when modified times are unknown');
+  /* 12時間たつと、変わっていなくても全部読む */
+  await A.p.evaluate(()=>RB.corpRun());
+  await A.p.clock.setSystemTime(new Date('2026-10-30T14:30:00Z'));
+  mark=G.calls.length;await A.p.evaluate(()=>RB.corpRun());
+  assert.equal(new Set(sheetReads(mark,ids)).size,ids.length,'all read after 12 hours');
   assert.deepEqual(A.errors,[]);
  });
  await check('複数有効同Gmailの異常は社員追加/役割変更/削除の前に停止、新ファイルも作らない',async()=>{

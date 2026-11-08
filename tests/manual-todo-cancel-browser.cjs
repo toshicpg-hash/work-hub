@@ -27,6 +27,8 @@ async function setup(db,width=390,network=null){
   const req=route.request(),u=req.url();if(u===origin+'/'||u===origin+'/index.html')return route.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(root,'index.html'),'utf8').replace('corpKeepLoad();\nrender();',hook+'\ncorpKeepLoad();\nrender();')});if(u===origin+'/seed.html')return route.fulfill({contentType:'text/html',body:'<!doctype html>'});if(u.startsWith(origin+'/'))return route.continue();
   requests.push({url:u,method:req.method()});if(network&&u==='https://accounts.google.com/gsi/client')return route.fulfill({contentType:'text/javascript',body:'window.google={accounts:{oauth2:{initTokenClient:({callback,scope})=>({requestAccessToken(){callback({access_token:"synthetic-token",expires_in:3600,scope})}})}}};'});
   if(network&&u.includes('/calendar/v3/users/me/calendarList'))return route.fulfill({contentType:'application/json',body:'{"items":[]}'});
+  /* v1.50.31 読み込みの前に、スプレッドシートの更新日時の一覧を1回読む（ここでは空＝全員を読む） */
+  if(network&&u.startsWith('https://www.googleapis.com/drive/v3/files?')&&new URL(u).searchParams.get('fields')==='nextPageToken,files(id,modifiedTime)')return route.fulfill({contentType:'application/json',body:'{"files":[]}'});
   if(network&&u.startsWith('https://sheets.googleapis.com/')){const body=sheetsFixture(req,network);return route.fulfill({contentType:'application/json',body:JSON.stringify(body)});}
   if(network&&/^https:\/\/(www\.googleapis\.com|sheets\.googleapis\.com)\//.test(u))network.unexpected.push(u);return route.fulfill({status:200,body:''});
  });

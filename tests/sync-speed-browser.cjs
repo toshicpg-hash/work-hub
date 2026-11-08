@@ -42,10 +42,10 @@ async function main(){
  browser=await playwright.chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
  const store=seed(),d=await device(store,150);
  await d.p.evaluate(staff=>{SP.setup();const x=SP.db.settings.data;x.admin=true;x.ob={legacy:true};x.listId='synthetic-list-0000000000001';x.staff=staff;SP.save()},staff);
- await check('社長：社員の記録は同時に3人まで読み、結果は一覧の順のまま',async()=>{
+ await check('社長：社員の記録は同時に5人まで読み（v1.50.31 で3→5）、結果は一覧の順のまま',async()=>{
   const data=await d.p.evaluate(async()=>(await SP.corpRun()).map(x=>[x.s.name,x.ok,x.cases.length]));
   assert.deepEqual(data,staff.map(s=>[s.name,true,1]));
-  assert.ok(d.max>1,'reads overlap: '+d.max);assert.ok(d.max<=3,'at most 3 at once: '+d.max);
+  assert.ok(d.max>1,'reads overlap: '+d.max);assert.ok(d.max<=5,'at most 5 at once: '+d.max);
  });
  await check('2回目：あとから増えるタブがそろっている人は、タブの一覧を問い合わせない。そろっていない人は今までどおり問い合わせる',async()=>{
   d.reset();await d.p.evaluate(async()=>{await SP.corpRun()});

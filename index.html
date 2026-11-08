@@ -420,8 +420,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.30" title="使い方マニュアルを開く">v1.50.30・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.30" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.31" title="使い方マニュアルを開く">v1.50.31・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.31" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -481,10 +481,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.30"></script>
+<script src="./share-management.js?v=1.50.31"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.30"></script>
-<script src="./calendar-view-scope.js?v=1.50.30"></script>
+<script src="./view-scope.js?v=1.50.31"></script>
+<script src="./calendar-view-scope.js?v=1.50.31"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2247,7 +2247,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.30";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.31";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2409,7 +2409,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.30" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.30" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.31" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.31" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3729,12 +3729,27 @@ async function adminRemove(s){return adminShareOperation(async()=>{
 })}
 /* 社長の「会社の動き」: read every shared sheet (read only; nothing is written to the people's sheets) */
 /* v1.50.18 社員の記録を同時に読む人数（多すぎるとGoogleの回数制限に当たって、かえって遅くなる） */
-const CORP_POOL=3, TABS_KEY="workhub_corp_tabs_v1";
+/* v1.50.31 同時に読む人数を3→5に。回数制限（429）のときは今までどおり待ってやり直す */
+const CORP_POOL=5, TABS_KEY="workhub_corp_tabs_v1";
 /* 社員の記録シートごとのタブの一覧（この端末だけに残す。タブの名前だけで、中身は残さない） */
 let corpTabsMem=null;
 function corpTabsAll(){if(corpTabsMem)return corpTabsMem;try{const v=JSON.parse(localStorage.getItem(TABS_KEY)||"{}");corpTabsMem=v&&typeof v==="object"&&!Array.isArray(v)?v:{}}catch(e){corpTabsMem={}}return corpTabsMem}
 const corpTabsGet=id=>{const t=corpTabsAll()[id];return Array.isArray(t)&&t.every(x=>typeof x==="string")?t:null};
 function corpTabsSet(id,tabs){const all=corpTabsAll();if(tabs)all[id]=tabs.map(String);else delete all[id];try{localStorage.setItem(TABS_KEY,JSON.stringify(all))}catch(e){}}
+/* v1.50.31 変わっていない人は読み直さない：
+   Googleドライブのスプレッドシートの更新日時を1回（多くても数回）でまとめて読む。
+   前に読んだときと記録シート・指示箱の更新日時が同じで、読み方（見る人・役割・担当・指示箱）も同じなら、前の内容をそのまま使う。
+   更新日時が取れないファイル（一覧に出ない・失敗した）は今までどおり読む。前に実際に読んでから12時間たった人も読む */
+const CORP_REUSE_MS=12*3600e3;
+async function corpModTimes(){
+  const out={};let pt="",pages=0;
+  try{do{const r=await gReq(DRIVE+"?"+new URLSearchParams(Object.assign({q:"mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",fields:"nextPageToken,files(id,modifiedTime)",pageSize:"1000",spaces:"drive"},pt?{pageToken:pt}:{})));
+      for(const f of (r&&r.files)||[])if(f&&f.id&&f.modifiedTime)out[f.id]=String(f.modifiedTime);
+      pt=(r&&r.nextPageToken)||"";pages++}while(pt&&pages<5)}
+  catch(err){if(err.message==="signin")throw err}
+  return out;
+}
+const corpReadKey=(viewer,me,s,noRc,boxOn)=>JSON.stringify([viewer?1:0,viewer&&me?[me.email,me.role,me.company,me.gmCo,me.charge,me.sheetId]:0,s.sheetId,s.boxId||"",noRc?1:0,boxOn?1:0]);
 async function corpLoad(){
   await gAuthorize(true);
   const viewer=!D().admin;
@@ -3743,9 +3758,16 @@ async function corpLoad(){
   if(viewer&&(!me||!isViewer(me)))throw new Error("notviewer");
   const list=viewer?ui.viewList.filter(s=>me&&(canSee(me,s)||s.sheetId===me.sheetId)):D().staff.filter(s=>!s.removed), out=[];
   const t0=Date.now();
+  const prev=Object.fromEntries(((ui.corp&&ui.corp.data)||[]).filter(x=>x&&x.ok&&x.s&&x.mt).map(x=>[x.s.sheetId,x]));
+  /* 更新日時は毎回取る（次の読み込みで比べるため。初めての読み込みでも取っておく） */
+  const mts=list.length?await corpModTimes():{};
   /* v1.50.18 3人ずつ同時に読む（前は1人ずつ順番）。並びは一覧の順のまま。読めなかった人のやり直しは今までどおり */
   const one=async s=>{
     const started=Date.now();let tries=0,x=null,fresh=false;
+    const noRc0=viewer&&noReceipts(me)&&s.sheetId!==me.sheetId, boxOn=!!s.boxId&&(!viewer||s.sheetId===me.sheetId||canOrder(me,s)), key=corpReadKey(viewer,me,s,noRc0,boxOn);
+    const mt=mts[s.sheetId]||"", bmt=boxOn?(mts[s.boxId]||""):"", old=prev[s.sheetId];
+    if(old&&mt&&old.mt===mt&&(!boxOn||bmt&&old.bmt===bmt)&&old.rk===key&&Date.now()-(old.readAt||0)<CORP_REUSE_MS){
+      x=Object.assign({},old,{s:Object.assign(s,{lastSync:old.s.lastSync||""}),reused:true,ms:Date.now()-started,tries:0});return x}
     /* v1.50.5 読めなかった人だけ、少し待って最大2回やり直す（回数制限・Google側の不具合・時間切れ・通信の失敗のとき）。成功した人は読み直さない */
     for(;;){tries++;
     try{/* a sheet synced from before v1.29 has no 「ToDo」 tab, and reading a missing tab fails the whole read */
@@ -3756,13 +3778,16 @@ async function corpLoad(){
       const hasTodo=tabs.includes("ToDo"), hasOrd=tabs.includes("指示"), hasRep=tabs.includes(REPORT_TAB), hasCal=!viewer&&tabs.includes(CALREC_TAB);
       /* v1.50.0 業務管理の端末は、ほかの人の立替・領収書を読まない */
       const noRc=viewer&&noReceipts(me)&&s.sheetId!==me.sheetId;
+      /* v1.50.31 指示箱は記録シートと同時に読む（前は記録シートのあと） */
+      const boxP=boxOn?sheetRead(s.boxId,[BOX_TAB]).then(r=>objRows(r[BOX_TAB]).filter(o=>o["指示ID"]),err=>{if(err.message==="signin")throw err;return null}):Promise.resolve(null);
+      boxP.catch(()=>{});
       let v;try{v=await sheetRead(s.sheetId,["案件","入金"].concat(noRc?[]:["立替"],["情報"],hasTodo?["ToDo"]:[],hasOrd?["指示"]:[],hasRep?[REPORT_TAB]:[],hasCal?[CALREC_TAB]:[]))}
-      catch(err){if(useKnown&&err.status===400){corpTabsSet(s.sheetId,null);fresh=true;tries--;continue}throw err}
+      catch(err){await boxP.catch(()=>{});if(useKnown&&err.status===400){corpTabsSet(s.sheetId,null);fresh=true;tries--;continue}throw err}
       /* 指示箱：読めるのは社長（持ち主）と、その社員に出せる人（編集者）。読めなければ null */
-      let box=null;if(s.boxId&&(!viewer||s.sheetId===me.sheetId||canOrder(me,s))){try{box=objRows((await sheetRead(s.boxId,[BOX_TAB]))[BOX_TAB]).filter(o=>o["指示ID"])}catch(err){if(err.message==="signin")throw err}}
+      const box=await boxP;
       const info=Object.fromEntries((v["情報"]||[]).slice(1).map(r=>[r[0],r[1]]));
       s.lastSync=String(info["最終同期"]||"");
-      x={s,ok:true,calRec:hasCal?objRows(v[CALREC_TAB]).map(r=>String(r["Gmail"]||"").trim()).filter(mailOK):null,receiptRead:noRc?{state:"hidden",at:Date.now(),version:String(info["版"]||"")}:{...(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.parseSheet(v["立替"]):{state:"invalid",message:"領収書の表示機能を読み込めません。"}),at:Date.now(),version:String(info["版"]||"")},cases:objRows(v["案件"]),rc:noRc?[]:rcFor(me,s,objRows(v["立替"])),todo:hasTodo?objRows(v["ToDo"]):null,orders:hasOrd?objRows(v["指示"]).filter(o=>o["指示ID"]):[],box,reports:hasRep?objRows(v[REPORT_TAB]).filter(r=>r["指示ID"]):[]}}
+      x={s,ok:true,calRec:hasCal?objRows(v[CALREC_TAB]).map(r=>String(r["Gmail"]||"").trim()).filter(mailOK):null,receiptRead:noRc?{state:"hidden",at:Date.now(),version:String(info["版"]||"")}:{...(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.parseSheet(v["立替"]):{state:"invalid",message:"領収書の表示機能を読み込めません。"}),at:Date.now(),version:String(info["版"]||"")},cases:objRows(v["案件"]),rc:noRc?[]:rcFor(me,s,objRows(v["立替"])),todo:hasTodo?objRows(v["ToDo"]):null,orders:hasOrd?objRows(v["指示"]).filter(o=>o["指示ID"]):[],box,reports:hasRep?objRows(v[REPORT_TAB]).filter(r=>r["指示ID"]):[],mt,bmt:box===null?"":bmt,rk:key,readAt:started}}
     catch(err){if(err.message==="signin")throw err;
       const wait=corpRetryWait(err,tries);if(wait!==null){await corpWait(wait);continue}
       x={s,ok:false,accessDenied:err.status===403||err.status===404,msg:corpReadMsg(err)+(tries>1?"・"+tries+"回試しました":""),status:err.status||(err.name==="AbortError"?"timeout":err.network?"network":"")}}
@@ -3770,7 +3795,7 @@ async function corpLoad(){
   };
   {let next=0,stop=null;const work=async()=>{while(!stop&&next<list.length){const i=next++;try{out[i]=await one(list[i])}catch(e){stop=stop||e}}};
    await Promise.all(Array.from({length:Math.min(CORP_POOL,list.length)},work));if(stop)throw stop;}
-  out.timing={ms:Date.now()-t0,n:list.length};
+  out.timing={ms:Date.now()-t0,n:list.length,reused:out.filter(x=>x&&x.reused).length};
   save();return out;
 }
 /* v1.50.5 読み込めなかった理由を分けて出す（前は 429・5xx・通信の失敗が全部「通信できませんでした」だった） */
@@ -3780,7 +3805,7 @@ function corpReadMsg(err){const k=corpErrKind(err);return k==="rate"?"Googleの�
 function corpRetryWait(err,tries){if(tries>2||!corpErrKind(err))return null;const ra=err&&Number.isFinite(err.retryAfter)?Math.min(60,err.retryAfter)*1000:null;return ra!==null?ra:tries===1?5000:15000;}
 let corpWait=ms=>new Promise(r=>setTimeout(r,ms));
 const secText=ms=>Number.isFinite(ms)?(ms<10000?(Math.round(ms/100)/10):Math.round(ms/1000))+"秒":"";
-function corpTimingText(data){const t=data&&data.timing;if(!t||!t.n)return "";return "読み込み：全体 "+secText(t.ms)+"・1人あたり "+secText(t.ms/t.n);}
+function corpTimingText(data){const t=data&&data.timing;if(!t||!t.n)return "";return "読み込み：全体 "+secText(t.ms)+"・1人あたり "+secText(t.ms/t.n)+(t.reused?"（前から変わっていない "+t.reused+"人は読み直していません）":"");}
 const objRows=rows=>{const [head,...rest]=rows||[];return head?rest.map(r=>Object.fromEntries(head.map((k,i)=>[k,r[i]??""]))):[]};
 /* 会社の動き：社員の案件を1件ずつカードで見せる（見るだけ） */
 function corpCaseCard(r){
