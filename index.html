@@ -52,6 +52,14 @@ section .calnav{flex-wrap:wrap;gap:6px}section .calnav h2{font-size:16px;margin:
 /* v1.50.28 会社・人の切り替えを目立たせる：色の枠・太字・名前を最後まで（入らなければ次の行へ） */
 .scope-bar .scope-row [data-view-scope]{gap:6px}
 .scope-bar .scope-row select{font:inherit;font-size:15px;font-weight:700;min-height:44px;width:auto;max-width:100%;min-width:0;padding:4px 20px 4px 4px;border:0;border-radius:8px;background-color:transparent;color:var(--fg);text-overflow:ellipsis}
+/* v1.50.30 タスクリクエストの宛先（プルダウンを開いてチェック） */
+#req-compose{scroll-margin-top:84px}
+#req-compose .req-to{border:2px solid var(--accent);border-radius:10px;background:var(--surface)}
+#req-compose .req-sum{list-style:none;cursor:pointer;min-height:44px;display:flex;align-items:center;padding:6px 12px;font-weight:700;color:var(--accent);overflow-wrap:anywhere}
+#req-compose .req-sum::-webkit-details-marker{display:none}#req-compose .req-sum::after{content:"▾";margin-left:auto;padding-left:8px}
+#req-compose .req-to[open] .req-sum::after{content:"▴"}
+#req-compose .req-list{display:flex;flex-direction:column;gap:2px;padding:4px 12px 10px;border-top:1px solid var(--line)}
+#req-compose .req-opt{display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer}#req-compose .req-opt input{width:22px;height:22px;flex:0 0 auto}
 .scope-bar .scope-row label.vs-pick{position:relative;min-width:0;flex:0 1 auto}
 .scope-bar .scope-row .vs-cur{display:inline-flex;align-items:center;gap:4px;font-size:15px;font-weight:800;line-height:1.25;min-height:40px;padding:2px 10px;border:2px solid var(--accent);border-radius:10px;background:var(--accent-soft);color:var(--accent);overflow-wrap:anywhere;word-break:break-word;max-width:100%;box-sizing:border-box}
 .scope-bar .scope-row .vs-cur::after{content:"▾";font-size:13px;flex:0 0 auto}
@@ -412,8 +420,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.29" title="使い方マニュアルを開く">v1.50.29・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.29" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.30" title="使い方マニュアルを開く">v1.50.30・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.30" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -473,10 +481,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.29"></script>
+<script src="./share-management.js?v=1.50.30"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.29"></script>
-<script src="./calendar-view-scope.js?v=1.50.29"></script>
+<script src="./view-scope.js?v=1.50.30"></script>
+<script src="./calendar-view-scope.js?v=1.50.30"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1026,7 +1034,9 @@ function homeCorpTile(){
   const c=ui.corp,rows=(c?.data||[]).filter(x=>x.s&&scopeContext().canView(x.s)),t=todayS(),old=rows.filter(x=>x.ok&&(!x.s.lastSync||String(x.s.lastSync).slice(0,10)!==t)).length,bad=rows.filter(x=>!x.ok).length;
   const attention=!c?.data||old||bad||c?.err||c?.kept||rows.some(x=>x.receiptRead?.state==='invalid');
   return '<button type="button" id="home-company" class="tile'+(attention?' alert':'')+'" data-nav="company" style="width:100%"><span class="k">会社の動き</span><span class="v">'+(c?.data?(scopeState().usable?'選択内の共有記録 '+scopeCompanyData().length+'人':'選択内の共有記録は未確認'):'社員の記録は未読込')+'</span><span class="s">'+(c?.data?'見られる社員全体：今日未同期 '+old+'人・読めなかった社員 '+bad+'人':'同期状況は未確認です')+'</span>'+
-    (c?.err?'<span class="s">'+h(c.err)+'</span>':'')+(c?.kept?'<span class="s">'+keptNote()+'</span>':'')+(rows.some(x=>x.receiptRead?.state==='invalid')?'<span class="s">共有領収書の読取注意 '+rows.filter(x=>x.receiptRead?.state==='invalid').length+'人</span>':'')+'</button>';
+    (c?.err?'<span class="s">'+h(c.err)+'</span>':'')+(c?.kept?'<span class="s">'+keptNote()+'</span>':'')+(rows.some(x=>x.receiptRead?.state==='invalid')?'<span class="s">共有領収書の読取注意 '+rows.filter(x=>x.receiptRead?.state==='invalid').length+'人</span>':'')+'</button>'+
+    /* v1.50.30 タスクリクエストを出す欄へ */
+    (reqTargets().length?'<div class="row" style="margin-top:6px"><button type="button" class="btn sm" data-act="reqgo">タスクリクエストを出す</button></div>':'');
 }
 function vCompany(){
   if(!D().admin&&!D().viewListId)return '<button class="back" data-nav="home">‹ ホームへ戻る</button><p>この端末には会社の動きの閲覧設定がありません。</p>';
@@ -2237,7 +2247,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.29";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.30";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2399,7 +2409,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.29" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.29" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.30" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.30" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3783,6 +3793,42 @@ function corpCaseCard(r){
     '<dl class="kv">'+rows.map(([k,x])=>'<dt>'+k+'</dt><dd>'+h(x)+'</dd>').join("")+'</dl>'+
     (corpLastMove(r)?'<div class="note">最終の動き '+h(mdh(corpLastMove(r)))+'</div>':'')+'</div>';
 }
+/* v1.50.30 タスクリクエストを出す欄（会社の動きのいちばん上に1つ）。宛先はプルダウンを開いてチェックで選ぶ（何人でも）。
+   社長は社員の記録シートの「指示」へ（adminOrderAdd）、全社・GM・経理・業務管理は指示箱へ（boxOrderAdd）。宛先は今までどおり出せる人だけ */
+function reqTargets(){
+  const data=(ui.corp&&ui.corp.data)||[],m=boxMe();if(!m)return [];
+  return data.map((x,k)=>({x,k})).filter(({x})=>x.ok&&x.s&&!x.s.removed&&(m.admin?true:canIssueTo(x.s)));
+}
+function reqCompose(){
+  const list=reqTargets();if(!list.length)return "";
+  const sel=ui.reqTo instanceof Set?ui.reqTo:(ui.reqTo=new Set()),chosen=list.filter(t=>sel.has(t.x.s.sheetId));
+  const summary=chosen.length?chosen.map(t=>dispName(t.x.s)).join("・"):"未選択（押して選ぶ）";
+  const dr=ui.reqDraft||{};
+  return '<section class="panel" id="req-compose" style="display:flex;flex-direction:column;gap:8px"><h3 style="margin:0">タスクリクエストを出す</h3>'+
+    '<details class="req-to"'+(ui.reqToOpen?' open':'')+'><summary class="req-sum"><span class="req-sum-t">宛先：'+h(summary)+'</span></summary>'+
+      '<div class="req-list"><div class="row"><button class="btn xs" type="button" data-act="reqall">全員を選ぶ</button><button class="btn xs" type="button" data-act="reqnone">選び直す</button></div>'+
+      list.map(t=>'<label class="req-opt"><input type="checkbox" data-req-to="'+h(t.x.s.sheetId)+'"'+(sel.has(t.x.s.sheetId)?' checked':'')+'>'+personBadge(t.x.s.name,false,t.x.s.sheetId)+'</label>').join("")+'</div></details>'+
+    '<label class="f">内容<input type="text" id="rq_title" maxlength="200" placeholder="例：〇〇の見積を今週中に出す" value="'+h(dr.title||"")+'"></label>'+
+    '<div class="f"><span>期限</span><div class="row"><button class="btn xs" type="button" data-req-due="0">今日</button><button class="btn xs" type="button" data-req-due="1">明日</button><button class="btn xs" type="button" data-req-due="week">今週中</button><input type="date" id="rq_due" value="'+h(dr.due||"")+'" style="flex:1 1 9em;min-width:0"></div></div>'+
+    '<div class="row"><button class="btn pri" type="button" data-act="reqsend"'+(ui.reqBusy?' disabled':'')+'>'+(ui.reqBusy?'送っています…':'リクエストする')+'</button></div>'+
+    (ui.reqMsg&&ui.reqMsg.length?'<ul class="gres" role="status">'+ui.reqMsg.map(x=>'<li class="'+(x.ok?'ok':'ng')+'">'+(x.ok?'✓ ':'× ')+h(x.text)+'</li>').join("")+'</ul>':'')+
+    '<p class="note" style="margin:0">相手が同期すると届きます。急ぎならLINEでも伝えてください。</p></section>';
+}
+const reqDraftSave=()=>{ui.reqDraft={title:val("rq_title"),due:val("rq_due")}};
+async function reqSend(){
+  reqDraftSave();
+  const title=String(ui.reqDraft.title||"").trim(),due=ui.reqDraft.due||"",list=reqTargets().filter(t=>ui.reqTo instanceof Set&&ui.reqTo.has(t.x.s.sheetId));
+  if(!list.length){ui.reqMsg=[{ok:false,text:"宛先を選んでください"}];render();return}
+  if(!title){ui.reqMsg=[{ok:false,text:"内容を入れてください"}];render();return}
+  const m=boxMe();ui.reqBusy=true;ui.reqMsg=[];render();
+  const out=[];
+  for(const t of list){try{if(m&&m.admin)await adminOrderAdd(t.x,title,due);else await boxOrderAdd(t.x,title,due);out.push({ok:true,text:dispName(t.x.s)+"さん：出しました"})}
+    catch(err){out.push({ok:false,text:dispName(t.x.s)+"さん：出せませんでした（"+(err.message==="readback"?"保存を確かめられませんでした。読み込み直して確かめてください":dMsg(err))+"）"})}}
+  ui.reqBusy=false;ui.reqMsg=out;
+  if(out.every(x=>x.ok)){ui.reqDraft=null;ui.reqTo=new Set();ui.reqToOpen=false}
+  try{corpKeepSave();roBuild(ui.corp.data)}catch(e){}
+  render();
+}
 /* 会社の動き：社員ごとに「タスクリクエスト」と「社員のToDo」。ToDoは期限切れ→今日→今後7日を一覧、それより先と期限なしは件数だけ */
 function corpTodos(x,k){
   const t=todayS(), dd=v=>cellDate(v), n=d=>diffDays(d,t);
@@ -3795,8 +3841,7 @@ function corpTodos(x,k){
   const orders='<p class="fk" style="margin:6px 0 0">タスクリクエスト（代表から）</p>'+
     (open.length?'<p class="note" style="margin:2px 0 0">未完了 '+open.length+'件'+(oOver.length?'<b style="color:var(--red)">（期限切れ '+oOver.length+'件）</b>':'')+'</p><ul class="dl">'+open.map(oli).join("")+'</ul>':'<p class="note" style="margin:2px 0 0">未完了のリクエストはありません</p>')+
     (done7.length?'<p class="note" style="margin:6px 0 0">最近7日の完了 '+done7.length+'件</p><ul class="dl">'+done7.map(o=>'<li><span class="num" style="color:var(--green)"><b>✓ '+md(dd(o["完了日"]))+'完了</b></span> '+h(o["内容"])+(o["完了メモ"]?'<div class="note">メモ：'+h(o["完了メモ"])+'</div>':'')+'</li>').join("")+'</ul>':'')+
-    (!D().admin?'':'<div class="form" style="margin-top:6px"><label class="f full">リクエストの内容<input type="text" id="oi_t'+k+'" placeholder="例：〇〇の見積を今週中に出す"></label><label class="f">期限<input type="date" id="oi_d'+k+'"></label>'+
-      '<div class="full"><button class="btn pri" type="button" data-oadd="'+k+'"'+(ui.oBusy?' disabled':'')+'>リクエストする</button></div></div>')+
+
     (ui.oMsg&&ui.oMsg.k===k?'<ul class="gres" role="status"><li class="'+(ui.oMsg.ok?'ok':'ng')+'">'+(ui.oMsg.ok?'✓ ':'× ')+h(ui.oMsg.text)+'</li></ul>':'');
   /* GM・全社からのリクエスト（指示箱）：社長は全部、出した人は自分が出したものだけ。状態は指示箱と社員の「指示の報告」で決める */
   const bm=boxMe(), boxRows=Array.isArray(x.box)?x.box.filter(o=>bm&&(bm.admin||eq(o["出した人Gmail"],bm.email))):[];
@@ -3812,8 +3857,7 @@ function corpTodos(x,k){
   const canIssue=canIssueTo(x.s);
   const boxHtml=(bst.length||canIssue||(bm&&!bm.admin&&canOrder(bm.me,x.s)))?'<p class="fk" style="margin:10px 0 0">'+(bm&&bm.admin?'タスクリクエスト（GM・全社・経理・業務管理から）':'あなたが出したタスクリクエスト')+'</p>'+
     (bst.length?'<p class="note" style="margin:2px 0 0">未完了 '+bOpen.length+'件'+(bOver.length?'<b style="color:var(--red)">（期限切れ '+bOver.length+'件）</b>':'')+'</p><ul class="dl">'+bst.map(bli).join("")+'</ul>':'<p class="note" style="margin:2px 0 0">まだありません</p>')+
-    (canIssue?'<div class="form" style="margin-top:6px"><label class="f full">リクエストの内容<input type="text" id="bi_t'+k+'" placeholder="例：〇〇の見積を今週中に出す"></label><label class="f">期限<input type="date" id="bi_d'+k+'"></label>'+
-      '<div class="full"><button class="btn pri" type="button" data-badd="'+k+'"'+(ui.bBusy?' disabled':'')+'>リクエストする</button></div></div>':
+    (canIssue?'':
       (bm&&!bm.admin&&canOrder(bm.me,x.s)&&!x.s.boxId?'<p class="note" style="margin:2px 0 0">指示箱がまだありません（社長の端末で、会社・役割を保存すると作られます）</p>':''))+
     (ui.bMsg&&ui.bMsg.k===k?'<ul class="gres" role="status"><li class="'+(ui.bMsg.ok?'ok':'ng')+'">'+(ui.bMsg.ok?'✓ ':'× ')+h(ui.bMsg.text)+'</li></ul>':''):'';
   let todos, tOver=[];
@@ -3850,6 +3894,7 @@ function corpView(){
         return '<li'+(x.ok&&old?' style="color:var(--red)"':'')+'>'+personBadge(x.s.name)+' '+(x.ok?(ls?'最終同期 '+h(ls):'まだ同期していません')+(old?' <b style="color:var(--red)">（今日まだ同期していません）</b>':''):'<b style="color:var(--red)">読めませんでした（'+h(x.msg)+'）</b>')+(x.ok&&x.tries>1?' <span class="note">（'+x.tries+'回目で読めました）</span>':'')+'</li>'}).join("")+'</ul>'+(c0.timing&&!c0.kept?'<p class="note num" style="margin:0">'+h(corpTimingText({timing:c0.timing}))+'</p>':'')+'</div>'+
       (scopeState().usable?'<div class="panel"><h3>動いている案件 '+active.length+'件</h3>'+(byStage.length?'<p class="note num" style="margin:0">'+byStage.map(([l,n])=>h(l)+' '+n).join("・")+'</p>':'')+
         byTan.map(([n,rs])=>'<details open><summary>'+personBadge(n)+'（'+rs.length+'件）</summary><div class="list" style="margin-top:6px">'+rs.slice().sort((a,b)=>corpLastMove(b).localeCompare(corpLastMove(a))).map(corpCaseCard).join("")+'</div></details>').join("")+'</div>'+
+      reqCompose()+
       '<div class="panel"><h3>ToDo</h3>'+(ok.length?c.data.map(x=>x.ok?corpTodos(x,x._i):'').join(""):'<p class="note" style="margin:0">読めた社員がいません</p>')+'</div>'+
       '<div class="panel"><h3>未入金</h3>'+(unp.length?'<p class="fk" style="margin:0">担当者別</p>'+tbl("担当",grp("担当").map(trow).join(""))+'<p class="fk" style="margin:0">物件別</p>'+tbl("物件",grp("物件").map(trow).join("")):'<p class="note" style="margin:0">未入金はありません</p>')+'</div>'+
       '<p class="note">社員ごとの立替は領収書ページで確認できます。</p>':scopeUnconfirmed());
@@ -4120,19 +4165,8 @@ document.addEventListener("click",e=>{
   if(el.dataset.bdone){if(manualTodoBusy())return toast("同期などの処理が終わってから操作してください");const t=requestBoxTasks().find(t=>t.requestId===el.dataset.bdone);if(!t||t.stale)return;ui.bDone={id:t.requestId,own:D().sheetId,box:t.boxId};render();document.getElementById("bd_memo")?.focus();return;}
   if(el.dataset.odone){ui.oDone=el.dataset.odone;render();showAlert();const m=document.getElementById("od_memo");if(m)m.focus();return}
   if(el.dataset.bcancel){ui.bCancel=el.dataset.bcancel;render();showAlert();return}
-  if(el.dataset.badd!=null){if(ui.bBusy)return;const k=Number(el.dataset.badd),x=ui.corp&&ui.corp.data&&ui.corp.data[k];if(!x)return;
-    const title=val("bi_t"+k).trim(),due=val("bi_d"+k);
-    if(!title){ui.bMsg={k,ok:false,text:"リクエストの内容を入れてください"};render();return}
-    ui.bBusy=true;ui.bMsg={k,ok:true,text:"送っています…"};render();
-    boxOrderAdd(x,title,due).then(()=>{corpKeepSave();roBuild(ui.corp.data);ui.bMsg={k,ok:true,text:"リクエストしました。"+dispName(x.s)+"さんが v1.47.1 以降の CPG HUB で同期すると届きます。急ぎならLINEでも伝えてください"}},
-      err=>{ui.bMsg={k,ok:false,text:"リクエストできませんでした："+(err.message==="readback"?"保存を確かめられませんでした。もう一度読み込んでから確かめてください":dMsg(err))}}).finally(()=>{ui.bBusy=false;render()});return}
   if(el.dataset.ocancel){ui.oCancel=el.dataset.ocancel;render();showAlert();return}
-  if(el.dataset.oadd!=null){if(ui.oBusy)return;const k=Number(el.dataset.oadd),x=ui.corp&&ui.corp.data&&ui.corp.data[k];if(!x)return;
-    const title=val("oi_t"+k).trim(),due=val("oi_d"+k);
-    if(!title){ui.oMsg={k,ok:false,text:"リクエストの内容を入れてください"};render();return}
-    ui.oBusy=true;ui.oMsg={k,ok:true,text:"送っています…"};render();
-    adminOrderAdd(x,title,due).then(()=>{ui.oMsg={k,ok:true,text:"リクエストしました。"+dispName(x.s)+"さんが同期すると届きます。急ぎならLINEでも伝えてください"}},
-      err=>{ui.oMsg={k,ok:false,text:"リクエストできませんでした："+dMsg(err)}}).finally(()=>{ui.oBusy=false;corpKeepSave();render()});return}
+  if(el.dataset.reqDue!=null){const v=el.dataset.reqDue,t=todayS(),d=v==="week"?addDays(t,6-parseYmd(t).getDay()):addDays(t,Number(v));const i=document.getElementById("rq_due");if(i)i.value=d;reqDraftSave();return}
   if(el.dataset.done){const t=DB.todos.find(x=>x.id===el.dataset.done);if(t&&!t.done&&!t.cancelled&&!t.order&&!t.ro){t.done=true;save();render();toast("ToDoを完了にしました")}return}
   if(el.dataset.burden!=null&&c){const it=c.items[Number(el.dataset.burden)];if(it){it.burden=el.dataset.b;save();render()}return}
   if(el.dataset.delitem&&c){c.items.splice(Number(el.dataset.delitem),1);save();render();return}
@@ -4183,6 +4217,9 @@ document.addEventListener("click",e=>{
     gAuthorize(true).then(()=>adminSync((text,ok)=>log.push({ok:ok===false?"warn":true,text}))).then(f=>{log.unshift(f.list?{ok:true,text:"社員一覧を読み直しました（社員"+f.n+"人）"}:{ok:"warn",text:"「CPG HUB_社員一覧」がまだありません"});ui.dmsg=log},
       err=>{ui.dmsg=[{ok:false,text:"読み直せませんでした："+dMsg(err)}]}).finally(()=>{ui.dbusy=false;render()});return}
   if(a==="daskno"){ui.dAsk=null;render();return}
+  if(a==="reqsend"){if(!ui.reqBusy)reqSend();return}
+  if(a==="reqgo"){go("company");setTimeout(()=>{const e=document.getElementById("req-compose");if(e)e.scrollIntoView({block:"start"})},0);return}
+  if(a==="reqall"||a==="reqnone"){reqDraftSave();ui.reqTo=new Set(a==="reqall"?reqTargets().map(t=>t.x.s.sheetId):[]);ui.reqToOpen=true;render();return}
   if(a==="calnames"){if(ui.calNamesBusy)return;ui.calNamesBusy=true;ui.calNamesMsg="";render();
     calNamesApply((t)=>{ui.calNamesMsg=t}).catch(err=>{ui.calNamesMsg="できませんでした："+(err.message==="http"?dMsg(err)+(err.status===403?"（Googleで許可されていません。Google Cloud の同意画面に「カレンダーの一覧」の許可が入っているか確かめてください）":""):gMsg(err)||err.message)}).finally(()=>{ui.calNamesBusy=false;render()});return}
   if(a==="dcodes"){ui.dCodes=true;ui.dCodesDraft=null;ui.dmsg=null;render();return}
@@ -4383,13 +4420,19 @@ document.addEventListener("input",e=>{
   if(caseSaveGuard()){e.preventDefault();return}
   if(e.target.id==="r_payee"||e.target.id==="r_item"){receiptRefreshSuggestions();return;}
   const t=e.target;
+  if(t.id==="rq_title"){reqDraftSave();return}
   if(t.id==="q"){ui.q=t.value;const pos=t.selectionStart;render();const q=document.getElementById("q");q.focus();try{q.setSelectionRange(pos,pos)}catch(err){}return}
   if(t.id==="d_bdate"){const pd=document.getElementById("d_pdue");if(pd&&t.value){pd.value=payDueOf(t.value,DB.settings.payRule);const dl=main.querySelector('[data-dl="d_pdue"]');if(dl)dl.textContent=mdh(pd.value)+"（"+PAY_RULES[DB.settings.payRule]+"）"}}
   if(t.type==="date"){const dl=main.querySelector('[data-dl="'+t.id+'"]');if(dl)dl.textContent=mdh(t.value)}
   const c=ui.caseId?editCase(ui.caseId):null;
   if(t.dataset.item!=null&&c){const it=c.items[Number(t.dataset.item)];if(it){it[t.dataset.f]=t.dataset.f==="amount"?(t.value===""?"":Number(t.value)):t.value;save();refreshItemTotals(c)}return}
 });
+document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("req-to"))ui.reqToOpen=e.target.open},true);
 document.addEventListener("change",e=>{
+  /* v1.50.30 タスクリクエストの宛先のチェック：描き直さずに、選んだ人と見出しだけ変える（開いたままにする） */
+  if(e.target.matches&&e.target.matches("[data-req-to]")){const id=e.target.dataset.reqTo;if(!(ui.reqTo instanceof Set))ui.reqTo=new Set();if(e.target.checked)ui.reqTo.add(id);else ui.reqTo.delete(id);
+    const names=reqTargets().filter(t=>ui.reqTo.has(t.x.s.sheetId)).map(t=>dispName(t.x.s));const sum=document.querySelector("#req-compose .req-sum-t");if(sum)sum.textContent="宛先："+(names.length?names.join("・"):"宛先を選ぶ");return}
+  if(e.target.id==="rq_due"){reqDraftSave();return}
   {const fm=e.target.closest&&e.target.closest("form");if(fm&&KEEP_FORMS.includes(fm.id))ui.keepDirty.add(fm.id)}
   if(e.target.matches("[data-scope-company],[data-scope-person]")){if(["new","detail","rform"].includes(ui.view))return;const field=e.target.matches("[data-scope-company]")?"company":"person",next={...scopeState().selection,[field]:e.target.value};ui.scopeSaveError=!CPGViewScope.save(localStorage,scopeIdentity(),next).ok;render();main.querySelector(field==="company"?"[data-scope-company]":"[data-scope-person]")?.focus();return;}
 
