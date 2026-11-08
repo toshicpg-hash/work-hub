@@ -43,7 +43,9 @@ async function main(){
   assert.equal(T.canSee(kei,kei),false,'not self');
   assert.equal(T.isViewer({...kei,charge:''}),false,'no charged company → not a viewer');assert.equal(T.isViewer({...kei,removed:true}),false);
   assert.equal(T.canSee(zen,jiro),true);assert.equal(T.canSee(gm,ichi),true);assert.equal(T.canSee(gm,jiro),false,'GM only its own single company');
-  for(const s of [ichi,jiro])assert.equal(T.canOrder(kei,s),false),assert.equal(T.canOrder(gyo,s),false);
+  /* v1.50.28 経理・業務管理もタスクリクエストを出せる。出せる相手は見られる人（担当の会社に所属する社員）だけ */
+  for(const s of [ichi,jiro])assert.equal(T.canOrder(kei,s),T.canSee(kei,s),'経理 → '+s.name),assert.equal(T.canOrder(gyo,s),T.canSee(gyo,s),'業務管理 → '+s.name);
+  assert.equal(T.canOrder(gyo,ichi),true);assert.equal(T.canOrder({...gyo,charge:'AT'},ichi),false,'outside the charged company: cannot send');assert.equal(T.canOrder({...kei,charge:''},jiro),false,'no charged company: cannot send');assert.equal(T.canOrder(kei,kei),false,'not to self');
   assert.equal(T.canOrder(zen,ichi),true);assert.equal(T.canOrder(gm,ichi),true);assert.equal(T.canOrder(gm,jiro),false);
   assert.equal(T.roleLabel(kei),'経理：CPY');assert.equal(T.roleLabel({...kei,charge:'CP,CPY'}),'経理：CP・CPY');assert.equal(T.roleLabel(gyo),'業務管理：3社すべて');assert.equal(T.roleLabel(gm),'GM（CPY）');
   assert.equal(T.chargeNorm('CPY、CP,XX'),'CP,CPY','normalized to the known companies in order');
