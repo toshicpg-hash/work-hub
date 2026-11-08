@@ -137,12 +137,14 @@ async function main(){
  for(const width of [320,400]){
   const g=await viewer(GM,width);
   await check('GMの端末：自分の会社の社員にだけ出せ、指示箱に1行足して読み戻す '+width+'px',async()=>{
-   const forms=await g.p.$$eval('[data-badd]',a=>a.map(x=>x.dataset.badd));
-   const ks=await g.p.evaluate(()=>RB.ui.corp.data.map((x,i)=>[i,x.s.name]));
-   assert.deepEqual(forms.map(k=>ks.find(x=>String(x[0])===k)[1]),['社員 二郎'],JSON.stringify(ks));
-   const k=forms[0];await g.p.fill('#bi_t'+k,'見積を出す（テスト'+width+'）');await g.p.fill('#bi_d'+k,'2026-11-05');await g.p.click('[data-badd="'+k+'"]');
-   await g.p.waitForFunction(()=>!RB.ui.bBusy&&RB.ui.bMsg&&!/送っています/.test(RB.ui.bMsg.text));
-   assert.ok((await g.p.textContent('main')).includes('v1.47.1 以降の CPG HUB で同期すると届きます'));
+   /* v1.50.30 会社の動きのいちばん上の「タスクリクエストを出す」：宛先はプルダウンを開いてチェック */
+   await g.p.click('#req-compose .req-sum');
+   const names=await g.p.evaluate(()=>[...document.querySelectorAll('[data-req-to]')].map(b=>RB.ui.corp.data.find(x=>x.s.sheetId===b.dataset.reqTo).s.name));
+   assert.deepEqual(names,['社員 二郎']);
+   await g.p.check('[data-req-to]');assert.match(await g.p.textContent('#req-compose .req-sum'),/宛先：社員 二郎/);
+   await g.p.fill('#rq_title','見積を出す（テスト'+width+'）');await g.p.fill('#rq_due','2026-11-05');await g.p.click('[data-act="reqsend"]');
+   await g.p.waitForFunction(()=>!RB.ui.reqBusy&&RB.ui.reqMsg&&RB.ui.reqMsg.length);
+   assert.ok((await g.p.textContent('#req-compose')).includes('社員 二郎さん：出しました'));
    const row=tab(byName('CPG HUB_指示箱_社員 二郎'),'指示').find(r=>r[1]==='見積を出す（テスト'+width+'）');
    assert.ok(/^B-20261030-[a-z0-9]{6}$/.test(row[0]),row[0]);
    assert.deepEqual(row.slice(2),['2026-11-05','2026-10-30','未完了',GM,'GM 管理 見本','','']);
@@ -176,15 +178,54 @@ async function main(){
  });
  await check('全社の人は全員に出せ、GMの出したものは見えない（自分の分だけ）',async()=>{
   const z=await viewer(ZEN,400);
-  const names=await z.p.evaluate(()=>[...document.querySelectorAll('[data-badd]')].map(b=>RB.ui.corp.data[Number(b.dataset.badd)].s.name).sort());
+  await z.p.click('#req-compose .req-sum');
+  const names=await z.p.evaluate(()=>[...document.querySelectorAll('[data-req-to]')].map(b=>RB.ui.corp.data.find(x=>x.s.sheetId===b.dataset.reqTo).s.name).sort());
   assert.deepEqual(names,['社員 一郎','社員 二郎','管理 見本'].sort());
   assert.ok(!(await z.p.textContent('main')).includes('見積を出す（テスト'),'requests of another issuer are not listed for 全社');
-  const k=await z.p.evaluate(()=>String(RB.ui.corp.data.findIndex(x=>x.s.name==='社員 一郎')));
-  await z.p.fill('#bi_t'+k,'書類を出す（全社テスト）');await z.p.click('[data-badd="'+k+'"]');
-  await z.p.waitForFunction(()=>!RB.ui.bBusy&&RB.ui.bMsg&&!/送っています/.test(RB.ui.bMsg.text));
+  const id=await z.p.evaluate(()=>RB.ui.corp.data.find(x=>x.s.name==='社員 一郎').s.sheetId);
+  await z.p.check('[data-req-to="'+id+'"]');await z.p.fill('#rq_title','書類を出す（全社テスト）');await z.p.click('[data-act="reqsend"]');
+  await z.p.waitForFunction(()=>!RB.ui.reqBusy&&RB.ui.reqMsg&&RB.ui.reqMsg.length);
   const row=tab(byName('CPG HUB_指示箱_社員 一郎'),'指示').find(r=>r[1]==='書類を出す（全社テスト）');
   assert.deepEqual([row[2],row[4],row[5],row[6]],['','未完了',ZEN,'見本 太郎']);
   assert.deepEqual(z.errors,[]);await z.c.close();
+ });
+ await check('v1.50.30 タスクリクエストの入力欄：社員ごとの欄はなく、宛先は複数チェックで一人ずつに出る。下書きは描き直しで消えない。今日／明日／今週中。360px・400pxではみ出さない',async()=>{
+  for(const width of [360,400]){
+   const z=await viewer(ZEN,width);
+   assert.equal(await z.p.$$eval('#req-compose',a=>a.length),1,'one compose box');
+   assert.equal(await z.p.$$eval('[data-badd],[data-oadd],[id^="bi_t"],[id^="oi_t"]',a=>a.length),0,'per-person forms are gone');
+   assert.equal(await z.p.$$eval('#req-compose details.req-to[open]',a=>a.length),0,'recipient list starts closed');
+   await z.p.click('#req-compose .req-sum');assert.equal(await z.p.$$eval('#req-compose details.req-to[open]',a=>a.length),1);
+   await z.p.click('[data-act="reqall"]');
+   assert.equal(await z.p.$$eval('[data-req-to]:checked',a=>a.length),3);
+   assert.equal(await z.p.$$eval('#req-compose details.req-to[open]',a=>a.length),1,'stays open after 全員を選ぶ');
+   await z.p.click('[data-act="reqnone"]');assert.equal(await z.p.$$eval('[data-req-to]:checked',a=>a.length),0);
+   const ids=await z.p.evaluate(()=>['社員 一郎','管理 見本'].map(n=>RB.ui.corp.data.find(x=>x.s.name===n).s.sheetId));
+   for(const id of ids)await z.p.check('[data-req-to="'+id+'"]');
+   assert.match(await z.p.textContent('#req-compose .req-sum'),/宛先：社員 一郎・管理 見本/);
+   /* 宛先を選ばずに送ると止める（ここでは内容なし） */
+   await z.p.fill('#rq_title','');await z.p.click('[data-act="reqsend"]');
+   assert.ok((await z.p.textContent('#req-compose')).includes('内容を入れてください'));
+   await z.p.fill('#rq_title','まとめて頼む（'+width+'）');
+   await z.p.click('[data-req-due="1"]');assert.equal(await z.p.inputValue('#rq_due'),'2026-10-31');
+   await z.p.click('[data-req-due="0"]');assert.equal(await z.p.inputValue('#rq_due'),'2026-10-30');
+   await z.p.click('[data-req-due="week"]');assert.equal(await z.p.inputValue('#rq_due'),'2026-10-31','2026-10-30 is a Friday; 今週中 = Saturday');
+   await z.p.evaluate(()=>RB.render());
+   assert.equal(await z.p.inputValue('#rq_title'),'まとめて頼む（'+width+'）','draft kept across re-render');
+   assert.equal(await z.p.inputValue('#rq_due'),'2026-10-31');
+   assert.equal(await z.p.$$eval('[data-req-to]:checked',a=>a.length),2,'recipients kept across re-render');
+   const o=await z.p.evaluate(()=>{const d=document.documentElement;return Math.max(d.scrollWidth-d.clientWidth,...[...document.querySelectorAll('#req-compose,#req-compose *')].map(x=>x.scrollWidth-x.clientWidth))});assert.ok(o<=0,'overflow '+o+' at '+width);
+   await z.p.click('[data-act="reqsend"]');
+   await z.p.waitForFunction(()=>!RB.ui.reqBusy&&RB.ui.reqMsg&&RB.ui.reqMsg.length);
+   const t=await z.p.textContent('#req-compose');assert.ok(t.includes('社員 一郎さん：出しました')&&t.includes('管理 見本さん：出しました'),t);
+   for(const n of ['社員 一郎','管理 見本']){const rows=tab(byName('CPG HUB_指示箱_'+n),'指示').filter(r=>r[1]==='まとめて頼む（'+width+'）');assert.equal(rows.length,1,n);assert.deepEqual([rows[0][2],rows[0][4],rows[0][5]],['2026-10-31','未完了',ZEN])}
+   assert.equal(await z.p.inputValue('#rq_title'),'','draft cleared after all sent');assert.equal(await z.p.$$eval('[data-req-to]:checked',a=>a.length),0);
+   /* ホームの「会社の動き」から入力欄へ飛べる */
+   await z.p.evaluate(()=>RB.go('home'));await z.p.click('[data-act="reqgo"]');
+   await z.p.waitForFunction(()=>RB.ui.view==='company'||!!document.querySelector('#req-compose'));assert.equal(await z.p.$$eval('#req-compose',a=>a.length),1);
+   if(width===400)await z.p.screenshot({path:path.join(require('node:os').tmpdir(),'req-compose-400.png'),fullPage:false});
+   assert.deepEqual(z.errors,[]);await z.c.close();
+  }
  });
  await check('社長の端末：全部の指示を出した人の表示付きで見られ、期限なしは指示一覧に「○○から」で残る',async()=>{
   await A.p.evaluate(async()=>{await RB.corpRun();RB.go('company')});await require('./scope-selection-helper').allPeople(A.p);
@@ -199,6 +240,20 @@ async function main(){
   const all=await A.p.$$eval('.request-compact .card',a=>a.map(x=>x.textContent));
   assert.ok(all.some(x=>x.includes('見本 太郎から')&&x.includes('書類を出す（全社テスト）')),all.join('|'));
   assert.ok(!reqs.some(x=>x.includes('見積を出す（テスト')),'done / cancelled are not in the ToDo block');
+ });
+ await check('v1.50.30 社長の入力欄：宛先は社員全員、出すと各社員の記録シートの「指示」に入る',async()=>{
+  await A.p.evaluate(()=>RB.go('company'));
+  await A.p.click('#req-compose .req-sum');
+  const names=await A.p.evaluate(()=>[...document.querySelectorAll('[data-req-to]')].map(b=>RB.ui.corp.data.find(x=>x.s.sheetId===b.dataset.reqTo).s.name).sort());
+  assert.deepEqual(names,['社員 一郎','社員 二郎','管理 見本','見本 太郎'].sort());
+  const id=await A.p.evaluate(()=>RB.ui.corp.data.find(x=>x.s.name==='社員 二郎').s.sheetId);
+  await A.p.check('[data-req-to="'+id+'"]');await A.p.fill('#rq_title','社長からの依頼（テスト）');await A.p.fill('#rq_due','2026-11-02');await A.p.click('[data-act="reqsend"]');
+  await A.p.waitForFunction(()=>!RB.ui.reqBusy&&RB.ui.reqMsg&&RB.ui.reqMsg.length);
+  assert.ok((await A.p.textContent('#req-compose')).includes('社員 二郎さん：出しました'));
+  const row=tab(byName('CPG HUB_社員 二郎'),'指示').find(r=>r[1]==='社長からの依頼（テスト）');
+  assert.ok(/^I-20261030-/.test(row[0]),row[0]);assert.deepEqual(row.slice(2,5),['2026-11-02','2026-10-30','未完了']);
+  assert.ok(!tab(byName('CPG HUB_指示箱_社員 二郎'),'指示').some(r=>r[1]==='社長からの依頼（テスト）'),'the 社長 does not use the box');
+  assert.deepEqual(A.errors,[]);
  });
  await check('社員は自分あての指示箱だけ読め、ほかの人の指示箱は読めない',async()=>{
   const b=await device(SB,400);
