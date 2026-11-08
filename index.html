@@ -412,8 +412,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.28" title="使い方マニュアルを開く">v1.50.28・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.28" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.29" title="使い方マニュアルを開く">v1.50.29・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.29" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -473,10 +473,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.28"></script>
+<script src="./share-management.js?v=1.50.29"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.28"></script>
-<script src="./calendar-view-scope.js?v=1.50.28"></script>
+<script src="./view-scope.js?v=1.50.29"></script>
+<script src="./calendar-view-scope.js?v=1.50.29"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1728,7 +1728,7 @@ async function gLoadCalendarsRun(){
   const epoch=G.readEpoch;let page="", items=[];
   do{const v=await gApi("users/me/calendarList?maxResults=250"+(page?"&pageToken="+encodeURIComponent(page):""));if(epoch!==G.readEpoch)throw new Error("stale");items.push(...((v&&v.items)||[]));page=(v&&v.nextPageToken)||""}while(page);
   if(epoch!==G.readEpoch)throw new Error("stale");
-  G.cals=items.filter(c=>c&&c.id&&!c.deleted).map(c=>({id:c.id,name:gCalName(c),primary:!!c.primary,owner:c.accessRole==="owner",write:c.accessRole==="owner"||c.accessRole==="writer"}));
+  G.cals=items.filter(c=>c&&c.id&&!c.deleted).map(c=>({id:c.id,name:gCalName(c),primary:!!c.primary,owner:c.accessRole==="owner",write:c.accessRole==="owner"||c.accessRole==="writer",access:String(c.accessRole||"")}));
   /* v1.49.5 本人の主カレンダーのID（この端末の設定。開き直して一覧がまだ無いときも、本人の予定として出すため） */
   {const pr=G.cals.find(c=>c.primary&&gConcreteReadable(c.id));if(pr&&D().gPrimary!==pr.id){D().gPrimary=pr.id;save()}}
   /* v1.50.9 共有カレンダー「CPG HUB」のID（開き直して一覧がまだ無いときも、自動の対応に使う） */
@@ -1765,7 +1765,8 @@ function calPersonAutoList(){
  const own=D().sheetId,people=(ctx.people||[]).filter(p=>p&&p.email&&!p.removed&&p.sheetId!==own&&!eq(p.email,ADMIN_ACCOUNT)&&ctx.canView(p));
  const out=[];
  for(const c of G.cals){
-  if(!c||c.primary||!gReadable(c)||c.name===GSHARED||calIsHoliday(c.id)||eq(c.id,ADMIN_ACCOUNT))continue;
+  /* v1.50.29 「予定の有無だけ」の共有（freeBusyReader）は中身が読めないので当てない */
+  if(!c||c.primary||!gReadable(c)||c.name===GSHARED||calIsHoliday(c.id)||eq(c.id,ADMIN_ACCOUNT)||c.access==="freeBusyReader")continue;
   const hit=people.filter(p=>gIdKey(p.email)===gIdKey(c.id));if(new Set(hit.map(p=>p.sheetId)).size!==1)continue;
   out.push({id:c.id,person:hit[0].sheetId});
  }
@@ -2056,9 +2057,11 @@ function calMapEntries(cals){
 const calMapLabelOf=id=>(calMapEntries(G.cals||[]).find(e=>gIdKey(e.id)===gIdKey(id))||{}).label||(gIdKey(id)===gIdKey(D().gHub)?GSHARED+"（会社の共有カレンダー）":calIsHoliday(id)?"祝日":String(id||"").split("@")[0]);
 /* v1.50.25 自動の人のカレンダー（calPersonAutoList）を対応の行に足す。保存した対応がある同じカレンダーには足さない。
    会社：選んでいる会社がその人の会社ならその会社、その人の会社が1社ならその会社、ほかは「会社未特定」（calSelfRows と同じ決まり） */
-function calPersonAutoRows(rows,model){
-  const have=rows||[],sel=model&&model.selection?model.selection.company:"",extra=[],shown=gShowIds();
-  for(const a of calPersonAutoList()){if(have.some(r=>gIdKey(r.id)===gIdKey(a.id))||!shown.some(id=>gIdKey(id)===gIdKey(a.id)))continue;
+/* v1.50.29 自動の行は、そのカレンダーが実際に読めたとき（readIds に入っているとき）だけ足す。
+   読めなかった（予定の有無だけの共有・権限なし・未同期）のに足すと、その人が毎日「未取得」になり、「CPG HUB の予定だけ」で出す今までの扱い（v1.50.15）より悪くなるため */
+function calPersonAutoRows(rows,model,readIds){
+  const have=rows||[],sel=model&&model.selection?model.selection.company:"",extra=[],shown=gShowIds(),read=Array.isArray(readIds)?readIds.map(gIdKey):null;
+  for(const a of calPersonAutoList()){if(have.some(r=>gIdKey(r.id)===gIdKey(a.id))||!shown.some(id=>gIdKey(id)===gIdKey(a.id))||read&&!read.includes(gIdKey(a.id)))continue;
     const p=((model&&model.people)||[]).find(x=>x.sheetId===a.person);if(!p)continue;
     extra.push({id:a.id,work:true,mode:"person",person:a.person,company:p.companies.includes(sel)?sel:p.companies.length===1?p.companies[0]:"unknown",auto:true});}
   return have.concat(extra);
@@ -2113,7 +2116,7 @@ function vCal(){
   const [rFrom,rTo]=calRange();
   const raw=gcalRange(rFrom,rTo), context=scopeContext(), loaded=CPGViewScope.load(localStorage,scopeIdentity(),context), model=CPGViewScope.model(context,loaded.selection);
   const mapping=CPGCalendarScope.load(localStorage,scopeIdentity());
-  const projected=CPGCalendarScope.project({g:{...raw,data:gSafeData(raw.data)},rows:ui.calendarMapError?[]:calPersonAutoRows(calSelfRows(calHubRow(mapping.rows),model),model),model,cases:scopeSourceCases(),resolvePerson:scopePerson,readable:gConcreteReadable,from:rFrom,to:rTo,attribute:e=>calHubOwner(e,context,model,scopeSourceCases())});
+  const projected=CPGCalendarScope.project({g:{...raw,data:gSafeData(raw.data)},rows:ui.calendarMapError?[]:calPersonAutoRows(calSelfRows(calHubRow(mapping.rows),model),model,((raw.data&&raw.data.sources)||[]).map(x=>x.id)),model,cases:scopeSourceCases(),resolvePerson:scopePerson,readable:gConcreteReadable,from:rFrom,to:rTo,attribute:e=>calHubOwner(e,context,model,scopeSourceCases())});
   const g={...raw,data:raw.data?{...raw.data,events:projected.events,sources:(raw.data.sources||[]).filter(s=>projected.approved.some(r=>r.id===s.id)),calendars:[]}:null};
   const gby=g.data?gcalByDay(g.data):{},gday=s=>gcalCovered(g,s)?gby[s]||[]:[];
   const tags=calPersonTags(projected.approved.concat([...new Set(projected.events.map(e=>e.person).filter(Boolean))].map(sid=>({id:"person:"+sid,mode:"person",person:sid})))),
@@ -2231,7 +2234,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.28";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.29";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2393,7 +2396,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.28" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.28" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.29" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.29" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
