@@ -406,8 +406,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.26" title="使い方マニュアルを開く">v1.50.26・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.26" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.27" title="使い方マニュアルを開く">v1.50.27・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.27" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -467,10 +467,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.26"></script>
+<script src="./share-management.js?v=1.50.27"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.26"></script>
-<script src="./calendar-view-scope.js?v=1.50.26"></script>
+<script src="./view-scope.js?v=1.50.27"></script>
+<script src="./calendar-view-scope.js?v=1.50.27"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1689,6 +1689,32 @@ async function gApi(path,opt){
 const gMsg=err=>{const m=err&&err.message;return m==="gis"?"Googleの読み込みができません。通信を確認してください":m==="denied"?"許可されませんでした":m==="popup"?"Googleの画面を開けませんでした（ポップアップを許可してください）":m==="closed"?"Googleの画面が閉じられました":
   m==="signin"?"もう一度「Googleとまとめて同期」を押してください":m==="nowrite"?"「"+GSHARED+"」カレンダーの共有がまだです。社長に共有してもらい、Gmailの招待メールで承諾してから、もう一度「Googleとまとめて同期」を押してください":err&&err.name==="AbortError"?"時間切れ":err&&err.status===403?"権限がありません":err&&err.status===404?"見つかりません":"通信できませんでした"};
 const gCalName=c=>c.primary?"自分":GNAMES[c.id]||c.summaryOverride||c.summary||c.id;
+/* v1.50.27 社長の端末：社員一覧の Gmail と同じカレンダー（社員本人のカレンダー）を、社長の Google カレンダーの中だけ社員の名前で表示する
+   （カレンダー一覧の「表示名」summaryOverride を変える。持ち主の名前・予定・共有は変えない）。
+   この操作のときだけ、追加の許可（カレンダーの一覧の変更）をもらう。同期で使う許可は変えない */
+const CALLIST_SCOPE="https://www.googleapis.com/auth/calendar.calendarlist";
+async function calNamesPlan(){
+  let page="",items=[];
+  do{const v=await gApi("users/me/calendarList?maxResults=250"+(page?"&pageToken="+encodeURIComponent(page):""));items.push(...((v&&v.items)||[]));page=(v&&v.nextPageToken)||""}while(page);
+  const staff=(D().staff||[]).filter(s=>!s.removed&&s.email);
+  return items.filter(c=>c&&c.id&&!c.deleted&&!c.primary&&!eq(c.id,ADMIN_ACCOUNT)&&c.summary!==GSHARED&&c.summaryOverride!==GSHARED).map(c=>{
+    const hit=staff.filter(s=>gIdKey(s.email)===gIdKey(c.id));if(new Set(hit.map(s=>s.sheetId)).size!==1)return null;
+    const name=String(hit[0].name||"").trim();if(!name||name===GSHARED)return null;
+    const now=c.summaryOverride||c.summary||c.id;return now===name?null:{id:c.id,before:now,after:name};
+  }).filter(Boolean);
+}
+async function calNamesApply(log){
+  if(!D().admin)throw Error("社長の端末で使えます");
+  await gAuthorize(true,CALLIST_SCOPE);
+  const plan=await calNamesPlan();
+  if(!plan.length){log("名前にするカレンダーはありません（もう名前になっているか、社員一覧の Gmail と同じカレンダーがありません）");return 0}
+  if(!confirm("Googleカレンダーでの表示名を変えます（社長の画面だけ。持ち主の名前・予定・共有は変わりません）\n\n"+plan.map(x=>x.before+" → "+x.after).join("\n")))return 0;
+  let n=0;const failed=[];
+  for(const x of plan){try{const r=await shareRead(()=>gApi("users/me/calendarList/"+encodeURIComponent(x.id),{method:"PATCH",body:{summaryOverride:x.after}}));if(!r||r.summaryOverride!==x.after)throw Error("確認できません");n++}catch(err){if(err.message==="signin")throw err;failed.push(x.before)}}
+  try{await gLoadCalendars()}catch(e){}
+  log(n+"件のカレンダーを名前で表示するようにしました"+(failed.length?"。変えられなかったもの："+failed.join("・"):""),!failed.length);
+  return n;
+}
 async function gLoadCalendars(){
   G.calsLoading=true;try{return await gLoadCalendarsRun()}finally{G.calsLoading=false}
 }
@@ -2199,7 +2225,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.26";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.27";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2361,7 +2387,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.26" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.26" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.27" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.27" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -2373,7 +2399,8 @@ function gSettings(){
     G.cals.map((c,i)=>!gReadable(c)?"":'<label><input type="checkbox" name="gshow" value="'+i+'" data-keep-key="gshow:'+h(c.id)+'"'+(show.has(c.id)?' checked':'')+'>'+h(c.name)+'</label>').join("")+'</fieldset><p class="note" style="margin:0">社長のマイカレンダーは、このアプリでは読み込みません。予定画面で仕事用・会社・人を確認したカレンダーだけ表示します。</p>'+
     '<label class="f">案件の日程を登録するカレンダー<select id="g_write">'+(gWritable().map(c=>'<option value="'+h(c.id)+'"'+(w&&w.id===c.id?' selected':'')+'>'+h(c.name)+'</option>').join("")||'<option value="">書き込めるカレンダーがありません</option>')+'</select></label>'+
     (gWritable().some(c=>c.name===GSHARED)?'':'<p class="note" style="margin:0" id="g_write_hint">共有カレンダー「'+GSHARED+'」がまだ使えません。社長に共有してもらい、Gmailの招待メールで承諾してから、もう一度「Googleとまとめて同期」を押してください。</p>')+
-    '<div class="row"><button class="btn pri" type="submit">保存する</button></div></form>');
+    '<div class="row"><button class="btn pri" type="submit">保存する</button></div></form>'+
+    (D().admin?'<div class="panel" id="cal-names"><p class="note" style="margin:0">社員のカレンダーがメールアドレスで出ているときは、社長の Google カレンダーの中だけ、社員の名前で表示できます（持ち主の名前・予定・共有は変わりません）。押すと Google の確認画面が出ることがあります（カレンダーの一覧を変える許可）。</p><div class="row"><button class="btn sm" type="button" data-act="calnames"'+(ui.calNamesBusy?' disabled':'')+'>'+(ui.calNamesBusy?'変えています…':'社員のカレンダーを名前で表示する')+'</button></div>'+(ui.calNamesMsg?'<p class="note" role="status" style="margin:0">'+h(ui.calNamesMsg)+'</p>':'')+'</div>':''));
 }
 
 
@@ -4133,6 +4160,8 @@ document.addEventListener("click",e=>{
     gAuthorize(true).then(()=>adminSync((text,ok)=>log.push({ok:ok===false?"warn":true,text}))).then(f=>{log.unshift(f.list?{ok:true,text:"社員一覧を読み直しました（社員"+f.n+"人）"}:{ok:"warn",text:"「CPG HUB_社員一覧」がまだありません"});ui.dmsg=log},
       err=>{ui.dmsg=[{ok:false,text:"読み直せませんでした："+dMsg(err)}]}).finally(()=>{ui.dbusy=false;render()});return}
   if(a==="daskno"){ui.dAsk=null;render();return}
+  if(a==="calnames"){if(ui.calNamesBusy)return;ui.calNamesBusy=true;ui.calNamesMsg="";render();
+    calNamesApply((t)=>{ui.calNamesMsg=t}).catch(err=>{ui.calNamesMsg="できませんでした："+(err.message==="http"?dMsg(err)+(err.status===403?"（Googleで許可されていません。Google Cloud の同意画面に「カレンダーの一覧」の許可が入っているか確かめてください）":""):gMsg(err)||err.message)}).finally(()=>{ui.calNamesBusy=false;render()});return}
   if(a==="dcodes"){ui.dCodes=true;ui.dCodesDraft=null;ui.dmsg=null;render();return}
   if(a==="dcodesno"){ui.dCodes=false;ui.dCodesDraft=null;render();return}
   if(a==="dcodesave"){if(ui.dbusy)return;
