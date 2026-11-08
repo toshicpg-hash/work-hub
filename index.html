@@ -47,10 +47,16 @@ section .calnav{flex-wrap:wrap;gap:6px}section .calnav h2{font-size:16px;margin:
 .scope-bar{display:flex;flex-direction:column;gap:4px;padding:0;margin-bottom:-8px}
 .scope-row{display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap}
 .scope-bar .scope-row [data-view-scope]{display:flex;align-items:center;gap:2px;flex:1 1 11em;min-width:11em;margin:0;padding:0}
-.scope-bar .scope-row [data-view-scope] label{display:flex;flex-direction:row;align-items:center;flex:0 1 auto;min-width:5em;max-width:calc(50% - 8px);font-size:0}.scope-bar .scope-row [data-view-scope] label select{min-width:5em}
+.scope-bar .scope-row [data-view-scope] label{display:flex;flex-direction:row;align-items:center;flex:0 1 auto;min-width:5em;max-width:100%;font-size:0}.scope-bar .scope-row [data-view-scope] label select{min-width:5em}
 .syncmini{max-width:10em;overflow:hidden;text-overflow:ellipsis;padding:0 10px}
-.scope-bar .scope-row [data-view-scope] label+label::before{content:"・";font-size:15px;color:var(--muted);padding:0 2px}
+/* v1.50.28 会社・人の切り替えを目立たせる：色の枠・太字・名前を最後まで（入らなければ次の行へ） */
+.scope-bar .scope-row [data-view-scope]{gap:6px}
 .scope-bar .scope-row select{font:inherit;font-size:15px;font-weight:700;min-height:44px;width:auto;max-width:100%;min-width:0;padding:4px 20px 4px 4px;border:0;border-radius:8px;background-color:transparent;color:var(--fg);text-overflow:ellipsis}
+.scope-bar .scope-row label.vs-pick{position:relative;min-width:0;flex:0 1 auto}
+.scope-bar .scope-row .vs-cur{display:inline-flex;align-items:center;gap:4px;font-size:15px;font-weight:800;line-height:1.25;min-height:40px;padding:2px 10px;border:2px solid var(--accent);border-radius:10px;background:var(--accent-soft);color:var(--accent);overflow-wrap:anywhere;word-break:break-word;max-width:100%;box-sizing:border-box}
+.scope-bar .scope-row .vs-cur::after{content:"▾";font-size:13px;flex:0 0 auto}
+.scope-bar .scope-row label.vs-pick select{position:absolute;inset:0;width:100%;height:100%;min-width:0;opacity:0;cursor:pointer;padding:0}
+.scope-bar .scope-row label.vs-pick:focus-within .vs-cur{outline:2px solid var(--fg);outline-offset:2px}
 .scope-bar .scope-row select:focus-visible{outline:2px solid var(--accent)}
 .scope-bar .scope-row [data-view-scope] p{flex-basis:100%;font-size:12px;margin:0;color:var(--red)}
 .scope-bar .scope-row [data-view-scope]{flex-wrap:wrap}.scope-bar .scope-row [data-view-scope] label{flex-wrap:nowrap}
@@ -406,8 +412,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.27" title="使い方マニュアルを開く">v1.50.27・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.27" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.28" title="使い方マニュアルを開く">v1.50.28・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.28" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -467,10 +473,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.27"></script>
+<script src="./share-management.js?v=1.50.28"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.27"></script>
-<script src="./calendar-view-scope.js?v=1.50.27"></script>
+<script src="./view-scope.js?v=1.50.28"></script>
+<script src="./calendar-view-scope.js?v=1.50.28"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1919,7 +1925,7 @@ function gSyncPanel(home=false){
   const r=ui.gsync,attention=home?homeSyncAttention():{blocked:false,html:''};
   const companyRow=x=>!!(D().admin||D().viewListId)&&x.name==='社員の記録';
   const resultList=rows=>rows?.length?'<ul class="gres" role="status">'+rows.map(x=>x.name==='日付の変わった案件'?'<li class="calendar-drift">'+calendarDriftList()+'</li>':'<li class="'+(x.ok?'ok':'ng')+'">'+(x.ok?'✓ ':'× ')+h(x.name)+'：'+h(x.msg)+'</li>').join("")+'</ul>':'';
-  const known=['Googleにログイン','カレンダー一覧','予定の読み込み','領収書の写真の控え','タスクリクエスト','指示箱（GM・全社）','社員の記録',...['案件','入金','立替','ToDo','情報'].map(t=>'記録シート「'+t+'」')];
+  const known=['Googleにログイン','カレンダー一覧','予定の読み込み','領収書の写真の控え','タスクリクエスト','指示箱（タスクリクエスト）','社員の記録',...['案件','入金','立替','ToDo','情報'].map(t=>'記録シート「'+t+'」')];
   const success=home&&r?.complete===true&&r.busy===false&&Number.isFinite(r.at)&&r.rows?.length>0&&!attention.blocked&&r.rows.some(x=>!companyRow(x))&&r.rows.every(x=>(x.ok===true||(companyRow(x)&&x.ok===false))&&known.includes(x.name)&&Object.keys(x).every(k=>['name','ok','msg'].includes(k)));
   const companyErrors=success?r.rows.filter(x=>companyRow(x)&&x.ok===false):[];
   const list=resultList(success?r.rows.filter(x=>!companyErrors.includes(x)):r?.rows);
@@ -2225,7 +2231,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.27";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.28";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2387,7 +2393,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.27" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.27" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.28" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.28" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -2931,8 +2937,8 @@ async function dataSync(step){
     try{const r=await ordersSync(id);step("タスクリクエスト",true,"未完了 "+r.open+"件"+(r.reported?"・完了の報告 "+r.reported+"件":"")+(r.removed?"・取り消し "+r.removed+"件":""));d.todo=dataRows().todo}
     catch(err){if(err.message==="signin")throw err;step("タスクリクエスト",false,dMsg(err))}
   }
-  try{if(!tabsKnown||tabs.includes("連絡")||DB.requestBoxEmployee){const r=await requestBoxSync(id);step("指示箱（GM・全社）",true,"未完了 "+r.open+"件・完了報告 "+r.sent+"件");}}
-  catch(err){if(err.message==="signin"||err.requestBoxStopped||caseSaveUncertain)throw err;step("指示箱（GM・全社）",false,err.message||dMsg(err));}
+  try{if(!tabsKnown||tabs.includes("連絡")||DB.requestBoxEmployee){const r=await requestBoxSync(id);step("指示箱（タスクリクエスト）",true,"未完了 "+r.open+"件・完了報告 "+r.sent+"件");}}
+  catch(err){if(err.message==="signin"||err.requestBoxStopped||caseSaveUncertain)throw err;step("指示箱（タスクリクエスト）",false,err.message||dMsg(err));}
   if(tabs.includes(NAME_TAB)){try{const rows=await namesRead(id),p=CPGNames.overlay([{name:RS().name||"",sheetId:id}],rows)[0];D().nameProfile=p;shareSave();step("正規氏名",!CPGNames.pending(rows,id).length,CPGNames.pending(rows,id).length?"変更の確認途中です。確認済みの表示名を使います":"表示名を確認しました")}catch(err){if(caseSaveUncertain||err.message==="signin")throw err;step("正規氏名",false,dMsg(err))}}
   d.todo=dataRows().todo;
   /* v1.50.18 案件・入金・立替・ToDo は別々のタブなので、同時に書く（前は1つずつ順番）。結果は今までどおりタブごとに、同じ順で出す */
@@ -3216,8 +3222,8 @@ const gmLeadOn=s=>!!s&&s.role==="GM"&&COMPANIES.includes(s.gmCo)&&!!s.gmLead;
 const gmLeadOver=(v,s)=>gmLeadOn(v)&&s.role==="GM"&&s.gmCo===v.gmCo&&!gmLeadOn(s);
 const chargeTarget=(v,s)=>{const ch=chargeList(v);return coList(s).some(c=>ch.includes(c))};
 const canSee=(v,s)=>isViewer(v)&&!s.removed&&v.sheetId!==s.sheetId&&(v.role==="全社"||(chargeRole(v)?chargeTarget(v,s):gmTarget(v,s)));
-/* 指示箱を出せる（指示箱の編集者になる）のは全社とGM。経理・業務管理は見るだけ */
-const canOrder=(v,s)=>canSee(v,s)&&(v.role==="全社"||v.role==="GM");
+/* 指示箱を出せる（指示箱の編集者になる）のは全社・GM・経理・業務管理（v1.50.28 で経理・業務管理も）。出せる相手は、その人が見られる人（canSee）だけ */
+const canOrder=(v,s)=>canSee(v,s)&&(v.role==="全社"||v.role==="GM"||chargeRole(v));
 /* 経理の端末：ほかの人の立替・領収書は、担当の会社の行だけ残す（専務のように複数の会社に所属する人の分も、担当の会社にかかる分だけ） */
 const rcFor=(me,s,rows)=>me&&me.role==="経理"&&s.sheetId!==me.sheetId?rows.filter(r=>chargeList(me).includes(String(r["会社"]||""))):rows;
 /* HUBの画面で、ほかの人の立替・領収書を見ない役割（業務管理） */
@@ -3534,7 +3540,7 @@ function boxState(o,reports){
 function boxMe(){
   if(D().admin)return {email:ADMIN_ACCOUNT,label:"社長",admin:true};
   const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));if(!me||!isViewer(me))return null;
-  return {email:String(me.email).toLowerCase(),label:me.role==="GM"&&me.gmCo?"GM "+personLabel(me):personLabel(me),me};
+  return {email:String(me.email).toLowerCase(),label:(me.role==="GM"&&me.gmCo?"GM ":chargeRole(me)?me.role+" ":"")+personLabel(me),me};
 }
 const canIssueTo=s=>{const m=boxMe();return !!(m&&!m.admin&&s&&s.boxId&&canOrder(m.me,s))};
 async function boxOrderAdd(x,title,due){
@@ -3798,7 +3804,7 @@ function corpTodos(x,k){
       (b.st==="完了"&&b.memo?'<div class="note">メモ：'+h(b.memo)+'</div>':'')+
       (ui.bCancel===key?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><span>このリクエストを取り消します（完了にはなりません）。社員の次の同期で、社員のToDoから消えます。</span><div class="row"><button class="btn danger" type="button" data-act="bcanceldo">取り消す</button><button class="btn" type="button" data-act="bcancelno">やめる</button></div></div>':'')+'</li>'};
   const canIssue=canIssueTo(x.s);
-  const boxHtml=(bst.length||canIssue||(bm&&!bm.admin&&canOrder(bm.me,x.s)))?'<p class="fk" style="margin:10px 0 0">'+(bm&&bm.admin?'タスクリクエスト（GM・全社から）':'あなたが出したタスクリクエスト')+'</p>'+
+  const boxHtml=(bst.length||canIssue||(bm&&!bm.admin&&canOrder(bm.me,x.s)))?'<p class="fk" style="margin:10px 0 0">'+(bm&&bm.admin?'タスクリクエスト（GM・全社・経理・業務管理から）':'あなたが出したタスクリクエスト')+'</p>'+
     (bst.length?'<p class="note" style="margin:2px 0 0">未完了 '+bOpen.length+'件'+(bOver.length?'<b style="color:var(--red)">（期限切れ '+bOver.length+'件）</b>':'')+'</p><ul class="dl">'+bst.map(bli).join("")+'</ul>':'<p class="note" style="margin:2px 0 0">まだありません</p>')+
     (canIssue?'<div class="form" style="margin-top:6px"><label class="f full">リクエストの内容<input type="text" id="bi_t'+k+'" placeholder="例：〇〇の見積を今週中に出す"></label><label class="f">期限<input type="date" id="bi_d'+k+'"></label>'+
       '<div class="full"><button class="btn pri" type="button" data-badd="'+k+'"'+(ui.bBusy?' disabled':'')+'>リクエストする</button></div></div>':
@@ -3970,6 +3976,16 @@ function keepRestore(){
   main.querySelectorAll("details[data-keep-open]").forEach(d=>{const k=d.dataset.keepOpen;if(ui.keepOpen[k]||Object.keys(ui.keep).some(id=>d.querySelector("#"+CSS.escape(id))))d.open=true});
 }
 const keepForget=id=>{delete ui.keep[id];ui.keepDirty.delete(id)};
+/* v1.50.28 会社・人の切り替え：選んでいる名前を、その長さのままの札（色の枠・太字）で見せる。押すと今までどおり端末の選択画面が開く
+   （選択の部品は札の上に透明に重ねる。部品の幅は一番長い選択肢で決まり、名前が途中で切れていたため） */
+function scopePickDecorate(){
+  for(const sel of main.querySelectorAll(".scope-bar [data-view-scope] select")){
+    const lab=sel.closest("label");if(!lab||lab.classList.contains("vs-pick"))continue;
+    lab.classList.add("vs-pick");
+    const cur=document.createElement("span");cur.className="vs-cur";cur.setAttribute("aria-hidden","true");cur.textContent=(sel.options[sel.selectedIndex]||{}).text||"";
+    sel.before(cur);sel.addEventListener("change",()=>{cur.textContent=(sel.options[sel.selectedIndex]||{}).text||""});
+  }
+}
 function render(){
   if(ui.view==="rform"&&(receiptSaving||receiptSelecting))return;
   if(ui.view==="rform"&&document.getElementById("rForm")){const ids={date:"r_date",payee:"r_payee",item:"r_item",amount:"r_amount",company:"r_co",method:"r_method",cardId:"r_card",cat:"r_cat",caseId:"r_case",site:"r_site",room:"r_room",jobNo:"r_job",note:"r_note"};ui.rDraft=Object.fromEntries(Object.entries(ids).map(([k,id])=>[k,val(id)]));}
@@ -3979,6 +3995,7 @@ function render(){
   main.innerHTML=v();
   keepRestore();
   const scopeMarkup=scopeHeader();if(ui.view==="home")main.querySelector("#home-sync")?.insertAdjacentHTML("afterend",scopeMarkup);else main.insertAdjacentHTML("afterbegin",scopeMarkup);
+  scopePickDecorate();
   document.querySelector(".proto").hidden=!hasExamples();
   const ml=document.getElementById("manualLink");if(ml)ml.setAttribute("href",manualHref()); /* 社長・全社・GMの端末は管理者向けのマニュアル */
   const navKey=ui.view==="new"||ui.view==="detail"?"cases":ui.view==="rform"?"rcpt":ui.view==="requests"?"todo":ui.view;

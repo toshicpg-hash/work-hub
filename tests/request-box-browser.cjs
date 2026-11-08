@@ -189,7 +189,7 @@ async function main(){
  await check('社長の端末：全部の指示を出した人の表示付きで見られ、期限なしは指示一覧に「○○から」で残る',async()=>{
   await A.p.evaluate(async()=>{await RB.corpRun();RB.go('company')});await require('./scope-selection-helper').allPeople(A.p);
   const t=await A.p.textContent('main');
-  assert.ok(t.includes('タスクリクエスト（GM・全社から）')&&t.includes('GM 管理 見本から')&&t.includes('見本 太郎から'));
+  assert.ok(t.includes('タスクリクエスト（GM・全社・経理・業務管理から）')&&t.includes('GM 管理 見本から')&&t.includes('見本 太郎から'));
   assert.ok(t.includes('✓ 10/30完了')&&t.includes('取り消し'));
   assert.ok((await A.p.$$('[data-bcancel]')).length>=1,'the 社長 can cancel open ones');
   await A.p.evaluate(()=>RB.go('todo',{tPeriod:'today',tTantou:'all'}));
@@ -282,6 +282,18 @@ async function main(){
   await A.p.reload();await A.p.waitForFunction(()=>!!window.RB);await A.p.evaluate(()=>{setInterval(()=>document.querySelector('[data-share-yes]')?.click(),20)});
   await A.p.evaluate(async email=>{const s=RB.db.settings.data.staff.find(x=>x.email===email&&!x.removed);await RB.adminRoleSave(s.sheetId,{company:'CPY',role:'社員',gmCo:''},'',()=>{})},SB);
   const records=tab(byName('CPG HUB_社員一覧'),'共有管理履歴').slice(1).map(r=>JSON.parse(r[2]));assert.ok(records.some(x=>x.file===old.id&&x.email===SB&&x.action==='revoke'&&x.state==='verified'));assert.ok(records.some(x=>x.file===fresh.id&&x.email===SB&&x.action==='grant'&&x.state==='verified'));
+ });
+ await check('v1.50.28 経理・業務管理もタスクリクエストを出せる：担当の会社の社員の指示箱の編集者になる（担当でない会社の社員にはならない）',async()=>{
+  const cur=await A.p.evaluate(([SA,SB])=>{const f=e=>RB.db.settings.data.staff.find(x=>x.email===e&&!x.removed);return {a:f(SA),b:f(SB)}},[SA,SB]);
+  await A.p.evaluate(async id=>{await RB.adminRoleSave(id,{company:'CP',role:'経理',gmCo:'',charge:'CPY'},'',()=>{})},cur.a.sheetId);
+  const after=await A.p.evaluate(SB=>{const b=RB.db.settings.data.staff.find(x=>x.email===SB&&!x.removed);return b.boxId},SB);
+  assert.ok(after,'the CPY employee has a request box');
+  assert.equal(shares(G.files[after])[SA],'writer','経理 (charge CPY) can write requests to the CPY employee');
+  assert.equal(shares(G.files[cur.b.sheetId])[SA],'reader','and reads the record sheet as before');
+  await A.p.evaluate(async id=>{await RB.adminRoleSave(id,{company:'CP',role:'業務管理',gmCo:'',charge:'AT'},'',()=>{})},cur.a.sheetId);
+  assert.ok(!(SA in shares(G.files[after])),'業務管理 for AT only: not an editor of the CPY employee box');
+  await A.p.evaluate(async id=>{await RB.adminRoleSave(id,{company:'CP,CPY',role:'GM',gmCo:'CPY'},'',()=>{})},cur.a.sheetId);
+  assert.deepEqual(A.errors,[]);
  });
  await check('v1.50.19 同じ会社のGMを2人に（追加）：記録シート・指示箱・見る人用一覧・予定の共有先が2人とも同じ。片方を外しても、もう片方は残る',async()=>{
   const GM2='test-gm2-cpy@example.com';
