@@ -96,6 +96,21 @@ async function main(){
   await d.p.evaluate(()=>{HO.db.settings.data.viewListId='';HO.save()});
   assert.deepEqual(await d.p.evaluate(()=>HO.calPersonAutoList()),[]);
  });
+ await check('v1.50.29 本人のカレンダーが一覧にあっても読めていない（未同期・読めない）ときは自動にせず、「CPG HUB の予定だけ」で出す（毎日「未取得」にしない）',async()=>{
+  const ev=[E('h1','【退去立会】見本荘 701',{hub:'U-0701',owner:'見本 二郎',creator:BCAL})];
+  const d=await device({rows:[{id:HUB,work:true,mode:'mixed'}],cals,events:ev,sources:[{id:HUB},{id:SELF_A}]});all.push(d);
+  await pick(d.p,B);await d.p.evaluate(()=>HO.go('cal',{calDay:'2026-11-07',calMonth:'2026-11',calView:'month'}));
+  const t=await d.p.evaluate(()=>document.querySelector('main').innerText);
+  assert.match(t,/見本荘 701/);assert.doesNotMatch(t,/未取得/,'not unfetched on every day');
+  assert.match(await d.p.evaluate(()=>HO.ui.calInfo||''),/見本 二郎：本人のカレンダーを結び付けていないので、共有カレンダー（CPG HUB）の予定だけ/);
+  assert.deepEqual(d.errors,[]);
+ });
+ await check('v1.50.29 「予定の有無だけ」の共有（freeBusyReader）のカレンダーは自動にしない（読む対象にも入れない）',async()=>{
+  const fb=cals.map(c=>c.id===BCAL?{...c,access:'freeBusyReader'}:c);
+  const d=await device({rows:[],cals:fb,events,sources});all.push(d);
+  assert.deepEqual(await d.p.evaluate(()=>HO.calPersonAutoList().map(x=>x.id)),[CCAL]);
+  assert.ok(!(await d.p.evaluate(()=>HO.gShowIds())).includes(BCAL));
+ });
  for(const d of all)await d.c.close();
  console.log('ALL PASS',results.length);
 }
