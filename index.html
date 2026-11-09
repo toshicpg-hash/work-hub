@@ -420,8 +420,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.33" title="使い方マニュアルを開く">v1.50.33・11/9更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.33" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.34" title="使い方マニュアルを開く">v1.50.34・11/9更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.34" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -481,10 +481,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.33"></script>
+<script src="./share-management.js?v=1.50.34"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.33"></script>
-<script src="./calendar-view-scope.js?v=1.50.33"></script>
+<script src="./view-scope.js?v=1.50.34"></script>
+<script src="./calendar-view-scope.js?v=1.50.34"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -949,8 +949,8 @@ function obPanel(){
   const busy=ui.obBusy?' disabled':'';
   const act={
     calshare:calShareBox()+calShareManual(busy),
-    login:'<p class="note" style="margin:0">仕事で使うGoogleアカウント（社長に伝えたGmail）でログインします。</p><button class="btn pri" type="button" data-act="oblogin"'+busy+'>Googleにログイン</button>',
-    sheet:'<p class="note" style="margin:0">社長から届いた共有メールの、記録シートのリンクを貼り付けます。'+(obGM()?'GM・全社の人も、見る人用一覧より先に、本人の記録シートをつなぎます。':'')+'</p><label class="f">記録シートのリンク<input type="url" id="ob_sheet" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://docs.google.com/spreadsheets/d/…/edit"></label><button class="btn pri" type="button" data-act="obsheet"'+busy+'>つなぐ</button>',
+    login:'<p class="note" style="margin:0">仕事で使うGoogleアカウント（社長に伝えたGmail）でログインします。</p><button class="btn pri" type="button" data-act="oblogin"'+busy+'>Googleにログイン</button>'+(G.email&&gSignedIn()?gWhoLine()+'<div class="row">'+gReloginBtn('違うアカウントなら：選び直す')+'</div>':''),
+    sheet:gWhoLine()+'<p class="note" style="margin:0">社長から届いた共有メールの、記録シートのリンクを貼り付けます。'+(obGM()?'GM・全社の人も、見る人用一覧より先に、本人の記録シートをつなぎます。':'')+'</p><label class="f">記録シートのリンク<input type="url" id="ob_sheet" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://docs.google.com/spreadsheets/d/…/edit"></label><button class="btn pri" type="button" data-act="obsheet"'+busy+'>つなぐ</button>',
     name:'<label class="f">氏名（社長の社員一覧と同じ書き方）<input type="text" id="ob_name" maxlength="100" value="'+h(RS().name||"")+'" placeholder="例：見本 一郎"></label><label class="f">所属の会社<select id="ob_co">'+COMPANIES.map(co=>'<option value="'+co+'"'+(RS().lastCo===co?' selected':'')+'>'+co+'</option>').join("")+'</select></label><p class="note" style="margin:0">会社は領収書の会社の初めの値にもなります。</p><button class="btn pri" type="button" data-act="obname"'+busy+'>この氏名・会社で確かめました</button>',
     sync:(ui.sheetGuard&&ui.sheetGuard.id===d.sheetId?'<p style="margin:0;color:var(--red)">下の同期の欄に出ている確認（共有の記録から取り込む）を先にしてください。</p>':'<p class="note" style="margin:0">記録シートに、この端末の記録を送ります。下の青いボタンでも同じです。</p>')+'<button class="btn pri" type="button" data-act="obsync"'+(ui.gsync?.busy?' disabled':'')+'>最初の同期をする</button>',
     check:'<p class="note" style="margin:0">案件の受付・ToDo・領収書のどれかを1件入れて保存してから押すと、この端末に保存されていて読み戻せるかを確かめます。練習用の記録は入れないでください。</p><button class="btn pri" type="button" data-act="obcheck"'+busy+'>保存と読み戻しを確かめる</button>',
@@ -1670,16 +1670,17 @@ const mdw=s=>{const d=parseYmd(s);return (d.getMonth()+1)+"月"+d.getDate()+"日
    トークンはメモリだけ。取得した予定は、読み込み対象のカレンダーIDとともにこの端末へ残す */
 const GOOGLE_CLIENT_ID="766726293537-1e4kdsqmoit29rbvh559fnmha3q0s6up.apps.googleusercontent.com";
 const GSCOPE="https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events";
-const G={token:"",exp:0,scope:"",cals:null,pending:null,readEpoch:0};
+const G={token:"",exp:0,scope:"",cals:null,pending:null,readEpoch:0,email:""};
 const GNAMES={"only.1.mybrand@gmail.com":"黒木","h-kuroki@cleanpapa.com":"黒木","toshi.cpg@gmail.com":"社長"};
 const gSignedIn=()=>!!G.token&&Date.now()<G.exp;
 /* Must be called directly from a tap so the Google window is not blocked */
 /* withData adds the Sheets / drive.file scopes; they are asked for only when the 記録 feature is used (like PAPA HUB's connectForSync) */
 const gHas=need=>{const have=new Set(G.scope.split(/\s+/));return need.split(/\s+/).every(x=>have.has(x))};
 /* extra：追加で求める許可（v1.50.0 予定の共有ボタンを押したときだけ calendar.acls）。起動時やふだんの同期では求めない */
-function gAuthorize(withData,extra){
+/* v1.50.34 pick=true：Googleのアカウントを選ぶ画面を必ず出す（「別のGoogleアカウントでログインし直す」）。ふだんは前に選んだアカウントのまま */
+function gAuthorize(withData,extra,pick){
   const need=GSCOPE+(withData?" "+DSCOPE:"")+(extra?" "+extra:"");
-  if(gSignedIn()&&(!withData||gHas(DSCOPE))&&(!extra||gHas(extra)))return Promise.resolve();
+  if(!pick&&gSignedIn()&&(!withData||gHas(DSCOPE))&&(!extra||gHas(extra)))return Promise.resolve();
   if(G.pending)return G.pending;
   if(!(window.google&&google.accounts&&google.accounts.oauth2))return Promise.reject(new Error("gis"));
   const p=new Promise((res,rej)=>{try{google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:need,
@@ -1687,8 +1688,8 @@ function gAuthorize(withData,extra){
       const sc=typeof r.scope==="string"?r.scope:need;
       if(withData&&!DSCOPE.split(" ").every(x=>sc.split(/\s+/).includes(x))){rej(new Error("denied"));return} /* the person unticked the Drive / Sheets permission */
       if(extra&&!extra.split(" ").every(x=>sc.split(/\s+/).includes(x))){rej(new Error("denied"));return}
-      gResetReads(true);G.cals=null;G.token=r.access_token;G.scope=sc;G.exp=Date.now()+Math.max(0,(Number(r.expires_in)||3600)-60)*1000;res()},
-    error_callback:e=>rej(new Error(e&&e.type==="popup_failed_to_open"?"popup":e&&e.type==="popup_closed"?"closed":"auth"))}).requestAccessToken({prompt:""})}catch(e){rej(new Error("auth"))}});
+      gResetReads(true);G.cals=null;G.email="";G.token=r.access_token;G.scope=sc;G.exp=Date.now()+Math.max(0,(Number(r.expires_in)||3600)-60)*1000;res()},
+    error_callback:e=>rej(new Error(e&&e.type==="popup_failed_to_open"?"popup":e&&e.type==="popup_closed"?"closed":"auth"))}).requestAccessToken({prompt:pick?"select_account":""})}catch(e){rej(new Error("auth"))}});
   G.pending=p;p.then(()=>{G.pending=null},()=>{G.pending=null});return p;
 }
 async function gApi(path,opt){
@@ -1946,6 +1947,7 @@ function gSyncPanel(home=false){
   const stamp=success?new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(r.at)):'';
   return '<div class="gsync"><button type="button" class="gsyncbtn" data-act="gsync"'+(r&&r.busy?' disabled':'')+'>'+(r&&r.busy?'同期しています…':'Googleとまとめて同期')+'</button>'+(home?sheetGuardPanel():'')+
     (home&&r?.busy===false&&r.complete!==true&&r.rows?.length&&r.rows.every(x=>x.ok===true)?'<p class="banner" role="alert">同期の完了を確認できません。結果を確認して、もう一度同期してください。</p>':'')+
+    (ui.wrongAccount&&ui.wrongAccount.id===D().sheetId?'<div class="row" style="margin-top:6px">'+gReloginBtn()+'</div>':'')+
     (success?'<details class="sync-result"><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer">✅ 同期済み '+h(stamp)+'</summary>'+list+'</details>':list)+resultList(companyErrors)+attention.html+'</div>';
 }
 /* Register / update the case's planned date on the chosen Google calendar.
@@ -2247,7 +2249,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.33";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.34";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2409,7 +2411,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.33" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.33" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.34" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.34" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -2961,6 +2963,10 @@ async function dataSync(step){
   const tabsOut=[["案件",d.cases],["入金",d.pay],["立替",d.rc],["ToDo",d.todo]];
   const res=await Promise.allSettled(tabsOut.map(([tab,rows])=>sheetWrite(id,tab,rows,g.rows[tab])));
   tabsOut.forEach(([tab,rows],i)=>{if(res[i].status==="fulfilled")step("記録シート「"+tab+"」",true,(rows.length-1)+"行");else step("記録シート「"+tab+"」",false,dMsg(res[i].reason))});
+  /* v1.50.34 記録シートに書けない（403）ときは、ログイン中のアカウントを出す。読めるのに書けないのは、ほとんどが別の人（閲覧だけの人）のアカウントでログインしているとき */
+  if(res.some(x=>x.status==="rejected"&&x.reason&&x.reason.status===403)){const who=await gWho();ui.wrongAccount={id,email:who};
+    step("ログイン中のGoogleアカウント",false,(who||"（確かめられませんでした）")+"：このアカウントでは記録シートに書き込めません。社長が共有した本人のGmailでログインし直してください（「別のGoogleアカウントでログインし直す」を押して、本人のアカウントを選ぶ）")}
+  else if(ui.wrongAccount&&ui.wrongAccount.id===id&&res.every(x=>x.status==="fulfilled"))ui.wrongAccount=null;
   const at=new Date();
   /* 「情報」（最終同期）は、ほかのタブを書いたあと。前の中身を読んであれば、消さずに1回で上書きする */
   try{await sheetWrite(id,"情報",[["項目","値"],["氏名",RS().name||""],["最終同期",ymd(at)+" "+hm(at)],["版",(document.querySelector(".ver")||{}).textContent||""],["管理者",ADMIN_ACCOUNT]],g.rows["情報"]);D().lastSync=at.toISOString();save();step("記録シート「情報」",true,"最終同期 "+md(ymd(at))+" "+hm(at))}
@@ -3715,6 +3721,10 @@ async function viewerList(){
   let names=[];ui.viewListWarn="";try{names=await namesRead(D().viewListId)}catch(err){if(err.message==="signin")throw err;ui.viewListWarn="社員の正式な氏名の履歴を読めなかったため、一覧の氏名で出しています（"+(err.message||dMsg(err))+"）";}
   return CPGNames.overlay(list,names);
 }
+/* v1.50.34 いまログインしているGoogleアカウント（画面に出す。分からなければ空） */
+async function gWho(){if(G.email)return G.email;if(!gSignedIn()||!gHas(DSCOPE))return "";try{G.email=await myEmail()}catch(err){if(err.message==="signin")throw err;G.email=""}return G.email}
+const gWhoLine=()=>G.email&&gSignedIn()?'<p class="note" style="margin:0">ログイン中のGoogleアカウント：<b style="overflow-wrap:anywhere">'+h(G.email)+'</b></p>':'';
+const gReloginBtn=(label)=>'<button class="btn sm" type="button" data-act="grelogin">'+(label||'別のGoogleアカウントでログインし直す')+'</button>';
 async function myEmail(){const r=await gReq(DRIVE.replace("/files","/about")+"?fields=user(emailAddress)");return (r&&r.user&&r.user.emailAddress)||""}
 async function viewerConnect(input){
   const id=sheetIdOf(input);if(!id)throw new Error("badid");
@@ -4007,6 +4017,7 @@ function staffCalText(s){
 function dSettings(){
   const d=D(), msg=ui.dview==="corp"?'':dMsgList();
   const mine='<div class="panel"><h3>記録シート（社員用）</h3>'+
+    gWhoLine()+(gSignedIn()&&G.email?'<div class="row">'+gReloginBtn()+'</div>':'')+
     (d.sheetId?'<p style="margin:0">つないでいるシート：<b>'+h(d.sheetName||d.sheetId)+'</b>'+(d.lastSync?'（最終同期 '+md(ymd(new Date(d.lastSync)))+' '+hm(new Date(d.lastSync))+'）':'（まだ同期していません）')+'</p>'+
       '<p class="note" style="margin:0">この端末のデータの保護：'+(storagePersist===true?'オン（ブラウザが自動では消しません）':storagePersist===false?'オフ（ブラウザが認めませんでした。容量が足りないと消されることがあります。こまめに同期してください）':'確かめています')+'</p>'+
       '<p class="note" style="margin:0">「Googleとまとめて同期」のたびに、案件・入金・立替・ToDoの要点と領収書の写真の控えを送ります。メモ・症状・住所の詳細と（架空）の例は送りません。</p>'+
@@ -4356,7 +4367,11 @@ document.addEventListener("click",e=>{
       ui.cs={stage:"done",results,recErr};
     }).catch(err=>{ui.cs={err:calShareMsg(err)}}).then(render);return}
   if(a==="obcalshare"){try{obSet({calShared:true});ui.obMsg={ok:true,text:"共有したことを、この端末に記録しました。"}}catch(err){ui.obMsg={ok:false,text:err.message}}render();return}
-  if(a==="oblogin"){ui.obBusy=true;ui.obMsg=null;render();gAuthorize(true).then(()=>{obSet({login:true});ui.obMsg={ok:true,text:"ログインしました"}},err=>{ui.obMsg={ok:false,text:err.message==="signin"?"ログインできませんでした。もう一度押してください。":err.message||gMsg(err)}}).finally(()=>{ui.obBusy=false;render()});return}
+  /* v1.50.34 アカウントを選ぶ画面を出してログインし直す（押したその場で開く。ポップアップが止められないように） */
+  if(a==="grelogin"){if(ui.gReBusy)return;ui.gReBusy=true;const msg=t=>{ui.obMsg=t;ui.gsync=Object.assign({},ui.gsync||{},{rows:[{name:"Googleにログイン",ok:t.ok,msg:t.text}],busy:false,complete:false})};
+    gAuthorize(true,null,true).then(async()=>{const who=await gWho().catch(()=>"");msg({ok:true,text:"ログインし直しました"+(who?"："+who:"")+"。もう一度「Googleとまとめて同期」を押してください"})},
+      err=>{msg({ok:false,text:err.message==="closed"?"ログインの画面が閉じられました。もう一度押してください":err.message==="popup"?"ログインの画面が開けませんでした（ポップアップを許可してください）":"ログインし直せませんでした（"+(err.message||gMsg(err))+"）"})}).finally(()=>{ui.gReBusy=false;render()});return}
+  if(a==="oblogin"){ui.obBusy=true;ui.obMsg=null;render();gAuthorize(true).then(async()=>{obSet({login:true});const who=await gWho().catch(()=>"");ui.obMsg={ok:true,text:"ログインしました"+(who?"："+who+"（社長に伝えたGmailと違うときは「選び直す」）":"")}},err=>{ui.obMsg={ok:false,text:err.message==="signin"?"ログインできませんでした。もう一度押してください。":err.message||gMsg(err)}}).finally(()=>{ui.obBusy=false;render()});return}
   if(a==="obsheet"){const v=val("ob_sheet");ui.obBusy=true;ui.obMsg={ok:true,text:"つないでいます…"};render();
     dataConnect(v).then(()=>{obSet({login:true});ui.obMsg={ok:true,text:"記録シート「"+(D().sheetName||D().sheetId)+"」につなぎました。"}},
       err=>{ui.obMsg={ok:false,text:err.message==="badid"?"リンクの形が違います（https://docs.google.com/spreadsheets/d/…）":err.message==="tabs"?"このシートには「"+err.miss.join("・")+"」のタブがありません。社長から届いたシートか確かめてください":"つなげませんでした："+dMsg(err)}}).finally(()=>{ui.obBusy=false;render()});return}
