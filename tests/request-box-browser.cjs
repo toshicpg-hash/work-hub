@@ -306,7 +306,7 @@ async function main(){
    await A.p.waitForFunction(()=>!RB.ui.dbusy);return A.p.evaluate(()=>window.__prog)};
   /* 1回目：役割の保存で書いてあるので変更なし */
   let prog=await run();
-  assert.ok(prog.some(t=>/^予定の共有先を書いています 1／\d+：.+さん$/.test(t)),prog.join(' | '));
+  assert.ok(prog.some(t=>/^予定の共有先を書いています \d+／\d+：.+さん$/.test(t)),prog.join(' | '));
   assert.match(prog.at(-1),/^完了しました（\d+人分を書きました。変更はありませんでした）$/);
   /* 一郎さんの記録シートの共有先から1人消しておくと、2回目は「＋その人」と出る */
   const sA=byName('CPG HUB_社員 一郎'),tabA=sA.tabs.find(t=>t.title==='予定の共有先'),removed=tabA.rows.splice(tabA.rows.length-1,1)[0];
@@ -458,6 +458,25 @@ async function main(){
   await A.p.clock.setSystemTime(new Date('2026-10-30T14:30:00Z'));
   mark=G.calls.length;await A.p.evaluate(()=>RB.corpRun());
   assert.equal(new Set(sheetReads(mark,ids)).size,ids.length,'all read after 12 hours');
+  assert.deepEqual(A.errors,[]);
+ });
+ await check('v1.50.32 ふつうの社員の追加は、その人の分（記録シート・指示箱・その人の会社の数字）だけ確かめて合わせ、ほかの人のファイルには触らない。GMの追加は今までどおり全員',async()=>{
+  const others=await A.p.evaluate(()=>RB.db.settings.data.staff.filter(s=>!s.removed).flatMap(s=>[s.sheetId,s.boxId]).filter(Boolean));
+  const touched=from=>[...new Set(G.calls.slice(from).map(c=>(String(c[2]).match(/(?:spreadsheets|files)\/([^/:?]+)/)||[])[1]).filter(Boolean))];
+  let mark=G.calls.length;
+  await A.p.evaluate(async()=>{await RB.adminAdd('追加 見本','test-add-plain@example.com',()=>{},{company:'CP',role:'社員',gmCo:''})});
+  const t1=touched(mark),hit=others.filter(id=>t1.includes(id));
+  assert.deepEqual(hit,[],'other people\'s files untouched: '+hit.join());
+  const nw=await A.p.evaluate(()=>RB.db.settings.data.staff.find(s=>s.email==='test-add-plain@example.com'));
+  assert.ok(nw&&nw.sheetId&&nw.boxId,JSON.stringify(nw));
+  const sh=shares(G.files[nw.sheetId]);assert.equal(sh['test-add-plain@example.com'],'writer');assert.equal(sh[ZEN],'reader','全社 reads the new record sheet');
+  assert.equal(shares(G.files[nw.boxId])[ZEN],'writer','全社 can send to the new person');
+  const list=tab(G.files[await A.p.evaluate(()=>RB.db.settings.data.listId)],'社員');assert.ok(list.some(r=>r[1]==='test-add-plain@example.com'));
+  const vl=tab(byName('CPG HUB_見る人用一覧'),'一覧');assert.ok(vl.some(r=>r[1]==='test-add-plain@example.com'),'the viewer list still gets the new person');
+  /* 全社・GMなど見る人の追加は、ほかの人の記録シートにも共有が増えるので全員を確かめる */
+  mark=G.calls.length;
+  await A.p.evaluate(async()=>{await RB.adminAdd('追加 統括','test-add-gm@example.com',()=>{},{company:'CP',role:'GM',gmCo:'CP'})});
+  assert.ok(others.some(id=>touched(mark).includes(id)),'a viewer add checks everyone');
   assert.deepEqual(A.errors,[]);
  });
  await check('複数有効同Gmailの異常は社員追加/役割変更/削除の前に停止、新ファイルも作らない',async()=>{
