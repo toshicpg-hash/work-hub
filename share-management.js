@@ -80,7 +80,7 @@ async function executeOneByOne(planRows,specs,rows,list,io){
  if(done)await check();
  return {done,review:planRows.filter(x=>x.action==='review').length};
 }
-/* v1.50.32 まとめて実行（io.batch のとき）：違うファイルへの変更を1回分（ラウンド）にまとめ、同じファイルへの変更は別のラウンドに分ける。
+/* v1.50.33 まとめて実行（io.batch のとき）：違うファイルへの変更を1回分（ラウンド）にまとめ、同じファイルへの変更は別のラウンドに分ける。
    1件ずつと同じ順番の約束を守る：変える前の確認 → 意図の記録（まとめて追記）→ 履歴の確認 → 直前の確認 → 変更（同時）→ 読戻し → 確認済みの記録。
    ラウンドの中で失敗したものがあっても、成功したものは確認済みを記録してから止める。中止は次のラウンドから */
 async function executeBatched(planRows,specs,rows,list,io){
