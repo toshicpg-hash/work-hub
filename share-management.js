@@ -54,7 +54,7 @@ function plan(specs,rows,list){
  }
  return out;
 }
-async function execute(planRows,specs,rows,list,io){
+async function executeOneByOne(planRows,specs,rows,list,io){
  let expected=rows.slice(),snap=new Map(specs.map(s=>[s.id,fingerprint(s.permissions)])),done=0;
  const check=async()=>{await io.guard();const got=await io.readHistory();history(got,list);if(stable(got)!==stable(expected))fail('共有管理履歴が別の操作で変わりました。再確認してください。');};
  const ops=planRows.filter(x=>['grant','revoke'].includes(x.action));
@@ -80,5 +80,42 @@ async function execute(planRows,specs,rows,list,io){
  if(done)await check();
  return {done,review:planRows.filter(x=>x.action==='review').length};
 }
+/* v1.50.33 まとめて実行（io.batch のとき）：違うファイルへの変更を1回分（ラウンド）にまとめ、同じファイルへの変更は別のラウンドに分ける。
+   1件ずつと同じ順番の約束を守る：変える前の確認 → 意図の記録（まとめて追記）→ 履歴の確認 → 直前の確認 → 変更（同時）→ 読戻し → 確認済みの記録。
+   ラウンドの中で失敗したものがあっても、成功したものは確認済みを記録してから止める。中止は次のラウンドから */
+async function executeBatched(planRows,specs,rows,list,io){
+ let expected=rows.slice(),snap=new Map(specs.map(s=>[s.id,fingerprint(s.permissions)])),done=0,started=0;
+ const check=async()=>{let got;if(io.guardHistory)got=await io.guardHistory();else{await io.guard();got=await io.readHistory();}history(got,list);if(stable(got)!==stable(expected))fail('共有管理履歴が別の操作で変わりました。再確認してください。');};
+ const appendAll=async recs=>{if(io.appendMany&&recs.length>1)await io.appendMany(recs);else for(const r of recs)await io.append(r);expected.push(...recs);};
+ const ops=planRows.filter(x=>['grant','revoke'].includes(x.action)),rounds=[];
+ {const left=ops.slice();while(left.length){const seen=new Set(),r=[];for(let i=0;i<left.length;){if(seen.has(left[i].file)){i++;continue}seen.add(left[i].file);r.push(left.splice(i,1)[0])}rounds.push(r)}}
+ for(const r of rounds){
+  if(io.cancelled&&io.cancelled())fail('途中で中止しました。確認済みの変更は残り、未実行分は変更していません。');
+  for(const x of r)if(io.step)io.step(x,++started,ops.length);
+  await check();
+  const before=await Promise.all(r.map(x=>io.permissions(x.file)));
+  r.forEach((x,i)=>{if(fingerprint(before[i])!==snap.get(x.file))fail('確認後に共有が変わりました。変更せず再確認してください。')});
+  const recs=r.map(x=>({list,op:io.id(),action:x.action,file:x.file,email:x.email,role:x.role,permission:x.permission||'',state:'intent',at:io.now()}));
+  await appendAll(recs);await check();
+  const again=await Promise.all(r.map(x=>io.permissions(x.file)));
+  r.forEach((x,i)=>{if(fingerprint(again[i])!==snap.get(x.file))fail('実行直前に共有が変わりました。操作は未実行です。')});
+  const res=await Promise.allSettled(r.map(async(x,i)=>{
+   let pid=recs[i].permission;
+   if(x.action==='grant'){const g=await io.grant(x.file,x.email,x.role);if(!g||!g.id)fail('付与結果が不明です。自動再試行しません。');pid=g.id;}
+   else await io.revoke(x.file,pid);
+   const after=await io.permissions(x.file),found=after.filter(p=>norm(p.emailAddress)===x.email);
+   if(x.action==='grant'?(found.length!==1||found[0].id!==pid||found[0].role!==x.role||!direct(found[0])):after.some(p=>p.id===pid))fail('共有変更後の読戻しを確認できません。個別確認してください。');
+   if(fingerprint(before[i].filter(p=>p.id!==pid))!==fingerprint(after.filter(p=>p.id!==pid)))fail('操作中に別の共有が変わりました。後続の変更を止めました。');
+   return {pid,after};
+  }));
+  const ok=[];let err=null;res.forEach((v,i)=>{if(v.status==='fulfilled')ok.push({x:r[i],rec:recs[i],...v.value});else err=err||v.reason});
+  if(ok.length){await check();await appendAll(ok.map(o=>({...o.rec,permission:o.pid,state:'verified',at:io.now()})));
+   for(const o of ok){snap.set(o.x.file,fingerprint(o.after));done++;if(io.progress)io.progress(o.x,done)}}
+  if(err)throw err;
+ }
+ if(done)await check();
+ return {done,review:planRows.filter(x=>x.action==='review').length};
+}
+function execute(planRows,specs,rows,list,io){return io&&io.batch?executeBatched(planRows,specs,rows,list,io):executeOneByOne(planRows,specs,rows,list,io)}
 return {plan,execute,history,fingerprint};
 });

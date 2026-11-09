@@ -420,8 +420,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.32" title="使い方マニュアルを開く">v1.50.32・11/9更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.32" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.33" title="使い方マニュアルを開く">v1.50.33・11/9更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.33" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -481,10 +481,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.32"></script>
+<script src="./share-management.js?v=1.50.33"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.32"></script>
-<script src="./calendar-view-scope.js?v=1.50.32"></script>
+<script src="./view-scope.js?v=1.50.33"></script>
+<script src="./calendar-view-scope.js?v=1.50.33"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2247,7 +2247,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.32";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.33";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2409,7 +2409,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.32" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.32" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.33" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.33" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3276,7 +3276,10 @@ function shareSave(){if(!save()){caseSaveUncertain=true;throw Error("端末の�
 const shareTabSeen=new Set();
 async function shareHistory(list){
  if(!shareTabSeen.has(list)){const tabs=await sheetTabNames(list);if(!tabs.includes(SHARE_TAB))return [];shareTabSeen.add(list)}
- const rows=(await sheetRead(list,[SHARE_TAB]))[SHARE_TAB]||[];if(!rows.length)return [];
+ return shareHistoryRows((await sheetRead(list,[SHARE_TAB]))[SHARE_TAB]||[]);
+}
+function shareHistoryRows(rows){
+ if(!rows.length)return [];
  if(JSON.stringify(rows[0])!==JSON.stringify(SHARE_COLS))throw Error("共有管理履歴の見出しが違います。変更を止めました。");
  return rows.slice(1).map(r=>{try{const x=JSON.parse(r[2]);if(r[0]!==x.op||r[1]!==x.state)throw Error();return x}catch(_){throw Error("共有管理履歴が読めません。変更を止めました。")}});
 }
@@ -3286,9 +3289,9 @@ async function shareJournalInit(list){
  if(!rows.length)await gReq(SHEETS+"/"+encodeURIComponent(list)+"/values/"+encodeURIComponent(A1(SHARE_TAB)+"!A1:C1")+"?valueInputOption=RAW",{method:"PUT",body:{values:[SHARE_COLS]}});
  const back=(await sheetRead(list,[SHARE_TAB]))[SHARE_TAB]||[];if(JSON.stringify(back[0])!==JSON.stringify(SHARE_COLS))throw Error("共有管理履歴の見出しを保存確認できません。");await shareHistory(list);
 }
-async function shareAppend(list,r){
- await gReq(SHEETS+"/"+encodeURIComponent(list)+"/values/"+encodeURIComponent(A1(SHARE_TAB)+"!A1")+":append?valueInputOption=RAW&insertDataOption=INSERT_ROWS",{method:"POST",body:{values:[[r.op,r.state,JSON.stringify(r)]]}});
- const rows=await shareHistory(list);if(rows.filter(x=>x.op===r.op&&x.state===r.state&&JSON.stringify(x)===JSON.stringify(r)).length!==1)throw Error("共有管理履歴の保存後確認に失敗しました。再試行せず確認してください。");
+/* v1.50.33 まとめて実行のときの追記：何行でも1回で書く。読戻しは、すぐあとの履歴の確認（全体が予定どおりか）で行う */
+async function shareAppendRows(list,rs){
+ await gReq(SHEETS+"/"+encodeURIComponent(list)+"/values/"+encodeURIComponent(A1(SHARE_TAB)+"!A1")+":append?valueInputOption=RAW&insertDataOption=INSERT_ROWS",{method:"POST",body:{values:rs.map(r=>[r.op,r.state,JSON.stringify(r)])}});
 }
 /* A real modal: cancel/Escape/back never confirms. The full list remains scrollable at large text sizes. */
 function shareConfirm(title,rows,note){return new Promise(resolve=>{
@@ -3371,7 +3374,10 @@ async function adminShareSync(log,staff=D().staff,scope=null){
  await shareJournalInit(list);
  shareChanging=true;
  let result;const stop=document.createElement("button");stop.className="btn danger";stop.textContent="共有変更を中止（次の変更から）";stop.style.cssText="position:fixed;z-index:10000;bottom:80px;left:12px;max-width:calc(100vw - 24px);white-space:normal";stop.onclick=()=>{shareAbort=true;stop.disabled=true;stop.textContent="現在の結果を確認してから中止します"};document.body.appendChild(stop);
- try{result=await CPGShares.execute(plan,specs,history,list,{guard,cancelled:()=>shareAbort,readHistory:()=>shareHistory(list),permissions:permList,append:r=>shareAppend(list,r),id:()=>crypto.randomUUID(),now:()=>new Date().toISOString(),grant:(id,email,role)=>driveShare(id,email,role,""),revoke:(id,pid)=>gReq(DRIVE+"/"+encodeURIComponent(id)+"/permissions/"+encodeURIComponent(pid),{method:"DELETE"}),progress:x=>log(x.label+" → "+x.email+"："+(x.action==="grant"?"付与":"解除")+"を読戻し確認しました"),step:(x,i,n)=>shareProgress("反映中 "+i+"／"+n+"："+shareStepText(x,staff))});}finally{stop.remove()}
+ /* v1.50.33 まとめて実行：違うファイルへの変更は同時に。社員一覧と共有管理履歴は1回でいっしょに読んで確かめる */
+ const guardHistory=async()=>{shareLocalCheck();if(d!==D()||d.listId!==list||G.token!==token)throw Error("社員一覧・接続先が変わりました。再確認してください。");
+  const v=await sheetRead(list,["社員",SHARE_TAB]);if(JSON.stringify(v["社員"]||[])!==source)throw Error("社員一覧・接続先が変わりました。再確認してください。");return shareHistoryRows(v[SHARE_TAB]||[])};
+ try{result=await CPGShares.execute(plan,specs,history,list,{batch:true,guardHistory,appendMany:rs=>shareAppendRows(list,rs),guard,cancelled:()=>shareAbort,readHistory:()=>shareHistory(list),permissions:permList,append:r=>shareAppendRows(list,[r]),id:()=>crypto.randomUUID(),now:()=>new Date().toISOString(),grant:(id,email,role)=>driveShare(id,email,role,""),revoke:(id,pid)=>gReq(DRIVE+"/"+encodeURIComponent(id)+"/permissions/"+encodeURIComponent(pid),{method:"DELETE"}),progress:x=>log(x.label+" → "+x.email+"："+(x.action==="grant"?"付与":"解除")+"を読戻し確認しました"),step:(x,i,n)=>shareProgress("反映中 "+i+"／"+n+"："+shareStepText(x,staff))});}finally{stop.remove()}
  if(shareAbort)throw Error("途中で中止しました。実行済みの共有は戻しません。役割は保存していません。");
  for(const x of plan.filter(x=>x.action==="review"))log("要確認（共有を残しました）："+x.label+" → "+x.email+"／"+x.reason,false);
  await guard();
