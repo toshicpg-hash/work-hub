@@ -420,8 +420,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.34" title="使い方マニュアルを開く">v1.50.34・11/9更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.34" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.35" title="使い方マニュアルを開く">v1.50.35・11/9更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.35" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -481,10 +481,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.34"></script>
+<script src="./share-management.js?v=1.50.35"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.34"></script>
-<script src="./calendar-view-scope.js?v=1.50.34"></script>
+<script src="./view-scope.js?v=1.50.35"></script>
+<script src="./calendar-view-scope.js?v=1.50.35"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -940,6 +940,24 @@ function obBefore(k){if(!obActive())return "";const st=obSteps(),i=st.findIndex(
 function calShareManual(busy){
  const c=ui.cs||{},open=!!c.err;
  return '<details class="cs-manual"'+(open?' open':'')+'><summary>ブラウザで共有する（ボタンが使えないとき）</summary><ol class="obsteps"><li>スマホのブラウザ（Chrome・Safari）で <b>calendar.google.com</b> を開く</li><li>画面のいちばん下の「<b>デスクトップ</b>」を押す（パソコン用の画面になります）</li><li>右上の<b>歯車</b> →「<b>設定</b>」</li><li>左の「マイカレンダーの設定」で、<b>自分の名前のカレンダー</b>を押す</li><li>「<b>特定のユーザーまたはグループと共有する</b>」→「ユーザーやグループを追加」で、社長（<b>'+h(ADMIN_ACCOUNT)+'</b>）と、社長から案内された相手（専務など）を入れ、権限を「<b>予定の表示（すべての予定の詳細）</b>」にして「送信」</li></ol><p class="note" style="margin:0">iPhoneの「Googleカレンダー」アプリでは共有の設定ができません。ブラウザで開いてください。HUBからは、ブラウザで共有できたかを確かめられないので、終わったら「共有しました」を押してください。</p><button class="btn" type="button" data-act="obcalshare"'+busy+'>共有しました</button></details>';
+}
+/* v1.50.35 同期が終わったら、社長の端末の控えを書く（同期の結果の最後に1行足す） */
+async function bbAfterSync(){
+  const b=D().bossBackup,g=ui.gsync;if(!D().admin||!g||!Array.isArray(g.rows)||!gSignedIn())return;
+  let row;if(!b||!b.id)row={name:"この端末の控え",ok:false,msg:"まだ作っていません。スマホのデータが消えると、この端末で入れた案件などが戻せません。数字 → 管理（社長用）の「この端末の控え」で作ってください"};
+  else try{const c=await bbWrite();row={name:"この端末の控え",ok:true,msg:"「"+BB_PREFIX+D().bossBackup.name+"」に控えました（"+bbCountText(c)+"）"}}
+  catch(err){row={name:"この端末の控え",ok:false,msg:err.message==="http"?dMsg(err):err.message==="signin"?"ログインが切れたため控えられませんでした":err.message}}
+  ui.gsync={...ui.gsync,rows:ui.gsync.rows.concat([row])};render();
+}
+/* v1.50.35 社長の端末の控え（数字 → 管理） */
+function bbPanel(){const b=D().bossBackup,busy=ui.bbBusy?' disabled':'';
+  const msg=ui.bbMsg?'<p role="status" style="margin:0;color:'+(ui.bbMsg.ok?'var(--green)':'var(--red)')+'">'+h(ui.bbMsg.text)+'</p>':'';
+  const list=ui.bbList?(ui.bbList.length?'<ul class="dl">'+ui.bbList.map(x=>'<li><div class="row" style="justify-content:space-between"><b>'+h(x.name)+'</b><button class="btn sm" type="button" data-bbrestore="'+h(x.id)+'"'+busy+'>この控えから戻す</button></div><div class="note">'+(x.at?'控えた日時 '+h(new Date(x.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"})):'まだ控えていません')+'・'+h(bbCountText(x.counts))+'</div></li>').join("")+'</ul>':'<p class="note" style="margin:0">控えはまだありません。</p>'):'';
+  const ask=ui.bbAsk?'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px"><span>「'+h(ui.bbAsk.name)+'」の控えで、この端末の記録を置き換えます。今の記録（'+h(bbCountText(bbCounts(DB)))+'）は消さずに端末の中の別の場所に残します。戻したあとは、この端末がこの控えに控え続けます（いま別の端末で使っている控えは選ばないでください）。</span><div class="row"><button class="btn pri" type="button" data-act="bbrestoredo"'+busy+'>置き換える</button><button class="btn" type="button" data-act="bbrestorecancel">やめる</button></div></div>':'';
+  return '<section class="sec" id="boss-backup" style="display:flex;flex-direction:column;gap:6px"><h4 style="margin:0">この端末の控え</h4>'+
+    (b&&b.id?'<p style="margin:0">控え：<b style="overflow-wrap:anywhere">'+h(BB_PREFIX+b.name)+'</b>（'+(b.at?'最後に控えた '+h(new Date(b.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"})):'まだ控えていません')+'）</p><p class="note" style="margin:0">「Googleとまとめて同期」のたびに、この端末の案件・入金・立替・ToDoを控えます（領収書の写真は入りません）。控えは社長のマイドライブにあり、だれとも共有しません。</p><div class="row"><button class="btn sm" type="button" data-act="bbnow"'+busy+'>今すぐ控える</button><button class="btn sm" type="button" data-act="bblist"'+busy+'>控えから戻す</button></div>'
+     :'<p style="margin:0;color:var(--red)"><b>この端末の控えがまだありません。</b>スマホのデータが消えると、この端末で入れた案件・入金・立替・ToDoは戻せません。</p><label class="f">この端末の名前（例：Fold8）<input id="bb_name" maxlength="30" autocomplete="off" value="'+h(ui.bbName||"")+'"></label><div class="row"><button class="btn pri" type="button" data-act="bbcreate"'+busy+'>控えを作る</button><button class="btn sm" type="button" data-act="bblist"'+busy+'>前の控えから戻す</button></div>')+
+    msg+list+ask+'</section>';
 }
 function obPanel(){
   if(!obActive())return "";
@@ -1900,7 +1918,7 @@ async function gSyncAll(){
   const run=async()=>{
     try{if(localStorage.getItem(KEY)!==dbPersistedRaw)throw Error("別の画面で記録が更新されています。古い内容を送信しないため同期を止めました。入力を控え、再読み込みしてください。");}
     catch(err){const msg=err.message||"端末の最新記録を確認できないため同期を止めました。";manualStorageNotice(msg);ui.gsync={busy:false,rows:[{name:"端末の最新記録",ok:false,msg}]};render();return;}
-    return gSyncAllRun();
+    const r=await gSyncAllRun();await bbAfterSync();return r;
   };
   manualTodoSyncPending=Promise.resolve().then(()=>globalThis.navigator?.locks?.request?navigator.locks.request(KEY+":manual-todo-edit",run):run());
   try{return await manualTodoSyncPending;}finally{manualTodoSyncPending=null;}
@@ -1940,7 +1958,7 @@ function gSyncPanel(home=false){
   const r=ui.gsync,attention=home?homeSyncAttention():{blocked:false,html:''};
   const companyRow=x=>!!(D().admin||D().viewListId)&&x.name==='社員の記録';
   const resultList=rows=>rows?.length?'<ul class="gres" role="status">'+rows.map(x=>x.name==='日付の変わった案件'?'<li class="calendar-drift">'+calendarDriftList()+'</li>':'<li class="'+(x.ok?'ok':'ng')+'">'+(x.ok?'✓ ':'× ')+h(x.name)+'：'+h(x.msg)+'</li>').join("")+'</ul>':'';
-  const known=['Googleにログイン','カレンダー一覧','予定の読み込み','領収書の写真の控え','タスクリクエスト','指示箱（タスクリクエスト）','社員の記録',...['案件','入金','立替','ToDo','情報'].map(t=>'記録シート「'+t+'」')];
+  const known=['Googleにログイン','カレンダー一覧','予定の読み込み','この端末の控え','領収書の写真の控え','タスクリクエスト','指示箱（タスクリクエスト）','社員の記録',...['案件','入金','立替','ToDo','情報'].map(t=>'記録シート「'+t+'」')];
   const success=home&&r?.complete===true&&r.busy===false&&Number.isFinite(r.at)&&r.rows?.length>0&&!attention.blocked&&r.rows.some(x=>!companyRow(x))&&r.rows.every(x=>(x.ok===true||(companyRow(x)&&x.ok===false))&&known.includes(x.name)&&Object.keys(x).every(k=>['name','ok','msg'].includes(k)));
   const companyErrors=success?r.rows.filter(x=>companyRow(x)&&x.ok===false):[];
   const list=resultList(success?r.rows.filter(x=>!companyErrors.includes(x)):r?.rows);
@@ -2249,7 +2267,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.34";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.35";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2411,7 +2429,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.34" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.34" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.35" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.35" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -2841,6 +2859,53 @@ async function gReq(url,o){
 const SHEETS="https://sheets.googleapis.com/v4/spreadsheets", DRIVE="https://www.googleapis.com/drive/v3/files";
 const dMsg=err=>err&&err.status===403?"このシートやフォルダを使う権限がありません":gMsg(err);
 async function driveCreate(meta){return gReq(DRIVE+"?fields=id,name,webViewLink",{method:"POST",body:meta})}
+/* v1.50.35 社長の端末の控え：端末ごとに1つのスプレッドシート（社長のマイドライブの一番上、だれとも共有しない）に、
+   この端末の記録（案件・入金・立替・ToDo・設定。領収書の写真は入れない）をそのまま控える。同期のたびに上書き。
+   端末ごとに分けるのは、2台が同じファイルに書くとお互いを上書きするため。端末の記録が消えたら「控えから戻す」で取り込む */
+const BB_PREFIX="CPG HUB_社長の控え_",BB_TAB="控え",BB_INFO="情報",BB_CHUNK=40000;
+const bbCounts=db=>({cases:(db.cases||[]).length,receipts:(db.receipts||[]).length,todos:(db.todos||[]).filter(t=>!t.order).length});
+const bbCountText=c=>"案件"+(Number(c.cases)||0)+"件・立替"+(Number(c.receipts)||0)+"件・ToDo"+(Number(c.todos)||0)+"件";
+function bbPack(db){const raw=JSON.stringify(db),rows=[["番号","中身"]];for(let i=0;i*BB_CHUNK<raw.length;i++)rows.push([String(i+1),raw.slice(i*BB_CHUNK,(i+1)*BB_CHUNK)]);return {raw,rows}}
+function bbUnpack(rows){if(!rows||!rows.length||rows[0][0]!=="番号")throw Error("控えの形が違います");const raw=rows.slice(1).filter(r=>r&&r[0]).sort((a,b)=>Number(a[0])-Number(b[0])).map(r=>String(r[1]||"")).join("");
+  const db=JSON.parse(raw);if(!db||typeof db!=="object"||!Array.isArray(db.cases))throw Error("控えの中身が読めません");return db}
+const bbInfoObj=rows=>Object.fromEntries((rows||[]).slice(1).filter(r=>r&&r[0]).map(r=>[String(r[0]),String(r[1]??"")]));
+async function bbOnlyMine(id){const ps=await permList(id),others=ps.filter(p=>p.role!=="owner");if(others.length)throw Error("控えのファイルがほかの人と共有されています（"+others.map(p=>p.emailAddress||p.type).join("・")+"）。共有を外してから使ってください");}
+async function bbCreate(name){
+  await gAuthorize(true);if(!eq(await myEmail(),ADMIN_ACCOUNT))throw Error("社長の管理アカウントで作ってください");
+  const nm=String(name||"").trim().replace(/[\\/'"]/g,"").slice(0,30);if(!nm)throw Error("この端末の名前を入れてください（例：Fold8）");
+  const found=await driveFind("name="+dq(BB_PREFIX+nm)+" and mimeType='application/vnd.google-apps.spreadsheet'");if(found.length)throw Error("「"+BB_PREFIX+nm+"」はもうあります。別の名前にするか、「控えから戻す」で選んでください");
+  const f=await driveCreate({name:BB_PREFIX+nm,mimeType:"application/vnd.google-apps.spreadsheet"});
+  await sheetTabs(f.id,BB_TAB,[BB_INFO]);D().bossBackup={id:f.id,name:nm,at:""};save();return bbWrite();
+}
+/* 書く前に控えの件数を読み、この端末の記録が明らかに少ないとき（消えた・入れ直した）は上書きしない */
+async function bbWrite(){
+  const b=D().bossBackup;if(!b||!b.id)return null;
+  await bbOnlyMine(b.id);
+  const v=await sheetRead(b.id,[BB_TAB,BB_INFO]),info=bbInfoObj(v[BB_INFO]),now=bbCounts(DB),was={cases:Number(info["案件"])||0,receipts:Number(info["立替"])||0,todos:Number(info["ToDo"])||0};
+  const shrink=["cases","receipts"].some(k=>was[k]>0&&(!now[k]||was[k]>=4&&now[k]*2<was[k]));
+  if(shrink)throw Object.assign(Error("控え（"+bbCountText(was)+"）より、この端末の記録（"+bbCountText(now)+"）がずっと少ないため、控えを上書きしませんでした。端末の記録が消えたときは「控えから戻す」を押してください"),{bbShrink:true});
+  const {raw,rows}=bbPack(DB),at=new Date().toISOString();
+  await sheetWrite(b.id,BB_TAB,rows,v[BB_TAB]||[]);
+  const back=bbUnpack(((await sheetRead(b.id,[BB_TAB]))[BB_TAB])||[]);if(JSON.stringify(back)!==raw)throw Error("控えの読み戻しが合いません");
+  await sheetWrite(b.id,BB_INFO,[["項目","値"],["端末",b.name],["保存日時",at],["版",(document.querySelector(".ver")||{}).textContent||""],["案件",String(now.cases)],["立替",String(now.receipts)],["ToDo",String(now.todos)]],v[BB_INFO]||[]);
+  b.at=at;save();return now;
+}
+async function bbList(){
+  await gAuthorize(true);if(!eq(await myEmail(),ADMIN_ACCOUNT))throw Error("社長の管理アカウントでログインしてください");
+  const fs=await driveFind("name contains "+dq(BB_PREFIX)+" and mimeType='application/vnd.google-apps.spreadsheet'");
+  const out=[];for(const f of fs){if(!String(f.name).startsWith(BB_PREFIX))continue;let info={};try{info=bbInfoObj((await sheetRead(f.id,[BB_INFO]))[BB_INFO])}catch(e){if(e.message==="signin")throw e}
+    out.push({id:f.id,name:String(f.name).slice(BB_PREFIX.length),at:info["保存日時"]||"",counts:{cases:info["案件"],receipts:info["立替"],todos:info["ToDo"]}})}
+  return out;
+}
+/* 戻す前の記録は消さずに別のキーに残す（戻したあとで違ったと分かったときのため） */
+async function bbRestore(id){
+  await bbOnlyMine(id);
+  const v=await sheetRead(id,[BB_TAB,BB_INFO]),db=bbUnpack(v[BB_TAB]),info=bbInfoObj(v[BB_INFO]);
+  try{const cur=localStorage.getItem(KEY);if(cur!==null)localStorage.setItem("workhub_proto_v1_before_restore:"+new Date().toISOString(),cur)}catch(e){throw Error("今の記録を控えに移せないため、戻すのをやめました（容量が足りない可能性があります）")}
+  for(const k of Object.keys(DB))delete DB[k];Object.assign(DB,db);upgrade(DB);
+  D().admin=true;D().bossBackup={id,name:info["端末"]||"",at:info["保存日時"]||""};loadProblem=null;
+  if(!save())throw Error("戻した記録を保存できませんでした");return bbCounts(DB);
+}
 async function driveShare(id,email,role,message){
   const q=new URLSearchParams({fields:"id",sendNotificationEmail:message?"true":"false"});if(message)q.set("emailMessage",message);
   return gReq(DRIVE+"/"+encodeURIComponent(id)+"/permissions?"+q,{method:"POST",body:{type:"user",role,emailAddress:email}});
@@ -4026,7 +4091,7 @@ function dSettings(){
      :'<p class="note" style="margin:0">社長から届いた共有メールのリンク（またはシートID）を貼り付けて「つなぐ」を押してください。</p>'+
       '<label class="f">記録シートのリンク<input type="url" id="d_sheet" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://docs.google.com/spreadsheets/d/…/edit"></label>'+
       '<div class="row"><button class="btn pri" type="button" data-act="dlink">つなぐ</button></div>')+'</div>';
-  const admin=isAdminDevice()?'<div class="panel"><h3>管理（社長用）</h3>'+
+  const admin=isAdminDevice()?'<div class="panel"><h3>管理（社長用）</h3>'+(d.admin?bbPanel():'')+
       (!d.admin?'<p class="note" style="margin:0">社員ごとの記録シートを、社長のドライブのフォルダ「CPG HUB データ」に作ります。</p><div class="row"><button class="btn pri" type="button" data-act="dadmin">管理をはじめる</button></div>':
       ((n=>n?'<p class="note" role="status" style="margin:0;color:var(--amber)">受付番号の記号が2文字のままの人が '+n+'人います。「役割を変える」で3文字（例：大平→OHI）を入れて保存してください。入れ直すまでは、今の2文字で受付番号が付きます。</p>':'')(d.staff.filter(s=>!s.removed&&codeLegacy(s.caseCode)).length))+
       (d.staff.some(s=>!s.removed)?(ui.dCodes?codesForm():'<div class="row"><button class="btn sm" type="button" data-act="dcodes"'+(ui.dbusy?' disabled':'')+'>受付番号の記号をまとめて入れる</button></div>'):'')+
@@ -4215,6 +4280,7 @@ document.addEventListener("click",e=>{
   if(el.dataset.drole!=null){ui.dRole=Number(el.dataset.drole);render();return}
   if(el.dataset.bdone){if(manualTodoBusy())return toast("同期などの処理が終わってから操作してください");const t=requestBoxTasks().find(t=>t.requestId===el.dataset.bdone);if(!t||t.stale)return;ui.bDone={id:t.requestId,own:D().sheetId,box:t.boxId};render();document.getElementById("bd_memo")?.focus();return;}
   if(el.dataset.odone){ui.oDone=el.dataset.odone;render();showAlert();const m=document.getElementById("od_memo");if(m)m.focus();return}
+  if(el.dataset.bbrestore){const x=(ui.bbList||[]).find(y=>y.id===el.dataset.bbrestore);if(x){ui.bbAsk={id:x.id,name:x.name};render()}return}
   if(el.dataset.bcancel){ui.bCancel=el.dataset.bcancel;render();showAlert();return}
   if(el.dataset.ocancel){ui.oCancel=el.dataset.ocancel;render();showAlert();return}
   if(el.dataset.reqDue!=null){const v=el.dataset.reqDue,t=todayS(),d=v==="week"?addDays(t,6-parseYmd(t).getDay()):addDays(t,Number(v));const i=document.getElementById("rq_due");if(i)i.value=d;reqDraftSave();return}
@@ -4282,6 +4348,15 @@ document.addEventListener("click",e=>{
     if(!r.changes.length){ui.dmsg=[{ok:true,text:"変わった記号はありません"}];render();return}
     const log=[];ui.dbusy=true;ui.dview="";ui.dmsg=log;render();
     adminCodesSave(r.changes,(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()}).then(()=>{ui.dCodes=false;ui.dCodesDraft=null},err=>{log.push({ok:false,text:"途中で止まりました："+(err.message==="http"?dMsg(err):err.message||dMsg(err))})}).finally(()=>{ui.dbusy=false;render()});return}
+  if(a==="bbcreate"){ui.bbName=val("bb_name");ui.bbBusy=true;ui.bbMsg=null;render();
+    bbCreate(ui.bbName).then(c=>{ui.bbMsg={ok:true,text:"控えを作りました（"+bbCountText(c)+"）。これからは同期のたびに控えます"}},err=>{ui.bbMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.bbBusy=false;render()});return}
+  if(a==="bbnow"){ui.bbBusy=true;ui.bbMsg=null;render();
+    gAuthorize(true).then(bbWrite).then(c=>{ui.bbMsg={ok:true,text:"控えました（"+bbCountText(c)+"）"}},err=>{ui.bbMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.bbBusy=false;render()});return}
+  if(a==="bblist"){ui.bbBusy=true;ui.bbMsg=null;ui.bbAsk=null;render();
+    bbList().then(l=>{ui.bbList=l},err=>{ui.bbList=null;ui.bbMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.bbBusy=false;render()});return}
+  if(a==="bbrestorecancel"){ui.bbAsk=null;render();return}
+  if(a==="bbrestoredo"){const q=ui.bbAsk;if(!q)return;ui.bbBusy=true;ui.bbMsg=null;render();
+    bbRestore(q.id).then(c=>{ui.bbAsk=null;ui.bbList=null;ui.bbMsg={ok:true,text:"「"+q.name+"」の控えから戻しました（"+bbCountText(c)+"）。これからは同期のたびに、この控えに控えます"}},err=>{ui.bbMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.bbBusy=false;render()});return}
   if(a==="loadbackup"){const k=loadProblem&&loadProblem.key;let raw=null;try{raw=k?localStorage.getItem(k):null}catch(e){}
     if(raw===null){toast("控えを読めませんでした");return}
     const url=URL.createObjectURL(new Blob([raw],{type:"application/json"})),a2=document.createElement("a");a2.href=url;a2.download="cpg-hub-backup-"+ymd(new Date())+".json";document.body.append(a2);a2.click();a2.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);return}
