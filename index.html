@@ -3276,7 +3276,10 @@ function shareSave(){if(!save()){caseSaveUncertain=true;throw Error("端末の�
 const shareTabSeen=new Set();
 async function shareHistory(list){
  if(!shareTabSeen.has(list)){const tabs=await sheetTabNames(list);if(!tabs.includes(SHARE_TAB))return [];shareTabSeen.add(list)}
- const rows=(await sheetRead(list,[SHARE_TAB]))[SHARE_TAB]||[];if(!rows.length)return [];
+ return shareHistoryRows((await sheetRead(list,[SHARE_TAB]))[SHARE_TAB]||[]);
+}
+function shareHistoryRows(rows){
+ if(!rows.length)return [];
  if(JSON.stringify(rows[0])!==JSON.stringify(SHARE_COLS))throw Error("共有管理履歴の見出しが違います。変更を止めました。");
  return rows.slice(1).map(r=>{try{const x=JSON.parse(r[2]);if(r[0]!==x.op||r[1]!==x.state)throw Error();return x}catch(_){throw Error("共有管理履歴が読めません。変更を止めました。")}});
 }
@@ -3286,9 +3289,9 @@ async function shareJournalInit(list){
  if(!rows.length)await gReq(SHEETS+"/"+encodeURIComponent(list)+"/values/"+encodeURIComponent(A1(SHARE_TAB)+"!A1:C1")+"?valueInputOption=RAW",{method:"PUT",body:{values:[SHARE_COLS]}});
  const back=(await sheetRead(list,[SHARE_TAB]))[SHARE_TAB]||[];if(JSON.stringify(back[0])!==JSON.stringify(SHARE_COLS))throw Error("共有管理履歴の見出しを保存確認できません。");await shareHistory(list);
 }
-async function shareAppend(list,r){
- await gReq(SHEETS+"/"+encodeURIComponent(list)+"/values/"+encodeURIComponent(A1(SHARE_TAB)+"!A1")+":append?valueInputOption=RAW&insertDataOption=INSERT_ROWS",{method:"POST",body:{values:[[r.op,r.state,JSON.stringify(r)]]}});
- const rows=await shareHistory(list);if(rows.filter(x=>x.op===r.op&&x.state===r.state&&JSON.stringify(x)===JSON.stringify(r)).length!==1)throw Error("共有管理履歴の保存後確認に失敗しました。再試行せず確認してください。");
+/* v1.50.32 まとめて実行のときの追記：何行でも1回で書く。読戻しは、すぐあとの履歴の確認（全体が予定どおりか）で行う */
+async function shareAppendRows(list,rs){
+ await gReq(SHEETS+"/"+encodeURIComponent(list)+"/values/"+encodeURIComponent(A1(SHARE_TAB)+"!A1")+":append?valueInputOption=RAW&insertDataOption=INSERT_ROWS",{method:"POST",body:{values:rs.map(r=>[r.op,r.state,JSON.stringify(r)])}});
 }
 /* A real modal: cancel/Escape/back never confirms. The full list remains scrollable at large text sizes. */
 function shareConfirm(title,rows,note){return new Promise(resolve=>{
@@ -3371,7 +3374,10 @@ async function adminShareSync(log,staff=D().staff,scope=null){
  await shareJournalInit(list);
  shareChanging=true;
  let result;const stop=document.createElement("button");stop.className="btn danger";stop.textContent="共有変更を中止（次の変更から）";stop.style.cssText="position:fixed;z-index:10000;bottom:80px;left:12px;max-width:calc(100vw - 24px);white-space:normal";stop.onclick=()=>{shareAbort=true;stop.disabled=true;stop.textContent="現在の結果を確認してから中止します"};document.body.appendChild(stop);
- try{result=await CPGShares.execute(plan,specs,history,list,{guard,cancelled:()=>shareAbort,readHistory:()=>shareHistory(list),permissions:permList,append:r=>shareAppend(list,r),id:()=>crypto.randomUUID(),now:()=>new Date().toISOString(),grant:(id,email,role)=>driveShare(id,email,role,""),revoke:(id,pid)=>gReq(DRIVE+"/"+encodeURIComponent(id)+"/permissions/"+encodeURIComponent(pid),{method:"DELETE"}),progress:x=>log(x.label+" → "+x.email+"："+(x.action==="grant"?"付与":"解除")+"を読戻し確認しました"),step:(x,i,n)=>shareProgress("反映中 "+i+"／"+n+"："+shareStepText(x,staff))});}finally{stop.remove()}
+ /* v1.50.32 まとめて実行：違うファイルへの変更は同時に。社員一覧と共有管理履歴は1回でいっしょに読んで確かめる */
+ const guardHistory=async()=>{shareLocalCheck();if(d!==D()||d.listId!==list||G.token!==token)throw Error("社員一覧・接続先が変わりました。再確認してください。");
+  const v=await sheetRead(list,["社員",SHARE_TAB]);if(JSON.stringify(v["社員"]||[])!==source)throw Error("社員一覧・接続先が変わりました。再確認してください。");return shareHistoryRows(v[SHARE_TAB]||[])};
+ try{result=await CPGShares.execute(plan,specs,history,list,{batch:true,guardHistory,appendMany:rs=>shareAppendRows(list,rs),guard,cancelled:()=>shareAbort,readHistory:()=>shareHistory(list),permissions:permList,append:r=>shareAppendRows(list,[r]),id:()=>crypto.randomUUID(),now:()=>new Date().toISOString(),grant:(id,email,role)=>driveShare(id,email,role,""),revoke:(id,pid)=>gReq(DRIVE+"/"+encodeURIComponent(id)+"/permissions/"+encodeURIComponent(pid),{method:"DELETE"}),progress:x=>log(x.label+" → "+x.email+"："+(x.action==="grant"?"付与":"解除")+"を読戻し確認しました"),step:(x,i,n)=>shareProgress("反映中 "+i+"／"+n+"："+shareStepText(x,staff))});}finally{stop.remove()}
  if(shareAbort)throw Error("途中で中止しました。実行済みの共有は戻しません。役割は保存していません。");
  for(const x of plan.filter(x=>x.action==="review"))log("要確認（共有を残しました）："+x.label+" → "+x.email+"／"+x.reason,false);
  await guard();
