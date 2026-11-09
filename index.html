@@ -420,8 +420,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.31" title="使い方マニュアルを開く">v1.50.31・11/8更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.31" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.32" title="使い方マニュアルを開く">v1.50.32・11/9更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.32" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -481,10 +481,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.31"></script>
+<script src="./share-management.js?v=1.50.32"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.31"></script>
-<script src="./calendar-view-scope.js?v=1.50.31"></script>
+<script src="./view-scope.js?v=1.50.32"></script>
+<script src="./calendar-view-scope.js?v=1.50.32"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2247,7 +2247,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.31";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.32";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2409,7 +2409,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.31" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.31" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.32" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.32" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3271,8 +3271,11 @@ const SHARE_TAB="共有管理履歴", SHARE_COLS=["操作ID","段階","記録JSO
 let shareRunning=false,shareAbort=false;
 const shareLocalCheck=()=>{if(!D().admin||caseSaveUncertain||localStorage.getItem(KEY)!==dbPersistedRaw)throw Error("管理者・保存状態が変わりました。再読込して確認してください。");};
 function shareSave(){if(!save()){caseSaveUncertain=true;throw Error("端末の保存を確認できません。共有操作を止めました。再読込してください。")}}
+/* v1.50.32 「共有管理履歴」のタブがあると分かった社員一覧は、タブの一覧を毎回問い合わせない（タブは消さない作り。
+   もし消えていたら読むところで失敗して止まる＝安全側） */
+const shareTabSeen=new Set();
 async function shareHistory(list){
- const tabs=await sheetTabNames(list);if(!tabs.includes(SHARE_TAB))return [];
+ if(!shareTabSeen.has(list)){const tabs=await sheetTabNames(list);if(!tabs.includes(SHARE_TAB))return [];shareTabSeen.add(list)}
  const rows=(await sheetRead(list,[SHARE_TAB]))[SHARE_TAB]||[];if(!rows.length)return [];
  if(JSON.stringify(rows[0])!==JSON.stringify(SHARE_COLS))throw Error("共有管理履歴の見出しが違います。変更を止めました。");
  return rows.slice(1).map(r=>{try{const x=JSON.parse(r[2]);if(r[0]!==x.op||r[1]!==x.state)throw Error();return x}catch(_){throw Error("共有管理履歴が読めません。変更を止めました。")}});
@@ -3319,8 +3322,10 @@ function shareProgress(text,{error=false,done=false}={}){
  if(error||done){const b=document.createElement("button");b.type="button";b.className="btn sm";b.textContent="閉じる";b.style.cssText="display:block;margin-top:6px";b.onclick=shareProgressEnd;shareProg.appendChild(b);}
 }
 function shareProgressEnd(){if(shareProg)shareProg.remove();shareProg=null;shareStage="";}
-async function adminShareSync(log,staff=D().staff){
- shareLocalCheck();const d=D(),vs=staff.filter(isViewer);
+/* v1.50.32 scope（sheetId の集合）：見る人（全社・GM・経理・業務管理）が変わらない変更（ふつうの社員の追加）では、
+   ほかの人の記録シート・指示箱の共有も中身も変わらないので、その人の分（と、その人の会社の数字）だけ確かめて合わせる。null は全員 */
+async function adminShareSync(log,staff=D().staff,scope=null){
+ shareLocalCheck();const d=D(),vs=staff.filter(isViewer),inScope=s=>!scope||scope.has(s.sheetId),scopeCos=scope?new Set(staff.filter(inScope).flatMap(coList)):null;
  shareValidateStaff(staff);
  const needed=staff.filter(s=>!s.boxId&&!s.removed&&vs.some(v=>canOrder(v,s))),needView=!d.viewListId&&vs.length;
  if(needed.length||needView){
@@ -3338,17 +3343,17 @@ async function adminShareSync(log,staff=D().staff){
  const list=d.listId,token=G.token;if(!list)throw Error("社員一覧がありません。共有を変更できません。");
  const source=JSON.stringify((await sheetRead(list,["社員"]))["社員"]||[]), specs=[],managed=staff.map(s=>s.email);
  /* v1.50.12 記録シートと指示箱の確認は読むだけなので3人ずつ。共有先の一覧（specs）は社員一覧の順に並べる */
- {let done=0;const per=staff.map(()=>[]);shareProgress("記録シートと指示箱を確かめています 0／"+staff.length);
- await sharePool(staff,async(s,k)=>{const specs=per[k];
+ {let done=0;const chk=staff.filter(inScope),per=chk.map(()=>[]);shareProgress("記録シートと指示箱を確かめています 0／"+chk.length);
+ await sharePool(chk,async(s,k)=>{const specs=per[k];
   const recordTabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!["案件","情報"].every(t=>recordTabs.includes(t)))throw Error(s.name+"：記録シートの初期化を確認できません。");
   if(s.boxId){const box=(await shareRead(()=>sheetRead(s.boxId,[BOX_TAB])))[BOX_TAB]||[];if(JSON.stringify(box[0])!==JSON.stringify(BOX_COLS))throw Error(s.name+"：指示箱の見出しを確認できません。");}
   specs.push({id:s.sheetId,label:s.name+"／記録シート",managed,want:(s.removed?[]:[{email:s.email,role:"writer"}]).concat(vs.filter(v=>canSee(v,s)).map(v=>({email:v.email,role:"reader"})))});
   if(s.boxId)specs.push({id:s.boxId,label:s.name+"／指示箱",managed,want:(s.removed?[]:[{email:s.email,role:"reader"}]).concat(vs.filter(v=>canOrder(v,s)).map(v=>({email:v.email,role:"writer"})))});
-  shareProgress("記録シートと指示箱を確かめています "+(++done)+"／"+staff.length);
+  shareProgress("記録シートと指示箱を確かめています "+(++done)+"／"+chk.length);
  });specs.push(...per.flat());}
- if(d.viewListId)specs.push({id:d.viewListId,label:"見る人用一覧",managed,want:vs.map(v=>({email:v.email,role:"reader"}))});
- /* v1.50.10 会社の数字は、その会社に所属する社員にだけ「閲覧者」で */
- specs.push(...numSpecs(staff,d.numbers,managed));
+ if(d.viewListId&&!scope)specs.push({id:d.viewListId,label:"見る人用一覧",managed,want:vs.map(v=>({email:v.email,role:"reader"}))});
+ /* v1.50.10 会社の数字は、その会社に所属する社員にだけ「閲覧者」で（scope のときは、その人の会社の分だけ） */
+ specs.push(...numSpecs(staff,d.numbers,managed).filter(x=>!scopeCos||COMPANIES.some(co=>scopeCos.has(co)&&d.numbers[co]===x.id)));
  if(new Set(specs.map(x=>x.id)).size!==specs.length)throw Error("共有先IDが重複しています。変更を止めました。");
  /* v1.50.6 共有の一覧は読むだけなので、3件ずつ同時に読み、回数制限・時間切れ・通信の失敗は少し待って最大2回読み直す（前は1件ずつで、1回の時間切れで止まった） */
  {let done=0,next=0;shareProgress("共有の一覧を読んでいます 0／"+specs.length);
@@ -3377,15 +3382,15 @@ async function adminShareSync(log,staff=D().staff){
  shareProgress("社員一覧に保存しています");D().staff=staff;shareSave();await shareWriteList();log("社員一覧に役割を保存しました");
  if(codes.length)log("受付番号の記号を決めました："+codes.join("・"));
  const tail=async(label,run)=>{try{await run()}catch(err){if(err.message==="signin")throw err;log(label+"を書けませんでした："+(err.message==="http"?dMsg(err):err.message)+"（役割と共有は保存済みです。もう一度保存すると書き直します）",false)}};
- const boxes=staff.filter(s=>s.boxId&&!s.removed);
+ const boxes=staff.filter(s=>s.boxId&&!s.removed&&inScope(s));
  await tail("指示箱のお知らせ",async()=>{let i=0;shareProgress("指示箱のお知らせを書いています 0／"+boxes.length);await sharePool(boxes,async s=>{await noticeWrite(s);shareProgress("指示箱のお知らせを書いています "+(++i)+"／"+boxes.length)})});
  if(d.viewListId)await tail("正式な氏名の履歴",async()=>{shareProgress("正式な氏名の履歴を写しています");/* v1.50.24 通信の失敗・時間切れ・回数制限は少し待って最大2回やり直す（同じ記録は二重に書かない作り） */await shareRead(()=>namesCopyConfirmed(list,d.viewListId))});
  /* v1.50.10 各社員の記録シートに「会社の数字の場所」（その人の会社の分だけ）を書く */
- if(d.numbers)await tail("会社の数字の場所",async()=>{const list=staff.filter(s=>!s.removed&&s.sheetId);let i=0,w=0;shareProgress("会社の数字の場所を確かめています 0／"+list.length);await sharePool(list,async s=>{if(await numPtrWrite(s,d.numbers))w++;shareProgress("会社の数字の場所を確かめています "+(++i)+"／"+list.length)});log("会社の数字の場所："+list.length+"人を確かめ、"+w+"人分を書きました（変わらない人は書きません）")});
+ if(d.numbers)await tail("会社の数字の場所",async()=>{const list=staff.filter(s=>!s.removed&&s.sheetId&&inScope(s));let i=0,w=0;shareProgress("会社の数字の場所を確かめています 0／"+list.length);await sharePool(list,async s=>{if(await numPtrWrite(s,d.numbers))w++;shareProgress("会社の数字の場所を確かめています "+(++i)+"／"+list.length)});log("会社の数字の場所："+list.length+"人を確かめ、"+w+"人分を書きました（変わらない人は書きません）")});
  /* v1.50.17 各社員の記録シートに「受付番号の記号」を書く（変わらない人は書かない） */
- await tail("受付番号の記号",async()=>{const list=staff.filter(s=>!s.removed&&s.sheetId&&s.caseCode);let i=0,w=0;shareProgress("受付番号の記号を確かめています 0／"+list.length);await sharePool(list,async s=>{if(await shareRead(()=>caseCodeWrite(s)))w++;shareProgress("受付番号の記号を確かめています "+(++i)+"／"+list.length)});log("受付番号の記号："+list.length+"人を確かめ、"+w+"人分を書きました（変わらない人は書きません）")});
+ await tail("受付番号の記号",async()=>{const list=staff.filter(s=>!s.removed&&s.sheetId&&s.caseCode&&inScope(s));let i=0,w=0;shareProgress("受付番号の記号を確かめています 0／"+list.length);await sharePool(list,async s=>{if(await shareRead(()=>caseCodeWrite(s)))w++;shareProgress("受付番号の記号を確かめています "+(++i)+"／"+list.length)});log("受付番号の記号："+list.length+"人を確かめ、"+w+"人分を書きました（変わらない人は書きません）")});
  /* v1.50.0 役割が変わったら、各社員の「予定の共有先」も書き直す（共有そのものは、本人が自分の端末でボタンを押して足す） */
- {const n=staff.filter(x=>!x.removed&&x.sheetId).length;let i=0;await tail("予定の共有先",()=>calShareTargetsWrite(staff,(t,ok)=>{shareProgress("予定の共有先を書いています "+(++i)+"／"+n);log(t,ok)}));}
+ {const n=staff.filter(x=>!x.removed&&x.sheetId&&inScope(x)).length;let i=0;await tail("予定の共有先",()=>calShareTargetsWrite(staff,(t,ok)=>{shareProgress("予定の共有先を書いています "+(++i)+"／"+n);log(t,ok)},null,scope));}
  return result;
 }
 function numSpecs(staff,numbers,managed){return COMPANIES.filter(co=>numbers&&numbers[co]).map(co=>({id:numbers[co],label:"会社の数字（"+co+"）",managed,want:staff.filter(s=>!s.removed&&s.sheetId&&coList(s).includes(co)).map(s=>({email:s.email,role:"reader"}))}));}
@@ -3447,10 +3452,11 @@ function calShareTargets(s,staff){
 }
 /* 社長の端末：有効な社員それぞれの記録シートに「予定の共有先」を書いて読み戻す */
 /* v1.50.4 戻り値：書いた人数と、人ごとの変化（足した相手・外れた相手）。onStep(i,n,s) で進み具合を出す */
-async function calShareTargetsWrite(staff,log,onStep){
- let n=0;const list=staff.filter(x=>!x.removed&&x.sheetId),changes=[];
- for(const s of list){
-  if(onStep)onStep(n+1,list.length,s);
+/* v1.50.32 only（sheetId の集合）を渡すと、その人の分だけ書く（相手の計算には全員を使う）。3人ずつ同時に（前は1人ずつ）。結果と記録は一覧の順のまま */
+async function calShareTargetsWrite(staff,log,onStep,only){
+ let n=0,started=0;const list=staff.filter(x=>!x.removed&&x.sheetId&&(!only||only.has(x.sheetId))),res=list.map(()=>null);
+ const one=async(s,k)=>{
+  if(onStep)onStep(++started,list.length,s);
   const rows=[CALSHARE_COLS,...calShareTargets(s,staff).map(x=>[x.name,x.email,x.role])];
   const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(CALSHARE_TAB))await addTab(s.sheetId,CALSHARE_TAB);
   const prev=(await shareRead(()=>sheetRead(s.sheetId,[CALSHARE_TAB])))[CALSHARE_TAB]||[];
@@ -3461,9 +3467,11 @@ async function calShareTargetsWrite(staff,log,onStep){
   if(!same){await sheetWrite(s.sheetId,CALSHARE_TAB,rows,prev);
    const back=((await sheetRead(s.sheetId,[CALSHARE_TAB]))[CALSHARE_TAB]||[]).map(r=>r.map(x=>String(x??""))).filter(r=>r.some(Boolean));
    if(JSON.stringify(back)!==JSON.stringify(rows))throw Error(s.name+"：予定の共有先を保存確認できません。");}
-  n++;changes.push({sheetId:s.sheetId,name:dispName(s),added,removed});
-  if(log)log(dispName(s)+"：予定の共有先 "+(rows.length-1)+"人"+(added.length||removed.length?"（"+[added.length?"＋"+added.join("・"):"",removed.length?"－"+removed.join("・"):""].filter(Boolean).join("　")+"）":"・変更なし"),true);
- }
+  res[k]={change:{sheetId:s.sheetId,name:dispName(s),added,removed},text:dispName(s)+"：予定の共有先 "+(rows.length-1)+"人"+(added.length||removed.length?"（"+[added.length?"＋"+added.join("・"):"",removed.length?"－"+removed.join("・"):""].filter(Boolean).join("　")+"）":"・変更なし")};
+ };
+ /* 止まった人が分かるように、失敗にその人を付ける（同時に読むので「いま書いている人」とは限らない） */
+ await sharePool(list,(s,k)=>one(s,k).catch(e=>{if(e&&typeof e==="object"&&!e.who)e.who=s;throw e})).finally(()=>{for(const r of res)if(r&&log)log(r.text,true)});
+ const changes=res.filter(Boolean).map(r=>r.change);n=changes.length;
  return {n,changes};
 }
 /* 「完了しました（3人分を書きました。変わった人：○○さん（＋△△）／変わらなかった人 2人）」 */
@@ -3721,7 +3729,8 @@ async function adminAdd(name,email,log,rv,swapId){return adminShareOperation(asy
  const s={name,email,sheetId:f.id,permId:"",addedAt:todayS(),removed:false,lastSync:"",company:"",role:"社員",gmCo:"",charge:"",displayName:"",caseCode:rv&&rv.caseCode||newCaseCode(D().staff)};D().staff.push(s);shareSave();
  await sheetTabs(f.id,"案件",["入金","立替","情報"]);await sheetWrite(f.id,"情報",[["項目","値"],["氏名",name],["管理者",ADMIN_ACCOUNT],["作成日",todayS()]]);await shareWriteList();
  const staff=structuredClone(D().staff),next=staff.find(x=>x.sheetId===f.id);Object.assign(next,rv||{});if(!gmLeadOn(next))next.gmLead=false;const prev=swapId&&staff.find(x=>x.sheetId===swapId);if(prev){if(prev.role==="GM")prev.role="社員";prev.gmCo="";prev.gmLead=false}
- const result=await adminShareSync(log,staff);log(name+"さんの登録を確認しました。要確認の共有 "+result.review+"件。案内メールは自動送信しません。");return result;
+ /* v1.50.32 ふつうの社員（見る人でない・入れ替えでない）の追加は、その人の分だけ合わせる。見る人の追加・入れ替えは今までどおり全員 */
+ const result=await adminShareSync(log,staff,!prev&&!isViewer(next)&&!staff.some(x=>x!==next&&isViewer(x)&&JSON.stringify(x)!==JSON.stringify(D().staff.find(y=>y.sheetId===x.sheetId)))?new Set([f.id]):null);log(name+"さんの登録を確認しました。要確認の共有 "+result.review+"件。案内メールは自動送信しません。");return result;
 })}
 async function adminRemove(s){return adminShareOperation(async()=>{
  await gAuthorize(true);await adminSync(()=>{});shareSave();shareLocalCheck();shareValidateStaff(D().staff);const staff=structuredClone(D().staff),target=staff.find(x=>x.sheetId===s.sheetId);if(!target)throw Error("nostaff");target.removed=true;
@@ -4268,7 +4277,7 @@ document.addEventListener("click",e=>{
     let cur=null;
     adminShareOperation(async()=>{shareProgress("予定の共有先を書く準備をしています");
       try{const r=await calShareTargetsWrite(D().staff,(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()},(i,n,s)=>{cur=s;shareProgress("予定の共有先を書いています "+i+"／"+n+"："+dispName(s)+"さん")});shareDoneText=calTargetsDoneText(r);return r}
-      catch(err){if(err&&err.message!=="signin"&&!/^中止しました。/.test(err.message||"")){shareProgress("ここで止まりました："+(cur?dispName(cur)+"さん":"（始める前）")+"\n理由："+(err.message==="http"?dMsg(err):err.message||String(err))+"\nそれまでの分は書けています。もう一度押すと、続きから書き直します。",{error:true});err.progressShown=true}throw err}})
+      catch(err){if(err&&err.message!=="signin"&&!/^中止しました。/.test(err.message||"")){const who=err.who||cur;shareProgress("ここで止まりました："+(who?dispName(who)+"さん":"（始める前）")+"\n理由："+(err.message==="http"?dMsg(err):err.message||String(err))+"\nそれまでの分は書けています。もう一度押すと、続きから書き直します。",{error:true});err.progressShown=true}throw err}})
      .then(r=>{log.push({ok:true,text:calTargetsDoneText(r)})},err=>{log.push({ok:false,text:"途中で止まりました："+dMsg(err)})}).finally(()=>{ui.dbusy=false;render()});return}
   if(a==="dnumshare"){if(ui.dbusy)return;const log=[];ui.dbusy=true;ui.dview="";ui.dmsg=log;render();
     adminShareOperation(()=>adminShareSync((text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()})).then(r=>{log.push({ok:true,text:"会社の数字の共有と受付番号の記号を合わせました。「社員の記録を読み込む」をすると、数字を書き出します"})},err=>{log.push({ok:false,text:"止まりました："+(err.message==="http"?dMsg(err):err.message)})}).finally(()=>{ui.dbusy=false;render()});return}
