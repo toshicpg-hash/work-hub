@@ -479,6 +479,32 @@ async function main(){
   assert.ok(others.some(id=>touched(mark).includes(id)),'a viewer add checks everyone');
   assert.deepEqual(A.errors,[]);
  });
+ await check('v1.50.36 見る人用一覧は社長のどの端末でも同じもの：古い一覧を覚えた端末も、空の端末も、いちばん新しい一覧に、共有を合わせたあとは社員一覧の「HUBの設定」に残した一覧にそろう。古い一覧には移転先を書き、見る人の端末は移る',async()=>{
+  const cur=byName('CPG HUB_見る人用一覧').id,list=await A.p.evaluate(()=>({listId:RB.db.settings.data.listId,folder:RB.db.settings.data.folder}));
+  assert.equal(await A.p.evaluate(()=>RB.db.settings.data.viewListId),cur);
+  /* 前に別の端末が作った古い一覧（見る人には共有済み） */
+  const old='shetOLDVIEW00000000000001';G.files[old]={id:old,name:'CPG HUB_見る人用一覧',owner:ADMIN,created:'2026-10-01T00:00:00.000Z',mt:'2026-10-01T00:00:00.000Z',mime:'application/vnd.google-apps.spreadsheet',parents:[list.folder],perms:[{id:'pv1',email:ZEN,role:'reader'}],tabs:[{title:'一覧',sheetId:0,rows:structuredClone(tab(G.files[cur],'一覧'))}]};
+  const listF=G.files[list.listId],before=JSON.stringify(listF.tabs);
+  /* 古い一覧を覚えた社長の端末：読み込むと、いちばん新しい一覧にそろう（このときは何も書かない） */
+  const B=await device(ADMIN,400);
+  await B.p.evaluate(async([l,old])=>{const d=RB.db.settings.data;d.admin=true;d.ob={legacy:true};d.folder=l.folder;d.listId=l.listId;d.viewListId=old;RB.noWait();await RB.corpRun()},[list,old]);
+  assert.equal(await B.p.evaluate(()=>RB.db.settings.data.viewListId),cur,'switched to the newest list');
+  assert.equal(JSON.stringify(listF.tabs),before,'reading does not write the staff list');
+  /* 共有を合わせると、使う一覧を社員一覧に残し、古い一覧に移転先を書く */
+  await A.p.evaluate(async()=>{const s=RB.db.settings.data.staff.find(x=>!x.removed&&x.role==='社員');await RB.adminRoleSave(s.sheetId,{company:s.company,role:s.role,gmCo:s.gmCo||'',displayName:'見本表示'},'',()=>{})});
+  assert.deepEqual(tab(listF,'HUBの設定'),[['項目','値'],['見る人用一覧ID',cur]]);
+  assert.deepEqual(tab(G.files[old],'移転先'),[['新しい見る人用一覧ID'],[cur]]);
+  /* 空の社長の端末：古い一覧のほうが新しく更新されていても、社員一覧に残した一覧を使う */
+  G.files[old].mt='2026-12-01T00:00:00.000Z';
+  const C=await device(ADMIN,400);
+  await C.p.evaluate(async l=>{const d=RB.db.settings.data;d.admin=true;d.ob={legacy:true};d.folder=l.folder;d.listId=l.listId;d.viewListId='';RB.noWait();await RB.corpRun()},list);
+  assert.equal(await C.p.evaluate(()=>RB.db.settings.data.viewListId),cur,'the shared setting wins');
+  /* 古い一覧につないでいる見る人の端末：次の読み込みで新しい一覧に移る */
+  const Z=await device(ZEN,400);
+  await Z.p.evaluate(async([old,me])=>{const x=RB.db.settings.data;x.viewListId=old;x.viewEmail=me;await RB.corpRun()},[old,ZEN]);
+  assert.equal(await Z.p.evaluate(()=>RB.db.settings.data.viewListId),cur,'viewer follows the move');
+  assert.deepEqual(B.errors.concat(C.errors,Z.errors),[]);await B.c.close();await C.c.close();await Z.c.close();
+ });
  await check('複数有効同Gmailの異常は社員追加/役割変更/削除の前に停止、新ファイルも作らない',async()=>{
   const table=tab(byName('CPG HUB_社員一覧'),'社員'),saved=structuredClone(table),duplicate=structuredClone(table.find((r,i)=>i&&r[1]===SB&&r[4]==='共有中'));duplicate[2]='synthetic-conflict-record';duplicate[11]='';table.push(duplicate);
   const before=G.calls.filter(x=>['POST','PUT','PATCH','DELETE'].includes(x[1])).length,files=Object.keys(G.files).length;
