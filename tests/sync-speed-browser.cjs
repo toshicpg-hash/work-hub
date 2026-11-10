@@ -68,7 +68,7 @@ async function main(){
   const mine=s2.log.filter(x=>x.id===own);
   assert.equal(mine.filter(x=>x.rest===''&&x.method==='GET').length,2,'tab list once (+1 for the 案件 grid size)');
   assert.equal(mine.filter(x=>/:clear$/.test(x.rest)).length,0,'情報 is not cleared first');
-  assert.deepEqual(steps.filter(x=>/記録シート/.test(x[0])),[['記録シート「案件」',true],['記録シート「入金」',true],['記録シート「立替」',true],['記録シート「ToDo」',true],['記録シート「情報」',true]]);
+  assert.deepEqual(steps.filter(x=>/^記録シート「/.test(x[0])),[['記録シート「案件」',true],['記録シート「入金」',true],['記録シート「立替」',true],['記録シート「ToDo」',true],['記録シート「情報」',true]]);
   assert.ok(s2.max>=3,'the four tabs are written at the same time: '+s2.max);
   assert.equal(store[own]['情報'][2][0],'最終同期');
   assert.deepEqual(s2.errors,[]);await s2.c.close();
