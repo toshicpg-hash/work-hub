@@ -420,8 +420,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.35" title="使い方マニュアルを開く">v1.50.35・11/9更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.35" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.36" title="使い方マニュアルを開く">v1.50.36・11/11更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.36" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -481,10 +481,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.35"></script>
+<script src="./share-management.js?v=1.50.36"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.35"></script>
-<script src="./calendar-view-scope.js?v=1.50.35"></script>
+<script src="./view-scope.js?v=1.50.36"></script>
+<script src="./calendar-view-scope.js?v=1.50.36"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2267,7 +2267,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.35";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.36";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2429,7 +2429,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.35" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.35" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.36" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.36" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3275,16 +3275,45 @@ async function adminSync(log){
     if(!ls.length)return found;
     d.listId=ls[0].id;save();
   }
-  /* v1.50.26 「社長の済み」タブも一緒に読む（まだタブがなければ「社員」だけ） */
-  let listV;try{listV=await sheetRead(d.listId,["社員",BOSSDONE_TAB])}catch(err){if(err.status!==400)throw err;listV=await sheetRead(d.listId,["社員"])}
+  /* v1.50.26 「社長の済み」タブも一緒に読む（まだタブがなければ「社員」だけ）。v1.50.36 「HUBの設定」（社長の端末で共通の設定）も */
+  let listV;try{listV=await sheetRead(d.listId,["社員",BOSSDONE_TAB,HUBSET_TAB])}catch(err){if(err.status!==400)throw err;const have=await sheetTabNames(d.listId);listV=await sheetRead(d.listId,["社員"].concat([BOSSDONE_TAB,HUBSET_TAB].filter(t=>have.includes(t))))}
   if(Array.isArray(listV[BOSSDONE_TAB]))bossDoneMerge(listV[BOSSDONE_TAB]);
   const rows=objRows(listV["社員"]).filter(r=>r["シートID"]);
   const local=d.staff.filter(s=>!rows.some(r=>String(r["シートID"])===s.sheetId)); /* added here, but the list sheet was not written yet */
   const next=rows.map(r=>{const old=d.staff.find(s=>s.sheetId===String(r["シートID"]))||{};
     return {name:String(r["氏名"]),email:String(r["Gmail"]),sheetId:String(r["シートID"]),permId:String(r["共有ID"]||old.permId||""),addedAt:String(r["追加日"]),removed:r["状態"]==="共有を外した",lastSync:String(r["最終同期"]||old.lastSync||""),
       company:String(r["会社"]||""),role:ROLES.includes(String(r["役割"]))?String(r["役割"]):"社員",gmCo:COMPANIES.includes(String(r["GMの会社"]))?String(r["GMの会社"]):"",boxId:String(r["指示箱ID"]||old.boxId||""),charge:chargeNorm(r["担当の会社"]),displayName:dispNorm(r["表示名"]),caseCode:codeNorm(r["受付番号の記号"])||codeNorm(old.caseCode),gmLead:String(r["GM統括"]||"").trim()==="統括"}}).concat(local);
-  d.staff=CPGNames.overlay(next,await namesRead(d.listId));save();found.list=true;found.n=d.staff.length;return found;
+  d.staff=CPGNames.overlay(next,await namesRead(d.listId));save();found.list=true;found.n=d.staff.length;
+  await viewListResolve(listV[HUBSET_TAB],log);
+  return found;
 }
+/* v1.50.36 見る人用一覧は、社長のどの端末でも同じ1つを使う。どれを使うかは社員一覧のファイルの「HUBの設定」タブに残す（社長の端末どうしで共通）。
+   前は端末ごとに覚えていたため、端末を入れ直したり2台目で始めたりすると、端末ごとに別の一覧ができていた。
+   設定がまだないときは、フォルダの中の「CPG HUB_見る人用一覧」のうち、いちばん新しく更新されたものを選んで残す（なければ、あとで作ったときに残す） */
+const HUBSET_TAB="HUBの設定", HUBSET_VIEW="見る人用一覧ID", MOVE_TAB="移転先";
+const hubSetGet=(rows,k)=>{const r=(rows||[]).slice(1).find(x=>x&&String(x[0])===k);return r?String(r[1]||"").trim():""};
+async function viewListFiles(){const d=D();if(!d.folder)return [];
+  const r=await gReq(DRIVE+"?"+new URLSearchParams({q:"name='CPG HUB_見る人用一覧' and mimeType='application/vnd.google-apps.spreadsheet' and "+dq(d.folder)+" in parents and trashed=false",fields:"files(id,modifiedTime,createdTime)",pageSize:"100",spaces:"drive"}));
+  return ((r&&r.files)||[]).sort((a,b)=>String(b.modifiedTime).localeCompare(String(a.modifiedTime)));}
+async function hubSetWrite(k,v){const d=D(),tabs=await sheetTabNames(d.listId);if(!tabs.includes(HUBSET_TAB))await addTab(d.listId,HUBSET_TAB);
+  const prev=(await sheetRead(d.listId,[HUBSET_TAB]))[HUBSET_TAB]||[],rows=[["項目","値"],...prev.slice(1).filter(r=>r&&r[0]&&String(r[0])!==k),[k,v]];
+  await sheetWrite(d.listId,HUBSET_TAB,rows,prev);if(hubSetGet((await sheetRead(d.listId,[HUBSET_TAB]))[HUBSET_TAB],k)!==v)throw Error("社員一覧の「HUBの設定」を保存確認できません");}
+/* adminSync は読むだけ（確認の前に書かない）。設定がなければ、いちばん新しく更新された一覧をこの端末で使い、設定に残すのは共有を合わせるとき（確認のあと） */
+let viewListShared="",viewListPicked=false;
+async function viewListResolve(setRows,log){
+  const d=D(),shared=hubSetGet(setRows,HUBSET_VIEW);viewListShared=shared;
+  if(shared){if(d.viewListId!==shared){const was=d.viewListId;d.viewListId=shared;save();log(was?"見る人用一覧を、社長のほかの端末と同じものにそろえました":"見る人用一覧を、社長のほかの端末と同じものにしました",true)}return}
+  if(viewListPicked)return;viewListPicked=true;/* 一覧を探すのは開いてから1回だけ */
+  let fs=[];try{fs=await viewListFiles()}catch(err){return}
+  if(fs.length&&d.viewListId!==fs[0].id){d.viewListId=fs[0].id;save();if(fs.length>1)log("見る人用一覧が"+fs.length+"つあります。いちばん新しく更新されたものを使います（次に共有を合わせるとき、社長のどの端末でもこれを使うように社員一覧に残します）",false)}
+}
+/* 古い見る人用一覧に「移転先」を書く。見る人の端末は、次の同期でそれを見て新しい一覧に移る */
+async function viewListMarkOld(){const d=D();if(!d.viewListId)return 0;let n=0;
+  for(const f of await viewListFiles()){if(f.id===d.viewListId)continue;
+    const tabs=await sheetTabNames(f.id);if(!tabs.includes(MOVE_TAB))await addTab(f.id,MOVE_TAB);
+    const prev=(await sheetRead(f.id,[MOVE_TAB]))[MOVE_TAB]||[];if(String((prev[1]||[])[0]||"")===d.viewListId)continue;
+    await sheetWrite(f.id,MOVE_TAB,[["新しい見る人用一覧ID"],[d.viewListId]],prev);n++}
+  return n}
 const staffDup=email=>D().staff.find(s=>!s.removed&&String(s.email).trim().toLowerCase()===String(email).trim().toLowerCase());
 /* 見る人（v1.31）：役割「全社」は全員の、「GM」はGMを務める会社の社員のシートを「閲覧者」で見る。
    見る範囲はGoogleの共有で守る（社長の管理端末で役割を保存したときに、閲覧者の共有を付けたり外したりする） */
@@ -3453,6 +3482,8 @@ async function adminShareSync(log,staff=D().staff,scope=null){
  for(const x of plan.filter(x=>x.action==="review"))log("要確認（共有を残しました）："+x.label+" → "+x.email+"／"+x.reason,false);
  await guard();
  if(d.viewListId){shareProgress("見る人用一覧を書き直しています");await viewListWrite(d.viewListId,staff);}
+ /* v1.50.36 どの一覧を使うかを社員一覧に残し、使わなくなった見る人用一覧に移転先を書く（見る人の端末が新しい一覧に移れるように）。失敗しても役割と共有は保存済み */
+ if(d.viewListId){try{if(viewListShared!==d.viewListId){await hubSetWrite(HUBSET_VIEW,d.viewListId);viewListShared=d.viewListId}const n=await viewListMarkOld();if(n)log("前の見る人用一覧 "+n+"つに、新しい一覧の場所を書きました（見る人の端末は次の同期で移ります）")}catch(err){if(err.message==="signin")throw err;log("前の見る人用一覧に新しい場所を書けませんでした（"+(err.message==="http"?dMsg(err):err.message)+"）",false)}}
  /* v1.50.3 共有と見る人用一覧のすぐあとに、役割を社員一覧に保存する（前は、指示箱のお知らせ・予定の共有先を全員分書いたあとの最後だったため、
     そのあいだ社員一覧が古い役割のまま長く残り、途中で止まると共有と一覧がずれた）。ここから先は、失敗しても役割と共有は保存済み */
  const codes=caseCodesAssign(staff);
@@ -3779,7 +3810,16 @@ async function adminNameSave(sheetId,name,log=()=>{}){return adminShareOperation
 })}
 
 /* 見る人の端末：「CPG HUB_見る人用一覧」を読み、自分が全社かGMかを確かめる */
+/* v1.50.36 見る人の端末：つないでいる一覧に「移転先」があれば、新しい一覧に移る（読めて「一覧」タブがあるときだけ。1回だけたどる） */
+let viewMoveChecked="";
+async function viewListFollow(){const id=D().viewListId;if(!id||viewMoveChecked===id)return;
+  let to="";try{const tabs=await sheetTabNames(id);viewMoveChecked=id;if(!tabs.includes(MOVE_TAB))return;to=String((((await sheetRead(id,[MOVE_TAB]))[MOVE_TAB]||[])[1]||[])[0]||"").trim()}catch(err){return}
+  if(!to||to===id)return;
+  let ok=false;try{ok=(await sheetTabNames(to)).includes("一覧")}catch(err){if(err.message==="signin")throw err}
+  if(!ok){ui.viewListWarn="社長が見る人用一覧を新しくしましたが、新しい一覧を開けません。社長に共有を確かめてもらってください";return}
+  D().viewListId=to;viewMoveChecked=to;save();}
 async function viewerList(){
+  await viewListFollow();
   const rows=objRows((await sheetRead(D().viewListId,["一覧"]))["一覧"]);
   const list=rows.filter(r=>r["シートID"]).map(r=>({name:String(r["氏名"]),email:String(r["Gmail"]),company:String(r["会社"]||""),role:String(r["役割"]||"社員"),gmCo:String(r["GMの会社"]||""),sheetId:String(r["シートID"]),boxId:String(r["指示箱ID"]||""),charge:chargeNorm(r["担当の会社"]),displayName:dispNorm(r["表示名"]),gmLead:String(r["GM統括"]||"").trim()==="統括",removed:false}));
   /* v1.49.8 正規氏名の履歴が読めなくても、一覧そのものは使う（読めないと全社・GMの端末でほかの社員が選べなくなるため）。名前は一覧の氏名のまま */
