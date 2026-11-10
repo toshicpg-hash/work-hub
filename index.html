@@ -201,6 +201,9 @@ ol.hist li{overflow-wrap:anywhere}
 .chip{font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:99px;background:var(--sunk);color:var(--muted);white-space:nowrap}
 .chip.boss{background:var(--amber-soft);color:var(--amber)}
 .card.boss{border-left:6px solid var(--amber)}
+/* v1.50.39 ホームの「タスクリクエストを出す」はオレンジで目立たせる（明るい画面・暗い画面とも、濃い文字で読みやすく） */
+.btn.req-go{background:#f5a524;border-color:#d4860b;color:#2b1a00;font-weight:800}
+.btn.req-go:active{background:#e0950f}
 .reqbox{display:flex;flex-direction:column;gap:8px;padding:10px 0 4px;border-bottom:1px dashed var(--line)}
 .reqbox h3{margin:0;font-size:16px;color:var(--amber)}
 /* 設定の欄の開け閉め */
@@ -420,8 +423,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.38" title="使い方マニュアルを開く">v1.50.38・11/11更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.38" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.39" title="使い方マニュアルを開く">v1.50.39・11/11更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.39" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -481,10 +484,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.38"></script>
+<script src="./share-management.js?v=1.50.39"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.38"></script>
-<script src="./calendar-view-scope.js?v=1.50.38"></script>
+<script src="./view-scope.js?v=1.50.39"></script>
+<script src="./calendar-view-scope.js?v=1.50.39"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1054,7 +1057,7 @@ function homeCorpTile(){
   return '<button type="button" id="home-company" class="tile'+(attention?' alert':'')+'" data-nav="company" style="width:100%"><span class="k">会社の動き</span><span class="v">'+(c?.data?(scopeState().usable?'選択内の共有記録 '+scopeCompanyData().length+'人':'選択内の共有記録は未確認'):'社員の記録は未読込')+'</span><span class="s">'+(c?.data?'見られる社員全体：今日未同期 '+old+'人・読めなかった社員 '+bad+'人':'同期状況は未確認です')+'</span>'+
     (c?.err?'<span class="s">'+h(c.err)+'</span>':'')+(c?.kept?'<span class="s">'+keptNote()+'</span>':'')+(rows.some(x=>x.receiptRead?.state==='invalid')?'<span class="s">共有領収書の読取注意 '+rows.filter(x=>x.receiptRead?.state==='invalid').length+'人</span>':'')+'</button>'+
     /* v1.50.30 タスクリクエストを出す欄へ */
-    (reqTargets().length?'<div class="row" style="margin-top:6px"><button type="button" class="btn sm" data-act="reqgo">タスクリクエストを出す</button></div>':'');
+    (reqTargets().length?'<div class="row" style="margin-top:6px"><button type="button" class="btn sm req-go" data-act="reqgo">タスクリクエストを出す</button></div>':'');
 }
 function vCompany(){
   if(!D().admin&&!D().viewListId)return '<button class="back" data-nav="home">‹ ホームへ戻る</button><p>この端末には会社の動きの閲覧設定がありません。</p>';
@@ -2267,7 +2270,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.38";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.39";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2429,7 +2432,7 @@ function vStats(){
     ''+
     '</form>')+
   exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.38" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.38" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.39" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.39" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
