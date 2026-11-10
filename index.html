@@ -3202,8 +3202,9 @@ async function dataConnect(input){
   /* v1.50.38 書けるシートか確かめる：中身のない変更（requests が空の batchUpdate）を送る。何も変わらないが、見るだけで共有されたシート
      （経理・業務管理・GM・全社の人には、ほかの社員のシートが届く）なら403になるので、つながない */
   const title=(v.properties&&v.properties.title)||"";
+  /* 403 のときだけ止める。それ以外（空の変更を受け付けない・回数制限・一時的な不具合・通信の失敗）は「確かめられなかった」として、今までどおりつなぐ */
   try{await gReq(SHEETS+"/"+encodeURIComponent(id)+":batchUpdate",{method:"POST",body:{requests:[]}})}
-  catch(err){if(err.status===403)throw Object.assign(new Error("readonly"),{title});throw err}
+  catch(err){if(err.message==="signin")throw err;if(err.status===403)throw Object.assign(new Error("readonly"),{title})}
   Object.assign(D(),{sheetId:id,sheetName:title});save();
   /* 新しい端末で最初につないだときも、同期の前と同じ確認をする（読むだけ） */
   ui.sgDone="";try{const g=await sharedCheck(id);ui.sheetGuard=g.block?g:null}catch(err){ui.sheetGuard=null}

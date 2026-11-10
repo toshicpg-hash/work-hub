@@ -10,7 +10,7 @@ const hook='window.WA={get db(){return DB},get ui(){return ui},get G(){return G}
 const GIS="window.__prompts=[];window.google={accounts:{oauth2:{initTokenClient(cfg){return {requestAccessToken(o){window.__prompts.push(o&&o.prompt);setTimeout(()=>cfg.callback({access_token:'tok:'+window.__acct,expires_in:3600,scope:cfg.scope}),5)}}}}}};";
 let server,browser,origin;const results=[];
 const check=async(name,fn)=>{await fn();results.push(name);console.log('PASS',name)};
-const S={'案件':[],'入金':[],'立替':[],'情報':[]};let writes=0;
+const S={'案件':[],'入金':[],'立替':[],'情報':[]};let writes=0;const MODE={empty400:false};
 async function device(width){
  const c=await browser.newContext({viewport:{width,height:900},timezoneId:'Asia/Tokyo',locale:'ja-JP',serviceWorkers:'block'});
  await c.route('**/*',async r=>{const req=r.request(),u=new URL(req.url()),acct=(req.headers()['authorization']||'').replace('Bearer tok:','');
@@ -24,6 +24,7 @@ async function device(width){
   if(method==='GET'&&!tail)return json({properties:{title:'CPG HUB_見本 一郎'},sheets:Object.keys(S).map((title,sheetId)=>({properties:{title,sheetId,gridProperties:{rowCount:1000,columnCount:40}}}))});
   if(method==='GET'&&tail==='/values:batchGet'){const ts=u.searchParams.getAll('ranges').map(t=>t.replace(/^'|'$/g,''));if(ts.some(t=>!S[t]))return json({},400);return json({valueRanges:ts.map(t=>({values:structuredClone(S[t])}))})}
   if(acct!==WRITER)return json({error:{code:403}},403);/* 見るだけの人は書けない */
+  if(method==='POST'&&tail===':batchUpdate'&&MODE.empty400&&!(req.postDataJSON().requests||[]).length)return json({error:{code:400}},400);/* 空の変更を受け付けない場合 */
   writes++;const body=req.postDataJSON();
   if(method==='POST'&&tail===':batchUpdate'){for(const q of body.requests)if(q.addSheet)S[q.addSheet.properties.title]=[];return json({})}
   const v=tail.match(/^\/values\/'([^']+)'(?:!A1)?(:clear)?$/);
@@ -86,6 +87,15 @@ async function main(){
   });
   await A.c.close();
  }
+ await check('書けるかの確かめが403以外で失敗しても（空の変更が400など）、本人のアカウントなら今までどおりつながる',async()=>{
+  for(const k of Object.keys(S))S[k]=[];MODE.empty400=true;
+  const B=await device(400);await B.p.evaluate(a=>{window.__acct=a},WRITER);
+  await B.p.click('[data-act=oblogin]');await B.p.waitForFunction(()=>!WA.ui.obBusy);
+  await B.p.fill('#ob_sheet','https://docs.google.com/spreadsheets/d/'+OWN+'/edit');await B.p.click('[data-act=obsheet]');await B.p.waitForFunction(()=>!WA.ui.obBusy);
+  assert.equal(await B.p.evaluate(()=>WA.db.settings.data.sheetId),OWN,await B.p.textContent('#onboarding'));
+  assert.match(await B.p.textContent('#onboarding'),/記録シート「CPG HUB_見本 一郎」につなぎました/);
+  MODE.empty400=false;assert.deepEqual(B.errors,[]);await B.c.close();
+ });
  console.log('ALL PASS',results.length);
 }
 main().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();if(server)server.close()});
