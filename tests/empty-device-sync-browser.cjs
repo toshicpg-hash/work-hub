@@ -43,7 +43,8 @@ const fillDevice=(own)=>{const D=ED.db,C=(o)=>Object.assign(ED.CASE_DEFAULTS(),o
  D.rseq=32;
  D.todos=[{id:'T100',title:'見本の手入力用事',due:'2026-11-05',tantou:'見本',done:false}];
  ED.save()};
-const dataCalls=()=>calls.filter(x=>x.method!=='GET'&&DATA_TABS.concat(['情報']).some(t=>x.tail.includes("'"+t+"'")||x.tail===':batchUpdate'));
+/* v1.50.38 つなぐときの「書けるか」の確かめ（requests が空の batchUpdate）は何も変えないので数えない */
+const dataCalls=()=>calls.filter(x=>x.method!=='GET'&&!(x.tail===':batchUpdate'&&x.body&&Array.isArray(x.body.requests)&&!x.body.requests.length)&&DATA_TABS.concat(['情報']).some(t=>x.tail.includes("'"+t+"'")||x.tail===':batchUpdate'));
 const syncRows=async p=>p.evaluate(async()=>{const rows=[];await ED.dataSync((name,ok,msg)=>rows.push({name,ok,msg}));return rows});
 const overflow=p=>p.evaluate(()=>{const d=document.documentElement;return Math.max(d.scrollWidth-d.clientWidth,...[...document.querySelectorAll('.panel,section,.row,.ro,.gsync,.sheet-guard')].map(x=>x.scrollWidth-x.clientWidth))});
 const snap=()=>structuredClone(sheets[OWN]);

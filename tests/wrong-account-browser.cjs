@@ -48,7 +48,12 @@ async function main(){
    assert.match(await A.p.textContent('#onboarding'),new RegExp('ログインしました：'+READER.replace('.','\\.')));
    assert.match(await A.p.textContent('#onboarding'),/ログイン中のGoogleアカウント：test-helper-reader@example\.com/);
    assert.deepEqual(await A.p.evaluate(()=>window.__prompts),[''],'normal login keeps the previous account (no chooser)');
+   /* v1.50.38 見るだけのシートはつながない（書けるかを、何も変えない確かめで見る） */
    await A.p.fill('#ob_sheet','https://docs.google.com/spreadsheets/d/'+OWN+'/edit');await A.p.click('[data-act=obsheet]');await A.p.waitForFunction(()=>!WA.ui.obBusy);
+   assert.match(await A.p.textContent('#onboarding'),/このシート（CPG HUB_見本 一郎）は、あなたには見るだけで共有されています（ほかの人の記録シートです）。つなぎませんでした/);
+   assert.equal(await A.p.evaluate(()=>WA.db.settings.data.sheetId),'');assert.equal(writes,0);
+   /* 前の版でつないだ端末と同じ状態にして、同期のときの案内を確かめる */
+   await A.p.evaluate(id=>{const d=WA.db.settings.data;d.sheetId=id;d.sheetName='CPG HUB_見本 一郎';WA.save();WA.render()},OWN);
    await A.p.fill('#ob_name','見本 一郎');await A.p.selectOption('#ob_co','CP');await A.p.click('[data-act=obname]');
   });
   await check('同期：記録シートに書けないと、ログイン中のアカウントと直し方が出て、ログインし直すボタンが出る '+width+'px',async()=>{
@@ -56,6 +61,8 @@ async function main(){
    const rows=await A.p.evaluate(()=>WA.ui.gsync.rows);
    const w=rows.find(x=>x.name==='ログイン中のGoogleアカウント');assert.ok(w&&!w.ok,JSON.stringify(rows));
    assert.match(w.msg,/test-helper-reader@example\.com：このアカウントでは記録シートに書き込めません。社長が共有した本人のGmailでログインし直してください/);
+   assert.match(w.msg,/つないでいるシート「CPG HUB_見本 一郎」が自分の名前のシートか確かめてください/);
+   assert.deepEqual(rows.find(x=>x.name==='つないでいる記録シート'),{name:'つないでいる記録シート',ok:true,msg:'CPG HUB_見本 一郎'});
    assert.ok(rows.some(x=>x.name==='記録シート「案件」'&&!x.ok&&/権限がありません/.test(x.msg)));
    assert.equal(writes,0);assert.ok(await A.p.isVisible('.gsync [data-act=grelogin]'));
    assert.ok(await overflow(A.p)<=0,'overflow '+await overflow(A.p));
