@@ -64,13 +64,18 @@ async function main(){
    await A.p.click('[data-act=salesdemo]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);
    const t=await A.p.textContent('#stats-sales');assert.match(t,/試作用のシートを作りました/,t);
    const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）');assert.ok(f);assert.deepEqual(f.perms,[],'not shared');
-   assert.deepEqual(f.tabs.map(x=>x.title),['2026-09','2026-10']);
+   assert.deepEqual(f.tabs.map(x=>x.title),['2026-09','2026-10']);assert.ok(f.tabs[0].rows.every(r=>!r.some(v=>/株式会社|黒木|大平/.test(String(v)))),'only fictional names');
    assert.deepEqual(tabOf(G.files.list00000000000000000001,'HUBの設定'),[['項目','値'],['売上報告ID',f.id]]);
    assert.match(t,/2026年9月/);assert.match(t,/2026年10月/);
    assert.match(t,/3社の合計/);assert.match(t,/25,650,000円/,'10月 = half of 9月 total');
    assert.match(t,/達成 35%/);assert.match(t,/本社/);
    await A.p.click('[data-sales-month="2026-09"]');assert.match(await A.p.textContent('#stats-sales'),/51,300,000円/);
-   await A.p.click('#stats-sales details:not([data-fold]) summary');assert.match(await A.p.textContent('#stats-sales'),/見本 一郎/);
+   for(const sm of await A.p.$$('#stats-sales details:not([data-fold]):not([hidden]) > summary'))await sm.click();
+   const t2=await A.p.textContent('#stats-sales');
+   for(const k of ['前月の金額','最終粗利予想','人件費','Notes未入力','目標粗利率','確認日：社長','見本 一郎','第1事業部','第2事業部','完了物件','施工中','合計','1件単価','営業外売上','毎日の受注（受注Total','更新日'])assert.ok(t2.includes(k),k);
+   assert.equal(await A.p.$$eval('#stats-sales .sales-col[data-sales-day^="CP|"]',a=>a.length),30);
+   await A.p.click('#stats-sales .sales-col[data-sales-day="CP|1"]');assert.equal(await A.p.$$eval('#stats-sales details:not([data-fold])[open]',a=>a.length)>0,true,'open sections stay open');
+   if(width===400)await A.p.locator('#stats-sales .panel').nth(1).screenshot({path:path.join(require('node:os').tmpdir(),'sales-cp-400.png')});assert.match(await A.p.textContent('#stats-sales'),/1日：(\d+件・[\d,]+円|入力なし)/);
    assert.ok(await overflow(A.p)<=0,'overflow '+await overflow(A.p));
    if(width===400)await A.p.screenshot({path:path.join(require('node:os').tmpdir(),'sales-400.png'),fullPage:true});
   });
@@ -90,10 +95,17 @@ async function main(){
   await E.c.close();
  }
  /* 読み取りの単体：見出しの行を探す・行の位置が前後してもよい・会社名の間違い */
- await check('見出しの行を探して読む（前に空行やメモがあってもよい）。知らない会社名は読めなかったところに出す',async()=>{
+ await check('見出しの行を探して読む（前に空行やメモがあってもよい）。3つの表（会社・担当者別・毎日の受注）を読み、知らない会社名・状態は読めなかったところに出す',async()=>{
   const P=await device(400);
-  const r=await P.p.evaluate(()=>BB.salesParse([['メモ'],[],['会社','目標売上','目標粗利','実績売上','実績粗利','社長確認日','本部長確認日'],['CP','1,000','500','800','300','10/2',''],['XX','1','1','1','1','',''],[],['会社','担当','完了件数','完了金額','完了粗利','施工中件数','施工中金額'],['AT','見本 九郎','2','100','50','1','30']]));
-  assert.deepEqual(r.cos.map(c=>[c.co,c.goal,c.amt,c.boss]),[['CP',1000,800,'10/2']]);assert.deepEqual(r.staff.map(x=>[x.co,x.name,x.wip]),[['AT','見本 九郎',30]]);assert.match(r.bad.join(),/会社「XX」/);
+  const r=await P.p.evaluate(()=>BB.salesParse([['メモ'],[],
+   ['会社','目標売上','目標粗利','実績売上','実績粗利','前月売上','前月粗利','最終粗利予想','人件費','Notes未入力','社長確認日','本部長確認日','GM確認日','GMの名前','更新日'],
+   ['CP','1,000','500','800','300','700','200','','100','2','10/2','10/1','10/1','見本 GM','10/3'],['XX','1','1','1','1','','','','','','','','','',''],[],
+   ['会社','区分','担当','状態','物件数','基準値','金額','粗利'],['AT','営業①','見本 九郎','完了','2','','100','50'],['AT','営業①','見本 九郎','途中','1','','30','5'],[],
+   ['会社','日','受注件数','受注金額'],['CP','1','3','55,000'],['CP','40','1','1']]));
+  assert.deepEqual(r.cos.map(c=>[c.co,c['目標売上'],c['実績売上'],c['前月粗利'],c['最終粗利予想'],c['人件費'],c['Notes未入力'],c['社長確認日'],c['GMの名前'],c['更新日']]),[['CP',1000,800,200,null,100,2,'10/2','見本 GM','10/3']]);
+  assert.deepEqual(r.staff.map(x=>[x.co,x.group,x.name,x.state,x.n,x.amt]),[['AT','営業①','見本 九郎','完了',2,100],['AT','営業①','見本 九郎','途中',1,30]]);
+  assert.deepEqual(r.days,[{co:'CP',day:1,n:3,amt:55000}]);
+  const bad=r.bad.join('／');assert.match(bad,/会社「XX」/);assert.match(bad,/状態「途中」/);assert.match(bad,/「日」/);
   await P.c.close();
  });
  console.log('ALL PASS',results.length);

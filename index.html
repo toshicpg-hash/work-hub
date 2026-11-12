@@ -206,6 +206,15 @@ ol.hist li{overflow-wrap:anywhere}
 .btn.req-go:active{background:#e0950f}
 .sales-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 @media(max-width:360px){.sales-grid{grid-template-columns:1fr}}
+.sales-kv{grid-template-columns:repeat(auto-fit,minmax(9em,1fr))}
+/* 毎日の受注：1色の縦棒（棒どうしは2pxあける・上の角を丸く）。押すとその日の数字を出す */
+.sales-chart{display:flex;align-items:flex-end;gap:2px;height:120px;padding:4px 0;border-bottom:1px solid var(--line)}
+.sales-col{flex:1 1 0;min-width:0;height:100%;display:flex;align-items:flex-end;padding:0;margin:0;border:0;background:transparent;cursor:pointer}
+.sales-col span{display:block;width:100%;background:var(--blue);border-radius:4px 4px 0 0}
+.sales-col:focus-visible{outline:2px solid var(--fg)}
+.sales-axis{display:flex;justify-content:space-between}
+tr.sales-sum td{border-top:2px solid var(--line)}
+.sales-st{font-size:12.5px}.sales-st td,.sales-st th{padding:6px 4px}.sales-st td:nth-child(2),.sales-st td.num,.sales-st th{white-space:nowrap}
 .reqbox{display:flex;flex-direction:column;gap:8px;padding:10px 0 4px;border-bottom:1px dashed var(--line)}
 .reqbox h3{margin:0;font-size:16px;color:var(--amber)}
 /* 設定の欄の開け閉め */
@@ -425,8 +434,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.40" title="使い方マニュアルを開く">v1.50.40・11/12更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.40" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.41" title="使い方マニュアルを開く">v1.50.41・11/12更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.41" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -486,10 +495,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.40"></script>
+<script src="./share-management.js?v=1.50.41"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.40"></script>
-<script src="./calendar-view-scope.js?v=1.50.40"></script>
+<script src="./view-scope.js?v=1.50.41"></script>
+<script src="./calendar-view-scope.js?v=1.50.41"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2272,7 +2281,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.40";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.41";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2434,7 +2443,7 @@ function vStats(){
     ''+
     '</form>')+
   (D().admin?foldSec("sales","売上報告（試作・社長だけ）",salesSec(),!!ui.salesBusy):'')+exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.40" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.40" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.41" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.41" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3325,23 +3334,30 @@ async function viewListResolve(setRows,log){
   let fs=[];try{fs=await viewListFiles()}catch(err){return}
   if(fs.length&&d.viewListId!==fs[0].id){d.viewListId=fs[0].id;save();if(fs.length>1)log("見る人用一覧が"+fs.length+"つあります。いちばん新しく更新されたものを使います（次に共有を合わせるとき、社長のどの端末でもこれを使うように社員一覧に残します）",false)}
 }
-/* v1.50.40 売上報告（試作・社長の端末だけ）：Googleスプレッドシート「CPG HUB_売上報告」を読んで、月ごとに会社の目標・実績と担当者別を出す。
+/* v1.50.40 売上報告（試作・社長の端末だけ）。v1.50.41 今の「3社報告」の項目をすべて出す（前月・目標粗利率・最終粗利予想・人件費・確認日（GM）・更新日・
+   担当者別（区分・完了／施工中・物件数・基準値・金額・粗利）・完了／施工中／合計・1件単価・Notes未入力・毎日の受注と受注Total）。
    読むだけで書かない（試作用のシートを作るときだけ、架空の数字を書く）。共有はしない。どのシートかは社員一覧の「HUBの設定」に残す（社長の端末どうしで同じ）。
-   入力の形：1か月を1つのタブ（名前は「2026-10」のように年-月）。「会社｜目標売上｜目標粗利｜実績売上｜実績粗利｜社長確認日｜本部長確認日」の表と、
-   「会社｜担当｜完了件数｜完了金額｜完了粗利｜施工中件数｜施工中金額」の表。見出しの行を探して読むので、行の位置は前後してもよい */
-const SALES_KEY="売上報告ID", SALES_CO=["会社","目標売上","目標粗利","実績売上","実績粗利","社長確認日","本部長確認日"], SALES_ST=["会社","担当","完了件数","完了金額","完了粗利","施工中件数","施工中金額"];
+   入力の形：1か月を1つのタブ（名前は「2026-10」のように年-月）。下の3つの表の見出しの行を探して読むので、行の位置は前後してもよい */
+const SALES_KEY="売上報告ID",
+  SALES_CO=["会社","目標売上","目標粗利","実績売上","実績粗利","前月売上","前月粗利","最終粗利予想","人件費","Notes未入力","社長確認日","本部長確認日","GM確認日","GMの名前","更新日"],
+  SALES_ST=["会社","区分","担当","状態","物件数","基準値","金額","粗利"],
+  SALES_DAY=["会社","日","受注件数","受注金額"];
 const salesNum=v=>{const t=String(v??"").replace(/[,，円¥￥\s]/g,"");if(t==="")return null;const n=Number(t);return Number.isFinite(n)?n:NaN};
 function salesParse(rows){
-  const cell=(r,i)=>String((r||[])[i]??"").trim(),out={cos:[],staff:[],bad:[]};
+  const cell=(r,i)=>String((r||[])[i]??"").trim(),out={cos:[],staff:[],days:[],bad:[]};
   const hdr=cols=>rows.findIndex(r=>cols.every((c,i)=>cell(r,i)===c));
   const block=(cols,fn)=>{const at=hdr(cols);if(at<0)return false;for(let i=at+1;i<rows.length;i++){const r=rows[i];if(!cols.some((_,j)=>cell(r,j)))break;if(cell(r,0)==="会社")break;fn(r,i+1)}return true};
   const num=(r,i,row,label)=>{const n=salesNum((r||[])[i]);if(Number.isNaN(n))out.bad.push(row+"行目の「"+label+"」");return Number.isNaN(n)?null:n};
-  const okCo=block(SALES_CO,(r,row)=>{if(!COMPANIES.includes(cell(r,0)))return out.bad.push(row+"行目の会社「"+cell(r,0)+"」");
-    out.cos.push({co:cell(r,0),goal:num(r,1,row,"目標売上"),goalP:num(r,2,row,"目標粗利"),amt:num(r,3,row,"実績売上"),prof:num(r,4,row,"実績粗利"),boss:cell(r,5),hq:cell(r,6)})});
-  const okSt=block(SALES_ST,(r,row)=>{if(!COMPANIES.includes(cell(r,0)))return out.bad.push(row+"行目の会社「"+cell(r,0)+"」");
-    out.staff.push({co:cell(r,0),name:cell(r,1),doneN:num(r,2,row,"完了件数"),done:num(r,3,row,"完了金額"),doneP:num(r,4,row,"完了粗利"),wipN:num(r,5,row,"施工中件数"),wip:num(r,6,row,"施工中金額")})});
-  if(!okCo)out.bad.unshift("「"+SALES_CO.join("｜")+"」の見出しの行が見つかりません");
-  if(!okSt)out.bad.push("「"+SALES_ST.join("｜")+"」の見出しの行が見つかりません（担当者別は出しません）");
+  const coOk=(r,row)=>{if(COMPANIES.includes(cell(r,0)))return true;out.bad.push(row+"行目の会社「"+cell(r,0)+"」");return false};
+  const okCo=block(SALES_CO,(r,row)=>{if(!coOk(r,row))return;const o={co:cell(r,0)};
+    SALES_CO.slice(1,10).forEach((k,j)=>{o[k]=num(r,j+1,row,k)});SALES_CO.slice(10).forEach((k,j)=>{o[k]=cell(r,j+10)});out.cos.push(o)});
+  const okSt=block(SALES_ST,(r,row)=>{if(!coOk(r,row))return;const st=cell(r,3);if(!["完了","施工中","その他"].includes(st))out.bad.push(row+"行目の状態「"+st+"」（完了・施工中・その他）");
+    out.staff.push({co:cell(r,0),group:cell(r,1),name:cell(r,2),state:st,n:num(r,4,row,"物件数"),base:num(r,5,row,"基準値"),amt:num(r,6,row,"金額"),prof:num(r,7,row,"粗利")})});
+  const okDay=block(SALES_DAY,(r,row)=>{if(!coOk(r,row))return;const d=salesNum(r[1]);if(!Number.isInteger(d)||d<1||d>31)return out.bad.push(row+"行目の「日」");
+    out.days.push({co:cell(r,0),day:d,n:num(r,2,row,"受注件数"),amt:num(r,3,row,"受注金額")})});
+  if(!okCo)out.bad.unshift("会社の表の見出し（"+SALES_CO.slice(0,5).join("｜")+"…）が見つかりません");
+  if(!okSt)out.bad.push("担当者別の表の見出し（"+SALES_ST.join("｜")+"）が見つかりません");
+  if(!okDay)out.bad.push("毎日の受注の表の見出し（"+SALES_DAY.join("｜")+"）が見つかりません");
   return out;
 }
 async function salesLoad(){
@@ -3352,41 +3368,70 @@ async function salesLoad(){
   if(!ui.salesMonth||!tabs.includes(ui.salesMonth))ui.salesMonth=tabs.at(-1)||"";
 }
 /* 試作用：架空の数字だけのシートを作る（実在の名前・金額は入れない） */
+function salesDemoRows(ym,k){
+  const co=[["CP",30000000,10000000,21000000,6300000,20000000,6000000,"",3000000,2,"見本 一郎"],["CPY",16000000,6000000,12800000,4500000,12000000,4200000,4800000,1800000,0,"見本 四郎"],["AT",25000000,9000000,17500000,5600000,16000000,5000000,6000000,2500000,1,"見本 六郎"]];
+  const st=[["CP","第1事業部","見本 一郎",[3,400000,120000],[10,3000000,900000]],["CP","第1事業部","見本 二郎",[5,900000,300000],[8,2500000,800000]],["CP","第2事業部","見本 三郎",[2,200000,80000],[6,1800000,500000]],
+    ["CPY","営業①","見本 四郎",[4,1000000,350000],[9,4000000,1400000]],["CPY","営業①","見本 五郎",[3,700000,260000],[12,5000000,1700000]],
+    ["AT","営業①","見本 六郎",[6,1500000,520000],[15,6000000,2000000]],["AT","営業①","見本 七郎",[2,300000,110000],[7,2200000,700000]]];
+  const r=x=>Math.round(x*k),rows=[["売上報告（試作・架空の数字）",ym],[],SALES_CO];
+  for(const c of co)rows.push([c[0],c[1],c[2],r(c[3]),r(c[4]),c[5],c[6],c[7]===""?"":r(c[7]),c[8],c[9],"","",ym.slice(5)+"/02",c[10],ym.slice(5)+"/03"]);
+  rows.push([],SALES_ST);
+  for(const s of st){rows.push([s[0],s[1],s[2],"完了",s[3][0],"",r(s[3][1]),r(s[3][2])]);rows.push([s[0],s[1],s[2],"施工中",s[4][0],"",r(s[4][1]),r(s[4][2])])}
+  rows.push(["CP","","営業外売上（事務管理手数料など）","その他",1,"",r(100000),r(100000)],[],SALES_DAY);
+  for(const [c,base] of [["CP",3],["CPY",2],["AT",4]])for(let d=1;d<=20;d++){const n=(d*base+3)%5;rows.push([c,d,n,n*(150000+((d*7919+base*31)%9)*25000)])}
+  return rows;
+}
 async function salesCreateDemo(){
   const d=D();await gAuthorize(true);if(!eq(await myEmail(),ADMIN_ACCOUNT))throw Error("社長の管理アカウントで作ってください");if(!d.folder||!d.listId)throw Error("先に「管理をはじめる」をしてください");
   const now=todayS(),m0=addMonths(now.slice(0,7),-2),m1=addMonths(now.slice(0,7),-1);
   const f=await driveCreate({name:"CPG HUB_売上報告（試作・架空）",mimeType:"application/vnd.google-apps.spreadsheet",parents:[d.folder]});
   await sheetTabs(f.id,m0,[m1]);
-  const demo=k=>[["売上報告（試作・架空の数字）",k],[],SALES_CO,["CP",30000000,10000000,21000000*k,6300000*k,"",""],["CPY",16000000,6000000,12800000*k,4500000*k,"",""],["AT",25000000,9000000,17500000*k,5600000*k,"",""],[],SALES_ST,
-    ["CP","見本 一郎",3,400000,120000,10,3000000],["CP","見本 二郎",5,900000,300000,8,2500000],["CPY","見本 四郎",4,1000000,350000,9,4000000],["AT","見本 六郎",6,1500000,520000,15,6000000]];
-  await sheetWrite(f.id,m0,demo(1).map(r=>r.map(x=>typeof x==="number"?Math.round(x):x)));await sheetWrite(f.id,m1,demo(0.5).map(r=>r.map(x=>typeof x==="number"?Math.round(x):x)));
+  await sheetWrite(f.id,m0,salesDemoRows(m0,1));await sheetWrite(f.id,m1,salesDemoRows(m1,0.5));
   await hubSetWrite(SALES_KEY,f.id);d.salesId=f.id;save();await salesLoad();
 }
 const addMonths=(ym,n)=>{const [y,m]=ym.split("-").map(Number),t=y*12+(m-1)+n;return Math.floor(t/12)+"-"+String(t%12+1).padStart(2,"0")};
 function salesSec(){
   const d=D(),S=ui.sales,busy=ui.salesBusy?' disabled':'',msg=ui.salesMsg?'<p role="status" style="margin:0;color:'+(ui.salesMsg.ok?'var(--green)':'var(--red)')+'">'+h(ui.salesMsg.text)+'</p>':'';
-  const head='<div class="sec-h"><h2>売上報告</h2><span class="chip">試作・社長だけ</span></div>';
-  if(!d.salesId)return '<section class="sec" id="stats-sales" style="display:flex;flex-direction:column;gap:8px">'+head+'<p class="note" style="margin:0">Googleスプレッドシートの売上報告を読んで、会社ごとの目標・実績と担当者別を出します。今は試作で、社長の端末にだけ出ます（社員には見えません）。</p><div class="row"><button class="btn pri" type="button" data-act="salesdemo"'+busy+'>試作用のシートを作る（架空のデータ）</button></div>'+msg+'</section>';
+  const head='<div class="row" style="gap:6px"><span class="chip">試作・社長だけ</span></div>';
+  const wrap=b=>'<section class="sec" id="stats-sales" style="display:flex;flex-direction:column;gap:10px">'+head+b+msg+'</section>';
+  if(!d.salesId)return wrap('<p class="note" style="margin:0">Googleスプレッドシートの売上報告を読んで、今の3社報告と同じ項目を出します。今は試作で、社長の端末にだけ出ます（社員には見えません）。</p><div class="row"><button class="btn pri" type="button" data-act="salesdemo"'+busy+'>試作用のシートを作る（架空のデータ）</button></div>');
   const link='<a class="btn sm" href="https://docs.google.com/spreadsheets/d/'+h(d.salesId)+'/edit" target="_blank" rel="noopener" style="text-decoration:none">シートを開く</a>';
-  const ctl='<div class="row"><button class="btn sm" type="button" data-act="salesload"'+busy+'>'+(ui.salesBusy?'読んでいます…':S?'読み直す':'読み込む')+'</button>'+link+'</div>';
-  if(!S||S.id!==d.salesId)return '<section class="sec" id="stats-sales" style="display:flex;flex-direction:column;gap:8px">'+head+ctl+msg+'</section>';
+  const ctl='<div class="row"><button class="btn sm" type="button" data-act="salesload"'+busy+'>'+(ui.salesBusy?'読んでいます…':S?'読み直す':'読み込む')+'</button>'+link+'<button class="btn sm" type="button" data-act="salesdemo"'+busy+'>試作用のシートを作り直す（架空）</button></div>';
+  if(!S||S.id!==d.salesId)return wrap(ctl);
   const M=S.months.find(x=>x.key===ui.salesMonth);
-  const yen0=n=>n==null?"—":Math.round(n).toLocaleString("ja-JP")+"円",pc=(a,b)=>a==null||!b?null:Math.round(a/b*100),pct=v=>v==null?"—":v+"%";
-  const bar=(v,c)=>'<div style="height:10px;border-radius:99px;background:var(--line);overflow:hidden"><div style="width:'+Math.max(0,Math.min(100,v||0))+'%;height:100%;background:'+c+'"></div></div>';
   const tabs='<div class="row" style="gap:6px;flex-wrap:wrap">'+S.months.map(x=>'<button class="btn sm'+(x.key===ui.salesMonth?' pri':'')+'" type="button" data-sales-month="'+h(x.key)+'">'+Number(x.key.slice(0,4))+'年'+Number(x.key.slice(5))+'月</button>').join("")+'</div>';
-  if(!M)return '<section class="sec" id="stats-sales" style="display:flex;flex-direction:column;gap:8px">'+head+'<p class="note" style="margin:0">「2026-10」のような名前のタブがありません。</p>'+ctl+msg+'</section>';
-  const sum=k=>M.cos.reduce((a,c)=>a+(c[k]||0),0);
-  const total='<div class="panel" style="display:flex;flex-direction:column;gap:4px"><h3 style="margin:0">3社の合計</h3><div style="font-size:22px;font-weight:800" class="num">'+yen0(sum("amt"))+'</div><div class="note num">目標 '+yen0(sum("goal"))+'・達成 '+pct(pc(sum("amt"),sum("goal")))+'／粗利 '+yen0(sum("prof"))+'</div></div>';
-  const card=c=>{const st=M.staff.filter(x=>x.co===c.co),ra=pc(c.amt,c.goal),rp=pc(c.prof,c.goalP);
-    return '<div class="panel" style="display:flex;flex-direction:column;gap:8px"><h3 style="margin:0">'+h(c.co)+'<span class="note" style="font-weight:400;margin-left:6px">'+h(CO_LABEL[c.co]||"")+'</span></h3>'+
-    '<div class="sales-grid"><div><div class="note">売上（実績／目標）</div><div class="num" style="font-size:20px;font-weight:800">'+yen0(c.amt)+'</div><div class="note num">目標 '+yen0(c.goal)+'・<b>達成 '+pct(ra)+'</b></div>'+bar(ra,'var(--blue)')+'</div>'+
-    '<div><div class="note">粗利（実績／目標）</div><div class="num" style="font-size:20px;font-weight:800">'+yen0(c.prof)+'</div><div class="note num">目標 '+yen0(c.goalP)+'・<b>達成 '+pct(rp)+'</b>・粗利率 '+pct(pc(c.prof,c.amt))+'</div>'+bar(rp,'var(--green)')+'</div></div>'+
-    '<div class="note">確認日：社長 '+h(c.boss||"—")+'・本部長 '+h(c.hq||"—")+'</div>'+
-    (st.length?'<details><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700">担当者別（'+st.length+'人）</summary><div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>担当</th><th>完了<br>件・金額</th><th>粗利</th><th>施工中<br>件・金額</th></tr></thead><tbody>'+
-      st.map(x=>'<tr><td>'+h(x.name)+'</td><td class="num">'+(x.doneN??"—")+'件<br>'+yen0(x.done)+'</td><td class="num">'+yen0(x.doneP)+'</td><td class="num">'+(x.wipN??"—")+'件<br>'+yen0(x.wip)+'</td></tr>').join("")+'</tbody></table></div></details>':'')+'</div>'};
+  if(!M)return wrap('<p class="note" style="margin:0">「2026-10」のような名前のタブがありません。</p>'+ctl);
+  const y=n=>n==null?"—":Math.round(n).toLocaleString("ja-JP")+"円",cnt=n=>n==null?"—":n+"件",pc=(a,b)=>a==null||!b?null:Math.round(a/b*100),pt=v=>v==null?"—":v+"%";
+  const sumBy=(arr,k)=>arr.reduce((a,x)=>a+(x[k]||0),0);
+  const bar=(v,c)=>'<div style="height:10px;border-radius:99px;background:var(--line);overflow:hidden"><div style="width:'+Math.max(0,Math.min(100,v||0))+'%;height:100%;background:'+c+'"></div></div>';
+  const kv=(k,v)=>'<div><div class="note">'+k+'</div><div class="num" style="font-weight:700">'+v+'</div></div>';
+  const tot=k=>M.cos.reduce((a,c)=>a+(c[k]||0),0),dAll=M.days;
+  const total='<div class="panel" style="display:flex;flex-direction:column;gap:4px"><h3 style="margin:0">3社の合計</h3><div style="font-size:22px;font-weight:800" class="num">'+y(tot("実績売上"))+'</div><div class="note num">目標 '+y(tot("目標売上"))+'・達成 '+pt(pc(tot("実績売上"),tot("目標売上")))+'／粗利 '+y(tot("実績粗利"))+'（粗利率 '+pt(pc(tot("実績粗利"),tot("実績売上")))+'）</div><div class="note num">受注Total '+cnt(sumBy(dAll,"n"))+'・'+y(sumBy(dAll,"amt"))+'</div></div>';
+  const stTable=st=>{const groups=[...new Set(st.map(x=>x.group||""))],hasBase=st.some(x=>x.base!=null),cols=hasBase?6:5,
+    row=x=>'<tr><td>'+h(x.name)+'</td><td>'+h(x.state)+'</td><td class="num">'+cnt(x.n)+'</td>'+(hasBase?'<td class="num">'+(x.base==null?"—":Math.round(x.base).toLocaleString("ja-JP"))+'</td>':'')+'<td class="num">'+y(x.amt)+'</td><td class="num">'+y(x.prof)+'</td></tr>';
+    const part=(label,a)=>'<tr class="sales-sum"><td colspan="2"><b>'+label+'</b></td><td class="num"><b>'+cnt(sumBy(a,"n"))+'</b></td>'+(hasBase?'<td></td>':'')+'<td class="num"><b>'+y(sumBy(a,"amt"))+'</b></td><td class="num"><b>'+y(sumBy(a,"prof"))+'</b></td></tr>';
+    const done=st.filter(x=>x.state==="完了"),wip=st.filter(x=>x.state==="施工中"),n=sumBy(st,"n");
+    return '<div class="tbl-wrap"><table class="items sales-st" style="min-width:0"><thead><tr><th>担当</th><th>状態</th><th>件数</th>'+(hasBase?'<th>基準値</th>':'')+'<th>金額</th><th>粗利</th></tr></thead><tbody>'+
+      groups.map(g=>(groups.length>1||g?'<tr><td colspan="'+cols+'" class="note"><b>'+h(g||"その他")+'</b></td></tr>':'')+st.filter(x=>(x.group||"")===g).map(row).join("")).join("")+
+      part("完了物件",done)+part("施工中",wip)+part("合計",st)+'</tbody></table></div><p class="note num" style="margin:0">1件単価（合計の金額 ÷ 物件数）：'+(n?y(sumBy(st,"amt")/n):"—")+'</p>'};
+  const dayChart=(co,ds)=>{const ym=M.key,last=new Date(Number(ym.slice(0,4)),Number(ym.slice(5)),0).getDate(),byD=Object.fromEntries(ds.map(x=>[x.day,x])),max=Math.max(1,...ds.map(x=>x.amt||0));
+    const cols=Array.from({length:last},(_,i)=>{const x=byD[i+1],v=x&&x.amt||0,hgt=v?Math.max(2,Math.round(v/max*100)):0,tip=(i+1)+"日："+(x?cnt(x.n)+"・"+y(x.amt):"入力なし");
+      return '<button type="button" class="sales-col" data-sales-day="'+h(co)+'|'+(i+1)+'" title="'+h(tip)+'" aria-label="'+h(tip)+'"><span style="height:'+hgt+'%"></span></button>'}).join("");
+    const pick=ui.salesDay&&ui.salesDay.startsWith(co+"|")?Number(ui.salesDay.split("|")[1]):0,px=pick&&byD[pick];
+    return '<div class="sales-chart" role="img" aria-label="'+h(co)+'の毎日の受注金額">'+cols+'</div><div class="sales-axis note"><span>1日</span><span>'+last+'日</span></div>'+
+      '<p class="note num" style="margin:0" role="status" id="sales-day-'+h(co)+'">'+(pick?pick+"日："+(px?cnt(px.n)+"・"+y(px.amt):"入力なし"):"棒を押すと、その日の件数と金額が出ます")+'</p>'+
+      '<details><summary class="note" style="cursor:pointer;min-height:36px;display:flex;align-items:center">表で見る</summary><div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>日</th><th>受注件数</th><th>受注金額</th></tr></thead><tbody>'+
+      ds.slice().sort((a,b)=>a.day-b.day).map(x=>'<tr><td class="num">'+x.day+'日</td><td class="num">'+cnt(x.n)+'</td><td class="num">'+y(x.amt)+'</td></tr>').join("")+'</tbody></table></div></details>'};
+  const card=c=>{const st=M.staff.filter(x=>x.co===c.co),ds=M.days.filter(x=>x.co===c.co),ra=pc(c["実績売上"],c["目標売上"]),rp=pc(c["実績粗利"],c["目標粗利"]),dn=sumBy(ds,"n"),da=sumBy(ds,"amt");
+    return '<div class="panel" style="display:flex;flex-direction:column;gap:8px"><div class="row" style="justify-content:space-between;align-items:baseline"><h3 style="margin:0">'+h(c.co)+'<span class="note" style="font-weight:400;margin-left:6px">'+h(CO_LABEL[c.co]||"")+'</span></h3><span class="note">更新日 '+h(c["更新日"]||"—")+'</span></div>'+
+    '<div class="sales-grid"><div><div class="note">売上（実績／目標）</div><div class="num" style="font-size:20px;font-weight:800">'+y(c["実績売上"])+'</div><div class="note num">目標 '+y(c["目標売上"])+'・<b>達成 '+pt(ra)+'</b></div>'+bar(ra,'var(--blue)')+'</div>'+
+    '<div><div class="note">粗利（実績／目標）</div><div class="num" style="font-size:20px;font-weight:800">'+y(c["実績粗利"])+'</div><div class="note num">目標 '+y(c["目標粗利"])+'（目標粗利率 '+pt(pc(c["目標粗利"],c["目標売上"]))+'）・<b>達成 '+pt(rp)+'</b>・粗利率 '+pt(pc(c["実績粗利"],c["実績売上"]))+'</div>'+bar(rp,'var(--green)')+'</div></div>'+
+    '<div class="sales-grid sales-kv">'+kv("前月の金額",y(c["前月売上"]))+kv("前月の粗利",y(c["前月粗利"])+'（'+pt(pc(c["前月粗利"],c["前月売上"]))+'）')+kv("最終粗利予想",y(c["最終粗利予想"]))+kv("人件費",y(c["人件費"]))+kv("Notes未入力",cnt(c["Notes未入力"]))+'</div>'+
+    '<div class="note">確認日：社長 '+h(c["社長確認日"]||"—")+'・本部長 '+h(c["本部長確認日"]||"—")+'・'+h(c["GMの名前"]||"GM")+' '+h(c["GM確認日"]||"—")+'</div>'+
+    (st.length?'<details><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700">担当者別（'+new Set(st.map(x=>x.name)).size+'人）</summary>'+stTable(st)+'</details>':'')+
+    '<details'+(ds.length?'':' hidden')+'><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700">毎日の受注（受注Total '+cnt(dn)+'・'+y(da)+'・1件単価 '+(dn?y(da/dn):"—")+'）</summary>'+dayChart(c.co,ds)+'</details></div>'};
   const bad=M.bad.length?'<p class="banner" role="status" style="margin:0">読めなかったところがあります：'+h(M.bad.slice(0,5).join("・"))+(M.bad.length>5?" ほか":"")+'</p>':'';
-  return '<section class="sec" id="stats-sales" style="display:flex;flex-direction:column;gap:10px">'+head+tabs+bad+total+M.cos.map(card).join("")+
-    '<p class="note" style="margin:0">「'+h(M.key)+'」のタブを読んでいます（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）。共有はしていません。</p>'+ctl+msg+'</section>';
+  return wrap(tabs+bad+total+M.cos.map(card).join("")+'<p class="note" style="margin:0">「'+h(M.key)+'」のタブを読んでいます（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）。共有はしていません。</p>'+ctl);
 }
 /* 古い見る人用一覧に「移転先」を書く。見る人の端末は、次の同期でそれを見て新しい一覧に移る */
 async function viewListMarkOld(){const d=D();if(!d.viewListId)return 0;let n=0;
@@ -4402,6 +4447,8 @@ document.addEventListener("click",e=>{
   if(el.dataset.bdone){if(manualTodoBusy())return toast("同期などの処理が終わってから操作してください");const t=requestBoxTasks().find(t=>t.requestId===el.dataset.bdone);if(!t||t.stale)return;ui.bDone={id:t.requestId,own:D().sheetId,box:t.boxId};render();document.getElementById("bd_memo")?.focus();return;}
   if(el.dataset.odone){ui.oDone=el.dataset.odone;render();showAlert();const m=document.getElementById("od_memo");if(m)m.focus();return}
   if(el.dataset.salesMonth){ui.salesMonth=el.dataset.salesMonth;render();return}
+  /* 棒を押したら、その日の数字の行だけ書き換える（描き直すと開いた欄が閉じるため） */
+  if(el.dataset.salesDay){ui.salesDay=el.dataset.salesDay;const [co]=el.dataset.salesDay.split("|"),o=document.getElementById("sales-day-"+co);if(o)o.textContent=(el.getAttribute("title")||"");return}
   if(el.dataset.bbrestore){const x=(ui.bbList||[]).find(y=>y.id===el.dataset.bbrestore);if(x){ui.bbAsk={id:x.id,name:x.name};render()}return}
   if(el.dataset.bcancel){ui.bCancel=el.dataset.bcancel;render();showAlert();return}
   if(el.dataset.ocancel){ui.oCancel=el.dataset.ocancel;render();showAlert();return}
