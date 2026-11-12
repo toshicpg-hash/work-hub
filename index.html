@@ -956,6 +956,13 @@ function calShareManual(busy){
  return '<details class="cs-manual"'+(open?' open':'')+'><summary>ブラウザで共有する（ボタンが使えないとき）</summary><ol class="obsteps"><li>スマホのブラウザ（Chrome・Safari）で <b>calendar.google.com</b> を開く</li><li>画面のいちばん下の「<b>デスクトップ</b>」を押す（パソコン用の画面になります）</li><li>右上の<b>歯車</b> →「<b>設定</b>」</li><li>左の「マイカレンダーの設定」で、<b>自分の名前のカレンダー</b>を押す</li><li>「<b>特定のユーザーまたはグループと共有する</b>」→「ユーザーやグループを追加」で、社長（<b>'+h(ADMIN_ACCOUNT)+'</b>）と、社長から案内された相手（専務など）を入れ、権限を「<b>予定の表示（すべての予定の詳細）</b>」にして「送信」</li></ol><p class="note" style="margin:0">iPhoneの「Googleカレンダー」アプリでは共有の設定ができません。ブラウザで開いてください。HUBからは、ブラウザで共有できたかを確かめられないので、終わったら「共有しました」を押してください。</p><button class="btn" type="button" data-act="obcalshare"'+busy+'>共有しました</button></details>';
 }
 /* v1.50.35 同期が終わったら、社長の端末の控えを書く（同期の結果の最後に1行足す） */
+/* v1.50.41 売上報告は毎日更新するので、社長の端末の同期のたびに読み直す（失敗しても同期の結果は変えない。結果に1行足す） */
+async function salesAfterSync(){
+  const g=ui.gsync;if(!D().admin||!D().salesId||!g||!Array.isArray(g.rows)||!gSignedIn())return;
+  let row;try{await salesLoad();const S=ui.sales,mt=S&&S.modified;row={name:"売上報告",ok:!!(S&&S.today),msg:S&&S.today?"今日の更新を読みました（"+salesWhen(mt)+"）":"シートが今日はまだ更新されていません（最終更新 "+salesWhen(mt)+"）"}}
+  catch(err){row={name:"売上報告",ok:false,msg:"読めませんでした（"+(err.message==="http"?dMsg(err):err.message==="signin"?"ログインが切れました":err.message)+"）"}}
+  ui.gsync={...ui.gsync,rows:ui.gsync.rows.concat([row])};render();
+}
 async function bbAfterSync(){
   const b=D().bossBackup,g=ui.gsync;if(!D().admin||!g||!Array.isArray(g.rows)||!gSignedIn())return;
   let row;if(!b||!b.id)row={name:"この端末の控え",ok:false,msg:"まだ作っていません。スマホのデータが消えると、この端末で入れた案件などが戻せません。数字 → 管理（社長用）の「この端末の控え」で作ってください"};
@@ -1932,7 +1939,7 @@ async function gSyncAll(){
   const run=async()=>{
     try{if(localStorage.getItem(KEY)!==dbPersistedRaw)throw Error("別の画面で記録が更新されています。古い内容を送信しないため同期を止めました。入力を控え、再読み込みしてください。");}
     catch(err){const msg=err.message||"端末の最新記録を確認できないため同期を止めました。";manualStorageNotice(msg);ui.gsync={busy:false,rows:[{name:"端末の最新記録",ok:false,msg}]};render();return;}
-    const r=await gSyncAllRun();await bbAfterSync();return r;
+    const r=await gSyncAllRun();await bbAfterSync();await salesAfterSync();return r;
   };
   manualTodoSyncPending=Promise.resolve().then(()=>globalThis.navigator?.locks?.request?navigator.locks.request(KEY+":manual-todo-edit",run):run());
   try{return await manualTodoSyncPending;}finally{manualTodoSyncPending=null;}
@@ -1970,9 +1977,10 @@ function homeSyncAttention(){
 }
 function gSyncPanel(home=false){
   const r=ui.gsync,attention=home?homeSyncAttention():{blocked:false,html:''};
-  const companyRow=x=>!!(D().admin||D().viewListId)&&x.name==='社員の記録';
+  /* 社員の記録・売上報告は、読めなくても（売上報告は今日まだ更新がなくても）同期そのものは済み。外に出して目立たせる */
+  const companyRow=x=>(!!(D().admin||D().viewListId)&&x.name==='社員の記録')||(!!D().admin&&x.name==='売上報告');
   const resultList=rows=>rows?.length?'<ul class="gres" role="status">'+rows.map(x=>x.name==='日付の変わった案件'?'<li class="calendar-drift">'+calendarDriftList()+'</li>':'<li class="'+(x.ok?'ok':'ng')+'">'+(x.ok?'✓ ':'× ')+h(x.name)+'：'+h(x.msg)+'</li>').join("")+'</ul>':'';
-  const known=['Googleにログイン','カレンダー一覧','予定の読み込み','つないでいる記録シート','この端末の控え','領収書の写真の控え','タスクリクエスト','指示箱（タスクリクエスト）','社員の記録',...['案件','入金','立替','ToDo','情報'].map(t=>'記録シート「'+t+'」')];
+  const known=['Googleにログイン','カレンダー一覧','予定の読み込み','つないでいる記録シート','売上報告','この端末の控え','領収書の写真の控え','タスクリクエスト','指示箱（タスクリクエスト）','社員の記録',...['案件','入金','立替','ToDo','情報'].map(t=>'記録シート「'+t+'」')];
   const success=home&&r?.complete===true&&r.busy===false&&Number.isFinite(r.at)&&r.rows?.length>0&&!attention.blocked&&r.rows.some(x=>!companyRow(x))&&r.rows.every(x=>(x.ok===true||(companyRow(x)&&x.ok===false))&&known.includes(x.name)&&Object.keys(x).every(k=>['name','ok','msg'].includes(k)));
   const companyErrors=success?r.rows.filter(x=>companyRow(x)&&x.ok===false):[];
   const list=resultList(success?r.rows.filter(x=>!companyErrors.includes(x)):r?.rows);
@@ -3364,7 +3372,9 @@ async function salesLoad(){
   const id=D().salesId;if(!id)return;await gAuthorize(true);
   const tabs=(await sheetTabNames(id)).filter(t=>/^\d{4}-\d{2}$/.test(t)).sort();
   const v=tabs.length?await sheetRead(id,tabs):{};
-  ui.sales={at:Date.now(),id,months:tabs.map(t=>({key:t,...salesParse(v[t]||[])}))};
+  /* 最終更新（Googleドライブの更新日時）。今日（日本時間）に更新されたかを見る。読めなくても内容は出す */
+  let modified="";try{modified=String(((await gReq(DRIVE+"/"+encodeURIComponent(id)+"?fields=modifiedTime"))||{}).modifiedTime||"")}catch(err){if(err.message==="signin")throw err}
+  ui.sales={at:Date.now(),id,modified,today:!!modified&&jstDay(modified)===jstDay(new Date().toISOString()),months:tabs.map(t=>({key:t,...salesParse(v[t]||[])}))};
   if(!ui.salesMonth||!tabs.includes(ui.salesMonth))ui.salesMonth=tabs.at(-1)||"";
 }
 /* 試作用：架空の数字だけのシートを作る（実在の名前・金額は入れない） */
@@ -3389,6 +3399,7 @@ async function salesCreateDemo(){
   await sheetWrite(f.id,m0,salesDemoRows(m0,1));await sheetWrite(f.id,m1,salesDemoRows(m1,0.5));
   await hubSetWrite(SALES_KEY,f.id);d.salesId=f.id;save();await salesLoad();
 }
+const salesWhen=iso=>iso?new Date(iso).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo",month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"不明";
 const addMonths=(ym,n)=>{const [y,m]=ym.split("-").map(Number),t=y*12+(m-1)+n;return Math.floor(t/12)+"-"+String(t%12+1).padStart(2,"0")};
 function salesSec(){
   const d=D(),S=ui.sales,busy=ui.salesBusy?' disabled':'',msg=ui.salesMsg?'<p role="status" style="margin:0;color:'+(ui.salesMsg.ok?'var(--green)':'var(--red)')+'">'+h(ui.salesMsg.text)+'</p>':'';
@@ -3431,7 +3442,8 @@ function salesSec(){
     (st.length?'<details><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700">担当者別（'+new Set(st.map(x=>x.name)).size+'人）</summary>'+stTable(st)+'</details>':'')+
     '<details'+(ds.length?'':' hidden')+'><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700">毎日の受注（受注Total '+cnt(dn)+'・'+y(da)+'・1件単価 '+(dn?y(da/dn):"—")+'）</summary>'+dayChart(c.co,ds)+'</details></div>'};
   const bad=M.bad.length?'<p class="banner" role="status" style="margin:0">読めなかったところがあります：'+h(M.bad.slice(0,5).join("・"))+(M.bad.length>5?" ほか":"")+'</p>':'';
-  return wrap(tabs+bad+total+M.cos.map(card).join("")+'<p class="note" style="margin:0">「'+h(M.key)+'」のタブを読んでいます（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）。共有はしていません。</p>'+ctl);
+  const fresh='<p class="'+(S.today?'note':'banner')+'" role="status" style="margin:0">'+(S.today?'シートの最終更新 '+h(salesWhen(S.modified))+'（今日）':'<b>今日はまだ更新されていません。</b>シートの最終更新 '+h(salesWhen(S.modified)))+'</p>';
+  return wrap(tabs+fresh+bad+total+M.cos.map(card).join("")+'<p class="note" style="margin:0">「'+h(M.key)+'」のタブを読んでいます（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）。共有はしていません。</p>'+ctl);
 }
 /* 古い見る人用一覧に「移転先」を書く。見る人の端末は、次の同期でそれを見て新しい一覧に移る */
 async function viewListMarkOld(){const d=D();if(!d.viewListId)return 0;let n=0;

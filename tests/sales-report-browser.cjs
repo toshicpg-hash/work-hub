@@ -18,7 +18,9 @@ async function google(r){
  if(p==='/drive/v3/files'&&m==='GET'){const q=u.searchParams.get('q')||'',eqn=(q.match(/name='([^']*)'/)||[])[1],cn=(q.match(/name contains '([^']*)'/)||[])[1];
   return J({files:Object.values(G.files).filter(f=>f.owner===acct&&(!eqn||f.name===eqn)&&(!cn||f.name.includes(cn))).map(f=>({id:f.id,name:f.name,createdTime:f.created}))})}
  if(p==='/drive/v3/files'&&m==='POST'){const b=req.postDataJSON(),id='bbsheet'+String(++G.n).padStart(20,'0');G.files[id]={id,name:b.name,owner:acct,created:new Date(Date.UTC(2026,10,1)+G.n*1000).toISOString(),perms:[],tabs:[{title:'シート1',sheetId:0,rows:[]}]};return J({id,name:b.name})}
- let mm=p.match(/^\/drive\/v3\/files\/([^/]+)\/permissions$/);
+ let mm=p.match(/^\/drive\/v3\/files\/([^/]+)$/);
+ if(mm&&m==='GET'){const f=G.files[mm[1]];if(!f||f.owner!==acct)return J({},404);return J({modifiedTime:f.modified||f.created})}
+ mm=p.match(/^\/drive\/v3\/files\/([^/]+)\/permissions$/);
  if(mm){const f=G.files[mm[1]];if(!f||f.owner!==acct)return J({},403);return J({permissions:[{id:'owner',emailAddress:f.owner,role:'owner',type:'user'}].concat(f.perms)})}
  mm=p.match(/^\/v4\/spreadsheets\/([^/:]+)(.*)$/);
  if(mm){const f=G.files[mm[1]],rest=mm[2];if(!f||f.owner!==acct)return J({},403);
@@ -26,7 +28,7 @@ async function google(r){
   if(rest==='/values:batchGet'){const ts=u.searchParams.getAll('ranges').map(x=>f.tabs.find(t=>t.title===tabName(x)));if(ts.some(t=>!t))return J({},400);return J({valueRanges:ts.map(t=>({values:structuredClone(t.rows)}))})}
   if(rest===':batchUpdate'){for(const q of req.postDataJSON().requests){if(q.addSheet)f.tabs.push({title:q.addSheet.properties.title,sheetId:f.tabs.length+1,rows:[]});if(q.updateSheetProperties){const t=f.tabs.find(x=>x.sheetId===q.updateSheetProperties.properties.sheetId);t.title=q.updateSheetProperties.properties.title}}return J({})}
   const vm=rest.match(/^\/values\/(.+?)(:clear)?$/);
-  if(vm){const t=f.tabs.find(x=>x.title===tabName(vm[1]));if(!t)return J({},400);if(vm[2]){t.rows=[];return J({})}if(m==='PUT'){t.rows=structuredClone(req.postDataJSON().values).map(r=>{while(r.length&&r[r.length-1]==='')r.pop();return r}).filter((r,i,a)=>r.length||a.slice(i).some(x=>x.length));while(t.rows.length&&!t.rows[t.rows.length-1].length)t.rows.pop();return J({})}}
+  if(vm){const t=f.tabs.find(x=>x.title===tabName(vm[1]));if(!t)return J({},400);if(vm[2]){t.rows=[];return J({})}if(m==='PUT'){f.modified=G.mod;t.rows=structuredClone(req.postDataJSON().values).map(r=>{while(r.length&&r[r.length-1]==='')r.pop();return r}).filter((r,i,a)=>r.length||a.slice(i).some(x=>x.length));while(t.rows.length&&!t.rows[t.rows.length-1].length)t.rows.pop();return J({})}}
  }
  return J({},404);
 }
@@ -53,7 +55,7 @@ async function main(){
  browser=await playwright.chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
  const open=async p=>{await p.evaluate(()=>{BB.go('stats');document.querySelectorAll('details[data-fold="sales"]').forEach(d=>d.open=true)});await p.waitForSelector('#stats-sales')};
  for(const width of [400,360]){
-  G.files={};G.n=0;
+  G.files={};G.n=0;G.mod='2026-11-09T01:30:00Z';
   /* 社員一覧（HUBの設定を書く先）とフォルダ */
   G.files.folder0000000000000000001={id:'folder0000000000000000001',name:'CPG HUB データ',owner:ADMIN,created:'2026-10-01T00:00:00Z',perms:[],tabs:[]};
   G.files.list00000000000000000001={id:'list00000000000000000001',name:'CPG HUB_社員一覧',owner:ADMIN,created:'2026-10-01T00:00:00Z',perms:[],tabs:[{title:'社員',sheetId:0,rows:[]}]};
@@ -84,6 +86,22 @@ async function main(){
    const row=t9.rows.findIndex(r=>r[0]==='CP'&&Number(r[1])===30000000);assert.ok(row>0);t9.rows[row][3]='22,000,000';t9.rows[row+1][4]='あいうえ';
    await A.p.click('[data-act=salesload]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);await A.p.click('[data-sales-month="2026-09"]');
    const t=await A.p.textContent('#stats-sales');assert.match(t,/22,000,000円/);assert.match(t,/読めなかったところがあります：.*「実績粗利」/);
+  });
+  await check('毎日の更新：同期のたびに売上報告を読み直す。今日（日本時間）に更新がなければ「今日はまだ更新されていません」を目立たせる '+width+'px',async()=>{
+   const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）');
+   assert.match(await A.p.textContent('#stats-sales'),/シートの最終更新 11\/9 10:30（今日）/);
+   f.modified='2026-11-08T14:59:00Z';/* 11/8 23:59（日本時間）＝昨日 */
+   let rows=await sync(A.p);await A.p.waitForFunction(()=>BB.ui.gsync.rows.some(x=>x.name==='売上報告'));rows=await A.p.evaluate(()=>BB.ui.gsync.rows);
+   const sr=rows.find(x=>x.name==='売上報告');assert.equal(sr.ok,false);assert.match(sr.msg,/今日はまだ更新されていません（最終更新 11\/8 23:59）/);
+   assert.match(await A.p.textContent('.gsync'),/× 売上報告：/);
+   await open(A.p);const b=await A.p.textContent('#stats-sales .banner');assert.match(b,/今日はまだ更新されていません。シートの最終更新 11\/8 23:59/);
+   if(width===400)await A.p.locator('#stats-sales').screenshot({path:path.join(require('node:os').tmpdir(),'sales-stale-400.png')});
+   const t9=f.tabs.find(x=>x.title==='2026-10'),row=t9.rows.findIndex(r=>r[0]==='CP'&&r[3]!==undefined&&/^\d/.test(String(r[3])));t9.rows[row][3]='12,345,000';
+   f.modified='2026-11-08T15:00:00Z';/* 11/9 0:00（日本時間）＝今日 */
+   await sync(A.p);await A.p.waitForFunction(()=>BB.ui.gsync.rows.some(x=>x.name==='売上報告'));
+   const sr2=(await A.p.evaluate(()=>BB.ui.gsync.rows)).find(x=>x.name==='売上報告');assert.equal(sr2.ok,true);assert.match(sr2.msg,/今日の更新を読みました（11\/9 00:00）/);
+   await open(A.p);await A.p.click('[data-sales-month="2026-10"]');const t=await A.p.textContent('#stats-sales');assert.match(t,/12,345,000円/,'read again by sync');assert.doesNotMatch(t,/今日はまだ更新されていません/);
+   assert.ok(await overflow(A.p)<=0);assert.deepEqual(A.errors,[]);
   });
   await A.c.close();
   /* 社員の端末には出ない */
