@@ -204,6 +204,8 @@ ol.hist li{overflow-wrap:anywhere}
 /* v1.50.39 ホームの「タスクリクエストを出す」はオレンジで目立たせる（明るい画面・暗い画面とも、濃い文字で読みやすく） */
 .btn.req-go{background:#f5a524;border-color:#d4860b;color:#2b1a00;font-weight:800}
 .btn.req-go:active{background:#e0950f}
+.sales-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:360px){.sales-grid{grid-template-columns:1fr}}
 .reqbox{display:flex;flex-direction:column;gap:8px;padding:10px 0 4px;border-bottom:1px dashed var(--line)}
 .reqbox h3{margin:0;font-size:16px;color:var(--amber)}
 /* 設定の欄の開け閉め */
@@ -423,8 +425,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.39" title="使い方マニュアルを開く">v1.50.39・11/11更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.39" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.40" title="使い方マニュアルを開く">v1.50.40・11/12更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.40" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -484,10 +486,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.39"></script>
+<script src="./share-management.js?v=1.50.40"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.39"></script>
-<script src="./calendar-view-scope.js?v=1.50.39"></script>
+<script src="./view-scope.js?v=1.50.40"></script>
+<script src="./calendar-view-scope.js?v=1.50.40"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2270,7 +2272,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.39";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.40";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2431,8 +2433,8 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.39" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.39" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  (D().admin?foldSec("sales","売上報告（試作・社長だけ）",salesSec(),!!ui.salesBusy):'')+exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.40" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.40" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3300,6 +3302,7 @@ async function adminSync(log){
       company:String(r["会社"]||""),role:ROLES.includes(String(r["役割"]))?String(r["役割"]):"社員",gmCo:COMPANIES.includes(String(r["GMの会社"]))?String(r["GMの会社"]):"",boxId:String(r["指示箱ID"]||old.boxId||""),charge:chargeNorm(r["担当の会社"]),displayName:dispNorm(r["表示名"]),caseCode:codeNorm(r["受付番号の記号"])||codeNorm(old.caseCode),gmLead:String(r["GM統括"]||"").trim()==="統括"}}).concat(local);
   d.staff=CPGNames.overlay(next,await namesRead(d.listId));save();found.list=true;found.n=d.staff.length;
   await viewListResolve(listV[HUBSET_TAB],log);
+  {const sid=hubSetGet(listV[HUBSET_TAB],SALES_KEY);if(sid&&d.salesId!==sid){d.salesId=sid;save()}}
   return found;
 }
 /* v1.50.36 見る人用一覧は、社長のどの端末でも同じ1つを使う。どれを使うかは社員一覧のファイルの「HUBの設定」タブに残す（社長の端末どうしで共通）。
@@ -3321,6 +3324,69 @@ async function viewListResolve(setRows,log){
   if(viewListPicked)return;viewListPicked=true;/* 一覧を探すのは開いてから1回だけ */
   let fs=[];try{fs=await viewListFiles()}catch(err){return}
   if(fs.length&&d.viewListId!==fs[0].id){d.viewListId=fs[0].id;save();if(fs.length>1)log("見る人用一覧が"+fs.length+"つあります。いちばん新しく更新されたものを使います（次に共有を合わせるとき、社長のどの端末でもこれを使うように社員一覧に残します）",false)}
+}
+/* v1.50.40 売上報告（試作・社長の端末だけ）：Googleスプレッドシート「CPG HUB_売上報告」を読んで、月ごとに会社の目標・実績と担当者別を出す。
+   読むだけで書かない（試作用のシートを作るときだけ、架空の数字を書く）。共有はしない。どのシートかは社員一覧の「HUBの設定」に残す（社長の端末どうしで同じ）。
+   入力の形：1か月を1つのタブ（名前は「2026-10」のように年-月）。「会社｜目標売上｜目標粗利｜実績売上｜実績粗利｜社長確認日｜本部長確認日」の表と、
+   「会社｜担当｜完了件数｜完了金額｜完了粗利｜施工中件数｜施工中金額」の表。見出しの行を探して読むので、行の位置は前後してもよい */
+const SALES_KEY="売上報告ID", SALES_CO=["会社","目標売上","目標粗利","実績売上","実績粗利","社長確認日","本部長確認日"], SALES_ST=["会社","担当","完了件数","完了金額","完了粗利","施工中件数","施工中金額"];
+const salesNum=v=>{const t=String(v??"").replace(/[,，円¥￥\s]/g,"");if(t==="")return null;const n=Number(t);return Number.isFinite(n)?n:NaN};
+function salesParse(rows){
+  const cell=(r,i)=>String((r||[])[i]??"").trim(),out={cos:[],staff:[],bad:[]};
+  const hdr=cols=>rows.findIndex(r=>cols.every((c,i)=>cell(r,i)===c));
+  const block=(cols,fn)=>{const at=hdr(cols);if(at<0)return false;for(let i=at+1;i<rows.length;i++){const r=rows[i];if(!cols.some((_,j)=>cell(r,j)))break;if(cell(r,0)==="会社")break;fn(r,i+1)}return true};
+  const num=(r,i,row,label)=>{const n=salesNum((r||[])[i]);if(Number.isNaN(n))out.bad.push(row+"行目の「"+label+"」");return Number.isNaN(n)?null:n};
+  const okCo=block(SALES_CO,(r,row)=>{if(!COMPANIES.includes(cell(r,0)))return out.bad.push(row+"行目の会社「"+cell(r,0)+"」");
+    out.cos.push({co:cell(r,0),goal:num(r,1,row,"目標売上"),goalP:num(r,2,row,"目標粗利"),amt:num(r,3,row,"実績売上"),prof:num(r,4,row,"実績粗利"),boss:cell(r,5),hq:cell(r,6)})});
+  const okSt=block(SALES_ST,(r,row)=>{if(!COMPANIES.includes(cell(r,0)))return out.bad.push(row+"行目の会社「"+cell(r,0)+"」");
+    out.staff.push({co:cell(r,0),name:cell(r,1),doneN:num(r,2,row,"完了件数"),done:num(r,3,row,"完了金額"),doneP:num(r,4,row,"完了粗利"),wipN:num(r,5,row,"施工中件数"),wip:num(r,6,row,"施工中金額")})});
+  if(!okCo)out.bad.unshift("「"+SALES_CO.join("｜")+"」の見出しの行が見つかりません");
+  if(!okSt)out.bad.push("「"+SALES_ST.join("｜")+"」の見出しの行が見つかりません（担当者別は出しません）");
+  return out;
+}
+async function salesLoad(){
+  const id=D().salesId;if(!id)return;await gAuthorize(true);
+  const tabs=(await sheetTabNames(id)).filter(t=>/^\d{4}-\d{2}$/.test(t)).sort();
+  const v=tabs.length?await sheetRead(id,tabs):{};
+  ui.sales={at:Date.now(),id,months:tabs.map(t=>({key:t,...salesParse(v[t]||[])}))};
+  if(!ui.salesMonth||!tabs.includes(ui.salesMonth))ui.salesMonth=tabs.at(-1)||"";
+}
+/* 試作用：架空の数字だけのシートを作る（実在の名前・金額は入れない） */
+async function salesCreateDemo(){
+  const d=D();await gAuthorize(true);if(!eq(await myEmail(),ADMIN_ACCOUNT))throw Error("社長の管理アカウントで作ってください");if(!d.folder||!d.listId)throw Error("先に「管理をはじめる」をしてください");
+  const now=todayS(),m0=addMonths(now.slice(0,7),-2),m1=addMonths(now.slice(0,7),-1);
+  const f=await driveCreate({name:"CPG HUB_売上報告（試作・架空）",mimeType:"application/vnd.google-apps.spreadsheet",parents:[d.folder]});
+  await sheetTabs(f.id,m0,[m1]);
+  const demo=k=>[["売上報告（試作・架空の数字）",k],[],SALES_CO,["CP",30000000,10000000,21000000*k,6300000*k,"",""],["CPY",16000000,6000000,12800000*k,4500000*k,"",""],["AT",25000000,9000000,17500000*k,5600000*k,"",""],[],SALES_ST,
+    ["CP","見本 一郎",3,400000,120000,10,3000000],["CP","見本 二郎",5,900000,300000,8,2500000],["CPY","見本 四郎",4,1000000,350000,9,4000000],["AT","見本 六郎",6,1500000,520000,15,6000000]];
+  await sheetWrite(f.id,m0,demo(1).map(r=>r.map(x=>typeof x==="number"?Math.round(x):x)));await sheetWrite(f.id,m1,demo(0.5).map(r=>r.map(x=>typeof x==="number"?Math.round(x):x)));
+  await hubSetWrite(SALES_KEY,f.id);d.salesId=f.id;save();await salesLoad();
+}
+const addMonths=(ym,n)=>{const [y,m]=ym.split("-").map(Number),t=y*12+(m-1)+n;return Math.floor(t/12)+"-"+String(t%12+1).padStart(2,"0")};
+function salesSec(){
+  const d=D(),S=ui.sales,busy=ui.salesBusy?' disabled':'',msg=ui.salesMsg?'<p role="status" style="margin:0;color:'+(ui.salesMsg.ok?'var(--green)':'var(--red)')+'">'+h(ui.salesMsg.text)+'</p>':'';
+  const head='<div class="sec-h"><h2>売上報告</h2><span class="chip">試作・社長だけ</span></div>';
+  if(!d.salesId)return '<section class="sec" id="stats-sales" style="display:flex;flex-direction:column;gap:8px">'+head+'<p class="note" style="margin:0">Googleスプレッドシートの売上報告を読んで、会社ごとの目標・実績と担当者別を出します。今は試作で、社長の端末にだけ出ます（社員には見えません）。</p><div class="row"><button class="btn pri" type="button" data-act="salesdemo"'+busy+'>試作用のシートを作る（架空のデータ）</button></div>'+msg+'</section>';
+  const link='<a class="btn sm" href="https://docs.google.com/spreadsheets/d/'+h(d.salesId)+'/edit" target="_blank" rel="noopener" style="text-decoration:none">シートを開く</a>';
+  const ctl='<div class="row"><button class="btn sm" type="button" data-act="salesload"'+busy+'>'+(ui.salesBusy?'読んでいます…':S?'読み直す':'読み込む')+'</button>'+link+'</div>';
+  if(!S||S.id!==d.salesId)return '<section class="sec" id="stats-sales" style="display:flex;flex-direction:column;gap:8px">'+head+ctl+msg+'</section>';
+  const M=S.months.find(x=>x.key===ui.salesMonth);
+  const yen0=n=>n==null?"—":Math.round(n).toLocaleString("ja-JP")+"円",pc=(a,b)=>a==null||!b?null:Math.round(a/b*100),pct=v=>v==null?"—":v+"%";
+  const bar=(v,c)=>'<div style="height:10px;border-radius:99px;background:var(--line);overflow:hidden"><div style="width:'+Math.max(0,Math.min(100,v||0))+'%;height:100%;background:'+c+'"></div></div>';
+  const tabs='<div class="row" style="gap:6px;flex-wrap:wrap">'+S.months.map(x=>'<button class="btn sm'+(x.key===ui.salesMonth?' pri':'')+'" type="button" data-sales-month="'+h(x.key)+'">'+Number(x.key.slice(0,4))+'年'+Number(x.key.slice(5))+'月</button>').join("")+'</div>';
+  if(!M)return '<section class="sec" id="stats-sales" style="display:flex;flex-direction:column;gap:8px">'+head+'<p class="note" style="margin:0">「2026-10」のような名前のタブがありません。</p>'+ctl+msg+'</section>';
+  const sum=k=>M.cos.reduce((a,c)=>a+(c[k]||0),0);
+  const total='<div class="panel" style="display:flex;flex-direction:column;gap:4px"><h3 style="margin:0">3社の合計</h3><div style="font-size:22px;font-weight:800" class="num">'+yen0(sum("amt"))+'</div><div class="note num">目標 '+yen0(sum("goal"))+'・達成 '+pct(pc(sum("amt"),sum("goal")))+'／粗利 '+yen0(sum("prof"))+'</div></div>';
+  const card=c=>{const st=M.staff.filter(x=>x.co===c.co),ra=pc(c.amt,c.goal),rp=pc(c.prof,c.goalP);
+    return '<div class="panel" style="display:flex;flex-direction:column;gap:8px"><h3 style="margin:0">'+h(c.co)+'<span class="note" style="font-weight:400;margin-left:6px">'+h(CO_LABEL[c.co]||"")+'</span></h3>'+
+    '<div class="sales-grid"><div><div class="note">売上（実績／目標）</div><div class="num" style="font-size:20px;font-weight:800">'+yen0(c.amt)+'</div><div class="note num">目標 '+yen0(c.goal)+'・<b>達成 '+pct(ra)+'</b></div>'+bar(ra,'var(--blue)')+'</div>'+
+    '<div><div class="note">粗利（実績／目標）</div><div class="num" style="font-size:20px;font-weight:800">'+yen0(c.prof)+'</div><div class="note num">目標 '+yen0(c.goalP)+'・<b>達成 '+pct(rp)+'</b>・粗利率 '+pct(pc(c.prof,c.amt))+'</div>'+bar(rp,'var(--green)')+'</div></div>'+
+    '<div class="note">確認日：社長 '+h(c.boss||"—")+'・本部長 '+h(c.hq||"—")+'</div>'+
+    (st.length?'<details><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700">担当者別（'+st.length+'人）</summary><div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>担当</th><th>完了<br>件・金額</th><th>粗利</th><th>施工中<br>件・金額</th></tr></thead><tbody>'+
+      st.map(x=>'<tr><td>'+h(x.name)+'</td><td class="num">'+(x.doneN??"—")+'件<br>'+yen0(x.done)+'</td><td class="num">'+yen0(x.doneP)+'</td><td class="num">'+(x.wipN??"—")+'件<br>'+yen0(x.wip)+'</td></tr>').join("")+'</tbody></table></div></details>':'')+'</div>'};
+  const bad=M.bad.length?'<p class="banner" role="status" style="margin:0">読めなかったところがあります：'+h(M.bad.slice(0,5).join("・"))+(M.bad.length>5?" ほか":"")+'</p>':'';
+  return '<section class="sec" id="stats-sales" style="display:flex;flex-direction:column;gap:10px">'+head+tabs+bad+total+M.cos.map(card).join("")+
+    '<p class="note" style="margin:0">「'+h(M.key)+'」のタブを読んでいます（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）。共有はしていません。</p>'+ctl+msg+'</section>';
 }
 /* 古い見る人用一覧に「移転先」を書く。見る人の端末は、次の同期でそれを見て新しい一覧に移る */
 async function viewListMarkOld(){const d=D();if(!d.viewListId)return 0;let n=0;
@@ -4335,6 +4401,7 @@ document.addEventListener("click",e=>{
   if(el.dataset.drole!=null){ui.dRole=Number(el.dataset.drole);render();return}
   if(el.dataset.bdone){if(manualTodoBusy())return toast("同期などの処理が終わってから操作してください");const t=requestBoxTasks().find(t=>t.requestId===el.dataset.bdone);if(!t||t.stale)return;ui.bDone={id:t.requestId,own:D().sheetId,box:t.boxId};render();document.getElementById("bd_memo")?.focus();return;}
   if(el.dataset.odone){ui.oDone=el.dataset.odone;render();showAlert();const m=document.getElementById("od_memo");if(m)m.focus();return}
+  if(el.dataset.salesMonth){ui.salesMonth=el.dataset.salesMonth;render();return}
   if(el.dataset.bbrestore){const x=(ui.bbList||[]).find(y=>y.id===el.dataset.bbrestore);if(x){ui.bbAsk={id:x.id,name:x.name};render()}return}
   if(el.dataset.bcancel){ui.bCancel=el.dataset.bcancel;render();showAlert();return}
   if(el.dataset.ocancel){ui.oCancel=el.dataset.ocancel;render();showAlert();return}
@@ -4403,6 +4470,8 @@ document.addEventListener("click",e=>{
     if(!r.changes.length){ui.dmsg=[{ok:true,text:"変わった記号はありません"}];render();return}
     const log=[];ui.dbusy=true;ui.dview="";ui.dmsg=log;render();
     adminCodesSave(r.changes,(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()}).then(()=>{ui.dCodes=false;ui.dCodesDraft=null},err=>{log.push({ok:false,text:"途中で止まりました："+(err.message==="http"?dMsg(err):err.message||dMsg(err))})}).finally(()=>{ui.dbusy=false;render()});return}
+  if(a==="salesdemo"||a==="salesload"){if(ui.salesBusy)return;ui.salesBusy=true;ui.salesMsg=null;render();
+    (a==="salesdemo"?salesCreateDemo():salesLoad()).then(()=>{ui.salesMsg={ok:true,text:a==="salesdemo"?"試作用のシートを作りました（架空のデータ）。シートの数字を変えて「読み直す」で試せます":"読み込みました"}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="bbcreate"){ui.bbName=val("bb_name");ui.bbBusy=true;ui.bbMsg=null;render();
     bbCreate(ui.bbName).then(c=>{ui.bbMsg={ok:true,text:"控えを作りました（"+bbCountText(c)+"）。これからは同期のたびに控えます"}},err=>{ui.bbMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.bbBusy=false;render()});return}
   if(a==="bbnow"){ui.bbBusy=true;ui.bbMsg=null;render();
