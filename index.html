@@ -434,8 +434,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.41" title="使い方マニュアルを開く">v1.50.41・11/12更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.41" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.42" title="使い方マニュアルを開く">v1.50.42・11/13更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.42" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -495,10 +495,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.41"></script>
+<script src="./share-management.js?v=1.50.42"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.41"></script>
-<script src="./calendar-view-scope.js?v=1.50.41"></script>
+<script src="./view-scope.js?v=1.50.42"></script>
+<script src="./calendar-view-scope.js?v=1.50.42"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2289,7 +2289,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.41";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.42";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2451,7 +2451,7 @@ function vStats(){
     ''+
     '</form>')+
   (D().admin?foldSec("sales","売上報告（試作・社長だけ）",salesSec(),!!ui.salesBusy):'')+exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.41" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.41" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.42" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.42" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -4367,7 +4367,23 @@ function go(view,extra){
     if(ui.view!=="rform"||(extra?.rId||null)!==(ui.rId||null))rFormClear();
     try{receiptInputApi();if(dbPersistedRaw===null&&localStorage.getItem(KEY)===null&&!save())return;if(localStorage.getItem(KEY)!==dbPersistedRaw)throw Error("別の画面で記録が更新されています。再読み込みしてから領収書を開いてください。");receiptSession=extra?.rId&&!rEditable(rFind(extra.rId))?null:receiptFileApi().open(localStorage,KEY,extra?.rId||null);}catch(error){toast(error.message,6500);return;}
   }
-if(view!=="rcpt")rClearDl();if(view!=="rform")rFormClear();Object.assign(ui,{view,wonCancel:null,coEdit:false,rcvEdit:false,rcvSuggest:"",acct:false,exAsk:false,rcCancel:null,cdel:null,cdelMsg:"",cdelBusy:false,cdelCal:true},extra||{});render();window.scrollTo(0,0)}
+if(view!=="rcpt")rClearDl();if(view!=="rform")rFormClear();
+  /* v1.50.42 ほかの画面から予定を開いたら、週表示は今日の行が見える所まで動かす（PAPA HUBと同じ） */
+  const toCal=view==="cal"&&ui.view!=="cal";
+  Object.assign(ui,{view,wonCancel:null,coEdit:false,rcvEdit:false,rcvSuggest:"",acct:false,exAsk:false,rcCancel:null,cdel:null,cdelMsg:"",cdelBusy:false,cdelCal:true},extra||{});render();window.scrollTo(0,0);if(toCal)calScrollToday()}
+/* 週表示で今日の行が画面（上の見出しと下のメニューの間）に入っていなければ、真ん中に来るように動かす。入っていれば動かさない */
+function calScrollToday(){
+  const t=todayS(),ok=()=>ui.view==="cal"&&ui.calView==="week";if(!ok())return;
+  const raf=typeof requestAnimationFrame==="function"?requestAnimationFrame:f=>setTimeout(f,16);
+  raf(()=>raf(()=>{if(!ok())return;
+    const b=main.querySelector('.wkd[data-day="'+t+'"]'),row=b&&b.closest('.wkrow');if(!row)return;
+    const hd=document.querySelector('header.top'),nv=document.querySelector('nav.bottom'),vv=window.visualViewport,vt=vv?vv.offsetTop:0,vb=vv?vt+vv.height:window.innerHeight;
+    const top=Math.max(vt,hd?hd.getBoundingClientRect().bottom:0),bottom=Math.min(vb,nv?nv.getBoundingClientRect().top:vb),r=row.getBoundingClientRect();
+    if(r.top>=top&&r.bottom<=bottom)return;
+    const y=r.height>bottom-top-16?window.scrollY+r.top-top-8:window.scrollY+r.top+r.height/2-(top+bottom)/2;
+    window.scrollTo({top:Math.max(0,y),behavior:"auto"});
+  }));
+}
 let toastT;
 function toast(msg,ms){const el=document.getElementById("toast");el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,ms||2600)}
 /* An on-page confirmation can open near the bottom, behind the menu bar; bring it to the middle of the screen */
@@ -4437,8 +4453,8 @@ document.addEventListener("click",e=>{
     render();toast("済みにしました");
     gAuthorize(true).then(()=>bossDoneWrite()).catch(err=>{if(err&&err.message==="signin")return;toast("社長のほかの端末にはまだ届いていません（次の同期でもう一度保存します）",6000)});return}
   if(el.dataset.day){ui.calDay=el.dataset.day;ui.calMonth=ui.calDay.slice(0,7);ui.calView="day";render();return}
-  if(el.dataset.cv){ui.calView=el.dataset.cv;render();return}
-  if(el.dataset.shift!=null){ui.calDay=el.dataset.shift==="today"?todayS():addDays(ui.calDay,el.dataset.shift);ui.calMonth=ui.calDay.slice(0,7);render();return}
+  if(el.dataset.cv){ui.calView=el.dataset.cv;render();calScrollToday();return}
+  if(el.dataset.shift!=null){const now=el.dataset.shift==="today";ui.calDay=now?todayS():addDays(ui.calDay,el.dataset.shift);ui.calMonth=ui.calDay.slice(0,7);render();if(now)calScrollToday();return}
   if(el.dataset.mon!=null){const n=Number(el.dataset.mon);if(n===0){ui.calMonth=todayS().slice(0,7);ui.calDay=todayS()}else{const [y,m]=ui.calMonth.split("-").map(Number);const d=new Date(y,m-1+n,1);ui.calMonth=d.getFullYear()+"-"+pad(d.getMonth()+1);ui.calDay=ymd(d)}render();return}
   if(el.dataset.tp){ui.tPeriod=el.dataset.tp;render();return}
   if(el.dataset.tt){ui.tTantou=el.dataset.tt;render();return}
