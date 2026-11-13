@@ -77,8 +77,9 @@ async function main(){
    await A.p.click('[data-sales-month="2026-09"]');assert.match(await A.p.textContent('#stats-sales'),/51,300,000円/);
    for(const sm of await A.p.$$('#stats-sales details:not([data-fold]):not([hidden]) > summary'))await sm.click();
    const t2=await A.p.textContent('#stats-sales');
-   for(const k of ['前月の金額','最終粗利予想','人件費','Notes未入力','目標粗利率','確認日：社長','見本 一郎','第1事業部','第2事業部','完了物件','施工中','合計','1件単価','営業外売上','毎日の受注（受注Total','更新日'])assert.ok(t2.includes(k),k);
+   for(const k of ['前月の金額','最終粗利予想','人件費','Notes未入力','目標粗利率','確認日　社長','見本 一郎','第1事業部','第2事業部','完了物件','施工中','合計','1件単価','営業外売上','毎日の受注（受注Total','更新日'])assert.ok(t2.includes(k),k);
    assert.equal(await A.p.$$eval('#stats-sales .sales-col[data-sales-day^="CP|"]',a=>a.length),30);
+   assert.deepEqual(await A.p.$$eval('#stats-sales .sales-co h3',a=>a.map(x=>x.textContent)),['CP本社','ATアートテック','CPY横浜'],'company order CP, AT, CPY');
    await A.p.click('#stats-sales .sales-col[data-sales-day="CP|1"]');assert.equal(await A.p.$$eval('#stats-sales details:not([data-fold])[open]',a=>a.length)>0,true,'open sections stay open');
    if(width===400)await A.p.locator('#stats-sales .panel').nth(1).screenshot({path:path.join(require('node:os').tmpdir(),'sales-cp-400.png')});assert.match(await A.p.textContent('#stats-sales'),/1日：(\d+件・[\d,]+円|入力なし)/);
    assert.ok(await overflow(A.p)<=0,'overflow '+await overflow(A.p));
@@ -87,8 +88,10 @@ async function main(){
   await check('シートの数字を書き換えて「読み直す」と変わる。読めない数字は「読めなかったところ」に出す '+width+'px',async()=>{
    const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）'),t9=f.tabs.find(x=>x.title==='2026-09 会社');
    const row=t9.rows.findIndex(r=>r[0]==='CP'&&Number(r[1])===30000000);assert.ok(row>0);t9.rows[row][3]='22,000,000';t9.rows[row+1][4]='あいうえ';
+   /* シートの行の順を変えても、画面は CP・AT・CPY の順 */
+   {const hd=t9.rows[0],body=t9.rows.slice(1).reverse();t9.rows=[hd,...body]}
    await A.p.click('[data-act=salesload]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);await A.p.click('[data-sales-month="2026-09"]');
-   const t=await A.p.textContent('#stats-sales');assert.match(t,/22,000,000円/);assert.match(t,/読めなかったところがあります：.*「2026-09 会社」\d+行目の「実績粗利」/);
+   const t=await A.p.textContent('#stats-sales');assert.match(t,/22,000,000円/);assert.match(t,/読めなかったところがあります：.*「2026-09 会社」\d+行目の「実績粗利」/);assert.deepEqual(await A.p.$$eval('#stats-sales .sales-co h3',a=>a.map(x=>x.textContent.slice(0,3).replace(/[^A-Z]/g,''))),['CP','AT','CPY']);
   });
   await check('前の形（1か月を1つのタブ「2026-08」）も今までどおり読める。表を分けた月でタブが欠けていると「…のタブがありません」と出す '+width+'px',async()=>{
    const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）'),tb=n=>f.tabs.find(x=>x.title===n);
