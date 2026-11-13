@@ -239,7 +239,13 @@ tr.sales-sum td{border-top:2px solid var(--line)}
 .sales-edit{border:2px solid var(--accent);border-radius:12px;padding:4px 12px 12px}
 .sales-profbox{background:var(--green-soft);border-radius:10px;padding:8px 10px}
 /* v1.50.50 粗利の枠は横いっぱい（文字が大きい端末で細かく折り返していた）。売上はその下 */
-.sales-grid>.sales-profbox,.sales-grid>.sales-profbox+div{grid-column:1/-1}
+.sales-main{display:flex;flex-direction:column;gap:8px}
+/* v1.50.50 選べるもの（月・会社・入れるもの）は色の付いたボタン。選んでいるものは塗りつぶしと ✓ */
+#stats-sales .pick{background:var(--accent-soft);border:2px solid var(--accent);color:var(--accent);font-weight:700;min-height:44px;border-radius:99px;padding:0 14px;font-size:14px;cursor:pointer}
+#stats-sales .pick[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}#stats-sales .pick[aria-pressed="true"]::before{content:"✓ "}
+#stats-sales .picks{display:flex;flex-wrap:wrap;gap:6px}
+/* 入れられる欄は薄い黄色 */
+#stats-sales .sales-in input,#stats-sales .sales-in select{background:var(--amber-soft);border:2px solid var(--amber);border-radius:8px;color:var(--fg)}
 #stats-sales .sales-big{font-size:24px;font-weight:800;line-height:1.2}
 .sales-rate{font-size:15px;color:var(--fg)}.sales-rate b{font-size:20px;font-weight:800;color:var(--green)}.sales-st td,.sales-st th{padding:6px 3px}.sales-st td:nth-child(2),.sales-st td.num,.sales-st th{white-space:nowrap}
 .reqbox{display:flex;flex-direction:column;gap:8px;padding:10px 0 4px;border-bottom:1px dashed var(--line)}
@@ -3523,14 +3529,14 @@ function salesSec(){
   const ctl='<div class="row"><button class="btn sm" type="button" data-act="salesload"'+busy+'>'+(ui.salesBusy?'読んでいます…':S?'読み直す':'読み込む')+'</button>'+link+(demo?'<button class="btn sm" type="button" data-act="salesdemo"'+busy+'>試作用のシートを作り直す（架空）</button>':'')+'</div>';
   if(!S||S.id!==d.salesId)return wrap(ctl);
   const M=S.months.find(x=>x.key===ui.salesMonth);
-  const tabs='<div class="row" style="gap:6px;flex-wrap:wrap">'+S.months.map(x=>'<button class="btn sm'+(x.key===ui.salesMonth?' pri':'')+'" type="button" data-sales-month="'+h(x.key)+'">'+Number(x.key.slice(0,4))+'年'+Number(x.key.slice(5))+'月</button>').join("")+'</div>';
+  const tabs='<div class="picks" role="group" aria-label="月">'+S.months.map(x=>'<button class="pick" aria-pressed="'+(x.key===ui.salesMonth)+'" type="button" data-sales-month="'+h(x.key)+'">'+Number(x.key.slice(0,4))+'年'+Number(x.key.slice(5))+'月</button>').join("")+'</div>';
   if(!M)return wrap('<p class="note" style="margin:0">「2026-10」のような名前のタブがありません。</p>'+ctl);
   const y=n=>n==null?"—":Math.round(n).toLocaleString("ja-JP")+"円",cnt=n=>n==null?"—":n+"件",pc=(a,b)=>a==null||!b?null:Math.round(a/b*100),pt=v=>v==null?"—":v+"%";
   const sumBy=(arr,k)=>arr.reduce((a,x)=>a+(x[k]||0),0);
   const bar=(v,c)=>'<div style="height:10px;border-radius:99px;background:var(--line);overflow:hidden"><div style="width:'+Math.max(0,Math.min(100,v||0))+'%;height:100%;background:'+c+'"></div></div>';
   const kv=(k,v)=>'<div><div class="sales-lab">'+k+'</div><div class="num" style="font-weight:700">'+v+'</div></div>';
   const tot=k=>M.cos.reduce((a,c)=>a+(c[k]||0),0),dAll=M.days;
-  const total='<div class="panel" style="display:flex;flex-direction:column;gap:4px"><h3 style="margin:0">3社の合計</h3><div class="sales-grid"><div class="sales-profbox"><div class="sales-lab">粗利</div><div class="num sales-big">'+y(tot("実績粗利"))+'</div><div class="sales-rate num">粗利率 <b>'+pt(pc(tot("実績粗利"),tot("実績売上")))+'</b></div></div><div><div class="sales-lab">売上</div><div class="num" style="font-size:18px;font-weight:700">'+y(tot("実績売上"))+'</div><div class="note num">目標 '+y(tot("目標売上"))+'・達成 '+pt(pc(tot("実績売上"),tot("目標売上")))+'</div></div></div><div class="note num">受注Total '+cnt(sumBy(dAll,"n"))+'・'+y(sumBy(dAll,"amt"))+'</div></div>';
+  const total='<div class="panel" style="display:flex;flex-direction:column;gap:4px"><h3 style="margin:0">3社の合計</h3><div class="sales-main"><div><div class="sales-lab">売上</div><div class="num sales-big">'+y(tot("実績売上"))+'</div><div class="note num">目標 '+y(tot("目標売上"))+'・達成 '+pt(pc(tot("実績売上"),tot("目標売上")))+'</div></div><div class="sales-profbox"><div class="sales-lab">粗利</div><div class="num sales-big">'+y(tot("実績粗利"))+'</div><div class="sales-rate num">粗利率 <b>'+pt(pc(tot("実績粗利"),tot("実績売上")))+'</b></div></div></div><div class="note num">受注Total '+cnt(sumBy(dAll,"n"))+'・'+y(sumBy(dAll,"amt"))+'</div></div>';
   /* v1.50.48 スマホで右が切れないように：状態は名前の下に小さく、金額・粗利は「円」を見出しにだけ付ける */
   const yn=n=>n==null?"—":Math.round(n).toLocaleString("ja-JP");
   const stTable=st=>{const groups=[...new Set(st.map(x=>x.group||""))],hasBase=st.some(x=>x.base!=null),cols=hasBase?5:4,
@@ -3564,10 +3570,10 @@ function salesSec(){
       (curM&&!tdc?'<p class="note" style="margin:0">シートの確認のタブに今日の行がありません</p>':'')+'</div>':'';
     const st=M.staff.filter(x=>x.co===c.co),ds=M.days.filter(x=>x.co===c.co),ra=pc(c["実績売上"],c["目標売上"]),rp=pc(c["実績粗利"],c["目標粗利"]),dn=sumBy(ds,"n"),da=sumBy(ds,"amt");
     return '<div class="panel" style="display:flex;flex-direction:column;gap:10px"><div class="sales-co"><h3>'+h(c.co)+'<span>'+h(CO_LABEL[c.co]||"")+'</span></h3><span class="sales-upd">更新日 <b>'+h(c["更新日"]||"—")+'</b></span></div>'+
-    '<div class="sales-grid">'+
-    /* v1.50.49 粗利を先に大きく。粗利率を太字で目立たせ、達成は控えめに */
-    '<div class="sales-profbox"><div class="sales-lab">粗利（実績）</div><div class="num sales-big">'+y(c["実績粗利"])+'</div><div class="sales-rate num">粗利率 <b>'+pt(pc(c["実績粗利"],c["実績売上"]))+'</b><span class="note">（目標粗利率 '+pt(pc(c["目標粗利"],c["目標売上"]))+'）</span></div><div class="note num">目標 '+y(c["目標粗利"])+'・達成 '+pt(rp)+'</div>'+bar(rp,'var(--green)')+'</div>'+
-    '<div><div class="sales-lab">売上（実績）</div><div class="num" style="font-size:18px;font-weight:700">'+y(c["実績売上"])+'</div><div class="note num">目標 '+y(c["目標売上"])+'・達成 '+pt(ra)+'</div>'+bar(ra,'var(--blue)')+'</div></div>'+
+    '<div class="sales-main">'+
+    /* v1.50.50 並びは見慣れた 売上 → 粗利。粗利は枠で目立たせ、粗利率を太字に */
+    '<div><div class="sales-lab">売上（実績）</div><div class="num sales-big">'+y(c["実績売上"])+'</div><div class="note num">目標 '+y(c["目標売上"])+'・達成 '+pt(ra)+'</div>'+bar(ra,'var(--blue)')+'</div>'+
+    '<div class="sales-profbox"><div class="sales-lab">粗利（実績）</div><div class="num sales-big">'+y(c["実績粗利"])+'</div><div class="sales-rate num">粗利率 <b>'+pt(pc(c["実績粗利"],c["実績売上"]))+'</b><span class="note">（目標粗利率 '+pt(pc(c["目標粗利"],c["目標売上"]))+'）</span></div><div class="note num">目標 '+y(c["目標粗利"])+'・達成 '+pt(rp)+'</div>'+bar(rp,'var(--green)')+'</div></div>'+
     '<div class="sales-grid sales-kv">'+kv("前月の金額",y(c["前月売上"]))+kv("前月の粗利",c["前月粗利"]==null?"—":y(c["前月粗利"])+'（'+pt(pc(c["前月粗利"],c["前月売上"]))+'）')+kv("最終粗利予想",y(c["最終粗利予想"]))+'</div>'+/* v1.50.47 人件費・Notes未入力は画面に出さない（シートの列は読むだけ残す） */
     '<div class="note"><span class="sales-lab">確認日</span>　社長 '+h(lastChk("boss")||c["社長確認日"]||"—")+'・本部長 '+h(lastChk("hq")||c["本部長確認日"]||"—")+'・'+h(c["GMの名前"]||"GM")+' '+h(lastChk("gm")||c["GM確認日"]||"—")+'</div>'+chkBox+
     (st.length?'<details><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700">担当者別（'+new Set(st.map(x=>x.name)).size+'人）</summary>'+stTable(st)+'</details>':'')+
@@ -3584,8 +3590,8 @@ function salesSec(){
     :ekind==="co"?(ec?["目標売上","目標粗利","実績売上","実績粗利","前月売上","前月粗利","最終粗利予想"].map(k=>inp("se_co_"+SALES_COLS.co[k],k+"（円）",ec[k],true)).join(""):'<p class="note" style="margin:0">'+eco+'の会社の行がシートにありません</p>')
     :M.staff.filter(x=>x.co===eco).map((x,i)=>'<div class="sales-in-st"><b>'+h(x.name)+'</b><span class="note">'+h(x.state)+'</span><div class="row" style="gap:6px">'+inp("se_st_"+i+"_n","物件数",x.n)+inp("se_st_"+i+"_amt","金額（円）",x.amt,true)+(x.state==="施工中"?'':inp("se_st_"+i+"_prof","粗利（円）",x.prof,true))+'</div></div>').join("")||'<p class="note" style="margin:0">担当者の行がシートにありません</p>';
   const editor='<details class="sales-edit"'+(ui.salesEdOpen?' open':'')+'><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:800;font-size:16px">数字を入れる（'+Number(M.key.slice(5))+'月）</summary><div style="display:flex;flex-direction:column;gap:8px">'+
-    '<div class="seg" role="group" aria-label="会社">'+SALES_ORDER.map(k=>'<button type="button" data-sales-edco="'+k+'" aria-pressed="'+(k===eco)+'">'+k+'</button>').join("")+'</div>'+
-    '<div class="seg" role="group" aria-label="入れるもの">'+[["day","毎日の受注"],["co","会社の数字"],["st","担当者別"]].map(([k,l])=>'<button type="button" data-sales-edkind="'+k+'" aria-pressed="'+(k===ekind)+'">'+l+'</button>').join("")+'</div>'+
+    '<div class="sales-lab">会社を選ぶ</div><div class="picks" role="group" aria-label="会社">'+SALES_ORDER.map(k=>'<button class="pick" type="button" data-sales-edco="'+k+'" aria-pressed="'+(k===eco)+'">'+k+'</button>').join("")+'</div>'+
+    '<div class="sales-lab">入れるものを選ぶ</div><div class="picks" role="group" aria-label="入れるもの">'+[["day","毎日の受注"],["co","会社の数字"],["st","担当者別"]].map(([k,l])=>'<button class="pick" type="button" data-sales-edkind="'+k+'" aria-pressed="'+(k===ekind)+'">'+l+'</button>').join("")+'</div>'+
     '<div class="sales-in-wrap">'+eform+'</div><div class="row"><button class="btn pri" type="button" data-act="salessave"'+busy+'>シートに保存</button></div>'+
     '<p class="note" style="margin:0">変えたマスだけを書きます。会社の「更新日」は今日になります。シートで誰かが先に変えていたら、書かずに止めます。</p></div></details>';
   return wrap(tabs+fresh+bad+editor+total+cos.map(card).join("")+'<p class="note" style="margin:0">「'+h(M.key)+'」の月のタブを読んでいます（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）。共有はしていません。</p>'+ctl);

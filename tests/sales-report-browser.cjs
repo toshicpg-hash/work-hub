@@ -90,7 +90,13 @@ async function main(){
    /* v1.50.49 名前は1人1回（2行目は状態だけ）。会社のカードは粗利が先で、粗利率を目立たせる */
    const cpNames=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-st tbody td:first-child').allTextContents();
    assert.equal(cpNames.filter(x=>x.startsWith('見本 一郎')).length,1,'one name per person '+cpNames);assert.ok(cpNames.includes('施工中'),'second row shows only the state');
-   assert.match(await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-grid > div').first().textContent(),/^粗利（実績）.*粗利率 \d+%/);
+   /* v1.50.50 並びは 売上 → 粗利（粗利は枠で目立たせる） */
+   const mains=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-main > div').allTextContents();
+   assert.match(mains[0],/^売上（実績）/);assert.match(mains[1],/^粗利（実績）.*粗利率 \d+%/);
+   assert.match((await A.p.locator('#stats-sales .panel').filter({hasText:'3社の合計'}).locator('.sales-main > div').allTextContents())[0],/^売上/);
+   /* 選べるものは色付きのボタン・選んでいるものは ✓ */
+   assert.equal(await A.p.$eval('#stats-sales [data-sales-month][aria-pressed="true"]',b=>getComputedStyle(b,'::before').content),'"✓ "');
+   assert.notEqual(await A.p.$eval('#stats-sales [data-sales-month][aria-pressed="false"]',b=>getComputedStyle(b).backgroundColor),'rgba(0, 0, 0, 0)');
    assert.match(await A.p.locator('#stats-sales .panel').filter({hasText:'3社の合計'}).locator('.sales-profbox').textContent(),/粗利.*粗利率 \d+%/);
    /* v1.50.50 粗利の枠は横いっぱい */
    assert.ok(await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-profbox').evaluate(b=>b.getBoundingClientRect().width>=b.parentElement.getBoundingClientRect().width-1),'profit box spans the card');
