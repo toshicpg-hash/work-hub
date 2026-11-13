@@ -79,8 +79,12 @@ async function main(){
    await A.p.click('[data-sales-month="2026-09"]');assert.match(await A.p.textContent('#stats-sales'),/51,300,000円/);
    for(const sm of await A.p.$$('#stats-sales details:not([data-fold]):not([hidden]) > summary'))await sm.click();
    const t2=await A.p.textContent('#stats-sales');
-   for(const k of ['前月の金額','最終粗利予想','人件費','Notes未入力','目標粗利率','確認日　社長','見本 一郎','第1事業部','第2事業部','完了物件','施工中','合計','1件単価','営業外売上','毎日の受注（受注Total','更新日'])assert.ok(t2.includes(k),k);
+   for(const k of ['前月の金額','最終粗利予想','目標粗利率','確認日　社長','見本 一郎','第1事業部','第2事業部','完了物件','施工中','合計','1件単価','営業外売上','毎日の受注（受注Total','更新日'])assert.ok(t2.includes(k),k);
    assert.equal(await A.p.$$eval('#stats-sales .sales-col[data-sales-day^="CP|"]',a=>a.length),30);
+   /* v1.50.47 人件費・Notes未入力は出さない。担当の名前は1行（縦に割れない） */
+   assert.doesNotMatch(t2,/人件費|Notes未入力/);
+   const nameLines=await A.p.$$eval('#stats-sales .sales-st tbody tr:not(.sales-sum) td:first-child[style*="nowrap"]',a=>a.map(td=>{const r=document.createRange();r.selectNodeContents(td);return r.getClientRects().length}));
+   assert.ok(nameLines.length>0&&nameLines.every(n=>n<=1),'names on one line '+nameLines);
    assert.deepEqual(await A.p.$$eval('#stats-sales .sales-co h3',a=>a.map(x=>x.textContent)),['CP本社','ATアートテック','CPY横浜'],'company order CP, AT, CPY');
    await A.p.click('#stats-sales .sales-col[data-sales-day="CP|1"]');assert.equal(await A.p.$$eval('#stats-sales details:not([data-fold])[open]',a=>a.length)>0,true,'open sections stay open');
    if(width===400)await A.p.locator('#stats-sales .panel').nth(1).screenshot({path:path.join(require('node:os').tmpdir(),'sales-cp-400.png')});assert.match(await A.p.textContent('#stats-sales'),/1日：(\d+件・[\d,]+円|入力なし)/);
