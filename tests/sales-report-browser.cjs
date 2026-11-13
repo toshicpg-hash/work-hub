@@ -26,7 +26,7 @@ async function google(r){
  if(mm){const f=G.files[mm[1]],rest=mm[2];if(!f||f.owner!==acct)return J({},403);
   if(m==='GET'&&!rest)return J({sheets:f.tabs.map(t=>({properties:{title:t.title,sheetId:t.sheetId,gridProperties:{rowCount:1000,columnCount:26}}}))});
   if(rest==='/values:batchGet'){const ts=u.searchParams.getAll('ranges').map(x=>f.tabs.find(t=>t.title===tabName(x)));if(ts.some(t=>!t))return J({},400);return J({valueRanges:ts.map(t=>({values:structuredClone(t.rows)}))})}
-  if(rest===':batchUpdate'){for(const q of req.postDataJSON().requests){if(q.addSheet)f.tabs.push({title:q.addSheet.properties.title,sheetId:f.tabs.length+1,rows:[]});if(q.updateSheetProperties){const t=f.tabs.find(x=>x.sheetId===q.updateSheetProperties.properties.sheetId);t.title=q.updateSheetProperties.properties.title}}return J({})}
+  if(rest===':batchUpdate'){for(const q of req.postDataJSON().requests){if(q.addSheet)f.tabs.push({title:q.addSheet.properties.title,sheetId:f.tabs.length+1,rows:[]});if(q.updateSheetProperties){const t=f.tabs.find(x=>x.sheetId===q.updateSheetProperties.properties.sheetId);if(q.updateSheetProperties.properties.title)t.title=q.updateSheetProperties.properties.title;if(q.updateSheetProperties.properties.gridProperties)t.grid=q.updateSheetProperties.properties.gridProperties}if(q.repeatCell||q.updateDimensionProperties){const r=(q.repeatCell||q.updateDimensionProperties).range,t=f.tabs.find(x=>x.sheetId===r.sheetId);(t.fmt=t.fmt||[]).push(q)}}return J({})}
   const vm=rest.match(/^\/values\/(.+?)(:clear)?$/);
   if(vm){const t=f.tabs.find(x=>x.title===tabName(vm[1]));if(!t)return J({},400);if(vm[2]){t.rows=[];return J({})}if(m==='PUT'){f.modified=G.mod;t.rows=structuredClone(req.postDataJSON().values).map(r=>{while(r.length&&r[r.length-1]==='')r.pop();return r}).filter((r,i,a)=>r.length||a.slice(i).some(x=>x.length));while(t.rows.length&&!t.rows[t.rows.length-1].length)t.rows.pop();return J({})}}
  }
@@ -66,7 +66,10 @@ async function main(){
    await A.p.click('[data-act=salesdemo]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);
    const t=await A.p.textContent('#stats-sales');assert.match(t,/試作用のシートを作りました/,t);
    const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）');assert.ok(f);assert.deepEqual(f.perms,[],'not shared');
-   assert.deepEqual(f.tabs.map(x=>x.title),['2026-09','2026-10']);assert.ok(f.tabs[0].rows.every(r=>!r.some(v=>/株式会社|黒木|大平/.test(String(v)))),'only fictional names');
+   assert.deepEqual(f.tabs.map(x=>x.title),['2026-09 会社','2026-09 担当','2026-09 受注','2026-10 会社','2026-10 担当','2026-10 受注']);
+   for(const t of f.tabs){assert.deepEqual(t.grid,{frozenRowCount:1,frozenColumnCount:1},t.title+' frozen');assert.ok(t.fmt.some(q=>q.repeatCell&&q.repeatCell.cell.userEnteredFormat.numberFormat&&q.repeatCell.cell.userEnteredFormat.numberFormat.pattern==='#,##0'),t.title+' #,##0');assert.ok(t.fmt.some(q=>q.repeatCell&&q.repeatCell.cell.userEnteredFormat.textFormat),t.title+' header');assert.ok(t.fmt.some(q=>q.updateDimensionProperties),t.title+' widths');assert.equal(t.rows[0][0],'会社',t.title+' header on row 1')}
+   assert.deepEqual(f.tabs.map(t=>t.rows[0].length),[15,8,4,15,8,4]);
+   assert.ok(f.tabs.flatMap(t=>t.rows).every(r=>!r.some(v=>/株式会社|黒木|大平/.test(String(v)))),'only fictional names');
    assert.deepEqual(tabOf(G.files.list00000000000000000001,'HUBの設定'),[['項目','値'],['売上報告ID',f.id]]);
    assert.match(t,/2026年9月/);assert.match(t,/2026年10月/);
    assert.match(t,/3社の合計/);assert.match(t,/25,650,000円/,'10月 = half of 9月 total');
@@ -82,10 +85,21 @@ async function main(){
    if(width===400)await A.p.screenshot({path:path.join(require('node:os').tmpdir(),'sales-400.png'),fullPage:true});
   });
   await check('シートの数字を書き換えて「読み直す」と変わる。読めない数字は「読めなかったところ」に出す '+width+'px',async()=>{
-   const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）'),t9=f.tabs.find(x=>x.title==='2026-09');
+   const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）'),t9=f.tabs.find(x=>x.title==='2026-09 会社');
    const row=t9.rows.findIndex(r=>r[0]==='CP'&&Number(r[1])===30000000);assert.ok(row>0);t9.rows[row][3]='22,000,000';t9.rows[row+1][4]='あいうえ';
    await A.p.click('[data-act=salesload]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);await A.p.click('[data-sales-month="2026-09"]');
-   const t=await A.p.textContent('#stats-sales');assert.match(t,/22,000,000円/);assert.match(t,/読めなかったところがあります：.*「実績粗利」/);
+   const t=await A.p.textContent('#stats-sales');assert.match(t,/22,000,000円/);assert.match(t,/読めなかったところがあります：.*「2026-09 会社」\d+行目の「実績粗利」/);
+  });
+  await check('前の形（1か月を1つのタブ「2026-08」）も今までどおり読める。表を分けた月でタブが欠けていると「…のタブがありません」と出す '+width+'px',async()=>{
+   const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）'),tb=n=>f.tabs.find(x=>x.title===n);
+   const old=[['売上報告（メモ）'],[],...tb('2026-09 会社').rows,[],...tb('2026-09 担当').rows,[],...tb('2026-09 受注').rows];
+   f.tabs.push({title:'2026-08',sheetId:99,rows:old});const day=tb('2026-10 受注');f.tabs.splice(f.tabs.indexOf(day),1);
+   await A.p.click('[data-act=salesload]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);
+   assert.deepEqual(await A.p.evaluate(()=>BB.ui.sales.months.map(m=>[m.key,m.cos.length,m.staff.length,m.days.length>0])),[['2026-08',3,15,true],['2026-09',3,15,true],['2026-10',3,15,false]]);
+   await A.p.click('[data-sales-month="2026-10"]');assert.match(await A.p.textContent('#stats-sales'),/「2026-10 受注」のタブがありません/);
+   await A.p.click('[data-sales-month="2026-08"]');const t=await A.p.textContent('#stats-sales');assert.match(t,/22,000,000円/,'old single tab is read');assert.doesNotMatch(t,/タブがありません/);
+   f.tabs.splice(f.tabs.findIndex(x=>x.title==='2026-08'),1);f.tabs.push(day);
+   await A.p.click('[data-act=salesload]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);await A.p.click('[data-sales-month="2026-10"]');
   });
   await check('毎日の更新：同期のたびに売上報告を読み直す。今日（日本時間）に更新がなければ「今日はまだ更新されていません」を目立たせる '+width+'px',async()=>{
    const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）');
@@ -96,7 +110,7 @@ async function main(){
    assert.match(await A.p.textContent('.gsync'),/× 売上報告：/);
    await open(A.p);const b=await A.p.textContent('#stats-sales .banner');assert.match(b,/今日はまだ更新されていません。シートの最終更新 11\/8 23:59/);
    if(width===400)await A.p.locator('#stats-sales').screenshot({path:path.join(require('node:os').tmpdir(),'sales-stale-400.png')});
-   const t9=f.tabs.find(x=>x.title==='2026-10'),row=t9.rows.findIndex(r=>r[0]==='CP'&&r[3]!==undefined&&/^\d/.test(String(r[3])));t9.rows[row][3]='12,345,000';
+   const t9=f.tabs.find(x=>x.title==='2026-10 会社'),row=t9.rows.findIndex(r=>r[0]==='CP'&&r[3]!==undefined&&/^\d/.test(String(r[3])));t9.rows[row][3]='12,345,000';
    f.modified='2026-11-08T15:00:00Z';/* 11/9 0:00（日本時間）＝今日 */
    await sync(A.p);await A.p.waitForFunction(()=>BB.ui.gsync.rows.some(x=>x.name==='売上報告'));
    const sr2=(await A.p.evaluate(()=>BB.ui.gsync.rows)).find(x=>x.name==='売上報告');assert.equal(sr2.ok,true);assert.match(sr2.msg,/今日の更新を読みました（11\/9 00:00）/);
