@@ -434,8 +434,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.42" title="使い方マニュアルを開く">v1.50.42・11/13更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.42" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.43" title="使い方マニュアルを開く">v1.50.43・11/13更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.43" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -495,10 +495,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.42"></script>
+<script src="./share-management.js?v=1.50.43"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.42"></script>
-<script src="./calendar-view-scope.js?v=1.50.42"></script>
+<script src="./view-scope.js?v=1.50.43"></script>
+<script src="./calendar-view-scope.js?v=1.50.43"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2289,7 +2289,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.42";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.43";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2451,7 +2451,7 @@ function vStats(){
     ''+
     '</form>')+
   (D().admin?foldSec("sales","売上報告（試作・社長だけ）",salesSec(),!!ui.salesBusy):'')+exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.42" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.42" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.43" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.43" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -4030,6 +4030,8 @@ async function corpLoad(){
   /* 更新日時は毎回取る（次の読み込みで比べるため。初めての読み込みでも取っておく） */
   const mts=list.length?await corpModTimes():{};
   /* v1.50.18 3人ずつ同時に読む（前は1人ずつ順番）。並びは一覧の順のまま。読めなかった人のやり直しは今までどおり */
+  /* v1.50.43 だれかが回数制限（429）に当たったら、ほかの人の読み込みもその間は始めない（同時に読み続けると上限が戻らない） */
+  let cool=0;const gate=async()=>{const w=cool-Date.now();if(w>0)await corpWait(w,"gate")};
   const one=async s=>{
     const started=Date.now();let tries=0,x=null,fresh=false;
     const noRc0=viewer&&noReceipts(me)&&s.sheetId!==me.sheetId, boxOn=!!s.boxId&&(!viewer||s.sheetId===me.sheetId||canOrder(me,s)), key=corpReadKey(viewer,me,s,noRc0,boxOn);
@@ -4037,7 +4039,7 @@ async function corpLoad(){
     if(old&&mt&&old.mt===mt&&(!boxOn||bmt&&old.bmt===bmt)&&old.rk===key&&Date.now()-(old.readAt||0)<CORP_REUSE_MS){
       x=Object.assign({},old,{s:Object.assign(s,{lastSync:old.s.lastSync||""}),reused:true,ms:Date.now()-started,tries:0});return x}
     /* v1.50.5 読めなかった人だけ、少し待って最大2回やり直す（回数制限・Google側の不具合・時間切れ・通信の失敗のとき）。成功した人は読み直さない */
-    for(;;){tries++;
+    for(;;){tries++;await gate();
     try{/* a sheet synced from before v1.29 has no 「ToDo」 tab, and reading a missing tab fails the whole read */
       /* v1.50.18 タブの一覧は、あとから増えるタブ（ToDo・指示・指示の報告・予定の共有の記録）が全部そろっていれば、前に読んだものを使う（増えようがないので問い合わせない）。
          そろっていない人は毎回問い合わせる。前の一覧で読めなかったとき（タブを消した・名前を変えた）は、問い合わせ直して読み直す */
@@ -4057,7 +4059,7 @@ async function corpLoad(){
       s.lastSync=String(info["最終同期"]||"");
       x={s,ok:true,calRec:hasCal?objRows(v[CALREC_TAB]).map(r=>String(r["Gmail"]||"").trim()).filter(mailOK):null,receiptRead:noRc?{state:"hidden",at:Date.now(),version:String(info["版"]||"")}:{...(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.parseSheet(v["立替"]):{state:"invalid",message:"領収書の表示機能を読み込めません。"}),at:Date.now(),version:String(info["版"]||"")},cases:objRows(v["案件"]),rc:noRc?[]:rcFor(me,s,objRows(v["立替"])),todo:hasTodo?objRows(v["ToDo"]):null,orders:hasOrd?objRows(v["指示"]).filter(o=>o["指示ID"]):[],box,reports:hasRep?objRows(v[REPORT_TAB]).filter(r=>r["指示ID"]):[],mt,bmt:box===null?"":bmt,rk:key,readAt:started}}
     catch(err){if(err.message==="signin")throw err;
-      const wait=corpRetryWait(err,tries);if(wait!==null){await corpWait(wait);continue}
+      const wait=corpRetryWait(err,tries);if(wait!==null){if(corpErrKind(err)==="rate")cool=Math.max(cool,Date.now()+wait);await corpWait(wait);continue}
       x={s,ok:false,accessDenied:err.status===403||err.status===404,msg:corpReadMsg(err)+(tries>1?"・"+tries+"回試しました":""),status:err.status||(err.name==="AbortError"?"timeout":err.network?"network":"")}}
     x.ms=Date.now()-started;x.tries=tries;return x}
   };
@@ -4069,8 +4071,11 @@ async function corpLoad(){
 /* v1.50.5 読み込めなかった理由を分けて出す（前は 429・5xx・通信の失敗が全部「通信できませんでした」だった） */
 const corpErrKind=err=>!err?"":err.status===429?"rate":err.status>=500&&err.status<600?"server":err.name==="AbortError"?"timeout":err.network||err.name==="TypeError"?"network":"";
 function corpReadMsg(err){const k=corpErrKind(err);return k==="rate"?"Googleの回数制限（429）":k==="server"?"Google側の一時的な不具合（"+err.status+"）":k==="timeout"?"時間切れ（45秒）":k==="network"?"通信の失敗（電波・接続）":dMsg(err)+(err&&err.status?"（"+err.status+"）":"");}
-/* 待つ時間（ミリ秒）。やり直さないときは null。Retry-After があれば従う（60秒まで）、なければ5秒→15秒 */
-function corpRetryWait(err,tries){if(tries>2||!corpErrKind(err))return null;const ra=err&&Number.isFinite(err.retryAfter)?Math.min(60,err.retryAfter)*1000:null;return ra!==null?ra:tries===1?5000:15000;}
+/* 待つ時間（ミリ秒）。やり直さないときは null。Retry-After があれば従う（60秒まで）、なければ5秒→15秒。
+   v1.50.43 回数制限（429）だけは、Googleの1分ごとの上限が戻るまで待てるように、10秒→20秒→30秒→60秒（最大5回）。
+   前は5秒→15秒の計20秒であきらめていたので、社員が増えて最後の数人が毎回読めなかった */
+const CORP_RATE_WAITS=[10000,20000,30000,60000];
+function corpRetryWait(err,tries){const k=corpErrKind(err);if(!k||tries>(k==="rate"?CORP_RATE_WAITS.length:2))return null;const ra=err&&Number.isFinite(err.retryAfter)?Math.min(60,err.retryAfter)*1000:null;return ra!==null?ra:k==="rate"?CORP_RATE_WAITS[tries-1]:tries===1?5000:15000;}
 let corpWait=ms=>new Promise(r=>setTimeout(r,ms));
 const secText=ms=>Number.isFinite(ms)?(ms<10000?(Math.round(ms/100)/10):Math.round(ms/1000))+"秒":"";
 function corpTimingText(data){const t=data&&data.timing;if(!t||!t.n)return "";return "読み込み：全体 "+secText(t.ms)+"・1人あたり "+secText(t.ms/t.n)+(t.reused?"（前から変わっていない "+t.reused+"人は読み直していません）":"");}
