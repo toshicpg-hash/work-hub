@@ -243,6 +243,14 @@ tr.sales-sum td{border-top:2px solid var(--line)}
 .sales-profbox{background:var(--green-soft);border-radius:10px;padding:8px 10px}
 /* v1.50.50 粗利の枠は横いっぱい（文字が大きい端末で細かく折り返していた）。売上はその下 */
 .sales-main{display:flex;flex-direction:column;gap:8px}
+/* v1.50.51 開け閉めする見出し（毎日の受注・担当者別・グラフで見る）を、押せると分かる色の帯に */
+#stats-sales details.sales-open>summary{list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-height:48px;padding:8px 12px;border-radius:10px;background:var(--accent-soft);border-left:6px solid var(--accent);color:var(--fg);font-weight:800;font-size:16px;cursor:pointer}
+#stats-sales details.sales-open>summary::-webkit-details-marker{display:none}
+#stats-sales details.sales-open>summary::before{content:"▶";color:var(--accent);font-size:13px}#stats-sales details.sales-open[open]>summary::before{content:"▼"}
+#stats-sales details.sales-open>summary::after{content:"押して開く";margin-left:auto;font-size:12px;font-weight:700;color:var(--accent)}#stats-sales details.sales-open[open]>summary::after{content:"閉じる"}
+#stats-sales details.sales-open.sub>summary{min-height:40px;font-size:14px;border-left-width:4px}
+.sales-open-sub{font-size:12.5px;font-weight:600;color:var(--muted);flex-basis:100%;padding-left:21px}
+#stats-sales details.sales-open[open]>summary{margin-bottom:8px}
 /* v1.50.50 選べるもの（月・会社・入れるもの）は色の付いたボタン。選んでいるものは塗りつぶしと ✓ */
 #stats-sales .pick{background:var(--accent-soft);border:2px solid var(--accent);color:var(--accent);font-weight:700;min-height:44px;border-radius:99px;padding:0 14px;font-size:14px;cursor:pointer}
 #stats-sales .pick[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}#stats-sales .pick[aria-pressed="true"]::before{content:"✓ "}
@@ -3565,7 +3573,7 @@ function salesSec(){
       return '<tr class="'+[x.day===today?'sales-today':'',wd===0?'sun':wd===6?'sat':''].join(' ').trim()+'"><td class="num"><b>'+x.day+'日</b><span class="sales-state">'+WD[wd]+(x.day===today?'・今日':'')+'</span></td><td class="num">'+cnt(x.n)+'</td><td class="num">'+yn(x.amt)+'</td><td class="num"><b>'+yn(ca)+'</b><span class="sales-pct">'+cn+'件</span></td></tr>'}).join("");
     return '<div class="tbl-wrap"><table class="items sales-days" style="min-width:0"><thead><tr><th>日</th><th>件数</th><th>金額（円）</th><th>累計（円）<span class="sales-pct">累計件数</span></th></tr></thead><tbody>'+rows+
       '<tr class="sales-sum"><td><b>合計</b></td><td class="num"><b>'+cnt(cn)+'</b></td><td class="num"><b>'+yn(ca)+'</b></td><td class="num">1件単価<span class="sales-pct">'+(cn?yn(ca/cn)+'円':'—')+'</span></td></tr></tbody></table></div>'+
-      '<details><summary class="note" style="cursor:pointer;min-height:36px;display:flex;align-items:center">グラフで見る</summary><div class="sales-chart" role="img" aria-label="'+h(co)+'の毎日の受注金額">'+cols+'</div><div class="sales-axis note"><span>1日</span><span>'+last+'日</span></div>'+
+      '<details class="sales-open sub"><summary>グラフで見る</summary><div class="sales-chart" role="img" aria-label="'+h(co)+'の毎日の受注金額">'+cols+'</div><div class="sales-axis note"><span>1日</span><span>'+last+'日</span></div>'+
       '<p class="note num" style="margin:0" role="status" id="sales-day-'+h(co)+'">'+(pick?pick+"日："+(px?cnt(px.n)+"・"+y(px.amt):"入力なし"):"棒を押すと、その日の件数と金額が出ます")+'</p></details>'};
   const curM=M.key===todayS().slice(0,7),tdN=Number(todayS().slice(8)),lastD=new Date(Number(M.key.slice(0,4)),Number(M.key.slice(5)),0).getDate();
   const card=c=>{const ck=M.chk.filter(x=>x.co===c.co),upto=curM?tdN:lastD,tdc=curM?ck.find(x=>x.day===tdN):null;
@@ -3582,9 +3590,10 @@ function salesSec(){
     '<div><div class="sales-lab">売上（実績）</div><div class="num sales-big">'+y(c["実績売上"])+'</div><div class="note num">目標 '+y(c["目標売上"])+'・達成 '+pt(ra)+'</div>'+bar(ra,'var(--blue)')+'</div>'+
     '<div class="sales-profbox"><div class="sales-lab">粗利（実績）</div><div class="num sales-big">'+y(c["実績粗利"])+'</div><div class="sales-rate num">粗利率 <b>'+pt(pc(c["実績粗利"],c["実績売上"]))+'</b><span class="note">（目標粗利率 '+pt(pc(c["目標粗利"],c["目標売上"]))+'）</span></div><div class="note num">目標 '+y(c["目標粗利"])+'・達成 '+pt(rp)+'</div>'+bar(rp,'var(--green)')+'</div></div>'+
     '<div class="sales-grid sales-kv">'+kv("前月の金額",y(c["前月売上"]))+kv("前月の粗利",c["前月粗利"]==null?"—":y(c["前月粗利"])+'（'+pt(pc(c["前月粗利"],c["前月売上"]))+'）')+kv("最終粗利予想",y(c["最終粗利予想"]))+'</div>'+/* v1.50.47 人件費・Notes未入力は画面に出さない（シートの列は読むだけ残す） */
+    /* v1.50.51 並び：毎日の受注 → 確認日・毎日の確認 → 担当者別。開け閉めする見出しは色の帯（.sales-open） */
+    '<details class="sales-open"'+(ds.length?'':' hidden')+'><summary>毎日の受注<span class="sales-open-sub">受注Total '+cnt(dn)+'・'+y(da)+'・1件単価 '+(dn?y(da/dn):"—")+'</span></summary>'+dayChart(c.co,ds)+'</details>'+
     '<div class="note"><span class="sales-lab">確認日</span>　社長 '+h(lastChk("boss")||c["社長確認日"]||"—")+'・本部長 '+h(lastChk("hq")||c["本部長確認日"]||"—")+'・'+h(c["GMの名前"]||"GM")+' '+h(lastChk("gm")||c["GM確認日"]||"—")+'</div>'+chkBox+
-    (st.length?'<details><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700">担当者別（'+new Set(st.map(x=>x.name)).size+'人）</summary>'+stTable(st)+'</details>':'')+
-    '<details'+(ds.length?'':' hidden')+'><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700">毎日の受注（受注Total '+cnt(dn)+'・'+y(da)+'・1件単価 '+(dn?y(da/dn):"—")+'）</summary>'+dayChart(c.co,ds)+'</details></div>'};
+    (st.length?'<details class="sales-open"><summary>担当者別<span class="sales-open-sub">'+new Set(st.map(x=>x.name)).size+'人</span></summary>'+stTable(st)+'</details>':'')+'</div>'};
   /* v1.50.45 会社の順は CP・AT・CPY（シートの行の順によらない） */
   const cos=M.cos.slice().sort((a,b)=>SALES_ORDER.indexOf(a.co)-SALES_ORDER.indexOf(b.co));
   const bad=M.bad.length?'<p class="banner" role="status" style="margin:0">読めなかったところがあります：'+h(M.bad.slice(0,5).join("・"))+(M.bad.length>5?" ほか":"")+'</p>':'';
