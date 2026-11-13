@@ -228,9 +228,15 @@ details[data-fold="sales"]>summary.foldh h2{font-size:22px;font-weight:800;color
 .sales-col:focus-visible{outline:2px solid var(--fg)}
 .sales-axis{display:flex;justify-content:space-between}
 tr.sales-sum td{border-top:2px solid var(--line)}
-.sales-st{font-size:12.5px}.sales-st td,.sales-st th{padding:6px 4px}
+.sales-st{font-size:12px}.sales-st td,.sales-st th{padding:6px 4px}
 /* v1.50.47 担当の名前を縦に割らない（短い名前は1行。長い「営業外売上（…）」だけ折り返す） */
-.sales-st td:first-child{min-width:4.6em;word-break:keep-all;overflow-wrap:anywhere;font-weight:700;font-size:13.5px}.sales-st td:nth-child(2),.sales-st td.num,.sales-st th{white-space:nowrap}
+.sales-st td:first-child{min-width:3.6em;word-break:keep-all;overflow-wrap:anywhere;font-weight:700;font-size:13.5px}
+.sales-state{display:block;font-size:11.5px;font-weight:400;color:var(--muted)}.sales-st .sales-pct{font-size:10.5px;white-space:nowrap}
+/* v1.50.49 1人ごとの区切り・粗利を目立たせる */
+.sales-st tr.sales-who td{border-top:2px solid var(--line)}
+.sales-profbox{background:var(--green-soft);border-radius:10px;padding:8px 10px}
+#stats-sales .sales-big{font-size:24px;font-weight:800;line-height:1.2}
+.sales-rate{font-size:15px;color:var(--fg)}.sales-rate b{font-size:20px;font-weight:800;color:var(--green)}.sales-st td,.sales-st th{padding:6px 3px}.sales-st td:nth-child(2),.sales-st td.num,.sales-st th{white-space:nowrap}
 .reqbox{display:flex;flex-direction:column;gap:8px;padding:10px 0 4px;border-bottom:1px dashed var(--line)}
 .reqbox h3{margin:0;font-size:16px;color:var(--amber)}
 /* 設定の欄の開け閉め */
@@ -450,8 +456,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.47" title="使い方マニュアルを開く">v1.50.47・11/13更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.47" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.49" title="使い方マニュアルを開く">v1.50.49・11/13更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.49" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -511,10 +517,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.47"></script>
+<script src="./share-management.js?v=1.50.49"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.47"></script>
-<script src="./calendar-view-scope.js?v=1.50.47"></script>
+<script src="./view-scope.js?v=1.50.49"></script>
+<script src="./calendar-view-scope.js?v=1.50.49"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2305,7 +2311,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.47";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.49";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2467,7 +2473,7 @@ function vStats(){
     ''+
     '</form>')+
   (D().admin?foldSec("sales","グループ各社売上報告",salesSec(),!!ui.salesBusy):'')+exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.47" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.47" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.49" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.49" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3478,17 +3484,20 @@ function salesSec(){
   const bar=(v,c)=>'<div style="height:10px;border-radius:99px;background:var(--line);overflow:hidden"><div style="width:'+Math.max(0,Math.min(100,v||0))+'%;height:100%;background:'+c+'"></div></div>';
   const kv=(k,v)=>'<div><div class="sales-lab">'+k+'</div><div class="num" style="font-weight:700">'+v+'</div></div>';
   const tot=k=>M.cos.reduce((a,c)=>a+(c[k]||0),0),dAll=M.days;
-  const total='<div class="panel" style="display:flex;flex-direction:column;gap:4px"><h3 style="margin:0">3社の合計</h3><div style="font-size:22px;font-weight:800" class="num">'+y(tot("実績売上"))+'</div><div class="note num">目標 '+y(tot("目標売上"))+'・達成 '+pt(pc(tot("実績売上"),tot("目標売上")))+'／粗利 '+y(tot("実績粗利"))+'（粗利率 '+pt(pc(tot("実績粗利"),tot("実績売上")))+'）</div><div class="note num">受注Total '+cnt(sumBy(dAll,"n"))+'・'+y(sumBy(dAll,"amt"))+'</div></div>';
-  const stTable=st=>{const groups=[...new Set(st.map(x=>x.group||""))],hasBase=st.some(x=>x.base!=null),cols=hasBase?6:5,
+  const total='<div class="panel" style="display:flex;flex-direction:column;gap:4px"><h3 style="margin:0">3社の合計</h3><div class="sales-grid"><div class="sales-profbox"><div class="sales-lab">粗利</div><div class="num sales-big">'+y(tot("実績粗利"))+'</div><div class="sales-rate num">粗利率 <b>'+pt(pc(tot("実績粗利"),tot("実績売上")))+'</b></div></div><div><div class="sales-lab">売上</div><div class="num" style="font-size:18px;font-weight:700">'+y(tot("実績売上"))+'</div><div class="note num">目標 '+y(tot("目標売上"))+'・達成 '+pt(pc(tot("実績売上"),tot("目標売上")))+'</div></div></div><div class="note num">受注Total '+cnt(sumBy(dAll,"n"))+'・'+y(sumBy(dAll,"amt"))+'</div></div>';
+  /* v1.50.48 スマホで右が切れないように：状態は名前の下に小さく、金額・粗利は「円」を見出しにだけ付ける */
+  const yn=n=>n==null?"—":Math.round(n).toLocaleString("ja-JP");
+  const stTable=st=>{const groups=[...new Set(st.map(x=>x.group||""))],hasBase=st.some(x=>x.base!=null),cols=hasBase?5:4,
     /* v1.50.46 粗利の下に粗利率。完了の行は薄い色 */
-    prof=(p,a)=>p==null?"—":y(p)+'<span class="sales-pct">粗利率 '+pt(pc(p,a))+'</span>',
+    prof=(p,a)=>p==null?"—":yn(p)+'<span class="sales-pct">粗利率 '+pt(pc(p,a))+'</span>',
     /* 粗利が1つも入っていない（施工中など）ときは0円ではなく「—」 */
     sumP=a=>a.some(x=>x.prof!=null)?sumBy(a,"prof"):null,
-    row=x=>'<tr'+(x.state==="完了"?' class="sales-done"':'')+'><td'+(String(x.name).length<=6?' style="white-space:nowrap"':'')+'>'+h(x.name)+'</td><td>'+h(x.state)+'</td><td class="num">'+cnt(x.n)+'</td>'+(hasBase?'<td class="num">'+(x.base==null?"—":Math.round(x.base).toLocaleString("ja-JP"))+'</td>':'')+'<td class="num">'+y(x.amt)+'</td><td class="num">'+prof(x.prof,x.amt)+'</td></tr>';
-    const part=(label,a)=>'<tr class="sales-sum'+(label==="完了物件"?' sales-done':'')+'"><td colspan="2"><b>'+label+'</b></td><td class="num"><b>'+cnt(sumBy(a,"n"))+'</b></td>'+(hasBase?'<td></td>':'')+'<td class="num"><b>'+y(sumBy(a,"amt"))+'</b></td><td class="num"><b>'+prof(sumP(a),sumBy(a,"amt"))+'</b></td></tr>';
+    /* v1.50.49 名前は1人1回。同じ人の続きの行（施工中など）は状態だけ */
+    row=(x,i,a)=>{const first=!i||a[i-1].name!==x.name;return '<tr class="'+[x.state==="完了"?'sales-done':'',first?'sales-who':''].join(' ').trim()+'"><td'+(String(x.name).length<=6?' style="white-space:nowrap"':'')+'>'+(first?h(x.name):'')+'<span class="sales-state">'+h(x.state)+'</span></td><td class="num">'+cnt(x.n)+'</td>'+(hasBase?'<td class="num">'+yn(x.base)+'</td>':'')+'<td class="num">'+yn(x.amt)+'</td><td class="num">'+prof(x.prof,x.amt)+'</td></tr>'};
+    const part=(label,a)=>'<tr class="sales-sum'+(label==="完了物件"?' sales-done':'')+'"><td><b>'+label+'</b></td><td class="num"><b>'+cnt(sumBy(a,"n"))+'</b></td>'+(hasBase?'<td></td>':'')+'<td class="num"><b>'+yn(sumBy(a,"amt"))+'</b></td><td class="num"><b>'+prof(sumP(a),sumBy(a,"amt"))+'</b></td></tr>';
     /* v1.50.46 合計は完了＋施工中（営業外売上などの「その他」は入れない。今の3社報告の合計と同じ） */
     const done=st.filter(x=>x.state==="完了"),wip=st.filter(x=>x.state==="施工中"),main=done.concat(wip),other=st.some(x=>x.state==="その他"),n=sumBy(main,"n");
-    return '<div class="tbl-wrap"><table class="items sales-st" style="min-width:0"><thead><tr><th>担当</th><th>状態</th><th>件数</th>'+(hasBase?'<th>基準値</th>':'')+'<th>金額</th><th>粗利</th></tr></thead><tbody>'+
+    return '<div class="tbl-wrap"><table class="items sales-st" style="min-width:0"><thead><tr><th>担当</th><th>件数</th>'+(hasBase?'<th>基準値</th>':'')+'<th>金額（円）</th><th>粗利（円）<span class="sales-pct">粗利率</span></th></tr></thead><tbody>'+
       groups.map(g=>(groups.length>1||g?'<tr><td colspan="'+cols+'" class="note"><b>'+h(g||"その他")+'</b></td></tr>':'')+st.filter(x=>(x.group||"")===g).map(row).join("")).join("")+
       part("完了物件",done)+part("施工中",wip)+part("合計",main)+'</tbody></table></div><p class="note num" style="margin:0">1件単価（合計の金額 ÷ 物件数）：'+(n?y(sumBy(main,"amt")/n):"—")+(other?'（合計に「その他」の営業外売上は入れていません）':'')+'</p>'};
   const dayChart=(co,ds)=>{const ym=M.key,last=new Date(Number(ym.slice(0,4)),Number(ym.slice(5)),0).getDate(),byD=Object.fromEntries(ds.map(x=>[x.day,x])),max=Math.max(1,...ds.map(x=>x.amt||0));
@@ -3509,8 +3518,10 @@ function salesSec(){
       (curM&&!tdc?'<p class="note" style="margin:0">シートの確認のタブに今日の行がありません</p>':'')+'</div>':'';
     const st=M.staff.filter(x=>x.co===c.co),ds=M.days.filter(x=>x.co===c.co),ra=pc(c["実績売上"],c["目標売上"]),rp=pc(c["実績粗利"],c["目標粗利"]),dn=sumBy(ds,"n"),da=sumBy(ds,"amt");
     return '<div class="panel" style="display:flex;flex-direction:column;gap:10px"><div class="sales-co"><h3>'+h(c.co)+'<span>'+h(CO_LABEL[c.co]||"")+'</span></h3><span class="sales-upd">更新日 <b>'+h(c["更新日"]||"—")+'</b></span></div>'+
-    '<div class="sales-grid"><div><div class="sales-lab">売上（実績／目標）</div><div class="num" style="font-size:20px;font-weight:800">'+y(c["実績売上"])+'</div><div class="note num">目標 '+y(c["目標売上"])+'・<b>達成 '+pt(ra)+'</b></div>'+bar(ra,'var(--blue)')+'</div>'+
-    '<div><div class="sales-lab">粗利（実績／目標）</div><div class="num" style="font-size:20px;font-weight:800">'+y(c["実績粗利"])+'</div><div class="note num">目標 '+y(c["目標粗利"])+'（目標粗利率 '+pt(pc(c["目標粗利"],c["目標売上"]))+'）・<b>達成 '+pt(rp)+'</b>・粗利率 '+pt(pc(c["実績粗利"],c["実績売上"]))+'</div>'+bar(rp,'var(--green)')+'</div></div>'+
+    '<div class="sales-grid">'+
+    /* v1.50.49 粗利を先に大きく。粗利率を太字で目立たせ、達成は控えめに */
+    '<div class="sales-profbox"><div class="sales-lab">粗利（実績）</div><div class="num sales-big">'+y(c["実績粗利"])+'</div><div class="sales-rate num">粗利率 <b>'+pt(pc(c["実績粗利"],c["実績売上"]))+'</b><span class="note">（目標粗利率 '+pt(pc(c["目標粗利"],c["目標売上"]))+'）</span></div><div class="note num">目標 '+y(c["目標粗利"])+'・達成 '+pt(rp)+'</div>'+bar(rp,'var(--green)')+'</div>'+
+    '<div><div class="sales-lab">売上（実績）</div><div class="num" style="font-size:18px;font-weight:700">'+y(c["実績売上"])+'</div><div class="note num">目標 '+y(c["目標売上"])+'・達成 '+pt(ra)+'</div>'+bar(ra,'var(--blue)')+'</div></div>'+
     '<div class="sales-grid sales-kv">'+kv("前月の金額",y(c["前月売上"]))+kv("前月の粗利",c["前月粗利"]==null?"—":y(c["前月粗利"])+'（'+pt(pc(c["前月粗利"],c["前月売上"]))+'）')+kv("最終粗利予想",y(c["最終粗利予想"]))+'</div>'+/* v1.50.47 人件費・Notes未入力は画面に出さない（シートの列は読むだけ残す） */
     '<div class="note"><span class="sales-lab">確認日</span>　社長 '+h(lastChk("boss")||c["社長確認日"]||"—")+'・本部長 '+h(lastChk("hq")||c["本部長確認日"]||"—")+'・'+h(c["GMの名前"]||"GM")+' '+h(lastChk("gm")||c["GM確認日"]||"—")+'</div>'+chkBox+
     (st.length?'<details><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700">担当者別（'+new Set(st.map(x=>x.name)).size+'人）</summary>'+stTable(st)+'</details>':'')+
