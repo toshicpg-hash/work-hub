@@ -83,6 +83,11 @@ async function main(){
    assert.equal(await A.p.$$eval('#stats-sales .sales-col[data-sales-day^="CP|"]',a=>a.length),30);
    /* v1.50.47 人件費・Notes未入力は出さない。担当の名前は1行（縦に割れない） */
    assert.doesNotMatch(t2,/人件費|Notes未入力/);
+   /* v1.50.49 名前は1人1回（2行目は状態だけ）。会社のカードは粗利が先で、粗利率を目立たせる */
+   const cpNames=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-st tbody td:first-child').allTextContents();
+   assert.equal(cpNames.filter(x=>x.startsWith('見本 一郎')).length,1,'one name per person '+cpNames);assert.ok(cpNames.includes('施工中'),'second row shows only the state');
+   assert.match(await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-grid > div').first().textContent(),/^粗利（実績）.*粗利率 \d+%/);
+   assert.match(await A.p.locator('#stats-sales .panel').filter({hasText:'3社の合計'}).locator('.sales-profbox').textContent(),/粗利.*粗利率 \d+%/);
    const nameLines=await A.p.$$eval('#stats-sales .sales-st tbody tr:not(.sales-sum) td:first-child[style*="nowrap"]',a=>a.map(td=>{const r=document.createRange();r.selectNodeContents(td.firstChild);return r.getClientRects().length}));
    assert.ok(nameLines.length>0&&nameLines.every(n=>n<=1),'names on one line '+nameLines);
    assert.deepEqual(await A.p.$$eval('#stats-sales .sales-co h3',a=>a.map(x=>x.textContent)),['CP本社','ATアートテック','CPY横浜'],'company order CP, AT, CPY');
