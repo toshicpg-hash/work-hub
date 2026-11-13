@@ -83,8 +83,18 @@ async function main(){
    await A.p.click('[data-sales-month="2026-09"]');assert.match(await A.p.textContent('#stats-sales'),/51,300,000円/);
    for(const sm of await A.p.$$('#stats-sales details:not([data-fold]):not([hidden]) > summary'))await sm.click();
    const t2=await A.p.textContent('#stats-sales');
-   for(const k of ['前月の金額','最終粗利予想','目標粗利率','確認日　社長','見本 一郎','第1事業部','第2事業部','完了物件','施工中','合計','1件単価','営業外売上','毎日の受注（受注Total','更新日'])assert.ok(t2.includes(k),k);
+   for(const k of ['前月の金額','最終粗利予想','目標粗利率','確認日　社長','見本 一郎','第1事業部','第2事業部','完了物件','施工中','合計','1件単価','営業外売上','毎日の受注受注Total','更新日'])assert.ok(t2.includes(k),k);
    assert.equal(await A.p.$$eval('#stats-sales .sales-col[data-sales-day^="CP|"]',a=>a.length),30);
+   /* v1.50.51 並びは 毎日の受注 → 確認日 → 担当者別。開け閉めの見出しは色の帯 */
+   const cpText=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).textContent();
+   assert.ok(cpText.indexOf('毎日の受注')<cpText.indexOf('確認日')&&cpText.indexOf('確認日')<cpText.indexOf('担当者別'),'order');
+   assert.ok(await A.p.$$eval('#stats-sales details.sales-open>summary',a=>a.length>0&&a.every(x=>getComputedStyle(x).backgroundColor!=='rgba(0, 0, 0, 0)')),'summaries are colored bands');
+   /* v1.50.51 毎日の受注は表が先：曜日・件数・金額・その日までの累計。最後の累計 ＝ 合計 ＝ 受注Total */
+   const dt=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-days').evaluate(t=>[...t.querySelectorAll('tbody tr')].map(r=>[...r.cells].map(c=>c.innerText.replace(/\n/g,' '))));
+   assert.match(dt[0][0],/^1日 (火)$/,'2026-09-01 is a Tuesday');const cum=dt.slice(0,-1).at(-1)[3],tot=dt.at(-1);
+   assert.equal(cum.split(' ')[0],tot[2],'last cumulative = total');assert.match(tot[0],/合計/);
+   const sum=dt.slice(0,-1).reduce((a,r)=>a+Number(r[2].replace(/,/g,'')),0);assert.equal(Number(tot[2].replace(/,/g,'')),sum);
+   assert.match(await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).textContent(),new RegExp('受注Total '+dt.slice(0,-1).reduce((a,r)=>a+Number(r[1].replace(/件/,'')),0)+'件・'+tot[2]+'円'));
    /* v1.50.47 人件費・Notes未入力は出さない。担当の名前は1行（縦に割れない） */
    assert.doesNotMatch(t2,/人件費|Notes未入力/);
    /* v1.50.49 名前は1人1回（2行目は状態だけ）。会社のカードは粗利が先で、粗利率を目立たせる */
@@ -147,10 +157,10 @@ async function main(){
    assert.deepEqual(await A.p.$$eval('#stats-sales .sales-st',a=>a.map(t=>{const w=t.closest('.tbl-wrap');return w.scrollWidth-w.clientWidth<=1})),[true,true,true],'staff tables fit');
    assert.match(await A.p.textContent('details[data-fold="sales"] > summary'),/グループ各社売上報告/);
    /* 施工中の粗利が空なら「—」。合計に「その他」（営業外売上）は入れない */
-   const sums=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('tr.sales-sum').allTextContents();
+   const sums=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-st tr.sales-sum').allTextContents();
    assert.match(sums[1],/施工中.*—$/);
    const num=s=>Number(s.replace(/[^0-9]/g,''));
-   const amts=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('tr.sales-sum td:nth-child(3)').allTextContents(),amt=i=>num(amts[i]);assert.equal(amt(2),amt(0)+amt(1),'合計 = 完了物件 + 施工中 (その他 is not added)');
+   const amts=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-st tr.sales-sum td:nth-child(3)').allTextContents(),amt=i=>num(amts[i]);assert.equal(amt(2),amt(0)+amt(1),'合計 = 完了物件 + 施工中 (その他 is not added)');
    assert.match(await A.p.textContent('#stats-sales'),/合計に「その他」の営業外売上は入れていません/);
    assert.ok(await overflow(A.p)<=0,'overflow');
    if(width===400)await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).screenshot({path:path.join(require('node:os').tmpdir(),'sales-check-400.png')});
