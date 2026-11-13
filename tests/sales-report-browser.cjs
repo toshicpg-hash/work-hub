@@ -19,12 +19,12 @@ async function google(r){
   return J({files:Object.values(G.files).filter(f=>f.owner===acct&&(!eqn||f.name===eqn)&&(!cn||f.name.includes(cn))).map(f=>({id:f.id,name:f.name,createdTime:f.created}))})}
  if(p==='/drive/v3/files'&&m==='POST'){const b=req.postDataJSON(),id='bbsheet'+String(++G.n).padStart(20,'0');G.files[id]={id,name:b.name,owner:acct,created:new Date(Date.UTC(2026,10,1)+G.n*1000).toISOString(),perms:[],tabs:[{title:'シート1',sheetId:0,rows:[]}]};return J({id,name:b.name})}
  let mm=p.match(/^\/drive\/v3\/files\/([^/]+)$/);
- if(mm&&m==='GET'){const f=G.files[mm[1]];if(!f||f.owner!==acct)return J({},404);return J({modifiedTime:f.modified||f.created,name:f.name})}
+ if(mm&&m==='GET'){const f=G.files[mm[1]];if(!f||f.owner!==acct||G.driveHidden)return J({},404);return J({modifiedTime:f.modified||f.created,name:f.name})}
  mm=p.match(/^\/drive\/v3\/files\/([^/]+)\/permissions$/);
  if(mm){const f=G.files[mm[1]];if(!f||f.owner!==acct)return J({},403);return J({permissions:[{id:'owner',emailAddress:f.owner,role:'owner',type:'user'}].concat(f.perms)})}
  mm=p.match(/^\/v4\/spreadsheets\/([^/:]+)(.*)$/);
  if(mm){const f=G.files[mm[1]],rest=mm[2];if(!f||f.owner!==acct)return J({},403);
-  if(m==='GET'&&!rest)return J({sheets:f.tabs.map(t=>({properties:{title:t.title,sheetId:t.sheetId,gridProperties:{rowCount:1000,columnCount:26}}}))});
+  if(m==='GET'&&!rest)return J({properties:{title:f.name},sheets:f.tabs.map(t=>({properties:{title:t.title,sheetId:t.sheetId,gridProperties:{rowCount:1000,columnCount:26}}}))});
   if(rest==='/values:batchGet'){const ts=u.searchParams.getAll('ranges').map(x=>f.tabs.find(t=>t.title===tabName(x)));if(ts.some(t=>!t))return J({},400);const fm=u.searchParams.get('valueRenderOption')==='FORMULA';
    return J({valueRanges:ts.map(t=>{const v=structuredClone(t.rows);if(fm&&t.formulas)for(const [k,x] of Object.entries(t.formulas)){const [r,c]=k.split(',').map(Number);v[r][c]=x}return {values:v}})})}
   if(rest==='/values:batchUpdate'&&m==='POST'){const b=req.postDataJSON();G.batch=(G.batch||[]).concat([b]);f.modified=G.mod;
@@ -216,8 +216,22 @@ async function main(){
    G.batch=[];await A.p.click('[data-act=salessave]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);assert.match(await A.p.textContent('#stats-sales'),/変わったところはありません/);assert.deepEqual(G.batch,[]);
    assert.deepEqual(A.errors,[]);
   });
+  await check('ドライブから見えないシート（HUB以外で作ったシート）でも：名前は表計算の題名から取り、今日の更新は会社の「更新日」で見る。名前が分からなくても作り直すボタンは出さない '+width+'px',async()=>{
+   const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）'),co=f.tabs.find(x=>x.title==='2026-11 会社');
+   G.driveHidden=true;f.name='CPG HUB_売上報告';for(const r of co.rows.slice(1))r[14]='11/03';
+   await A.p.click('[data-act=salesload]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);
+   assert.match(await A.p.textContent('#stats-sales .banner'),/今日はまだ更新されていません。シートの最終更新 11\/3（会社の更新日）/);
+   assert.equal(await A.p.locator('#stats-sales [data-act=salesdemo]').count(),0);assert.match(await A.p.textContent('#stats-sales .chip'),/^社長だけ$/);
+   co.rows[1][14]='11/09';await A.p.click('[data-act=salesload]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);
+   assert.match(await A.p.textContent('#stats-sales'),/シートの最終更新 11\/9（会社の更新日）（今日）/);assert.equal(await A.p.evaluate(()=>BB.ui.sales.today),true);
+   /* 名前も取れないとき（題名も読めない）でも、作り直すボタンは出さない */
+   const save=f.name;f.name='';await A.p.click('[data-act=salesload]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);assert.equal(await A.p.locator('#stats-sales [data-act=salesdemo]').count(),0);
+   f.name='CPG HUB_売上報告（試作・架空）';G.driveHidden=false;await A.p.click('[data-act=salesload]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);
+  });
   await check('毎日の更新：同期のたびに売上報告を読み直す。今日（日本時間）に更新がなければ「今日はまだ更新されていません」を目立たせる '+width+'px',async()=>{
    const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）');
+   /* 入力の試験で今日にした会社の「更新日」を前の日に戻す（ドライブの更新日時で見る） */
+   for(const r of f.tabs.find(x=>x.title==='2026-11 会社').rows.slice(1))r[14]='11/03';await A.p.click('[data-act=salesload]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);
    assert.match(await A.p.textContent('#stats-sales'),/シートの最終更新 11\/9 10:30（今日）/);
    f.modified='2026-11-08T14:59:00Z';/* 11/8 23:59（日本時間）＝昨日 */
    let rows=await sync(A.p);await A.p.waitForFunction(()=>BB.ui.gsync.rows.some(x=>x.name==='売上報告'));rows=await A.p.evaluate(()=>BB.ui.gsync.rows);
