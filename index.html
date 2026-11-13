@@ -3403,8 +3403,8 @@ async function salesLoad(){
     for(const k of need)out.bad.push("「"+key+" "+Object.keys(SALES_PARTS).find(n=>SALES_PARTS[n]===k)+"」のタブがありません");
     return {key,...out}};
   /* 最終更新（Googleドライブの更新日時）。今日（日本時間）に更新されたかを見る。読めなくても内容は出す */
-  let modified="";try{modified=String(((await gReq(DRIVE+"/"+encodeURIComponent(id)+"?fields=modifiedTime"))||{}).modifiedTime||"")}catch(err){if(err.message==="signin")throw err}
-  ui.sales={at:Date.now(),id,modified,today:!!modified&&jstDay(modified)===jstDay(new Date().toISOString()),months:tabs.map(month)};
+  let modified="",name="";try{const f=(await gReq(DRIVE+"/"+encodeURIComponent(id)+"?fields=modifiedTime,name"))||{};modified=String(f.modifiedTime||"");name=String(f.name||"")}catch(err){if(err.message==="signin")throw err}
+  ui.sales={at:Date.now(),id,modified,name,today:!!modified&&jstDay(modified)===jstDay(new Date().toISOString()),months:tabs.map(month)};
   if(!ui.salesMonth||!tabs.includes(ui.salesMonth))ui.salesMonth=tabs.at(-1)||"";
 }
 /* 試作用：架空の数字だけのシートを作る（実在の名前・金額は入れない） */
@@ -3416,7 +3416,7 @@ function salesDemoRows(ym,k,upto=20){
   const r=x=>Math.round(x*k),rows=[SALES_CO];
   for(const c of co)rows.push([c[0],c[1],c[2],r(c[3]),r(c[4]),c[5],c[6],c[7]===""?"":r(c[7]),c[8],c[9],"","",ym.slice(5)+"/02",c[10],ym.slice(5)+"/03"]);
   const sr=[SALES_ST];
-  for(const s of st){sr.push([s[0],s[1],s[2],"完了",s[3][0],"",r(s[3][1]),r(s[3][2])]);sr.push([s[0],s[1],s[2],"施工中",s[4][0],"",r(s[4][1]),r(s[4][2])])}
+  for(const s of st){sr.push([s[0],s[1],s[2],"完了",s[3][0],"",r(s[3][1]),r(s[3][2])]);sr.push([s[0],s[1],s[2],"施工中",s[4][0],"",r(s[4][1]),""])}/* 今の3社報告と同じく、施工中の粗利（円）は空 */
   sr.push(["CP","","営業外売上（事務管理手数料など）","その他",1,"",r(100000),r(100000)]);
   const dr=[SALES_DAY];
   for(const [c,base] of [["CP",3],["AT",4],["CPY",2]])for(let d=1;d<=upto;d++){const n=(d*base+3)%5;dr.push([c,d,n,n*(150000+((d*7919+base*31)%9)*25000)])}
@@ -3460,11 +3460,13 @@ const salesWhen=iso=>iso?new Date(iso).toLocaleString("ja-JP",{timeZone:"Asia/To
 const addMonths=(ym,n)=>{const [y,m]=ym.split("-").map(Number),t=y*12+(m-1)+n;return Math.floor(t/12)+"-"+String(t%12+1).padStart(2,"0")};
 function salesSec(){
   const d=D(),S=ui.sales,busy=ui.salesBusy?' disabled':'',msg=ui.salesMsg?'<p role="status" style="margin:0;color:'+(ui.salesMsg.ok?'var(--green)':'var(--red)')+'">'+h(ui.salesMsg.text)+'</p>':'';
-  const head='<div class="row" style="gap:6px"><span class="chip">試作・社長だけ</span></div>';
+  /* v1.50.46 本物のシート（名前に「試作」がない）を読んでいるときは「社長だけ」、作り直すボタンも出さない（押すと架空のシートに戻るため） */
+  const demo=!S||S.id!==d.salesId||!S.name||S.name.includes("試作");
+  const head='<div class="row" style="gap:6px"><span class="chip">'+(demo?'試作・社長だけ':'社長だけ')+'</span></div>';
   const wrap=b=>'<section class="sec" id="stats-sales" style="display:flex;flex-direction:column;gap:10px">'+head+b+msg+'</section>';
   if(!d.salesId)return wrap('<p class="note" style="margin:0">Googleスプレッドシートの売上報告を読んで、今の3社報告と同じ項目を出します。今は試作で、社長の端末にだけ出ます（社員には見えません）。</p><div class="row"><button class="btn pri" type="button" data-act="salesdemo"'+busy+'>試作用のシートを作る（架空のデータ）</button></div>');
   const link='<a class="btn sm" href="https://docs.google.com/spreadsheets/d/'+h(d.salesId)+'/edit" target="_blank" rel="noopener" style="text-decoration:none">シートを開く</a>';
-  const ctl='<div class="row"><button class="btn sm" type="button" data-act="salesload"'+busy+'>'+(ui.salesBusy?'読んでいます…':S?'読み直す':'読み込む')+'</button>'+link+'<button class="btn sm" type="button" data-act="salesdemo"'+busy+'>試作用のシートを作り直す（架空）</button></div>';
+  const ctl='<div class="row"><button class="btn sm" type="button" data-act="salesload"'+busy+'>'+(ui.salesBusy?'読んでいます…':S?'読み直す':'読み込む')+'</button>'+link+(demo?'<button class="btn sm" type="button" data-act="salesdemo"'+busy+'>試作用のシートを作り直す（架空）</button>':'')+'</div>';
   if(!S||S.id!==d.salesId)return wrap(ctl);
   const M=S.months.find(x=>x.key===ui.salesMonth);
   const tabs='<div class="row" style="gap:6px;flex-wrap:wrap">'+S.months.map(x=>'<button class="btn sm'+(x.key===ui.salesMonth?' pri':'')+'" type="button" data-sales-month="'+h(x.key)+'">'+Number(x.key.slice(0,4))+'年'+Number(x.key.slice(5))+'月</button>').join("")+'</div>';
@@ -3477,13 +3479,16 @@ function salesSec(){
   const total='<div class="panel" style="display:flex;flex-direction:column;gap:4px"><h3 style="margin:0">3社の合計</h3><div style="font-size:22px;font-weight:800" class="num">'+y(tot("実績売上"))+'</div><div class="note num">目標 '+y(tot("目標売上"))+'・達成 '+pt(pc(tot("実績売上"),tot("目標売上")))+'／粗利 '+y(tot("実績粗利"))+'（粗利率 '+pt(pc(tot("実績粗利"),tot("実績売上")))+'）</div><div class="note num">受注Total '+cnt(sumBy(dAll,"n"))+'・'+y(sumBy(dAll,"amt"))+'</div></div>';
   const stTable=st=>{const groups=[...new Set(st.map(x=>x.group||""))],hasBase=st.some(x=>x.base!=null),cols=hasBase?6:5,
     /* v1.50.46 粗利の下に粗利率。完了の行は薄い色 */
-    prof=(p,a)=>y(p)+'<span class="sales-pct">粗利率 '+pt(pc(p,a))+'</span>',
+    prof=(p,a)=>p==null?"—":y(p)+'<span class="sales-pct">粗利率 '+pt(pc(p,a))+'</span>',
+    /* 粗利が1つも入っていない（施工中など）ときは0円ではなく「—」 */
+    sumP=a=>a.some(x=>x.prof!=null)?sumBy(a,"prof"):null,
     row=x=>'<tr'+(x.state==="完了"?' class="sales-done"':'')+'><td>'+h(x.name)+'</td><td>'+h(x.state)+'</td><td class="num">'+cnt(x.n)+'</td>'+(hasBase?'<td class="num">'+(x.base==null?"—":Math.round(x.base).toLocaleString("ja-JP"))+'</td>':'')+'<td class="num">'+y(x.amt)+'</td><td class="num">'+prof(x.prof,x.amt)+'</td></tr>';
-    const part=(label,a)=>'<tr class="sales-sum'+(label==="完了物件"?' sales-done':'')+'"><td colspan="2"><b>'+label+'</b></td><td class="num"><b>'+cnt(sumBy(a,"n"))+'</b></td>'+(hasBase?'<td></td>':'')+'<td class="num"><b>'+y(sumBy(a,"amt"))+'</b></td><td class="num"><b>'+prof(sumBy(a,"prof"),sumBy(a,"amt"))+'</b></td></tr>';
-    const done=st.filter(x=>x.state==="完了"),wip=st.filter(x=>x.state==="施工中"),n=sumBy(st,"n");
+    const part=(label,a)=>'<tr class="sales-sum'+(label==="完了物件"?' sales-done':'')+'"><td colspan="2"><b>'+label+'</b></td><td class="num"><b>'+cnt(sumBy(a,"n"))+'</b></td>'+(hasBase?'<td></td>':'')+'<td class="num"><b>'+y(sumBy(a,"amt"))+'</b></td><td class="num"><b>'+prof(sumP(a),sumBy(a,"amt"))+'</b></td></tr>';
+    /* v1.50.46 合計は完了＋施工中（営業外売上などの「その他」は入れない。今の3社報告の合計と同じ） */
+    const done=st.filter(x=>x.state==="完了"),wip=st.filter(x=>x.state==="施工中"),main=done.concat(wip),other=st.some(x=>x.state==="その他"),n=sumBy(main,"n");
     return '<div class="tbl-wrap"><table class="items sales-st" style="min-width:0"><thead><tr><th>担当</th><th>状態</th><th>件数</th>'+(hasBase?'<th>基準値</th>':'')+'<th>金額</th><th>粗利</th></tr></thead><tbody>'+
       groups.map(g=>(groups.length>1||g?'<tr><td colspan="'+cols+'" class="note"><b>'+h(g||"その他")+'</b></td></tr>':'')+st.filter(x=>(x.group||"")===g).map(row).join("")).join("")+
-      part("完了物件",done)+part("施工中",wip)+part("合計",st)+'</tbody></table></div><p class="note num" style="margin:0">1件単価（合計の金額 ÷ 物件数）：'+(n?y(sumBy(st,"amt")/n):"—")+'</p>'};
+      part("完了物件",done)+part("施工中",wip)+part("合計",main)+'</tbody></table></div><p class="note num" style="margin:0">1件単価（合計の金額 ÷ 物件数）：'+(n?y(sumBy(main,"amt")/n):"—")+(other?'（合計に「その他」の営業外売上は入れていません）':'')+'</p>'};
   const dayChart=(co,ds)=>{const ym=M.key,last=new Date(Number(ym.slice(0,4)),Number(ym.slice(5)),0).getDate(),byD=Object.fromEntries(ds.map(x=>[x.day,x])),max=Math.max(1,...ds.map(x=>x.amt||0));
     const cols=Array.from({length:last},(_,i)=>{const x=byD[i+1],v=x&&x.amt||0,hgt=v?Math.max(2,Math.round(v/max*100)):0,tip=(i+1)+"日："+(x?cnt(x.n)+"・"+y(x.amt):"入力なし");
       return '<button type="button" class="sales-col" data-sales-day="'+h(co)+'|'+(i+1)+'" title="'+h(tip)+'" aria-label="'+h(tip)+'"><span style="height:'+hgt+'%"></span></button>'}).join("");

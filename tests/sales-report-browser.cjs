@@ -19,7 +19,7 @@ async function google(r){
   return J({files:Object.values(G.files).filter(f=>f.owner===acct&&(!eqn||f.name===eqn)&&(!cn||f.name.includes(cn))).map(f=>({id:f.id,name:f.name,createdTime:f.created}))})}
  if(p==='/drive/v3/files'&&m==='POST'){const b=req.postDataJSON(),id='bbsheet'+String(++G.n).padStart(20,'0');G.files[id]={id,name:b.name,owner:acct,created:new Date(Date.UTC(2026,10,1)+G.n*1000).toISOString(),perms:[],tabs:[{title:'シート1',sheetId:0,rows:[]}]};return J({id,name:b.name})}
  let mm=p.match(/^\/drive\/v3\/files\/([^/]+)$/);
- if(mm&&m==='GET'){const f=G.files[mm[1]];if(!f||f.owner!==acct)return J({},404);return J({modifiedTime:f.modified||f.created})}
+ if(mm&&m==='GET'){const f=G.files[mm[1]];if(!f||f.owner!==acct)return J({},404);return J({modifiedTime:f.modified||f.created,name:f.name})}
  mm=p.match(/^\/drive\/v3\/files\/([^/]+)\/permissions$/);
  if(mm){const f=G.files[mm[1]];if(!f||f.owner!==acct)return J({},403);return J({permissions:[{id:'owner',emailAddress:f.owner,role:'owner',type:'user'}].concat(f.perms)})}
  mm=p.match(/^\/v4\/spreadsheets\/([^/:]+)(.*)$/);
@@ -122,8 +122,21 @@ async function main(){
    assert.ok(await A.p.$$eval('#stats-sales tr.sales-done td',a=>a.every(td=>getComputedStyle(td).backgroundColor!=='rgba(0, 0, 0, 0)')));
    assert.match(await A.p.textContent('#stats-sales .sales-st'),/粗利率 \d+%/);assert.match(await A.p.locator('#stats-sales .sales-st tr.sales-sum').last().textContent(),/合計.*粗利率 \d+%/);
    assert.match(await A.p.textContent('details[data-fold="sales"] > summary'),/グループ各社売上報告/);
+   /* 施工中の粗利が空なら「—」。合計に「その他」（営業外売上）は入れない */
+   const sums=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('tr.sales-sum').allTextContents();
+   assert.match(sums[1],/施工中.*—/);assert.doesNotMatch(sums[1],/0円粗利率/);
+   const num=s=>Number(s.replace(/[^0-9]/g,''));
+   const amt=r=>num((r.match(/([\d,]+)円/)||[])[1]||'0');assert.equal(amt(sums[2]),amt(sums[0])+amt(sums[1]),'合計 = 完了物件 + 施工中 (その他 is not added)');
+   assert.match(await A.p.textContent('#stats-sales'),/合計に「その他」の営業外売上は入れていません/);
    assert.ok(await overflow(A.p)<=0,'overflow');
    if(width===400)await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).screenshot({path:path.join(require('node:os').tmpdir(),'sales-check-400.png')});
+  });
+  await check('本物のシート（名前に「試作」がない）を読んでいるときは「試作用のシートを作り直す」を出さず、札は「社長だけ」 '+width+'px',async()=>{
+   const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）');f.name='CPG HUB_売上報告';
+   await A.p.click('[data-act=salesload]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);
+   assert.equal(await A.p.locator('#stats-sales [data-act=salesdemo]').count(),0);assert.match(await A.p.textContent('#stats-sales .chip'),/^社長だけ$/);
+   f.name='CPG HUB_売上報告（試作・架空）';await A.p.click('[data-act=salesload]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);
+   assert.equal(await A.p.locator('#stats-sales [data-act=salesdemo]').count(),1);
   });
   await check('毎日の更新：同期のたびに売上報告を読み直す。今日（日本時間）に更新がなければ「今日はまだ更新されていません」を目立たせる '+width+'px',async()=>{
    const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）');
