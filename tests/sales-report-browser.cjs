@@ -83,7 +83,7 @@ async function main(){
    assert.equal(await A.p.$$eval('#stats-sales .sales-col[data-sales-day^="CP|"]',a=>a.length),30);
    /* v1.50.47 人件費・Notes未入力は出さない。担当の名前は1行（縦に割れない） */
    assert.doesNotMatch(t2,/人件費|Notes未入力/);
-   const nameLines=await A.p.$$eval('#stats-sales .sales-st tbody tr:not(.sales-sum) td:first-child[style*="nowrap"]',a=>a.map(td=>{const r=document.createRange();r.selectNodeContents(td);return r.getClientRects().length}));
+   const nameLines=await A.p.$$eval('#stats-sales .sales-st tbody tr:not(.sales-sum) td:first-child[style*="nowrap"]',a=>a.map(td=>{const r=document.createRange();r.selectNodeContents(td.firstChild);return r.getClientRects().length}));
    assert.ok(nameLines.length>0&&nameLines.every(n=>n<=1),'names on one line '+nameLines);
    assert.deepEqual(await A.p.$$eval('#stats-sales .sales-co h3',a=>a.map(x=>x.textContent)),['CP本社','ATアートテック','CPY横浜'],'company order CP, AT, CPY');
    await A.p.click('#stats-sales .sales-col[data-sales-day="CP|1"]');assert.equal(await A.p.$$eval('#stats-sales details:not([data-fold])[open]',a=>a.length)>0,true,'open sections stay open');
@@ -124,13 +124,16 @@ async function main(){
    for(const sm of await A.p.$$('#stats-sales details:not([data-fold]):not([hidden]) > summary'))await sm.click();
    const done=await A.p.$$eval('#stats-sales tr.sales-done',a=>a.map(r=>r.textContent));assert.ok(done.length>=7&&done.every(x=>/完了/.test(x)),'完了 rows are tinted');
    assert.ok(await A.p.$$eval('#stats-sales tr.sales-done td',a=>a.every(td=>getComputedStyle(td).backgroundColor!=='rgba(0, 0, 0, 0)')));
-   assert.match(await A.p.textContent('#stats-sales .sales-st'),/粗利率 \d+%/);assert.match(await A.p.locator('#stats-sales .sales-st tr.sales-sum').last().textContent(),/合計.*粗利率 \d+%/);
+   assert.match(await A.p.textContent('#stats-sales .sales-st thead'),/金額（円）.*粗利（円）粗利率/);assert.match(await A.p.textContent('#stats-sales .sales-st tbody'),/[\d,]+粗利率 \d+%/);assert.match(await A.p.locator('#stats-sales .sales-st tr.sales-sum').last().textContent(),/合計.*[\d,]+粗利率 \d+%/);
+   /* v1.50.48 状態は名前の下。表は右が切れない（横にはみ出さない） */
+   assert.match(await A.p.locator('#stats-sales .sales-st tbody tr.sales-done td').first().textContent(),/^見本 .郎完了$/);
+   assert.deepEqual(await A.p.$$eval('#stats-sales .sales-st',a=>a.map(t=>{const w=t.closest('.tbl-wrap');return w.scrollWidth-w.clientWidth<=1})),[true,true,true],'staff tables fit');
    assert.match(await A.p.textContent('details[data-fold="sales"] > summary'),/グループ各社売上報告/);
    /* 施工中の粗利が空なら「—」。合計に「その他」（営業外売上）は入れない */
    const sums=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('tr.sales-sum').allTextContents();
-   assert.match(sums[1],/施工中.*—/);assert.doesNotMatch(sums[1],/0円粗利率/);
+   assert.match(sums[1],/施工中.*—$/);
    const num=s=>Number(s.replace(/[^0-9]/g,''));
-   const amt=r=>num((r.match(/([\d,]+)円/)||[])[1]||'0');assert.equal(amt(sums[2]),amt(sums[0])+amt(sums[1]),'合計 = 完了物件 + 施工中 (その他 is not added)');
+   const amts=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('tr.sales-sum td:nth-child(3)').allTextContents(),amt=i=>num(amts[i]);assert.equal(amt(2),amt(0)+amt(1),'合計 = 完了物件 + 施工中 (その他 is not added)');
    assert.match(await A.p.textContent('#stats-sales'),/合計に「その他」の営業外売上は入れていません/);
    assert.ok(await overflow(A.p)<=0,'overflow');
    if(width===400)await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).screenshot({path:path.join(require('node:os').tmpdir(),'sales-check-400.png')});
