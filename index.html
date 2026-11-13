@@ -211,6 +211,16 @@ ol.hist li{overflow-wrap:anywhere}
 .sales-co{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:var(--accent-soft);border-left:6px solid var(--accent);border-radius:8px;padding:8px 12px}
 #stats-sales .sales-co h3{margin:0;font-size:22px;font-weight:800;color:var(--fg);line-height:1.2}#stats-sales .sales-co h3 span{font-size:16px;font-weight:700;margin-left:8px}
 .sales-lab{font-size:13.5px;font-weight:700;color:var(--fg)}
+/* v1.50.46 完了の行は薄い色・粗利率・更新日・毎日の確認 */
+#stats-sales tr.sales-done td{background:var(--green-soft)}
+/* v1.50.46 見出し「グループ各社売上報告」を目立たせる */
+details[data-fold="sales"]>summary.foldh{background:var(--accent);color:var(--accent-fg);border-radius:12px;padding:10px 14px}
+details[data-fold="sales"]>summary.foldh h2{font-size:22px;font-weight:800;color:var(--accent-fg)}
+.sales-pct{display:block;font-size:11.5px;color:var(--muted);font-weight:400}
+.sales-upd{font-size:15px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:2px 10px;white-space:nowrap}
+.sales-chk{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.sales-chip{display:inline-flex;align-items:center;min-height:32px;padding:2px 10px;border-radius:99px;font-weight:700;font-size:14px}
+.sales-chip.on{background:var(--green-soft);color:var(--fg)}.sales-chip.off{background:var(--amber-soft);color:var(--fg)}
 /* 毎日の受注：1色の縦棒（棒どうしは2pxあける・上の角を丸く）。押すとその日の数字を出す */
 .sales-chart{display:flex;align-items:flex-end;gap:2px;height:120px;padding:4px 0;border-bottom:1px solid var(--line)}
 .sales-col{flex:1 1 0;min-width:0;height:100%;display:flex;align-items:flex-end;padding:0;margin:0;border:0;background:transparent;cursor:pointer}
@@ -438,8 +448,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.45" title="使い方マニュアルを開く">v1.50.45・11/13更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.45" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.46" title="使い方マニュアルを開く">v1.50.46・11/13更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.46" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -499,10 +509,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.45"></script>
+<script src="./share-management.js?v=1.50.46"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.45"></script>
-<script src="./calendar-view-scope.js?v=1.50.45"></script>
+<script src="./view-scope.js?v=1.50.46"></script>
+<script src="./calendar-view-scope.js?v=1.50.46"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2293,7 +2303,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.45";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.46";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2454,8 +2464,8 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  (D().admin?foldSec("sales","売上報告（試作・社長だけ）",salesSec(),!!ui.salesBusy):'')+exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.45" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.45" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  (D().admin?foldSec("sales","グループ各社売上報告",salesSec(),!!ui.salesBusy):'')+exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.46" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.46" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3354,12 +3364,15 @@ async function viewListResolve(setRows,log){
 const SALES_ORDER=["CP","AT","CPY"],SALES_KEY="売上報告ID",
   SALES_CO=["会社","目標売上","目標粗利","実績売上","実績粗利","前月売上","前月粗利","最終粗利予想","人件費","Notes未入力","社長確認日","本部長確認日","GM確認日","GMの名前","更新日"],
   SALES_ST=["会社","区分","担当","状態","物件数","基準値","金額","粗利"],
-  SALES_DAY=["会社","日","受注件数","受注金額"];
+  SALES_DAY=["会社","日","受注件数","受注金額"],
+  /* v1.50.46 毎日の確認：会社・日ごとに、社長・本部長・GMのチェックボックス（「YYYY-MM 確認」のタブ。なくてもよい） */
+  SALES_CHK=["会社","日","社長","本部長","GM"],SALES_ROLES=[["boss","社長"],["hq","本部長"],["gm","GM"]];
+const salesOn=v=>/^(TRUE|✓|✔|済|〇|○|1)$/i.test(String(v??"").trim());
 const salesNum=v=>{const t=String(v??"").replace(/[,，円¥￥\s]/g,"");if(t==="")return null;const n=Number(t);return Number.isFinite(n)?n:NaN};
-const SALES_PARTS={"会社":"co","担当":"st","受注":"day"},SALES_TAB=/^(\d{4}-\d{2})(?: (会社|担当|受注))?$/;
+const SALES_PARTS={"会社":"co","担当":"st","受注":"day","確認":"chk"},SALES_TAB=/^(\d{4}-\d{2})(?: (会社|担当|受注|確認))?$/;
 /* only：そのタブで探す表（"co"・"st"・"day"）。省くと3つとも探す */
 function salesParse(rows,only){
-  const cell=(r,i)=>String((r||[])[i]??"").trim(),out={cos:[],staff:[],days:[],bad:[]};
+  const cell=(r,i)=>String((r||[])[i]??"").trim(),out={cos:[],staff:[],days:[],chk:[],bad:[]};
   const hdr=cols=>rows.findIndex(r=>cols.every((c,i)=>cell(r,i)===c));
   const block=(cols,fn)=>{const at=hdr(cols);if(at<0)return false;for(let i=at+1;i<rows.length;i++){const r=rows[i];if(!cols.some((_,j)=>cell(r,j)))break;if(cell(r,0)==="会社")break;fn(r,i+1)}return true};
   const num=(r,i,row,label)=>{const n=salesNum((r||[])[i]);if(Number.isNaN(n))out.bad.push(row+"行目の「"+label+"」");return Number.isNaN(n)?null:n};
@@ -3370,7 +3383,10 @@ function salesParse(rows,only){
     out.staff.push({co:cell(r,0),group:cell(r,1),name:cell(r,2),state:st,n:num(r,4,row,"物件数"),base:num(r,5,row,"基準値"),amt:num(r,6,row,"金額"),prof:num(r,7,row,"粗利")})});
   const okDay=block(SALES_DAY,(r,row)=>{if(!coOk(r,row))return;const d=salesNum(r[1]);if(!Number.isInteger(d)||d<1||d>31)return out.bad.push(row+"行目の「日」");
     out.days.push({co:cell(r,0),day:d,n:num(r,2,row,"受注件数"),amt:num(r,3,row,"受注金額")})});
+  const okChk=block(SALES_CHK,(r,row)=>{if(!coOk(r,row))return;const d=salesNum(r[1]);if(!Number.isInteger(d)||d<1||d>31)return out.bad.push(row+"行目の「日」");
+    out.chk.push({co:cell(r,0),day:d,boss:salesOn(r[2]),hq:salesOn(r[3]),gm:salesOn(r[4]),row})});
   const want=k=>!only||only.includes(k);
+  if(!okChk&&only&&only.includes("chk"))out.bad.push("確認の表の見出し（"+SALES_CHK.join("｜")+"）が見つかりません");
   if(!okCo&&want("co"))out.bad.unshift("会社の表の見出し（"+SALES_CO.slice(0,5).join("｜")+"…）が見つかりません");
   if(!okSt&&want("st"))out.bad.push("担当者別の表の見出し（"+SALES_ST.join("｜")+"）が見つかりません");
   if(!okDay&&want("day"))out.bad.push("毎日の受注の表の見出し（"+SALES_DAY.join("｜")+"）が見つかりません");
@@ -3381,9 +3397,9 @@ async function salesLoad(){
   const all=(await sheetTabNames(id)).filter(t=>SALES_TAB.test(t)),tabs=[...new Set(all.map(t=>t.slice(0,7)))].sort();
   const v=all.length?await sheetRead(id,all):{};
   /* 同じ月のタブを1つずつ読んでまとめる。表を分けたタブは、その表だけを探す。読めなかったところにはタブの名前を付ける */
-  const month=key=>{const out={cos:[],staff:[],days:[],bad:[]},mine=all.filter(t=>t.slice(0,7)===key),split=mine.length>1||mine[0]!==key;
+  const month=key=>{const out={cos:[],staff:[],days:[],chk:[],bad:[]},mine=all.filter(t=>t.slice(0,7)===key),split=mine.length>1||mine[0]!==key;
     const need=["co","st","day"].filter(k=>!mine.some(t=>t===key||SALES_PARTS[t.slice(8)]===k));
-    for(const t of mine){const part=SALES_PARTS[t.slice(8)],r=salesParse(v[t]||[],part?[part]:null);out.cos.push(...r.cos);out.staff.push(...r.staff);out.days.push(...r.days);out.bad.push(...r.bad.map(b=>split?"「"+t+"」"+b:b))}
+    for(const t of mine){const part=SALES_PARTS[t.slice(8)],r=salesParse(v[t]||[],part?[part]:null);out.cos.push(...r.cos);out.staff.push(...r.staff);out.days.push(...r.days);out.chk.push(...r.chk.map(x=>({...x,tab:t})));out.bad.push(...r.bad.map(b=>split?"「"+t+"」"+b:b))}
     for(const k of need)out.bad.push("「"+key+" "+Object.keys(SALES_PARTS).find(n=>SALES_PARTS[n]===k)+"」のタブがありません");
     return {key,...out}};
   /* 最終更新（Googleドライブの更新日時）。今日（日本時間）に更新されたかを見る。読めなくても内容は出す */
@@ -3392,7 +3408,7 @@ async function salesLoad(){
   if(!ui.salesMonth||!tabs.includes(ui.salesMonth))ui.salesMonth=tabs.at(-1)||"";
 }
 /* 試作用：架空の数字だけのシートを作る（実在の名前・金額は入れない） */
-function salesDemoRows(ym,k){
+function salesDemoRows(ym,k,upto=20){
   const co=[["CP",30000000,10000000,21000000,6300000,20000000,6000000,"",3000000,2,"見本 一郎"],["AT",25000000,9000000,17500000,5600000,16000000,5000000,6000000,2500000,1,"見本 六郎"],["CPY",16000000,6000000,12800000,4500000,12000000,4200000,4800000,1800000,0,"見本 四郎"]];
   const st=[["CP","第1事業部","見本 一郎",[3,400000,120000],[10,3000000,900000]],["CP","第1事業部","見本 二郎",[5,900000,300000],[8,2500000,800000]],["CP","第2事業部","見本 三郎",[2,200000,80000],[6,1800000,500000]],
     ["AT","営業①","見本 六郎",[6,1500000,520000],[15,6000000,2000000]],["AT","営業①","見本 七郎",[2,300000,110000],[7,2200000,700000]],
@@ -3403,29 +3419,42 @@ function salesDemoRows(ym,k){
   for(const s of st){sr.push([s[0],s[1],s[2],"完了",s[3][0],"",r(s[3][1]),r(s[3][2])]);sr.push([s[0],s[1],s[2],"施工中",s[4][0],"",r(s[4][1]),r(s[4][2])])}
   sr.push(["CP","","営業外売上（事務管理手数料など）","その他",1,"",r(100000),r(100000)]);
   const dr=[SALES_DAY];
-  for(const [c,base] of [["CP",3],["AT",4],["CPY",2]])for(let d=1;d<=20;d++){const n=(d*base+3)%5;dr.push([c,d,n,n*(150000+((d*7919+base*31)%9)*25000)])}
-  return {"会社":rows,"担当":sr,"受注":dr};
+  for(const [c,base] of [["CP",3],["AT",4],["CPY",2]])for(let d=1;d<=upto;d++){const n=(d*base+3)%5;dr.push([c,d,n,n*(150000+((d*7919+base*31)%9)*25000)])}
+  /* 確認：その月の日の数だけ行を作る。架空の印は upto の日まで（社長は毎日・本部長は3日に2日・GMは平日だけのように見える形） */
+  const last=new Date(Number(ym.slice(0,4)),Number(ym.slice(5)),0).getDate(),cr=[SALES_CHK];
+  for(const c of ["CP","AT","CPY"])for(let d=1;d<=last;d++){const on=d<=upto,wd=new Date(Number(ym.slice(0,4)),Number(ym.slice(5))-1,d).getDay();cr.push([c,d,on,on&&d%3!==0,on&&wd!==0&&wd!==6])}
+  return {"会社":rows,"担当":sr,"受注":dr,"確認":cr};
 }
 /* v1.50.44 スマホで見やすく：見出しの行と会社の列を止める・見出しを太字と色・金額に「,」・列の幅 */
-const SALES_FMT={"会社":{num:[1,9],w:[56,110,110,110,110,110,110,110,100,90,90,90,90,100,80]},"担当":{num:[4,7],w:[56,90,110,70,70,80,110,110]},"受注":{num:[2,3],w:[56,48,80,120]}};
+const SALES_FMT={"会社":{num:[1,9],w:[56,110,110,110,110,110,110,110,100,90,90,90,90,100,80]},"担当":{num:[4,7],w:[56,90,110,70,70,80,110,110]},"受注":{num:[2,3],w:[56,48,80,120]},"確認":{chk:[2,4],w:[56,48,64,64,64]}};
 function salesFormatReqs(sheetId,part){const f=SALES_FMT[part],g={sheetId};
   return [{updateSheetProperties:{properties:{sheetId,gridProperties:{frozenRowCount:1,frozenColumnCount:1}},fields:"gridProperties.frozenRowCount,gridProperties.frozenColumnCount"}},
     {repeatCell:{range:{...g,startRowIndex:0,endRowIndex:1},cell:{userEnteredFormat:{textFormat:{bold:true},backgroundColor:{red:0.85,green:0.92,blue:0.98},wrapStrategy:"WRAP",verticalAlignment:"MIDDLE"}},fields:"userEnteredFormat(textFormat,backgroundColor,wrapStrategy,verticalAlignment)"}},
-    {repeatCell:{range:{...g,startRowIndex:1,startColumnIndex:f.num[0],endColumnIndex:f.num[1]+1},cell:{userEnteredFormat:{numberFormat:{type:"NUMBER",pattern:"#,##0"}}},fields:"userEnteredFormat.numberFormat"}},
+    ...(f.num?[{repeatCell:{range:{...g,startRowIndex:1,startColumnIndex:f.num[0],endColumnIndex:f.num[1]+1},cell:{userEnteredFormat:{numberFormat:{type:"NUMBER",pattern:"#,##0"}}},fields:"userEnteredFormat.numberFormat"}}]:[]),
+    /* 確認の欄はチェックボックス（スマホで押すだけ） */
+    ...(f.chk?[{setDataValidation:{range:{...g,startRowIndex:1,startColumnIndex:f.chk[0],endColumnIndex:f.chk[1]+1},rule:{condition:{type:"BOOLEAN"},strict:true}}}]:[]),
     ...f.w.map((px,i)=>({updateDimensionProperties:{range:{...g,dimension:"COLUMNS",startIndex:i,endIndex:i+1},properties:{pixelSize:px},fields:"pixelSize"}}))];
 }
 async function salesCreateDemo(){
   const d=D();await gAuthorize(true);if(!eq(await myEmail(),ADMIN_ACCOUNT))throw Error("社長の管理アカウントで作ってください");if(!d.folder||!d.listId)throw Error("先に「管理をはじめる」をしてください");
-  const now=todayS(),m0=addMonths(now.slice(0,7),-2),m1=addMonths(now.slice(0,7),-1);
+  const now=todayS(),m0=addMonths(now.slice(0,7),-2),m1=addMonths(now.slice(0,7),-1),m2=now.slice(0,7),upto=Math.max(1,Number(now.slice(8))-1);
   const f=await driveCreate({name:"CPG HUB_売上報告（試作・架空）",mimeType:"application/vnd.google-apps.spreadsheet",parents:[d.folder]});
-  const parts=Object.keys(SALES_PARTS),names=[m0,m1].flatMap(m=>parts.map(p=>m+" "+p));
+  const parts=Object.keys(SALES_PARTS),names=[m0,m1,m2].flatMap(m=>parts.map(p=>m+" "+p));
   await sheetTabs(f.id,names[0],names.slice(1));
-  for(const [m,k] of [[m0,1],[m1,0.5]]){const rows=salesDemoRows(m,k);for(const p of parts)await sheetWrite(f.id,m+" "+p,rows[p])}
+  for(const [m,k,u] of [[m0,1,31],[m1,0.5,20],[m2,0.3,upto]]){const rows=salesDemoRows(m,k,u);for(const p of parts)await sheetWrite(f.id,m+" "+p,rows[p])}
   /* 見た目を整える（失敗しても読み込みには困らないので止めない） */
   try{const v=await gReq(SHEETS+"/"+encodeURIComponent(f.id)+"?fields=sheets.properties");
     const reqs=(v.sheets||[]).map(x=>x.properties).filter(x=>SALES_TAB.test(x.title)&&x.title.length>7).flatMap(x=>salesFormatReqs(x.sheetId,x.title.slice(8)));
     if(reqs.length)await gReq(SHEETS+"/"+encodeURIComponent(f.id)+":batchUpdate",{method:"POST",body:{requests:reqs}});}catch(err){if(err.message==="signin")throw err}
   await hubSetWrite(SALES_KEY,f.id);d.salesId=f.id;save();await salesLoad();
+}
+/* v1.50.46 社長の「今日の確認」を、シートの確認のタブに印を付けて残す（その1マスだけ書く） */
+async function salesCheck(co){
+  const S=ui.sales,key=todayS().slice(0,7),td=Number(todayS().slice(8)),M=S&&S.months.find(m=>m.key===key),x=M&&M.chk.find(r=>r.co===co&&r.day===td);
+  if(!S||!x)throw Error("シートの確認のタブに、今日（"+td+"日）の"+co+"の行がありません");
+  await gAuthorize(true);
+  await gReq(SHEETS+"/"+encodeURIComponent(S.id)+"/values/"+encodeURIComponent("'"+x.tab+"'!C"+x.row)+"?valueInputOption=USER_ENTERED",{method:"PUT",body:{values:[[true]]}});
+  await salesLoad();
 }
 const salesWhen=iso=>iso?new Date(iso).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo",month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"不明";
 const addMonths=(ym,n)=>{const [y,m]=ym.split("-").map(Number),t=y*12+(m-1)+n;return Math.floor(t/12)+"-"+String(t%12+1).padStart(2,"0")};
@@ -3447,8 +3476,10 @@ function salesSec(){
   const tot=k=>M.cos.reduce((a,c)=>a+(c[k]||0),0),dAll=M.days;
   const total='<div class="panel" style="display:flex;flex-direction:column;gap:4px"><h3 style="margin:0">3社の合計</h3><div style="font-size:22px;font-weight:800" class="num">'+y(tot("実績売上"))+'</div><div class="note num">目標 '+y(tot("目標売上"))+'・達成 '+pt(pc(tot("実績売上"),tot("目標売上")))+'／粗利 '+y(tot("実績粗利"))+'（粗利率 '+pt(pc(tot("実績粗利"),tot("実績売上")))+'）</div><div class="note num">受注Total '+cnt(sumBy(dAll,"n"))+'・'+y(sumBy(dAll,"amt"))+'</div></div>';
   const stTable=st=>{const groups=[...new Set(st.map(x=>x.group||""))],hasBase=st.some(x=>x.base!=null),cols=hasBase?6:5,
-    row=x=>'<tr><td>'+h(x.name)+'</td><td>'+h(x.state)+'</td><td class="num">'+cnt(x.n)+'</td>'+(hasBase?'<td class="num">'+(x.base==null?"—":Math.round(x.base).toLocaleString("ja-JP"))+'</td>':'')+'<td class="num">'+y(x.amt)+'</td><td class="num">'+y(x.prof)+'</td></tr>';
-    const part=(label,a)=>'<tr class="sales-sum"><td colspan="2"><b>'+label+'</b></td><td class="num"><b>'+cnt(sumBy(a,"n"))+'</b></td>'+(hasBase?'<td></td>':'')+'<td class="num"><b>'+y(sumBy(a,"amt"))+'</b></td><td class="num"><b>'+y(sumBy(a,"prof"))+'</b></td></tr>';
+    /* v1.50.46 粗利の下に粗利率。完了の行は薄い色 */
+    prof=(p,a)=>y(p)+'<span class="sales-pct">粗利率 '+pt(pc(p,a))+'</span>',
+    row=x=>'<tr'+(x.state==="完了"?' class="sales-done"':'')+'><td>'+h(x.name)+'</td><td>'+h(x.state)+'</td><td class="num">'+cnt(x.n)+'</td>'+(hasBase?'<td class="num">'+(x.base==null?"—":Math.round(x.base).toLocaleString("ja-JP"))+'</td>':'')+'<td class="num">'+y(x.amt)+'</td><td class="num">'+prof(x.prof,x.amt)+'</td></tr>';
+    const part=(label,a)=>'<tr class="sales-sum'+(label==="完了物件"?' sales-done':'')+'"><td colspan="2"><b>'+label+'</b></td><td class="num"><b>'+cnt(sumBy(a,"n"))+'</b></td>'+(hasBase?'<td></td>':'')+'<td class="num"><b>'+y(sumBy(a,"amt"))+'</b></td><td class="num"><b>'+prof(sumBy(a,"prof"),sumBy(a,"amt"))+'</b></td></tr>';
     const done=st.filter(x=>x.state==="完了"),wip=st.filter(x=>x.state==="施工中"),n=sumBy(st,"n");
     return '<div class="tbl-wrap"><table class="items sales-st" style="min-width:0"><thead><tr><th>担当</th><th>状態</th><th>件数</th>'+(hasBase?'<th>基準値</th>':'')+'<th>金額</th><th>粗利</th></tr></thead><tbody>'+
       groups.map(g=>(groups.length>1||g?'<tr><td colspan="'+cols+'" class="note"><b>'+h(g||"その他")+'</b></td></tr>':'')+st.filter(x=>(x.group||"")===g).map(row).join("")).join("")+
@@ -3461,12 +3492,20 @@ function salesSec(){
       '<p class="note num" style="margin:0" role="status" id="sales-day-'+h(co)+'">'+(pick?pick+"日："+(px?cnt(px.n)+"・"+y(px.amt):"入力なし"):"棒を押すと、その日の件数と金額が出ます")+'</p>'+
       '<details><summary class="note" style="cursor:pointer;min-height:36px;display:flex;align-items:center">表で見る</summary><div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>日</th><th>受注件数</th><th>受注金額</th></tr></thead><tbody>'+
       ds.slice().sort((a,b)=>a.day-b.day).map(x=>'<tr><td class="num">'+x.day+'日</td><td class="num">'+cnt(x.n)+'</td><td class="num">'+y(x.amt)+'</td></tr>').join("")+'</tbody></table></div></details>'};
-  const card=c=>{const st=M.staff.filter(x=>x.co===c.co),ds=M.days.filter(x=>x.co===c.co),ra=pc(c["実績売上"],c["目標売上"]),rp=pc(c["実績粗利"],c["目標粗利"]),dn=sumBy(ds,"n"),da=sumBy(ds,"amt");
-    return '<div class="panel" style="display:flex;flex-direction:column;gap:10px"><div class="sales-co"><h3>'+h(c.co)+'<span>'+h(CO_LABEL[c.co]||"")+'</span></h3><span class="note">更新日 '+h(c["更新日"]||"—")+'</span></div>'+
+  const curM=M.key===todayS().slice(0,7),tdN=Number(todayS().slice(8)),lastD=new Date(Number(M.key.slice(0,4)),Number(M.key.slice(5)),0).getDate();
+  const card=c=>{const ck=M.chk.filter(x=>x.co===c.co),upto=curM?tdN:lastD,tdc=curM?ck.find(x=>x.day===tdN):null;
+    const lastChk=k=>{const d=ck.filter(x=>x[k]&&x.day<=upto).map(x=>x.day).sort((a,b)=>b-a)[0];return d?M.key.slice(5)+"/"+String(d).padStart(2,"0"):""};
+    const chkBox=ck.length?'<div class="sales-chk"><div class="sales-lab">毎日の確認'+(curM?'（今日 '+tdN+'日）':'')+'</div>'+
+      (curM?'<div class="row" style="gap:6px">'+SALES_ROLES.map(([k,l])=>{const on=!!(tdc&&tdc[k]);return '<span class="sales-chip '+(on?'on':'off')+'">'+l+' '+(on?'✓ 済':'未')+'</span>'}).join("")+'</div>':'')+
+      '<div class="note num">'+(curM?'今月':'この月')+'（'+upto+'日まで）：'+SALES_ROLES.map(([k,l])=>l+' '+ck.filter(x=>x[k]&&x.day<=upto).length+'日').join("・")+'</div>'+
+      (curM&&tdc&&!tdc.boss?'<div class="row"><button class="btn sm pri" type="button" data-act="salescheck" data-co="'+h(c.co)+'"'+busy+'>社長の確認をした（今日）</button></div>':'')+
+      (curM&&!tdc?'<p class="note" style="margin:0">シートの確認のタブに今日の行がありません</p>':'')+'</div>':'';
+    const st=M.staff.filter(x=>x.co===c.co),ds=M.days.filter(x=>x.co===c.co),ra=pc(c["実績売上"],c["目標売上"]),rp=pc(c["実績粗利"],c["目標粗利"]),dn=sumBy(ds,"n"),da=sumBy(ds,"amt");
+    return '<div class="panel" style="display:flex;flex-direction:column;gap:10px"><div class="sales-co"><h3>'+h(c.co)+'<span>'+h(CO_LABEL[c.co]||"")+'</span></h3><span class="sales-upd">更新日 <b>'+h(c["更新日"]||"—")+'</b></span></div>'+
     '<div class="sales-grid"><div><div class="sales-lab">売上（実績／目標）</div><div class="num" style="font-size:20px;font-weight:800">'+y(c["実績売上"])+'</div><div class="note num">目標 '+y(c["目標売上"])+'・<b>達成 '+pt(ra)+'</b></div>'+bar(ra,'var(--blue)')+'</div>'+
     '<div><div class="sales-lab">粗利（実績／目標）</div><div class="num" style="font-size:20px;font-weight:800">'+y(c["実績粗利"])+'</div><div class="note num">目標 '+y(c["目標粗利"])+'（目標粗利率 '+pt(pc(c["目標粗利"],c["目標売上"]))+'）・<b>達成 '+pt(rp)+'</b>・粗利率 '+pt(pc(c["実績粗利"],c["実績売上"]))+'</div>'+bar(rp,'var(--green)')+'</div></div>'+
     '<div class="sales-grid sales-kv">'+kv("前月の金額",y(c["前月売上"]))+kv("前月の粗利",y(c["前月粗利"])+'（'+pt(pc(c["前月粗利"],c["前月売上"]))+'）')+kv("最終粗利予想",y(c["最終粗利予想"]))+kv("人件費",y(c["人件費"]))+kv("Notes未入力",cnt(c["Notes未入力"]))+'</div>'+
-    '<div class="note"><span class="sales-lab">確認日</span>　社長 '+h(c["社長確認日"]||"—")+'・本部長 '+h(c["本部長確認日"]||"—")+'・'+h(c["GMの名前"]||"GM")+' '+h(c["GM確認日"]||"—")+'</div>'+
+    '<div class="note"><span class="sales-lab">確認日</span>　社長 '+h(lastChk("boss")||c["社長確認日"]||"—")+'・本部長 '+h(lastChk("hq")||c["本部長確認日"]||"—")+'・'+h(c["GMの名前"]||"GM")+' '+h(lastChk("gm")||c["GM確認日"]||"—")+'</div>'+chkBox+
     (st.length?'<details><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700">担当者別（'+new Set(st.map(x=>x.name)).size+'人）</summary>'+stTable(st)+'</details>':'')+
     '<details'+(ds.length?'':' hidden')+'><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700">毎日の受注（受注Total '+cnt(dn)+'・'+y(da)+'・1件単価 '+(dn?y(da/dn):"—")+'）</summary>'+dayChart(c.co,ds)+'</details></div>'};
   /* v1.50.45 会社の順は CP・AT・CPY（シートの行の順によらない） */
@@ -4580,6 +4619,8 @@ document.addEventListener("click",e=>{
     if(!r.changes.length){ui.dmsg=[{ok:true,text:"変わった記号はありません"}];render();return}
     const log=[];ui.dbusy=true;ui.dview="";ui.dmsg=log;render();
     adminCodesSave(r.changes,(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()}).then(()=>{ui.dCodes=false;ui.dCodesDraft=null},err=>{log.push({ok:false,text:"途中で止まりました："+(err.message==="http"?dMsg(err):err.message||dMsg(err))})}).finally(()=>{ui.dbusy=false;render()});return}
+  if(a==="salescheck"){if(ui.salesBusy)return;const co=el.dataset.co;ui.salesBusy=true;ui.salesMsg=null;render();
+    salesCheck(co).then(()=>{ui.salesMsg={ok:true,text:co+"：今日の社長の確認を付けました"}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="salesdemo"||a==="salesload"){if(ui.salesBusy)return;ui.salesBusy=true;ui.salesMsg=null;render();
     (a==="salesdemo"?salesCreateDemo():salesLoad()).then(()=>{ui.salesMsg={ok:true,text:a==="salesdemo"?"試作用のシートを作りました（架空のデータ）。シートの数字を変えて「読み直す」で試せます":"読み込みました"}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="bbcreate"){ui.bbName=val("bb_name");ui.bbBusy=true;ui.bbMsg=null;render();
