@@ -85,6 +85,12 @@ async function main(){
    const t2=await A.p.textContent('#stats-sales');
    for(const k of ['前月の金額','最終粗利予想','目標粗利率','確認日　社長','見本 一郎','第1事業部','第2事業部','完了物件','施工中','合計','1件単価','営業外売上','毎日の受注（受注Total','更新日'])assert.ok(t2.includes(k),k);
    assert.equal(await A.p.$$eval('#stats-sales .sales-col[data-sales-day^="CP|"]',a=>a.length),30);
+   /* v1.50.51 毎日の受注は表が先：曜日・件数・金額・その日までの累計。最後の累計 ＝ 合計 ＝ 受注Total */
+   const dt=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-days').evaluate(t=>[...t.querySelectorAll('tbody tr')].map(r=>[...r.cells].map(c=>c.innerText.replace(/\n/g,' '))));
+   assert.match(dt[0][0],/^1日 (火)$/,'2026-09-01 is a Tuesday');const cum=dt.slice(0,-1).at(-1)[3],tot=dt.at(-1);
+   assert.equal(cum.split(' ')[0],tot[2],'last cumulative = total');assert.match(tot[0],/合計/);
+   const sum=dt.slice(0,-1).reduce((a,r)=>a+Number(r[2].replace(/,/g,'')),0);assert.equal(Number(tot[2].replace(/,/g,'')),sum);
+   assert.match(await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).textContent(),new RegExp('受注Total '+dt.slice(0,-1).reduce((a,r)=>a+Number(r[1].replace(/件/,'')),0)+'件・'+tot[2]+'円'));
    /* v1.50.47 人件費・Notes未入力は出さない。担当の名前は1行（縦に割れない） */
    assert.doesNotMatch(t2,/人件費|Notes未入力/);
    /* v1.50.49 名前は1人1回（2行目は状態だけ）。会社のカードは粗利が先で、粗利率を目立たせる */

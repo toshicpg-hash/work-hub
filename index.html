@@ -213,6 +213,9 @@ ol.hist li{overflow-wrap:anywhere}
 .sales-lab{font-size:13.5px;font-weight:700;color:var(--fg)}
 /* v1.50.46 完了の行は薄い色・粗利率・更新日・毎日の確認 */
 #stats-sales tr.sales-done td{background:var(--green-soft)}
+/* v1.50.51 毎日の受注の表：今日の行・土日 */
+.sales-days{font-size:12px}.sales-days td,.sales-days th{padding:6px 3px}.sales-days td.num,.sales-days th{white-space:nowrap}.sales-days .sales-pct{font-size:10.5px}
+#stats-sales tr.sales-today td{background:var(--amber-soft)}#stats-sales .sales-days tr.sun td:first-child b{color:var(--red)}#stats-sales .sales-days tr.sat td:first-child b{color:var(--blue)}
 /* v1.50.46 見出し「グループ各社売上報告」を目立たせる */
 details[data-fold="sales"]>summary.foldh{background:var(--accent);color:var(--accent-fg);border-radius:12px;padding:10px 14px}
 details[data-fold="sales"]>summary.foldh h2{font-size:22px;font-weight:800;color:var(--accent-fg)}
@@ -467,8 +470,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.50" title="使い方マニュアルを開く">v1.50.50・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.50" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.51" title="使い方マニュアルを開く">v1.50.51・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.51" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -528,10 +531,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.50"></script>
+<script src="./share-management.js?v=1.50.51"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.50"></script>
-<script src="./calendar-view-scope.js?v=1.50.50"></script>
+<script src="./view-scope.js?v=1.50.51"></script>
+<script src="./calendar-view-scope.js?v=1.50.51"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2322,7 +2325,7 @@ function foldSec(key,title,body,force){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.50";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.51";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2484,7 +2487,7 @@ function vStats(){
     ''+
     '</form>')+
   (D().admin?foldSec("sales","グループ各社売上報告",salesSec(),!!ui.salesBusy):'')+exSection()+gSettings()+'<section class="sec">'+calendarScopeSettings()+'</section>'+calShareSettings()+dSettings()+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.50" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.50" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.51" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.51" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3556,10 +3559,14 @@ function salesSec(){
     const cols=Array.from({length:last},(_,i)=>{const x=byD[i+1],v=x&&x.amt||0,hgt=v?Math.max(2,Math.round(v/max*100)):0,tip=(i+1)+"日："+(x?cnt(x.n)+"・"+y(x.amt):"入力なし");
       return '<button type="button" class="sales-col" data-sales-day="'+h(co)+'|'+(i+1)+'" title="'+h(tip)+'" aria-label="'+h(tip)+'"><span style="height:'+hgt+'%"></span></button>'}).join("");
     const pick=ui.salesDay&&ui.salesDay.startsWith(co+"|")?Number(ui.salesDay.split("|")[1]):0,px=pick&&byD[pick];
-    return '<div class="sales-chart" role="img" aria-label="'+h(co)+'の毎日の受注金額">'+cols+'</div><div class="sales-axis note"><span>1日</span><span>'+last+'日</span></div>'+
-      '<p class="note num" style="margin:0" role="status" id="sales-day-'+h(co)+'">'+(pick?pick+"日："+(px?cnt(px.n)+"・"+y(px.amt):"入力なし"):"棒を押すと、その日の件数と金額が出ます")+'</p>'+
-      '<details><summary class="note" style="cursor:pointer;min-height:36px;display:flex;align-items:center">表で見る</summary><div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>日</th><th>受注件数</th><th>受注金額</th></tr></thead><tbody>'+
-      ds.slice().sort((a,b)=>a.day-b.day).map(x=>'<tr><td class="num">'+x.day+'日</td><td class="num">'+cnt(x.n)+'</td><td class="num">'+y(x.amt)+'</td></tr>').join("")+'</tbody></table></div></details>'};
+    /* v1.50.51 表を先に（曜日・その日の件数と金額・その日までの累計）。グラフは「グラフで見る」の中へ */
+    const today=M.key===todayS().slice(0,7)?Number(todayS().slice(8)):0;let cn=0,ca=0;
+    const rows=ds.slice().sort((a,b)=>a.day-b.day).map(x=>{cn+=x.n||0;ca+=x.amt||0;const wd=new Date(Number(ym.slice(0,4)),Number(ym.slice(5))-1,x.day).getDay();
+      return '<tr class="'+[x.day===today?'sales-today':'',wd===0?'sun':wd===6?'sat':''].join(' ').trim()+'"><td class="num"><b>'+x.day+'日</b><span class="sales-state">'+WD[wd]+(x.day===today?'・今日':'')+'</span></td><td class="num">'+cnt(x.n)+'</td><td class="num">'+yn(x.amt)+'</td><td class="num"><b>'+yn(ca)+'</b><span class="sales-pct">'+cn+'件</span></td></tr>'}).join("");
+    return '<div class="tbl-wrap"><table class="items sales-days" style="min-width:0"><thead><tr><th>日</th><th>件数</th><th>金額（円）</th><th>累計（円）<span class="sales-pct">累計件数</span></th></tr></thead><tbody>'+rows+
+      '<tr class="sales-sum"><td><b>合計</b></td><td class="num"><b>'+cnt(cn)+'</b></td><td class="num"><b>'+yn(ca)+'</b></td><td class="num">1件単価<span class="sales-pct">'+(cn?yn(ca/cn)+'円':'—')+'</span></td></tr></tbody></table></div>'+
+      '<details><summary class="note" style="cursor:pointer;min-height:36px;display:flex;align-items:center">グラフで見る</summary><div class="sales-chart" role="img" aria-label="'+h(co)+'の毎日の受注金額">'+cols+'</div><div class="sales-axis note"><span>1日</span><span>'+last+'日</span></div>'+
+      '<p class="note num" style="margin:0" role="status" id="sales-day-'+h(co)+'">'+(pick?pick+"日："+(px?cnt(px.n)+"・"+y(px.amt):"入力なし"):"棒を押すと、その日の件数と金額が出ます")+'</p></details>'};
   const curM=M.key===todayS().slice(0,7),tdN=Number(todayS().slice(8)),lastD=new Date(Number(M.key.slice(0,4)),Number(M.key.slice(5)),0).getDate();
   const card=c=>{const ck=M.chk.filter(x=>x.co===c.co),upto=curM?tdN:lastD,tdc=curM?ck.find(x=>x.day===tdN):null;
     const lastChk=k=>{const d=ck.filter(x=>x[k]&&x.day<=upto).map(x=>x.day).sort((a,b)=>b-a)[0];return d?M.key.slice(5)+"/"+String(d).padStart(2,"0"):""};
