@@ -149,6 +149,8 @@ async function main(){
    assert.match(await A.p.textContent('#stats-sales'),/CP：今日の社長の確認を付けました/);
    assert.match(await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).textContent(),/確認日\s*社長 11\/09/);
    for(const sm of await A.p.$$('#stats-sales details:not([data-fold]):not([hidden]) > summary'))await sm.click();
+   /* v1.50.53 完了の行の数字は少し太く、施工中の行はふつう */
+   assert.deepEqual(await A.p.evaluate(()=>{const w=sel=>getComputedStyle(document.querySelector(sel)).fontWeight;return [w('#stats-sales .sales-st tbody tr.sales-done:not(.sales-sum) td.num'),w('#stats-sales .sales-st tbody tr:not(.sales-done):not(.sales-sum) td.num')]}),['600','400']);
    const done=await A.p.$$eval('#stats-sales tr.sales-done',a=>a.map(r=>r.textContent));assert.ok(done.length>=7&&done.every(x=>/完了/.test(x)),'完了 rows are tinted');
    assert.ok(await A.p.$$eval('#stats-sales tr.sales-done td',a=>a.every(td=>getComputedStyle(td).backgroundColor!=='rgba(0, 0, 0, 0)')));
    assert.match(await A.p.textContent('#stats-sales .sales-st thead'),/金額（円）.*粗利（円）粗利率/);assert.match(await A.p.textContent('#stats-sales .sales-st tbody'),/[\d,]+粗利率 \d+%/);assert.match(await A.p.locator('#stats-sales .sales-st tr.sales-sum').last().textContent(),/合計.*[\d,]+粗利率 \d+%/);
