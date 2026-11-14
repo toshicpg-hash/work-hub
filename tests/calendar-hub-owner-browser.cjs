@@ -108,7 +108,19 @@ async function main(){
   const r2=await d.p.evaluate(()=>{const ctx={people:[{sheetId:'boss-sheet',email:HO.ADMIN,name:'社長役'},{sheetId:'s',email:'s@example.com',name:'見本 社員'}]},m={people:[]};
    return [HO.calHubOwner({private:false,owner:'社長',creator:HO.ADMIN},ctx,m,[])?.person,HO.calHubOwner({private:false,owner:'社長',creator:'s@example.com'},ctx,m,[])]});
   assert.deepEqual(r2,['boss-sheet',null]);
+  /* v1.50.75 社長を人として持たない端末では {boss:true}（人に結び付けない） */
+  const r3=await d.p.evaluate(()=>HO.calHubOwner({private:false,owner:'社長',creator:HO.ADMIN},{people:[{sheetId:'s',email:'s@example.com',name:'見本 社員'}]},{people:[]},[]));
+  assert.deepEqual(r3,{boss:true});
   assert.ok(out.other.every(e=>!('owner' in e)),'other calendars unchanged');
+ });
+ await check('v1.50.75 社長の端末に社長の記録シートがなくても、社長の「予定を入れる」は「社長」の札で出す（持ち主不明にしない）',async()=>{
+  const d=await device({rows:[{id:HUB,work:true,mode:'mixed'}]});all.push(d);
+  await d.p.evaluate(({HUB})=>{HO.db.settings.data.sheetId='';HO.save();
+   const ev={private:false,calendarId:HUB,calendar:'CPG HUB',id:'boss1',hub:'',title:'会議　見本の会議',allDay:false,start:'2026-11-07T16:00:00+09:00',end:'2026-11-07T18:00:00+09:00',owner:'社長',creator:HO.ADMIN};
+   localStorage.setItem('workhub_gcal_last_v1',JSON.stringify({policy:2,at:Date.now(),from:'2026-11-01',to:'2026-11-30',data:{events:[ev],sources:[{id:HUB}],missing:0}}));HO.go('cal',{calDay:'2026-11-07',calView:'day'})},{HUB});
+  await pick(d.p,'all');
+  const c=await cards(d.p);const card=c.find(x=>x.text.includes('見本の会議'));assert.ok(card,JSON.stringify(c));assert.equal(card.tag,'社長');
+  assert.ok(!(await d.p.textContent('main')).includes('持ち主不明'),'not unidentified');
  });
  await check('400px・360pxで横にはみ出さない・スクリプトのエラーなし',async()=>{
   for(const width of [400,360]){const d=await device({rows:[{id:HUB,work:true,mode:'mixed'}],width});all.push(d);await pick(d.p,B);

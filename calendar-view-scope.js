@@ -20,6 +20,8 @@ function project({g,rows,model,cases=[],resolvePerson,readable,from='',to='9999-
  for(const e of g.data?.events||[]){const r=maps.get(e.calendarId),[first,last]=span(e);if(!r||!model.usable||e.private===true||!first||last<from||first>to)continue;let company=r.company,id=r.person;
   if(e.private!==false){if(r.mode==='mixed'||match(company,id)||(company==='unknown'&&(person==='all'||person===id)))privacyUnconfirmed.push(e);continue}
   const a=typeof attribute==='function'?attribute(e):null;
+  /* v1.50.75 社長の予定（「担当：社長」・社長のGmailで作成）で、社長を人として持たない端末：全社・全員のときだけ出す。持ち主不明にはしない */
+  if(a&&a.boss){if(co==='all'&&person==='all')events.push({...e,boss:true});continue}
   if(a&&a.person){if(!allowed.has(a.person))continue;company=['CP','CPY','AT'].includes(a.company)?a.company:'unknown';id=a.person;}
   else if(r.mode==='mixed'){
    // A bare case number is not provenance. Require exact saved event+calendar identity.
