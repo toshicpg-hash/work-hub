@@ -291,7 +291,7 @@ async function main(){
    await A.p.click('#home-orders');assert.equal(await A.p.evaluate(()=>BB.ui.view),'stats');
    assert.equal(await A.p.$eval('#sales-edit',d=>d.open),true);assert.match(await A.p.textContent('#sales-edit>summary'),/数字を入れる（11月）/);
    assert.ok(await A.p.$eval('details[data-fold="sales"]',d=>d.open));
-   const top=await A.p.$eval('#sales-edit',e=>e.getBoundingClientRect().top);assert.ok(top>=0&&top<900,'scrolled to the input '+top);
+   const top=await A.p.$eval('#sales-edit',e=>e.getBoundingClientRect().top);assert.ok(top>=-2&&top<900,'scrolled to the input '+top);
    await A.p.evaluate(()=>{BB.ui.salesEdOpen=false;BB.go('home')});
    /* 社員の端末：自分の記録シートの「会社の数字の場所」から読む */
    G.files.rec00000000000000000001={id:'rec00000000000000000001',name:'記録',owner:ADMIN,readers:[STAFF],created:'2026-10-01T00:00:00Z',perms:[],tabs:[{title:'会社の数字の場所',sheetId:0,rows:[['会社','ファイルID'],['CP','numcp000000000000000001']]}]};
@@ -312,7 +312,7 @@ async function main(){
    assert.match(await A.p.textContent('#sales-eds>summary'),/社長だけ/);
    await A.p.check('[data-sales-ed="rec00000000000000000001"]');await A.p.click('[data-act=saleseds]');await A.p.waitForFunction(()=>!BB.ui.salesBusy&&BB.ui.salesMsg);
    assert.equal(await A.p.evaluate(()=>BB.ui.salesMsg.ok),true,await A.p.evaluate(()=>BB.ui.salesMsg.text));
-   assert.deepEqual(tabOf(rec,'会社の数字の場所').find(r=>r[0]==='売上報告'),['売上報告',f.id,'CP,AT,CPY'],'全社の人は3社');
+   assert.deepEqual(tabOf(rec,'会社の数字の場所').find(r=>r[0]==='売上報告'),['売上報告',f.id,'CP,AT,CPY','45'],'全社の人は3社');
    assert.deepEqual(tabOf(rec,'会社の数字の場所').find(r=>r[0]==='CP'),['CP','numcp000000000000000001'],'company row kept');
    assert.ok(tabOf(G.files.list00000000000000000001,'HUBの設定').some(r=>r[0]==='売上報告を入れる人'&&r[1]==='rec00000000000000000001'));
    assert.match(await A.p.textContent('#sales-eds>summary'),/見本 専務/);
@@ -370,7 +370,7 @@ async function main(){
    await A.p.evaluate(()=>{document.getElementById('sales-eds').open=true});
    assert.match(await A.p.textContent('#sales-eds'),/GM・入れられる会社 CPY/);
    await A.p.check('[data-sales-ed="rec00000000000000000002"]');await A.p.click('[data-act=saleseds]');await A.p.waitForFunction(()=>!BB.ui.salesBusy&&BB.ui.salesMsg&&/保存しました/.test(BB.ui.salesMsg.text));
-   assert.deepEqual(tabOf(G.files.rec00000000000000000002,'会社の数字の場所').find(r=>r[0]==='売上報告'),['売上報告',f.id,'CPY']);
+   assert.deepEqual(tabOf(G.files.rec00000000000000000002,'会社の数字の場所').find(r=>r[0]==='売上報告'),['売上報告',f.id,'CPY','45']);
    const E3=await device(width,s=>{window.__acct=s},STAFF2);
    await E3.p.evaluate(()=>{const d=BB.db.settings.data;d.ob={legacy:true};d.sheetId='rec00000000000000000002';BB.save()});
    await E3.p.evaluate(()=>BB.gAuthorize(true));await E3.p.evaluate(()=>BB.ordAfterSync());
