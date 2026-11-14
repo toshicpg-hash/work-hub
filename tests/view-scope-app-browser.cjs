@@ -13,7 +13,14 @@ await p.locator('[data-scope-company]').selectOption('AT');await p.locator('[dat
 await p.evaluate(()=>SC.go('home'));assert.equal(await p.locator('#home-summary .tile').nth(3).locator('.v').innerText(),'1');
 await p.evaluate(()=>SC.go('gantt'));assert.equal(await p.locator('.grow:not(.ghead)').count(),1);
 await p.evaluate(()=>{SC.db.todos.push({id:'SYN-OUTSIDE-LATE',title:'合成選択外期限切れ',due:'2026-11-01',done:false,tantou:''});SC.save();SC.go('cal',{calView:'day',calDay:'2026-11-02'})});assert.match(await p.locator('main').innerText(),/合成担当ToDo/);assert(!/合成選択外期限切れ/.test(await p.locator('main').innerText()));assert.match(await p.locator('.scope-alert').innerText(),/期限切れToDo 1件/);
-await p.evaluate(()=>SC.go('company'));assert.match(await p.locator('main').innerText(),/合成案件fixture-2/);assert(!/合成案件fixture-5/.test(await p.locator('main').innerText()));
+await p.evaluate(()=>SC.go('company'));/* v1.50.57 人ごとの行は最初は畳む。並びは 同期の状況 → ToDo → リクエストする → 動いている案件 → 未入金 */
+{const st=await p.$$eval('details.corp-p',a=>a.map(d=>d.open));assert.ok(st.length>0&&st.every(x=>x===false),'closed at first');
+ const hs=await p.$$eval('main .panel>h3',a=>a.map(x=>x.textContent));const at=k=>hs.findIndex(x=>x.startsWith(k));
+ assert.ok(at('同期の状況')<at('ToDo')&&at('ToDo')<at('動いている案件')&&at('動いている案件')<at('未入金'),JSON.stringify(hs));
+ const html=await p.innerHTML('main');assert.ok(html.indexOf('<h3>ToDo</h3>')<html.indexOf('data-act="reqsend"')||!html.includes('data-act="reqsend"'),'request form after ToDo');
+ assert.ok(html.indexOf('data-act="reqsend"')<0||html.indexOf('data-act="reqsend"')<html.indexOf('動いている案件'),'request form before cases');
+ await p.click('details.corp-p>summary');await p.evaluate(()=>SC.render());assert.equal(await p.$eval('details.corp-p',d=>d.open),true,'remembered across render');}
+await p.$$eval('details.corp-p',a=>a.forEach(d=>d.open=true));assert.match(await p.locator('main').innerText(),/合成案件fixture-2/);assert(!/合成案件fixture-5/.test(await p.locator('main').innerText()));
 await p.evaluate(()=>SC.go('requests',{sentRequests:true}));assert.match(await p.locator('main').innerText(),/合成宛先指示/);
 await p.evaluate(()=>SC.go('rcpt'));assert.equal(await p.locator('.shared-receipt').count(),1);assert.match(await p.locator('.shared-receipt').innerText(),/合成店舗/);assert.equal(await p.locator('[data-act=rnew],[data-rclaim],[data-rsettle]').count(),0);assert.equal(await p.evaluate(()=>SC.scopeHomeReceipts(['未提出']).length),1);
 await p.evaluate(()=>{SC.ui.rScope='shared';SC.go('home')});await p.locator('[data-scope-company]').selectOption('all');await p.locator('[data-scope-person]').selectOption('fixture-0');await p.evaluate(()=>SC.go('rcpt'));assert.equal(await p.locator('[data-act=rnew]').count(),1,'stale separate receipt view does not override common self');
