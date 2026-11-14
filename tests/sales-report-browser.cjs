@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..'),ADMIN='toshi.cpg@gmail.com',KEY='workhub_proto_v1';
-const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,'+
+const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,'+
  'mock(){gLoadCalendarsRun=async()=>{G.cals=[];return G.cals};gReadRange=async()=>({events:[],calendars:[],missing:0});gKeepSave=()=>{};corpRun=async()=>[]}};';
 const GIS="window.google={accounts:{oauth2:{initTokenClient(cfg){return {requestAccessToken(){setTimeout(()=>cfg.callback({access_token:'tok:'+window.__acct,expires_in:3600,scope:cfg.scope}),5)}}}}}};";
 const G={files:{},n:0,calls:[]};
@@ -100,7 +100,7 @@ async function main(){
    assert.equal(await A.p.$$eval('#stats-sales .sales-col[data-sales-day^="CP|"]',a=>a.length),30);
    /* v1.50.51 並びは 毎日の受注 → 確認日 → 担当者別。開け閉めの見出しは色の帯 */
    const cpText=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).textContent();
-   assert.ok(cpText.indexOf('毎日の受注')<cpText.indexOf('確認日')&&cpText.indexOf('確認日')<cpText.indexOf('担当者別'),'order');
+   assert.ok(cpText.indexOf('毎日の受注')<cpText.indexOf('確認日')&&cpText.indexOf('確認日')<cpText.indexOf('担当者別'),'order');assert.ok(cpText.indexOf('毎日の受注')<cpText.indexOf('売上（実績）'),'v1.50.56 開いたら先頭は毎日の受注（売上の上）');
    assert.ok(await A.p.$$eval('#stats-sales details.sales-open>summary',a=>a.length>0&&a.every(x=>getComputedStyle(x).backgroundColor!=='rgba(0, 0, 0, 0)')),'summaries are colored bands');
    /* v1.50.51 毎日の受注は表が先：曜日・件数・金額・その日までの累計。最後の累計 ＝ 合計 ＝ 受注Total */
    const dt=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-days').evaluate(t=>[...t.querySelectorAll('tbody tr')].map(r=>[...r.cells].map(c=>c.innerText.replace(/\n/g,' '))));
@@ -250,8 +250,9 @@ async function main(){
    assert.match(await A.p.textContent('#stats-sales'),/シートの最終更新 11\/9 10:30（今日）/);
    f.modified='2026-11-08T14:59:00Z';/* 11/8 23:59（日本時間）＝昨日 */
    let rows=await sync(A.p);await A.p.waitForFunction(()=>BB.ui.gsync.rows.some(x=>x.name==='売上報告'));rows=await A.p.evaluate(()=>BB.ui.gsync.rows);
-   const sr=rows.find(x=>x.name==='売上報告');assert.equal(sr.ok,false);assert.match(sr.msg,/今日はまだ更新されていません（最終更新 11\/8 23:59）/);
-   assert.match(await A.p.textContent('.gsync'),/× 売上報告：/);
+   const sr=rows.find(x=>x.name==='売上報告');assert.equal(sr.ok,'warn');assert.match(sr.msg,/今日はまだ更新されていません（最終更新 11\/8 23:59）/);
+   assert.match(await A.p.textContent('.gsync'),/△ 売上報告：/);assert.doesNotMatch(await A.p.textContent('.gsync'),/× 売上報告/);/* v1.50.56 エラーではなく△（お知らせ） */
+   { const own=rows.filter(x=>x.ok!==true&&x.ok!=='warn'&&x.name!=='日付の変わった案件'&&x.name!=='社員の記録');const lab=await A.p.evaluate(()=>BB.homeSyncLabels().join('／'));assert.equal((lab.match(/同期エラー (\d+)件/)||[0,'0'])[1],String(own.length),'今日まだ更新されていないのは同期エラーに数えない'); }
    await open(A.p);const b=await A.p.textContent('#stats-sales .banner');assert.match(b,/今日はまだ更新されていません。シートの最終更新 11\/8 23:59/);
    if(width===400)await A.p.locator('#stats-sales').screenshot({path:path.join(require('node:os').tmpdir(),'sales-stale-400.png')});
    const t9=f.tabs.find(x=>x.title==='2026-10 会社'),row=t9.rows.findIndex(r=>r[0]==='CP'&&r[3]!==undefined&&/^\d/.test(String(r[3])));t9.rows[row][3]='12,345,000';
