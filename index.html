@@ -394,6 +394,7 @@ div.ordtile{cursor:default}
 /* v1.50.68 売上の速報 */
 .sales-pre{margin-left:6px;font-size:11px;font-weight:800;color:var(--amber);background:var(--amber-soft);border-radius:99px;padding:1px 6px}
 .sales-prebar{margin:0;padding:8px 12px;border-radius:10px;background:var(--amber-soft);font-size:13.5px}.sales-prebar b{color:var(--amber)}
+.filters-on{color:var(--accent);font-weight:700}/* v1.50.71 かかっている絞り込み */
 .banner.updok{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--green-soft,#e3f3e8);color:var(--fg);border:2px solid var(--green);font-weight:700}.banner.updok>span{flex:1 1 200px}.banner.updok a{white-space:nowrap}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + 14px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
 .empty{color:var(--muted);font-size:14px;padding:14px;border:1px dashed var(--line);border-radius:12px;text-align:center}
@@ -517,8 +518,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.70" title="使い方マニュアルを開く">v1.50.70・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.70" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.71" title="使い方マニュアルを開く">v1.50.71・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.71" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -578,10 +579,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.70"></script>
+<script src="./share-management.js?v=1.50.71"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.70"></script>
-<script src="./calendar-view-scope.js?v=1.50.70"></script>
+<script src="./view-scope.js?v=1.50.71"></script>
+<script src="./calendar-view-scope.js?v=1.50.71"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1309,7 +1310,8 @@ function vCases(){
     (ui.csv?csvPanel(won):'')+infoBox('cases','<p>「Access書出し」は、受注して引渡しを待っている案件をAccess用に書き出します。書き出しと経理への入金確認の依頼は、上で選んだ会社・人に関係なく、この端末の案件すべてが対象です。</p>'+roNoteText())+
     roNoteWarn()+
     '<div class="row findrow"><input type="search" id="q" placeholder="物件・依頼元・番号で探す" value="'+h(ui.q)+'"><label class="f typesel"><span class="sr">依頼の種類</span><select id="c_type" aria-label="依頼の種類">'+[["all","種類：すべて"],...Object.entries(TYPES).map(([k,v])=>[k,v.label])].map(([k,l])=>'<option value="'+k+'"'+(ui.type===k?' selected':'')+'>'+h(l)+'</option>').join("")+'</select></label>'+
-    '<details class="filters"'+(nf||ui.filtersOpen?' open':'')+'><summary>絞り込み'+(nf?'（'+nf+'）':'')+'</summary><div class="filterbox note">'+
+    /* v1.50.71 絞り込みは、使っていても最初は畳む（トシさんの指示）。かかっている絞り込みは見出しに名前で出す */
+    '<details class="filters"'+(ui.filtersOpen?' open':'')+'><summary>絞り込み'+(nf?'<span class="filters-on">：'+[ui.payOnly&&'入金待ちだけ',ui.showEnded&&'失注・入金済も表示',ui.handoffOnly&&'Access引渡待ちだけ',ui.builtOnly&&'今月完工だけ'].filter(Boolean).join('・')+'</span>':'')+'</summary><div class="filterbox note">'+
     '<label class="row"><input type="checkbox" id="payOnly"'+(ui.payOnly?" checked":"")+'> 入金待ちだけ</label><label class="row"><input type="checkbox" id="showEnded"'+(ui.showEnded?" checked":"")+'> 失注・受注後取消・入金済も表示</label>'+
     '<label class="row"><input type="checkbox" id="handoffOnly"'+(ui.handoffOnly?' checked':'')+'> Access引渡待ちだけ（受注済み・仕事番号待ち）</label>'+
     '<label class="row"><input type="checkbox" id="builtOnly"'+(ui.builtOnly?' checked':'')+'> 今月完工だけ（入金済も出します）</label></div></details></div>'+
@@ -2395,7 +2397,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.70";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.71";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2564,7 +2566,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.70" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.70" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.71" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.71" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -4850,7 +4852,7 @@ document.addEventListener("click",e=>{
   if(el.dataset.drift){const c=DB.cases.find(c=>c.id===el.dataset.drift);if(c&&calendarDriftCases().includes(c)){go("detail",{caseId:c.id});const panel=document.getElementById("case-google-calendar");if(panel){panel.style.scrollMarginTop=(document.querySelector("header.top").getBoundingClientRect().height+12)+"px";panel.scrollIntoView({block:"start"});}}return}
   if(el.dataset.open){go("detail",{caseId:el.dataset.open});return}
   if(el.dataset.ordgo){foldSet("sales",true);ui.salesEdOpen=true;const k=todayS().slice(0,7);if(ui.sales&&ui.sales.months.some(m=>m.key===k))ui.salesMonth=k}/* v1.50.61 今月の受注のタイル → 売上報告の「数字を入れる」を開く */
-  if(el.dataset.nav){const ex={csv:false};if(el.dataset.nav==="requests"){ex.sentRequests=!!el.dataset.sent;ex.sentAuthor="all";}if(el.closest("#home-summary")&&el.dataset.nav==="cases"){ex.q="";ex.cCo="all";ex.showEnded=false;}if(el.dataset.sharedReceipts)ex.rScope="shared";if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";if(el.dataset.nav==="cases"){ex.payOnly=!!el.dataset.pay;ex.handoffOnly=!!el.dataset.handoff;ex.builtOnly=!!el.dataset.built;}if(el.dataset.nav==="rcpt"&&el.closest(".tile")){ex.rTab=el.dataset.rtab2||"list";ex.rScope="own";}go(el.dataset.nav,ex);if(el.dataset.jump&&ui.view===el.dataset.nav)document.getElementById(el.dataset.jump)?.scrollIntoView();return}
+  if(el.dataset.nav){const ex={csv:false};if(el.dataset.nav==="requests"){ex.sentRequests=!!el.dataset.sent;ex.sentAuthor="all";}if(el.closest("#home-summary")&&el.dataset.nav==="cases"){ex.q="";ex.cCo="all";ex.showEnded=false;}if(el.dataset.sharedReceipts)ex.rScope="shared";if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";if(el.dataset.nav==="cases"){ex.filtersOpen=false;ex.payOnly=!!el.dataset.pay;ex.handoffOnly=!!el.dataset.handoff;ex.builtOnly=!!el.dataset.built;}if(el.dataset.nav==="rcpt"&&el.closest(".tile")){ex.rTab=el.dataset.rtab2||"list";ex.rScope="own";}go(el.dataset.nav,ex);if(el.dataset.jump&&ui.view===el.dataset.nav)document.getElementById(el.dataset.jump)?.scrollIntoView();return}
   if(el.dataset.rscope){ui.rScope=el.dataset.rscope;rClearDl();render();return;}
   if(el.dataset.rtab){ui.rTab=el.dataset.rtab;rClearDl();ui.rcCancel=null;render();return}
   if(el.dataset.ropen){rFormClear();go("rform",{rId:el.dataset.ropen});return}
@@ -5192,6 +5194,8 @@ document.addEventListener("input",e=>{
 document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("req-to"))ui.reqToOpen=e.target.open},true);
 /* v1.50.50 「数字を入れる」の開け閉めを覚える（描き直しても閉じない） */
 document.addEventListener("toggle",e=>{if(e.target.classList&&e.target.classList.contains("sales-edit"))ui.salesEdOpen=e.target.open},true);
+/* v1.50.71 案件の絞り込みの開け閉めを覚える（描き直しても変わらない） */
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("filters"))ui.filtersOpen=d.open},true);
 /* v1.50.54 会社のカードの開け閉めを覚える（描き直しても閉じない） */
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("sales-card")){ui.salesCoOpen={...(ui.salesCoOpen||{}),[d.dataset.salesCo]:d.open}}},true);
 document.addEventListener("change",e=>{
