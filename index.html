@@ -2294,7 +2294,7 @@ function planAddSec(){
     '<div style="display:flex;flex-direction:column;gap:8px">'+
     '<div class="sales-lab">種類を選ぶ</div><div class="picks plan-kinds" role="group" aria-label="予定の種類">'+PLAN_KINDS.map(([n])=>'<button class="pick'+(planRest(n)?' rest':'')+'" type="button" data-plan-kind="'+h(n)+'" aria-pressed="'+(n===k)+'">'+h(n)+'</button>').join("")+'</div>'+
     '<label class="f">内容'+(planRest(k)?'（書かなくてよい）':'')+'<input type="text" id="pl_text" maxlength="60" autocomplete="off" placeholder="例：見積書作成／○○様邸" value="'+h(f.text||"")+'"></label>'+
-    (planRest(k)?'':'<label class="f">場所<input type="text" id="pl_place" maxlength="100" autocomplete="off" placeholder="例：○○マンション 101号室（住所）／会社" value="'+h(f.place||"")+'"></label>')+/* v1.50.76 場所（社員には場所を入れるよう指示している。トシさんの指示）。休みには出さない */
+    (planRest(k)?'':'<label class="f">場所（できるだけ住所つきで）<input type="text" id="pl_place" maxlength="100" autocomplete="off" placeholder="例：○○マンション 101号室　○○市○○町1-2-3" value="'+h(f.place||"")+'"></label>')+/* v1.50.76 場所（社員には場所を入れるよう指示している。トシさんの指示）。休みには出さない */
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px"><label class="f">日付<input type="date" id="pl_date" value="'+h(f.date||ui.calDay||todayS())+'"></label>'+
     (all?'<p class="note" style="margin:0;align-self:end">終日の予定で入ります</p>':'<label class="f">開始'+hm("pl_start",f.start)+'</label><label class="f">終了'+hm("pl_end",f.end)+'</label>')+'</div>'+
     '<p class="note" style="margin:0">予定の名前：<b>'+h(k?(k+(f.text?"　"+f.text:"")):"（種類を選んでください）")+'</b></p>'+
@@ -2309,7 +2309,7 @@ async function planAdd(){
   const all=planAllDay(k);
   if(!all){if(!/^\d{2}:\d{2}$/.test(f.start||"")||!/^\d{2}:\d{2}$/.test(f.end||""))throw Error("開始と終了の時刻を入れてください");if(f.end<=f.start)throw Error("終了は開始より後の時刻にしてください")}
   if(!planRest(k)&&!f.text)throw Error("内容を書いてください（例：見積書作成）");
-  if(!planRest(k)&&!f.place)throw Error("場所を書いてください（例：物件名・部屋番号・住所。会社にいるときは「会社」）");
+  if(!planRest(k)&&!f.place)throw Error("場所を書いてください（物件名・部屋番号と、できるだけ住所も。会社にいるときは「会社」）");
   await gAuthorize();if(!G.cals)await gLoadCalendars();
   const cal=planSharedCal();if(!cal)throw Error("「CPG HUB」カレンダーに書き込めません。Gmailに届いた「CPG HUB」の共有のお知らせから、カレンダーを追加してください");
   f.id=f.id||gRand();/* やり直しても2つにならないように、同じIDで送る */
