@@ -509,8 +509,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.63" title="使い方マニュアルを開く">v1.50.63・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.63" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.64" title="使い方マニュアルを開く">v1.50.64・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.64" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -570,10 +570,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.63"></script>
+<script src="./share-management.js?v=1.50.64"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.63"></script>
-<script src="./calendar-view-scope.js?v=1.50.63"></script>
+<script src="./view-scope.js?v=1.50.64"></script>
+<script src="./calendar-view-scope.js?v=1.50.64"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2379,7 +2379,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.63";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.64";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2548,7 +2548,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.63" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.63" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.64" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.64" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3480,6 +3480,7 @@ function salesParse(rows,only){
 /* v1.50.62 売上報告を開ける端末：社長と、社長が「入力できる人」に選んだ人（例：専務） */
 const salesSrc=()=>D().admin?D().salesId:D().salesEditId||"";
 const salesCan=()=>!!(D().admin||D().salesEditId);
+const salesMyCos=()=>D().admin?SALES_ORDER.slice():(D().salesEditCos||[]).filter(c=>SALES_ORDER.includes(c));
 async function salesLoad(){
   const id=salesSrc();if(!id)return;await gAuthorize(true);
   const all=(await sheetTabNames(id)).filter(t=>SALES_TAB.test(t)),tabs=[...new Set(all.map(t=>t.slice(0,7)))].sort();
@@ -3555,7 +3556,9 @@ async function salesEdPtr(){
   const tabs=await sheetTabNames(d.sheetId);
   const ptr=tabs.includes(NUMPTR_TAB)?((await sheetRead(d.sheetId,[NUMPTR_TAB]))[NUMPTR_TAB]||[]).slice(1):[];
   const r=ptr.find(x=>String(x[0]||"").trim()===SALES_PTR),id=r?sheetIdOf(String(r[1]||"")):"";
-  if((d.salesEditId||"")!==(id||"")){d.salesEditId=id||"";if(!id)ui.sales=null;save()}
+  /* v1.50.64 入れられる会社（3列目）。書いていない古い行は、念のため入れられる会社なし（社長がもう一度保存すると入る） */
+  const cos=r?String(r[2]||"").split(",").map(x=>x.trim()).filter(x=>SALES_ORDER.includes(x)):[];
+  if((d.salesEditId||"")!==(id||"")||JSON.stringify(d.salesEditCos||[])!==JSON.stringify(cos)){d.salesEditId=id||"";d.salesEditCos=cos;if(!id)ui.sales=null;save()}
 }
 /* ホームのタイル。社長の端末は押すと数字タブ（売上報告）へ */
 function ordTile(){
@@ -3640,7 +3643,9 @@ async function salesWrite(id,cells,adds){
 /* 画面の入力を読んで、変わったマスだけ書く。会社の「更新日」は今日にする */
 async function salesSave(){
   const S=ui.sales,M=S&&S.months.find(m=>m.key===ui.salesMonth),ed=ui.salesEd||{};if(!S||!M)throw Error("先に読み込んでください");
-  const co=ed.co||"CP",kind=ed.kind||"day",c=M.cos.find(x=>x.co===co),cells=[],adds=[];
+  const mine=salesMyCos(),co=ed.co?(mine.includes(ed.co)?ed.co:""):mine[0]||"",kind=ed.kind||"day",c=M.cos.find(x=>x.co===co),cells=[],adds=[];
+  if(!mine.length)throw Error("数字を入れられる会社がありません。社長に「入力できる人」をもう一度保存してもらってください");
+  if(!co)throw Error(ed.co+"の数字は入れられません（入れられる会社："+mine.join("・")+"）");
   const num=(id,label)=>{const t=val(id).trim();if(t==="")return null;const n=salesNum(t);if(Number.isNaN(n))throw Error(label+"は数字で入れてください（今は「"+t+"」）");return n};
   const put=(tab,row,col,base,next,label)=>{if(!salesSame(next,base))cells.push({tab,row,col,base,next,label})};
   if(kind==="co"){if(!c)throw Error(co+"の会社の行がシートにありません");
@@ -3674,9 +3679,9 @@ function salesEdPanel(){
   const d=D(),ids=new Set(d.salesEditors||[]),list=(d.staff||[]).filter(s=>!s.removed&&s.sheetId&&s.sheetId!==d.sheetId);
   const sel=list.filter(s=>ids.has(s.sheetId));
   return '<details class="sales-open sub" id="sales-eds"'+(ui.salesEdsOpen?' open':'')+'><summary>入力できる人<span class="sales-open-sub">'+(sel.length?sel.map(s=>h(dispName(s))).join("・"):'社長だけ')+'</span></summary>'+
-    '<div style="display:flex;flex-direction:column;gap:6px">'+list.map(s=>'<label class="req-opt"><input type="checkbox" data-sales-ed="'+h(s.sheetId)+'"'+(ids.has(s.sheetId)?' checked':'')+'>'+personBadge(s.name,false,s.sheetId)+'<span class="note">'+h(s.role||"")+'</span></label>').join("")+
+    '<div style="display:flex;flex-direction:column;gap:6px">'+list.map(s=>'<label class="req-opt"><input type="checkbox" data-sales-ed="'+h(s.sheetId)+'"'+(ids.has(s.sheetId)?' checked':'')+'>'+personBadge(s.name,false,s.sheetId)+'<span class="note">'+h(s.role||"")+'・入れられる会社 '+h(salesEdCos(s).join("・")||"なし")+'</span></label>').join("")+
     '<div class="row"><button class="btn sm pri" type="button" data-act="saleseds"'+(ui.salesBusy?' disabled':'')+'>入力できる人を保存</button></div>'+
-    '<p class="note" style="margin:0">選んだ人の端末では、同期すると「数字」に売上報告と「数字を入れる」が出ます（社長の確認の印は社長だけ）。<b>あわせて、Googleスプレッドシートの「共有」で、その人を売上報告のシートの「編集者」に加えてください</b>（このシートはHUBの外で作ったので、HUBからは共有できません）。</p></div></details>';
+    '<p class="note" style="margin:0">入れられる会社は役割で決まります（全社＝3社、GM＝GMの会社だけ、ほかはその人の会社）。役割を変えたときは、ここでもう一度保存してください。選んだ人の端末では、同期すると「数字」に売上報告と「数字を入れる」が出ます（社長の確認の印は社長だけ）。<b>あわせて、Googleスプレッドシートの「共有」で、その人を売上報告のシートの「編集者」に加えてください</b>（このシートはHUBの外で作ったので、HUBからは共有できません）。</p></div></details>';
 }
 function salesSec(){
   const d=D(),src=salesSrc(),admin=!!d.admin,S=ui.sales,busy=ui.salesBusy?' disabled':'',msg=ui.salesMsg?'<p role="status" style="margin:0;color:'+(ui.salesMsg.ok?'var(--green)':'var(--red)')+'">'+h(ui.salesMsg.text)+'</p>':'';
@@ -3753,14 +3758,15 @@ function salesSec(){
   const bad=M.bad.length?'<p class="banner" role="status" style="margin:0">読めなかったところがあります：'+h(M.bad.slice(0,5).join("・"))+(M.bad.length>5?" ほか":"")+'</p>':'';
   const fresh='<p class="'+(S.today?'note':'banner')+'" role="status" style="margin:0">'+(S.today?'シートの最終更新 '+h(salesLast(S))+'（今日）':'<b>今日はまだ更新されていません。</b>シートの最終更新 '+h(salesLast(S)))+'</p>';
   /* v1.50.50 数字を入れる（会社・担当者別・毎日の受注） */
-  const ed=ui.salesEd||{},eco=ed.co||"CP",ekind=ed.kind||"day",ec=M.cos.find(x=>x.co===eco),fv=v=>v==null?"":typeof v==="number"?v.toLocaleString("ja-JP"):String(v);
+  const myCos=salesMyCos(),ed=ui.salesEd||{},eco=myCos.includes(ed.co)?ed.co:myCos[0]||"",ekind=ed.kind||"day",ec=M.cos.find(x=>x.co===eco),fv=v=>v==null?"":typeof v==="number"?v.toLocaleString("ja-JP"):String(v);
   const inp=(id,label,v,wide)=>'<label class="f sales-in'+(wide?' wide':'')+'"><span>'+h(label)+'</span><input id="'+id+'" inputmode="numeric" autocomplete="off" value="'+h(fv(v))+'"></label>';
   const eday=Number(ed.day)||(curM?tdN:1),dx=M.days.find(d=>d.co===eco&&d.day===eday);
   const eform=ekind==="day"?'<label class="f sales-in"><span>日</span><select id="se_day">'+Array.from({length:lastD},(_,i)=>'<option value="'+(i+1)+'"'+(i+1===eday?' selected':'')+'>'+(i+1)+'日</option>').join("")+'</select></label>'+inp("se_day_n","受注件数",dx&&dx.n)+inp("se_day_amt","受注金額（円）",dx&&dx.amt,true)+(dx?'':'<p class="note" style="margin:0">この日はまだシートにありません。保存すると行を足します</p>')
     :ekind==="co"?(ec?["目標売上","目標粗利","実績売上","実績粗利","前月売上","前月粗利","最終粗利予想"].map(k=>inp("se_co_"+SALES_COLS.co[k],k+"（円）",ec[k],true)).join(""):'<p class="note" style="margin:0">'+eco+'の会社の行がシートにありません</p>')
     :M.staff.filter(x=>x.co===eco).map((x,i)=>'<div class="sales-in-st"><b>'+h(x.name)+'</b><span class="note">'+h(x.state)+'</span><div class="row" style="gap:6px">'+inp("se_st_"+i+"_n","物件数",x.n)+inp("se_st_"+i+"_amt","金額（円）",x.amt,true)+(x.state==="施工中"?'':inp("se_st_"+i+"_prof","粗利（円）",x.prof,true))+'</div></div>').join("")||'<p class="note" style="margin:0">担当者の行がシートにありません</p>';
   const editor='<details id="sales-edit" class="sales-edit sales-open"'+(ui.salesEdOpen?' open':'')+'><summary>数字を入れる（'+Number(M.key.slice(5))+'月）</summary><div style="display:flex;flex-direction:column;gap:8px">'+
-    '<div class="sales-lab">会社を選ぶ</div><div class="picks" role="group" aria-label="会社">'+SALES_ORDER.map(k=>'<button class="pick" type="button" data-sales-edco="'+k+'" aria-pressed="'+(k===eco)+'">'+k+'</button>').join("")+'</div>'+
+    (myCos.length?'':'<p class="banner" role="status" style="margin:0">数字を入れられる会社がありません。社長に「入力できる人」をもう一度保存してもらってください</p>')+
+    '<div class="sales-lab">会社を選ぶ'+(admin?'':'（あなたが入れられる会社）')+'</div><div class="picks" role="group" aria-label="会社">'+myCos.map(k=>'<button class="pick" type="button" data-sales-edco="'+k+'" aria-pressed="'+(k===eco)+'">'+k+'</button>').join("")+'</div>'+
     '<div class="sales-lab">入れるものを選ぶ</div><div class="picks" role="group" aria-label="入れるもの">'+[["day","毎日の受注"],["co","会社の数字"],["st","担当者別"]].map(([k,l])=>'<button class="pick" type="button" data-sales-edkind="'+k+'" aria-pressed="'+(k===ekind)+'">'+l+'</button>').join("")+'</div>'+
     '<div class="sales-in-wrap">'+eform+'</div><div class="row"><button class="btn pri" type="button" data-act="salessave"'+busy+'>シートに保存</button></div>'+
     '<p class="note" style="margin:0">変えたマスだけを書きます。会社の「更新日」は今日になります。シートで誰かが先に変えていたら、書かずに止めます。</p></div></details>';
@@ -3981,6 +3987,8 @@ async function caseCodeWrite(s){
  if(codeNorm((back[1]||[])[0])!==s.caseCode)throw Error(s.name+"：受付番号の記号を保存確認できません。");
  return true;
 }
+/* v1.50.64 入力できる人が数字を入れられる会社（トシさんの決定：本部長＝3社、GMは自分の会社だけ）。社長はいつも3社 */
+const salesEdCos=s=>s.role==="全社"?SALES_ORDER.slice():s.role==="GM"&&COMPANIES.includes(s.gmCo)?[s.gmCo]:coList(s);
 /* v1.50.62 入力できる人を保存：社員一覧の「HUBの設定」に残し、各社員の記録シートの「会社の数字の場所」を書き直す（変わらない人は書かない） */
 async function salesEdSave(ids){
   const d=D();if(!d.admin)throw Error("社長の端末で選んでください");if(!d.listId)throw Error("社員一覧がありません");await gAuthorize(true);
@@ -3993,7 +4001,7 @@ async function salesEdSave(ids){
 async function numPtrWrite(s,numbers){
  const rows=[NUMPTR_COLS,...coList(s).filter(co=>numbers&&numbers[co]).map(co=>[co,numbers[co]])];
  /* v1.50.62 売上報告に数字を入れられる人だけ、売上報告のシートの場所も書く（社員の端末の「会社の数字」は会社の行だけ読むので影響しない） */
- if(D().salesId&&(D().salesEditors||[]).includes(s.sheetId))rows.push([SALES_PTR,D().salesId]);
+ if(D().salesId&&(D().salesEditors||[]).includes(s.sheetId))rows.push([SALES_PTR,D().salesId,salesEdCos(s).join(",")]);/* v1.50.64 3列目＝入れられる会社 */
  const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(NUMPTR_TAB))await addTab(s.sheetId,NUMPTR_TAB);
  const prev=(await shareRead(()=>sheetRead(s.sheetId,[NUMPTR_TAB])))[NUMPTR_TAB]||[];
  const norm=r=>JSON.stringify(r.map(x=>x.map(y=>String(y??""))).filter(x=>x.some(Boolean)));
