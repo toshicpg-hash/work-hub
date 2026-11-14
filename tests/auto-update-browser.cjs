@@ -54,7 +54,13 @@ async function main(){
    assert.match(await verText(p),/v9\.0\.1/);
    assert.equal(new URL(p.url()).search,'','URL mark removed');
    await p.clock.runFor(500);
-   assert.match(await p.textContent('#toast'),/新しい版（v9\.0\.1）にしました/);
+   /* v1.50.58 お知らせは画面のいちばん上（スクロールしなくても見える）。閉じるまで消えない */
+   assert.match(await p.textContent('main .updok'),/新しい版（v9\.0\.1）にしました/);
+   const box=await p.$eval('main .updok',e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,vh:innerHeight}});assert.ok(box.top>=0&&box.bottom<=box.vh/2,JSON.stringify(box));
+   assert.equal(await p.$eval('main',m=>m.firstElementChild.classList.contains('updok')),true,'first in main');
+   await p.clock.runFor(60000);await p.evaluate(()=>AU.render());assert.equal(await p.locator('main .updok').count(),1,'stays until closed');
+   assert.ok(await overflow(p)<=0);
+   await p.click('main .updok [data-act=upddone]');assert.equal(await p.locator('main .updok').count(),0);
    assert.ok(await overflow(p)<=0);
   });
   await check('古い版が返ってきても、同じ版への更新は繰り返さない（5分に1回まで） '+width+'px',async()=>{
@@ -64,7 +70,7 @@ async function main(){
    assert.equal(state.docs.length,3);assert.equal(state.docs[2],'/?u=9.0.2');
    await p.evaluate(()=>AU.check(true));await p.clock.runFor(16000);await p.clock.runFor(16000);
    assert.equal(state.docs.length,3,'no loop');
-   assert.doesNotMatch(await p.textContent('#toast'),/9\.0\.2/);
+   assert.equal(await p.locator('main .updok').count(),0,'no notice when the version did not change');
   });
   await check('同期の途中・確認の画面が開いているときも開き直さない '+width+'px',async()=>{
    state.latest='9.0.3';state.page='9.0.3';
