@@ -386,6 +386,9 @@ div.ordtile{cursor:default}
 .ordtile .ord-go{align-self:flex-end;margin-top:2px;font-size:14px;font-weight:800;color:var(--blue);border:1.5px solid var(--blue);border-radius:99px;padding:3px 12px;background:var(--surface)}
 .ordtile .ord-r{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 10px;font-size:15px}.ordtile .ord-r>b{min-width:3.2em}.ordtile .ord-r .num{font-weight:700}
 .ordtile .ord-t{font-size:13px;color:var(--muted);flex-basis:100%;padding-left:calc(3.2em + 10px)}.ordtile .ord-r .ord-t{font-weight:600}.ordtile .ord-sum{border-top:1px solid var(--line);padding-top:4px;font-size:16px}
+/* v1.50.68 売上の速報 */
+.sales-pre{margin-left:6px;font-size:11px;font-weight:800;color:var(--amber);background:var(--amber-soft);border-radius:99px;padding:1px 6px}
+.sales-prebar{margin:0;padding:8px 12px;border-radius:10px;background:var(--amber-soft);font-size:13.5px}.sales-prebar b{color:var(--amber)}
 .banner.updok{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--green-soft,#e3f3e8);color:var(--fg);border:2px solid var(--green);font-weight:700}.banner.updok>span{flex:1 1 200px}.banner.updok a{white-space:nowrap}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + 14px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
 .empty{color:var(--muted);font-size:14px;padding:14px;border:1px dashed var(--line);border-radius:12px;text-align:center}
@@ -509,8 +512,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.67" title="使い方マニュアルを開く">v1.50.67・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.67" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.68" title="使い方マニュアルを開く">v1.50.68・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.68" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -570,10 +573,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.67"></script>
+<script src="./share-management.js?v=1.50.68"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.67"></script>
-<script src="./calendar-view-scope.js?v=1.50.67"></script>
+<script src="./view-scope.js?v=1.50.68"></script>
+<script src="./calendar-view-scope.js?v=1.50.68"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2387,7 +2390,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.67";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.68";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2556,7 +2559,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.67" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.67" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.68" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.68" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3425,6 +3428,8 @@ async function adminSync(log){
   d.staff=CPGNames.overlay(next,await namesRead(d.listId));save();found.list=true;found.n=d.staff.length;
   await viewListResolve(listV[HUBSET_TAB],log);
   {const sid=hubSetGet(listV[HUBSET_TAB],SALES_KEY);if(sid&&d.salesId!==sid){d.salesId=sid;save()}}
+  /* v1.50.68 売上の確定：月末から何日（社長が決める） */
+  {const v=Number(hubSetGet(listV[HUBSET_TAB],SALES_FIX_KEY));if(v>=1&&v<=120&&d.salesFixDays!==v){d.salesFixDays=v;save()}}
   /* v1.50.62 売上報告に数字を入れられる人（社長が選ぶ。シートIDの並び） */
   {const raw=hubSetGet(listV[HUBSET_TAB],SALES_ED_KEY),ids=raw?raw.split(",").map(x=>x.trim()).filter(Boolean):null;if(ids&&JSON.stringify(ids)!==JSON.stringify(d.salesEditors||[])){d.salesEditors=ids;save()}}
   return found;
@@ -3454,7 +3459,7 @@ async function viewListResolve(setRows,log){
    読むだけで書かない（試作用のシートを作るときだけ、架空の数字を書く）。共有はしない。どのシートかは社員一覧の「HUBの設定」に残す（社長の端末どうしで同じ）。
    入力の形：1か月を1つのタブ（名前は「2026-10」のように年-月）。下の3つの表の見出しの行を探して読むので、行の位置は前後してもよい。
    v1.50.44 スマホで見やすいように、表ごとにタブを分けてもよい（「2026-10 会社」「2026-10 担当」「2026-10 受注」）。同じ月のタブはまとめて読む */
-const SALES_ORDER=["CP","AT","CPY"],SALES_KEY="売上報告ID",SALES_ED_KEY="売上報告を入れる人",SALES_PTR="売上報告",
+const SALES_ORDER=["CP","AT","CPY"],SALES_FIX_KEY="売上確定までの日数",SALES_KEY="売上報告ID",SALES_ED_KEY="売上報告を入れる人",SALES_PTR="売上報告",
   SALES_CO=["会社","目標売上","目標粗利","実績売上","実績粗利","前月売上","前月粗利","最終粗利予想","人件費","Notes未入力","社長確認日","本部長確認日","GM確認日","GMの名前","更新日"],
   SALES_ST=["会社","区分","担当","状態","物件数","基準値","金額","粗利"],
   SALES_DAY=["会社","日","受注件数","受注金額"],
@@ -3488,6 +3493,11 @@ function salesParse(rows,only){
 /* v1.50.62 売上報告を開ける端末：社長と、社長が「入力できる人」に選んだ人（例：専務） */
 const salesSrc=()=>D().admin?D().salesId:D().salesEditId||"";
 const salesCan=()=>!!(D().admin||D().salesEditId);
+/* v1.50.68 売上の確定：その月の月末から N 日（今は45日。社内で35日→10日に縮める計画。トシさんの指示）。
+   確定までは実績売上・粗利・担当者別が増えていく（直しでまれに減る）。受注は増えない。確定日まで「速報」と出す */
+const salesFixDays=()=>{const v=Number(D().salesFixDays);return v>=1&&v<=120?v:45};
+function salesFixDate(key){const [y,m]=key.split("-").map(Number),end=new Date(y,m,0);end.setDate(end.getDate()+salesFixDays());return end.getFullYear()+"-"+String(end.getMonth()+1).padStart(2,"0")+"-"+String(end.getDate()).padStart(2,"0")}
+const salesPrelim=key=>todayS()<=salesFixDate(key);
 const salesMyCos=()=>D().admin?SALES_ORDER.slice():(D().salesEditCos||[]).filter(c=>SALES_ORDER.includes(c));
 async function salesLoad(){
   const id=salesSrc();if(!id)return;await gAuthorize(true);
@@ -3576,6 +3586,7 @@ async function salesEdPtr(){
   const r=ptr.find(x=>String(x[0]||"").trim()===SALES_PTR),id=r?sheetIdOf(String(r[1]||"")):"";
   /* v1.50.64 入れられる会社（3列目）。書いていない古い行は、念のため入れられる会社なし（社長がもう一度保存すると入る） */
   const cos=r?String(r[2]||"").split(",").map(x=>x.trim()).filter(x=>SALES_ORDER.includes(x)):[];
+  {const v=r?Number(r[3]):NaN;if(v>=1&&v<=120&&d.salesFixDays!==v){d.salesFixDays=v;save()}}
   if((d.salesEditId||"")!==(id||"")||JSON.stringify(d.salesEditCos||[])!==JSON.stringify(cos)){d.salesEditId=id||"";d.salesEditCos=cos;if(!id)ui.sales=null;save()}
 }
 /* ホームのタイル。社長の端末は押すと数字タブ（売上報告）へ */
@@ -3701,6 +3712,19 @@ function salesEdPanel(){
     '<div class="row"><button class="btn sm pri" type="button" data-act="saleseds"'+(ui.salesBusy?' disabled':'')+'>入力できる人を保存</button></div>'+
     '<p class="note" style="margin:0">入れられる会社は役割で決まります（全社＝3社、GM＝GMの会社だけ、ほかはその人の会社）。役割を変えたときは、ここでもう一度保存してください。選んだ人の端末では、同期すると「数字」に売上報告と「数字を入れる」が出ます（社長の確認の印は社長だけ）。<b>あわせて、Googleスプレッドシートの「共有」で、その人を売上報告のシートの「編集者」に加えてください</b>（このシートはHUBの外で作ったので、HUBからは共有できません）。</p></div></details>';
 }
+/* v1.50.68 社長：売上の確定（月末から何日）を変える。社員一覧の「HUBの設定」に残し、入力できる人の記録シートにも書く */
+function salesFixPanel(){
+  return '<details class="sales-open sub" id="sales-fix"'+(ui.salesFixOpen?' open':'')+'><summary>売上の確定日<span class="sales-open-sub">月末から'+salesFixDays()+'日</span></summary><div style="display:flex;flex-direction:column;gap:6px">'+
+    '<label class="f sales-in"><span>月末から何日で確定するか</span><input id="se_fixdays" inputmode="numeric" autocomplete="off" value="'+salesFixDays()+'"></label>'+
+    '<div class="row"><button class="btn sm pri" type="button" data-act="salesfix"'+(ui.salesBusy?' disabled':'')+'>確定日を保存</button></div>'+
+    '<p class="note" style="margin:0">確定日までの月には「速報」と出します（例：月末から45日なら、9月は11/14、10月は12/15）。社内で縮めたら、ここで日数を変えてください。</p></div></details>';
+}
+async function salesFixSave(v){
+  const d=D();if(!d.admin)throw Error("社長の端末で変えてください");if(!(v>=1&&v<=120))throw Error("1〜120の日数で入れてください");await gAuthorize(true);
+  d.salesFixDays=v;save();if(d.listId)await hubSetWrite(SALES_FIX_KEY,String(v));
+  const nums=await numbersEnsure();let w=0;for(const s of (d.staff||[]).filter(s=>!s.removed&&s.sheetId&&(d.salesEditors||[]).includes(s.sheetId)))if(await numPtrWrite(s,nums))w++;
+  return w;
+}
 function salesSec(){
   const d=D(),src=salesSrc(),admin=!!d.admin,S=ui.sales,busy=ui.salesBusy?' disabled':'',msg=ui.salesMsg?'<p role="status" style="margin:0;color:'+(ui.salesMsg.ok?'var(--green)':'var(--red)')+'">'+h(ui.salesMsg.text)+'</p>':'';
   /* v1.50.46 本物のシート（名前に「試作」がない）を読んでいるときは「社長だけ」、作り直すボタンも出さない（押すと架空のシートに戻るため） */
@@ -3713,7 +3737,7 @@ function salesSec(){
   const ctl='<div class="row"><button class="btn sm" type="button" data-act="salesload"'+busy+'>'+(ui.salesBusy?'読んでいます…':S?'読み直す':'読み込む')+'</button>'+link+(demo?'<button class="btn sm" type="button" data-act="salesdemo"'+busy+'>試作用のシートを作り直す（架空）</button>':'')+'</div>';
   if(!S||S.id!==src)return wrap(ctl+(admin?salesEdPanel():''));
   const M=S.months.find(x=>x.key===ui.salesMonth);
-  const tabs='<div class="picks" role="group" aria-label="月">'+S.months.map(x=>'<button class="pick" aria-pressed="'+(x.key===ui.salesMonth)+'" type="button" data-sales-month="'+h(x.key)+'">'+Number(x.key.slice(0,4))+'年'+Number(x.key.slice(5))+'月</button>').join("")+'</div>';
+  const tabs='<div class="picks" role="group" aria-label="月">'+S.months.map(x=>'<button class="pick" aria-pressed="'+(x.key===ui.salesMonth)+'" type="button" data-sales-month="'+h(x.key)+'">'+Number(x.key.slice(0,4))+'年'+Number(x.key.slice(5))+'月'+(salesPrelim(x.key)?'<span class="sales-pre">速報</span>':'')+'</button>').join("")+'</div>';
   if(!M)return wrap('<p class="note" style="margin:0">「2026-10」のような名前のタブがありません。</p>'+ctl);
   const y=n=>n==null?"—":Math.round(n).toLocaleString("ja-JP")+"円",cnt=n=>n==null?"—":n+"件",pc=(a,b)=>a==null||!b?null:Math.round(a/b*100),pt=v=>v==null?"—":v+"%";
   const sumBy=(arr,k)=>arr.reduce((a,x)=>a+(x[k]||0),0);
@@ -3788,7 +3812,8 @@ function salesSec(){
     '<div class="sales-lab">入れるものを選ぶ</div><div class="picks" role="group" aria-label="入れるもの">'+[["day","毎日の受注"],["co","会社の数字"],["st","担当者別"]].map(([k,l])=>'<button class="pick" type="button" data-sales-edkind="'+k+'" aria-pressed="'+(k===ekind)+'">'+l+'</button>').join("")+'</div>'+
     '<div class="sales-in-wrap">'+eform+'</div><div class="row"><button class="btn pri" type="button" data-act="salessave"'+busy+'>シートに保存</button></div>'+
     '<p class="note" style="margin:0">変えたマスだけを書きます。会社の「更新日」は今日になります。シートで誰かが先に変えていたら、書かずに止めます。</p></div></details>';
-  return wrap(tabs+fresh+bad+editor+(admin?salesEdPanel():'')+total+cos.map(card).join("")+'<p class="note" style="margin:0">「'+h(M.key)+'」の月のタブを読んでいます（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）。共有はしていません。</p>'+ctl);
+  const pre=salesPrelim(M.key)?'<p class="sales-prebar" role="status"><b>速報</b>　'+Number(M.key.slice(5))+'月の売上は '+md(salesFixDate(M.key))+' に確定します（月末から'+salesFixDays()+'日）。それまで実績売上・粗利・担当者別は増えていきます（直しでまれに減ります）。受注は変わりません</p>':'<p class="note" style="margin:0">'+Number(M.key.slice(5))+'月の売上は確定しています（'+md(salesFixDate(M.key))+'）</p>';
+  return wrap(tabs+pre+fresh+bad+editor+(admin?salesEdPanel()+salesFixPanel():'')+total+cos.map(card).join("")+'<p class="note" style="margin:0">「'+h(M.key)+'」の月のタブを読んでいます（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）。共有はしていません。</p>'+ctl);
 }
 /* 古い見る人用一覧に「移転先」を書く。見る人の端末は、次の同期でそれを見て新しい一覧に移る */
 async function viewListMarkOld(){const d=D();if(!d.viewListId)return 0;let n=0;
@@ -4041,7 +4066,7 @@ async function numPtrWrite(s,numbers){
  const old=co=>{const r=prev.slice(1).find(x=>String((x||[])[0]||"").trim()===co);return r?sheetIdOf(String(r[1]||"")):""};
  const rows=[NUMPTR_COLS,...coList(s).map(co=>[co,(numbers&&numbers[co])||old(co)]).filter(x=>x[1])];
  /* v1.50.62 売上報告に数字を入れられる人だけ、売上報告のシートの場所も書く（社員の端末の「会社の数字」は会社の行だけ読むので影響しない） */
- if(D().salesId&&(D().salesEditors||[]).includes(s.sheetId))rows.push([SALES_PTR,D().salesId,salesEdCos(s).join(",")]);/* v1.50.64 3列目＝入れられる会社 */
+ if(D().salesId&&(D().salesEditors||[]).includes(s.sheetId))rows.push([SALES_PTR,D().salesId,salesEdCos(s).join(","),String(salesFixDays())]);/* v1.50.68 4列目＝確定までの日数 *//* v1.50.64 3列目＝入れられる会社 */
  const norm=r=>JSON.stringify(r.map(x=>x.map(y=>String(y??""))).filter(x=>x.some(Boolean)));
  if(norm(prev)===norm(rows))return false; /* v1.50.12 変わらなければ書かない */
  await sheetWrite(s.sheetId,NUMPTR_TAB,rows,prev);
@@ -4942,6 +4967,8 @@ document.addEventListener("click",e=>{
     adminCodesSave(r.changes,(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()}).then(()=>{ui.dCodes=false;ui.dCodesDraft=null},err=>{log.push({ok:false,text:"途中で止まりました："+(err.message==="http"?dMsg(err):err.message||dMsg(err))})}).finally(()=>{ui.dbusy=false;render()});return}
   if(a==="salessave"){if(ui.salesBusy)return;ui.salesBusy=true;ui.salesMsg=null;ui.salesEdOpen=true;
     salesSave().then(n=>{ui.salesMsg={ok:true,text:n?"シートに保存しました（"+n+"か所）":"変わったところはありません"}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?(err.status===403?"このシートに書く権限がありません":dMsg(err)):err.message}}).finally(()=>{ui.salesBusy=false;render()});render();return}
+  if(a==="salesfix"){if(ui.salesBusy)return;const v=Math.round(Number(val("se_fixdays")));ui.salesBusy=true;ui.salesMsg=null;ui.salesFixOpen=true;render();
+    salesFixSave(v).then(()=>{ui.salesMsg={ok:true,text:"確定日を「月末から"+v+"日」にしました"}},err=>{ui.salesMsg={ok:false,text:"保存できませんでした："+(err.message==="http"?dMsg(err):err.message)}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="saleseds"){if(ui.salesBusy)return;const ids=[...document.querySelectorAll('[data-sales-ed]')].filter(x=>x.checked).map(x=>x.dataset.salesEd);ui.salesBusy=true;ui.salesMsg=null;ui.salesEdsOpen=true;render();
     salesEdSave(ids).then(w=>{ui.salesMsg={ok:true,text:"入力できる人を保存しました（記録シートを書き直した人 "+w+"人）。選んだ人を、シートの共有で編集者に加えてください"}},err=>{ui.salesMsg={ok:false,text:"保存できませんでした："+(err.message==="http"?dMsg(err):err.message)}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="salescheck"){if(ui.salesBusy)return;const co=el.dataset.co;ui.salesBusy=true;ui.salesMsg=null;render();
