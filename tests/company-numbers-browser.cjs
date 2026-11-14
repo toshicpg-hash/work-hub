@@ -24,6 +24,8 @@ function seed(){return {
  [E]:{'案件':[CASE,row('E-1','AT')],'立替':[],'情報':[['項目','値']]},
  'synthetic-num-cp-000000001':{'会社の数字':[],'情報':[['項目','値'],['会社','CP']]},
  'synthetic-num-cpy-00000002':{'会社の数字':[],'情報':[['項目','値'],['会社','CPY']]}};}
+/* v1.50.55 数字タブのまとまりは最初は畳む。この試験は中の数字を見るので、開いた状態にしておく */
+const OPEN_STATS=()=>{try{const k='workhub_fold_v1',v=JSON.parse(localStorage.getItem(k)||'{}');for(const x of ['st_won','st_unpaid','st_tantou','st_reasons','st_types'])if(!(x in v))v[x]=true;localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let server,browser,origin;const results=[];
 const check=async(name,fn)=>{await fn();results.push(name);console.log('PASS',name)};
 async function device({store,deny=new Set(),width=400,fail=new Set()}){
@@ -43,7 +45,7 @@ async function device({store,deny=new Set(),width=400,fail=new Set()}){
   const v=rest.match(/^\/values\/([^:]+)(:clear)?$/);if(v){const t=tabOf(v[1]);if(v[2]){sh[t]=[];return J(r,{})}const body=r.request().postDataJSON();const vals=body.values.map(x=>x.map(y=>y));while(vals.length&&vals[vals.length-1].every(y=>y===''))vals.pop();sh[t]=vals.map(x=>{const a=x.slice();while(a.length&&a[a.length-1]==='')a.pop();return a});return J(r,{})}
   return J(r,{});
  });
- const p=await c.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));
+ const p=await c.newPage();await p.addInitScript(OPEN_STATS);const errors=[];p.on('pageerror',e=>errors.push(e.message));
  await p.clock.setFixedTime(new Date('2026-11-06T03:00:00Z'));await p.goto(origin+'/');await p.waitForFunction(()=>!!window.CN);
  return {c,p,errors};
 }

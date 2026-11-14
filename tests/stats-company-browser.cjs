@@ -18,6 +18,8 @@ const data=[
   row('U-0004','試験荘失注','見本',{'会社':'AT','段階キー':'lost','段階':'失注','見積提出日':'2026-10-02','失注日':'2026-10-15'})]},
  {s:staff[1],ok:true,rc:[],orders:[],todo:[],cases:[
   row('U-0001','例題荘受注','例題',{'段階キー':'won','段階':'受注','見積額':200000,'見積提出日':'2026-10-03','受注日':'2026-10-12'})]}]; /* 会社の列なし → 人の会社 CPY */
+/* v1.50.55 数字タブのまとまりは最初は畳む。この試験は中の数字を見るので、開いた状態にしておく */
+const OPEN_STATS=()=>{try{const k='workhub_fold_v1',v=JSON.parse(localStorage.getItem(k)||'{}');for(const x of ['st_won','st_unpaid','st_tantou','st_reasons','st_types'])if(!(x in v))v[x]=true;localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let server,browser,origin;const results=[];
 const check=async(name,fn)=>{await fn();results.push(name);console.log('PASS',name)};
 async function page(width,{admin=true,load=true}={}){
@@ -26,7 +28,7 @@ async function page(width,{admin=true,load=true}={}){
   if(u===origin+'/'||u===origin+'/index.html'){const s=fs.readFileSync(path.join(root,'index.html'),'utf8').replace('corpKeepLoad();\nrender();',hook+'\ncorpKeepLoad();\nrender();');return r.fulfill({contentType:'text/html',body:s})}
   if(u.startsWith(origin+'/'))return r.continue();
   return r.fulfill({status:200,body:''})});
- const p=await c.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));
+ const p=await c.newPage();await p.addInitScript(OPEN_STATS);const errors=[];p.on('pageerror',e=>errors.push(e.message));
  await p.clock.install({time:new Date(TODAY+'T03:00:00Z')});await p.goto(origin+'/');await p.waitForFunction(()=>!!window.ST);
  await p.evaluate(({admin,load,staff,data})=>{const d=ST.db.settings.data;d.admin=admin;d.staff=admin?JSON.parse(JSON.stringify(staff)):[];
   /* この端末で入力した案件（会社 CP、今月見積提出） */
@@ -36,7 +38,8 @@ async function page(width,{admin=true,load=true}={}){
  return {c,p,errors};
 }
 const sum=p=>p.$$eval('.sum .k',a=>Object.fromEntries(a.map(k=>[k.textContent,k.nextElementSibling.textContent])));
-const unpaidHead=p=>p.$eval('h2:text("未入金")+span',e=>e.textContent);
+/* v1.50.55 未入金は畳める見出しになり、件数・金額のあとに「（現在残高）」などが続く */
+const unpaidHead=p=>p.$eval('h2:text("未入金")+span',e=>e.textContent.replace(/（現在残高）.*$/,''));
 // Wide tables may scroll inside .tbl-wrap; outer panels and the page must not overflow.
 const overflow=p=>p.evaluate(()=>{const d=document.documentElement;return Math.max(d.scrollWidth-d.clientWidth,...[...document.querySelectorAll('.panel,section,.row,.seg')].map(x=>x.scrollWidth-x.clientWidth))});
 async function main(){

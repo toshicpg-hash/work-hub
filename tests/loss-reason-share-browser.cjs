@@ -4,6 +4,8 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
 const sheetReply=require('./helpers/case-sheet-mock.cjs');
 const root=path.resolve(__dirname,'..'),KEY='workhub_proto_v1';
 const hook='window.testHub={get db(){return DB},ui,go,emptyDB,CASE_DEFAULTS,save,render,genTodos,dataRows,roCase,roDetail,upgrade,ended,gSyncAll,sheetWrite,sheetRead,vStats,roBuild,objRows,get uncertain(){return caseSaveUncertain},authorize(){G.token="synthetic-token";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000;}};';
+/* v1.50.55 数字タブのまとまりは最初は畳む。この試験は中の数字を見るので、開いた状態にしておく */
+const OPEN_STATS=()=>{try{const k='workhub_fold_v1',v=JSON.parse(localStorage.getItem(k)||'{}');for(const x of ['st_won','st_unpaid','st_tantou','st_reasons','st_types'])if(!(x in v))v[x]=true;localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let server,browser,origin;const results=[];
 async function setup(db,tz='Asia/Tokyo',width=390,network=null,baseline=false,touch=false){
  const ctx=await browser.newContext({timezoneId:tz,locale:'ja-JP',viewport:{width,height:844},hasTouch:touch,isMobile:touch,...(touch?{userAgent:'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36'}:{})}),requests=[],errors=[];
@@ -13,7 +15,7 @@ async function setup(db,tz='Asia/Tokyo',width=390,network=null,baseline=false,to
   const answer=sheetReply(network,r.request());return r.fulfill({status:answer.status||200,contentType:'application/json',body:JSON.stringify(answer.body)});
  }
  return r.fulfill({status:200,body:''});});
- const p=await ctx.newPage();p.on('pageerror',e=>errors.push(e.message));await p.clock.setFixedTime(new Date('2026-10-29T15:05:00Z'));await p.goto(origin+'/seed');if(db)await p.evaluate(({KEY,db})=>localStorage.setItem(KEY,JSON.stringify(db)),{KEY,db});await p.goto(origin+'/');await p.waitForFunction(()=>!!window.testHub);return {ctx,p,requests,errors};
+ const p=await ctx.newPage();await p.addInitScript(OPEN_STATS);p.on('pageerror',e=>errors.push(e.message));await p.clock.setFixedTime(new Date('2026-10-29T15:05:00Z'));await p.goto(origin+'/seed');if(db)await p.evaluate(({KEY,db})=>localStorage.setItem(KEY,JSON.stringify(db)),{KEY,db});await p.goto(origin+'/');await p.waitForFunction(()=>!!window.testHub);return {ctx,p,requests,errors};
 }
 const setTime=async(p,time)=>{const [hour='',minute='']=time.split(':');await p.locator('#d_plan_hour').selectOption(hour);await p.locator('#d_plan_minute').selectOption(minute);};
 const readTime=async p=>{const h=await p.locator('#d_plan_hour').inputValue(),m=await p.locator('#d_plan_minute').inputValue();return h!==''&&m!==''?h+':'+m:'';};
