@@ -114,7 +114,7 @@ async function main(){
   const {c,p,errors}=await page(400,{admin:false,staffList:[],rsName:'黒木 見本二'});
   await p.evaluate(()=>SS.go('new'));
   const o=await p.$$eval('#n_tantou option',a=>a.map(x=>x.value+'='+x.textContent));
-  assert.ok(o.includes('黒木=黒木 見本二')&&o.includes('トシ=社長')&&o.length===2,o.join());
+  assert.ok(o.includes('黒木=黒木 見本二')&&!o.includes('トシ=社長')&&o.length===1,o.join());/* v1.50.72 社員の端末に「社長」は出さない */
   const raw=await p.evaluate(()=>localStorage.getItem('workhub_proto_v1')||'');
   assert.ok(!raw.includes('黒木 見本二'),'display does not save data');
   assert.deepEqual(errors,[]);await c.close();

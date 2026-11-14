@@ -876,7 +876,8 @@ function ownTantouValue(){
  if(!o&&D().admin)o=opts.find(x=>x.v===BOSS_TANTOU);
  return o?o.v:"";
 }
-const tantouOptsHtml=(sel)=>tantouOptions().filter(o=>!o.disabled||o.v===sel).map(o=>'<option value="'+h(o.v)+'"'+(o.disabled?' disabled':'')+(sel&&o.v===sel&&!o.disabled?' selected':'')+'>'+h(o.l)+(o.disabled?'（氏名重複・選択不可）':'')+'</option>').join("");
+/* v1.50.72 社員の端末では「社長」（トシ）を選べないようにする（トシさんの指示。社長の端末だけ残す）。今その値の案件を開いたときは出す */
+const tantouOptsHtml=(sel)=>tantouOptions().filter(o=>(!o.disabled||o.v===sel)&&(D().admin||o.v!==BOSS_TANTOU||o.v===sel)).map(o=>'<option value="'+h(o.v)+'"'+(o.disabled?' disabled':'')+(sel&&o.v===sel&&!o.disabled?' selected':'')+'>'+h(o.l)+(o.disabled?'（氏名重複・選択不可）':'')+'</option>').join("");
 const isEizen=c=>c.type==="eizen";
 const isTaikyo=c=>c.type==="taikyo";
 const itemsSum=(c,b)=>c.items.filter(i=>!b||i.burden===b).reduce((s,i)=>s+(Number(i.amount)||0),0);

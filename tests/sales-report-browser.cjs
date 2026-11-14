@@ -370,7 +370,7 @@ async function main(){
    assert.equal(await E2.p.$$eval('[data-act=salescheck]',a=>a.length),0,'boss check is only for the boss');assert.equal(await E2.p.$$eval('#sales-eds,[data-act=salesdemo]',a=>a.length),0,'no admin controls');
    /* v1.50.72 社員の端末：担当の候補があれば、担当はフルネームから選ぶ（名字だけの「黒木」は出ない） */
    {await E2.p.evaluate(()=>{const d=BB.db.settings.data;d.nameCands={sheetId:d.sheetId,list:[{name:'黒木 見本一',company:'CP',sheetId:'recA'},{name:'黒木 見本二',company:'CPY',sheetId:'recB'},{name:'見本 専務',company:'CP',sheetId:'rec00000000000000000001'}]};BB.save();BB.go('new')});
-    const o=await E2.p.$$eval('#n_tantou option',a=>a.map(x=>x.value));assert.ok(o.includes('黒木 見本一')&&o.includes('黒木 見本二')&&!o.includes('黒木'),o.join());
+    const o=await E2.p.$$eval('#n_tantou option',a=>a.map(x=>x.value));assert.ok(o.includes('黒木 見本一')&&o.includes('黒木 見本二')&&!o.includes('黒木')&&!o.includes('トシ'),o.join());/* 社員の端末に「社長」は出さない */
     assert.equal(await E2.p.$eval('#n_tantou',x=>x.value),'見本 専務','own name selected first');}
    await E2.p.evaluate(()=>BB.go('home'));assert.match(await E2.p.textContent('#home-orders .ord-go'),/タップして数字を入れる/);
    await E2.p.click('#home-orders');assert.equal(await E2.p.$eval('#sales-edit',d=>d.open),true);
