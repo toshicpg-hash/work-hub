@@ -221,6 +221,7 @@ ol.hist li{overflow-wrap:anywhere}
 /* v1.50.46 見出し「グループ各社売上報告」を目立たせる */
 main details[data-fold="sales"]>summary.foldh{background:var(--accent);color:var(--accent-fg);border-radius:12px;padding:10px 14px}
 details[data-fold="sales"]>summary.foldh h2{font-size:22px;font-weight:800;color:var(--accent-fg)}
+.foldsub{display:block;font-size:14px;font-weight:700;opacity:.9;margin-top:2px}
 .sales-pct{display:block;font-size:11.5px;color:var(--muted);font-weight:400}
 .sales-upd{font-size:15px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:2px 10px;white-space:nowrap}
 .sales-chk{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
@@ -497,8 +498,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.55" title="使い方マニュアルを開く">v1.50.55・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.55" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.56" title="使い方マニュアルを開く">v1.50.56・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.56" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -558,10 +559,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.55"></script>
+<script src="./share-management.js?v=1.50.56"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.55"></script>
-<script src="./calendar-view-scope.js?v=1.50.55"></script>
+<script src="./view-scope.js?v=1.50.56"></script>
+<script src="./calendar-view-scope.js?v=1.50.56"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1022,15 +1023,19 @@ function calShareManual(busy){
 /* v1.50.41 売上報告は毎日更新するので、社長の端末の同期のたびに読み直す（失敗しても同期の結果は変えない。結果に1行足す） */
 async function salesAfterSync(){
   const g=ui.gsync;if(!D().admin||!D().salesId||!g||!Array.isArray(g.rows)||!gSignedIn())return;
-  let row;try{await salesLoad();const S=ui.sales,mt=S&&S.modified;row={name:"売上報告",ok:!!(S&&S.today),msg:S&&S.today?"今日の更新を読みました（"+salesLast(S)+"）":"シートが今日はまだ更新されていません（最終更新 "+salesLast(S)+"）"}}
+  let row;try{await salesLoad();const S=ui.sales,mt=S&&S.modified;row={name:"売上報告",ok:S&&S.today?true:"warn",msg:S&&S.today?"今日の更新を読みました（"+salesLast(S)+"）":"シートが今日はまだ更新されていません（最終更新 "+salesLast(S)+"）"}}
   catch(err){row={name:"売上報告",ok:false,msg:"読めませんでした（"+(err.message==="http"?dMsg(err):err.message==="signin"?"ログインが切れました":err.message)+"）"}}
   ui.gsync={...ui.gsync,rows:ui.gsync.rows.concat([row])};render();
 }
 async function bbAfterSync(){
   const b=D().bossBackup,g=ui.gsync;if(!D().admin||!g||!Array.isArray(g.rows)||!gSignedIn())return;
   let row;if(!b||!b.id)row={name:"この端末の控え",ok:false,msg:"まだ作っていません。スマホのデータが消えると、この端末で入れた案件などが戻せません。数字 → 管理（社長用）の「この端末の控え」で作ってください"};
-  else try{const c=await bbWrite();row={name:"この端末の控え",ok:true,msg:"「"+BB_PREFIX+D().bossBackup.name+"」に控えました（"+bbCountText(c)+"）"}}
-  catch(err){row={name:"この端末の控え",ok:false,msg:err.message==="http"?dMsg(err):err.message==="signin"?"ログインが切れたため控えられませんでした":err.message}}
+  /* v1.50.56 時間切れ・通信の失敗・Google側の一時的な不具合・回数制限のときは、少し待って1回だけやり直す（控えは上書きなので二重にならない）。
+     理由は日本語で出す（前は「signal is aborted without reason」のように英語のまま出ていた） */
+  else{let tries=0;for(;;){tries++;
+    try{const c=await bbWrite();row={name:"この端末の控え",ok:true,msg:"「"+BB_PREFIX+D().bossBackup.name+"」に控えました（"+bbCountText(c)+"）"+(tries>1?"（"+tries+"回目で控えました）":"")};break}
+    catch(err){if(err.message!=="signin"&&corpErrKind(err)&&tries<2){await corpWait(3000);continue}
+      row={name:"この端末の控え",ok:false,msg:err.message==="signin"?"ログインが切れたため控えられませんでした":corpErrKind(err)?corpReadMsg(err)+(tries>1?"・"+tries+"回試しました":""):err.message==="http"?dMsg(err):err.message};break}}}
   ui.gsync={...ui.gsync,rows:ui.gsync.rows.concat([row])};render();
 }
 /* v1.50.35 社長の端末の控え（数字 → 管理） */
@@ -1123,7 +1128,7 @@ function calendarDriftList(){
  return '<p>要確認：日付のずれ '+cases.length+'件。カレンダーに登録した日付との比較です。更新は案件の画面で行ってください。</p><ul>'+cases.slice(0,5).map(row).join('')+'</ul>'+(cases.length>5?'<details><summary>ほか'+(cases.length-5)+'件</summary><ul>'+cases.slice(5).map(row).join('')+'</ul></details>':'');
 }
 function homeSyncLabels(){
-  const r=ui.gsync,own=(r?.rows||[]).filter(x=>!((D().admin||D().viewListId)&&x.name==='社員の記録')),bad=own.filter(x=>x.ok!==true&&x.name!=='日付の変わった案件').length,drift=own.some(x=>x.name==='日付の変わった案件')?calendarDriftCases().length:0;
+  const r=ui.gsync,own=(r?.rows||[]).filter(x=>!((D().admin||D().viewListId)&&x.name==='社員の記録')),bad=own.filter(x=>x.ok!==true&&x.ok!=="warn"&&x.name!=='日付の変わった案件').length,drift=own.some(x=>x.name==='日付の変わった案件')?calendarDriftCases().length:0;
   const incomplete=!!r&&r.busy===false&&r.complete!==true,old=!!D().sheetId&&jstDay(D().lastSync)!==jstDay(new Date().toISOString());
   const pending=DB.todos.filter(t=>t.order&&t.done&&!t.synced).length,box=!!requestBoxNotice(),uncertain=caseSaveUncertain||ui.rSaveUncertain||!!(document.getElementById('manualTodoStorageNotice')&&!document.getElementById('manualTodoStorageNotice').hidden);
   return [drift?'日付のずれ '+drift+'件（要確認）':'',bad?'同期エラー '+bad+'件':'',incomplete?'同期未完了 1件':'',old?'今日未同期 1件':'',pending?'未送信の完了報告 '+pending+'件':'',box?'指示箱の注意 1件':'',uncertain?'保存未確認 1件':''].filter(Boolean);
@@ -2042,10 +2047,10 @@ function gSyncPanel(home=false){
   const r=ui.gsync,attention=home?homeSyncAttention():{blocked:false,html:''};
   /* 社員の記録・売上報告は、読めなくても（売上報告は今日まだ更新がなくても）同期そのものは済み。外に出して目立たせる */
   const companyRow=x=>(!!(D().admin||D().viewListId)&&x.name==='社員の記録')||(!!D().admin&&x.name==='売上報告');
-  const resultList=rows=>rows?.length?'<ul class="gres" role="status">'+rows.map(x=>x.name==='日付の変わった案件'?'<li class="calendar-drift">'+calendarDriftList()+'</li>':'<li class="'+(x.ok?'ok':'ng')+'">'+(x.ok?'✓ ':'× ')+h(x.name)+'：'+h(x.msg)+'</li>').join("")+'</ul>':'';
+  const resultList=rows=>rows?.length?'<ul class="gres" role="status">'+rows.map(x=>x.name==='日付の変わった案件'?'<li class="calendar-drift">'+calendarDriftList()+'</li>':x.ok==="warn"?'<li class="warn">△ '+h(x.name)+'：'+h(x.msg)+'</li>':'<li class="'+(x.ok?'ok':'ng')+'">'+(x.ok?'✓ ':'× ')+h(x.name)+'：'+h(x.msg)+'</li>').join("")+'</ul>':'';
   const known=['Googleにログイン','カレンダー一覧','予定の読み込み','つないでいる記録シート','売上報告','この端末の控え','領収書の写真の控え','タスクリクエスト','指示箱（タスクリクエスト）','社員の記録',...['案件','入金','立替','ToDo','情報'].map(t=>'記録シート「'+t+'」')];
-  const success=home&&r?.complete===true&&r.busy===false&&Number.isFinite(r.at)&&r.rows?.length>0&&!attention.blocked&&r.rows.some(x=>!companyRow(x))&&r.rows.every(x=>(x.ok===true||(companyRow(x)&&x.ok===false))&&known.includes(x.name)&&Object.keys(x).every(k=>['name','ok','msg'].includes(k)));
-  const companyErrors=success?r.rows.filter(x=>companyRow(x)&&x.ok===false):[];
+  const success=home&&r?.complete===true&&r.busy===false&&Number.isFinite(r.at)&&r.rows?.length>0&&!attention.blocked&&r.rows.some(x=>!companyRow(x))&&r.rows.every(x=>(x.ok===true||(companyRow(x)&&(x.ok===false||x.ok==="warn")))&&known.includes(x.name)&&Object.keys(x).every(k=>['name','ok','msg'].includes(k)));
+  const companyErrors=success?r.rows.filter(x=>companyRow(x)&&x.ok!==true):[];
   const list=resultList(success?r.rows.filter(x=>!companyErrors.includes(x)):r?.rows);
   const stamp=success?new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(r.at)):'';
   return '<div class="gsync"><button type="button" class="gsyncbtn" data-act="gsync"'+(r&&r.busy?' disabled':'')+'>'+(r&&r.busy?'同期しています…':'Googleとまとめて同期')+'</button>'+(home?sheetGuardPanel():'')+
@@ -2346,13 +2351,16 @@ function statsCases(){
 const FOLDKEY="workhub_fold_v1";
 const foldGet=()=>{try{const v=JSON.parse(localStorage.getItem(FOLDKEY)||"{}");return v&&typeof v==="object"?v:{}}catch(e){return {}}};
 function foldSet(k,open){try{const v=foldGet();v[k]=!!open;localStorage.setItem(FOLDKEY,JSON.stringify(v))}catch(e){}}
-function foldSec(key,title,body,force){
+/* v1.50.56 見出しの下に小さく添える言葉（sub）。売上報告の「（旧3社報告書）」に使う */
+/* v1.50.56 トシさんの指示：前の呼び名を見出しの下に添える。みんなに浸透したら "" にすれば消える */
+const SALES_OLD_NAME="（旧3社報告書）";
+function foldSec(key,title,body,force,sub){
   if(!body)return "";
   const open=force||foldGet()[key];
-  return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
+  return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.55";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.56";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2490,7 +2498,7 @@ function vStats(){
       :'<div class="empty">未入金の案件はありません</div>'),"stats-unpaid");
   return (hasExamples()?'<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>':'')+
   /* v1.50.54 グループ各社売上報告は数字タブのいちばん上（社長の端末だけ） */
-  (D().admin?foldSec("sales","グループ各社売上報告",salesSec(),!!ui.salesBusy):'')+
+  (D().admin?foldSec("sales","グループ各社売上報告",salesSec(),!!ui.salesBusy,SALES_OLD_NAME):'')+
   statsWhoSeg()+(coMode&&!coMode.cases?statsCompanyEmpty(coMode):
   (coMode||scopeState().usable)?(coMode?'<section class="sec">'+statsCompanyNote(coMode)+'</section>'+unpaidSec:statsNote()?'<section class="sec">'+statsNote()+'</section>':'')+
   '<section class="sec" id="stats-won">'+statsPeriodControls()+(undatedLost.length?'<p class="banner stats-undated">失注日が未入力の案件 '+undatedLost.length+'件（案件を開いて日付を入れてください）</p>':'')+'<div class="sec-h stats-modebar">'+statsModeSeg()+'</div>'+
@@ -2521,7 +2529,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.55" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.55" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.56" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.56" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3623,13 +3631,14 @@ function salesSec(){
     const opened=!!(ui.salesCoOpen||{})[c.co];
     return '<details class="panel sales-card" data-sales-co="'+h(c.co)+'"'+(opened?' open':'')+'><summary class="sales-co"><h3>'+h(c.co)+'<span>'+h(CO_LABEL[c.co]||"")+'</span></h3><span class="sales-upd">更新日 <b>'+h(c["更新日"]||"—")+'</b></span>'+
       '<span class="sales-co-sum num">売上 <b>'+y(c["実績売上"])+'</b>・粗利 <b>'+y(c["実績粗利"])+'</b>（'+pt(pc(c["実績粗利"],c["実績売上"]))+'）</span></summary><div class="sales-card-body">'+
+    /* v1.50.56 トシさんの指示で、会社を開いたら先頭は「毎日の受注」（売上の上） */
+    '<details class="sales-open sales-day"'+(ds.length?'':' hidden')+'><summary>毎日の受注<span class="sales-open-sub">受注Total '+cnt(dn)+'・'+y(da)+'・1件単価 '+(dn?y(da/dn):"—")+'</span></summary>'+dayChart(c.co,ds)+'</details>'+
     '<div class="sales-main">'+
     /* v1.50.50 並びは見慣れた 売上 → 粗利。粗利は枠で目立たせ、粗利率を太字に */
     '<div><div class="sales-lab">売上（実績）</div><div class="num sales-big">'+y(c["実績売上"])+'</div><div class="note num">目標 '+y(c["目標売上"])+'・達成 '+pt(ra)+'</div>'+bar(ra,'var(--blue)')+'</div>'+
     '<div class="sales-profbox"><div class="sales-lab">粗利（実績）</div><div class="num sales-big">'+y(c["実績粗利"])+'</div><div class="sales-rate num">粗利率 <b>'+pt(pc(c["実績粗利"],c["実績売上"]))+'</b><span class="note">（目標粗利率 '+pt(pc(c["目標粗利"],c["目標売上"]))+'）</span></div><div class="note num">目標 '+y(c["目標粗利"])+'・達成 '+pt(rp)+'</div>'+bar(rp,'var(--green)')+'</div></div>'+
     '<div class="sales-grid sales-kv">'+kv("前月の金額",y(c["前月売上"]))+kv("前月の粗利",c["前月粗利"]==null?"—":y(c["前月粗利"])+'（'+pt(pc(c["前月粗利"],c["前月売上"]))+'）')+kv("最終粗利予想",y(c["最終粗利予想"]))+'</div>'+/* v1.50.47 人件費・Notes未入力は画面に出さない（シートの列は読むだけ残す） */
-    /* v1.50.51 並び：毎日の受注 → 確認日・毎日の確認 → 担当者別。開け閉めする見出しは色の帯（.sales-open） */
-    '<details class="sales-open"'+(ds.length?'':' hidden')+'><summary>毎日の受注<span class="sales-open-sub">受注Total '+cnt(dn)+'・'+y(da)+'・1件単価 '+(dn?y(da/dn):"—")+'</span></summary>'+dayChart(c.co,ds)+'</details>'+
+    /* v1.50.51 並び：確認日・毎日の確認 → 担当者別。開け閉めする見出しは色の帯（.sales-open） */
     '<div class="note"><span class="sales-lab">確認日</span>　社長 '+h(lastChk("boss")||c["社長確認日"]||"—")+'・本部長 '+h(lastChk("hq")||c["本部長確認日"]||"—")+'・'+h(c["GMの名前"]||"GM")+' '+h(lastChk("gm")||c["GM確認日"]||"—")+'</div>'+chkBox+
     (st.length?'<details class="sales-open"><summary>担当者別<span class="sales-open-sub">'+new Set(st.map(x=>x.name)).size+'人</span></summary>'+stTable(st)+'</details>':'')+'</div></details>'};
   /* v1.50.45 会社の順は CP・AT・CPY（シートの行の順によらない） */
@@ -5050,6 +5059,42 @@ main.addEventListener("touchend",e=>{
   render();
 },{passive:true});
 setInterval(()=>{document.querySelectorAll("[data-since]").forEach(el=>el.textContent=since(el.dataset.since))},30000);
+/* v1.50.56 新しい版が出たら自動で更新する（下に引っ張らなくてよい）。
+   アプリに戻ったとき・開いた少しあと・開いている間は10分ごとに、index.html を読み直して版を比べる。新しければ、その版のURLで開き直す。
+   入力の途中・保存や同期の途中・確認の画面が開いているとき・同期の結果を出したばかりのときは更新せず、終わってから更新する。
+   同じ版への更新は5分に1回まで（古い版が返ってきても繰り返さない）。案件などの記録は端末に保存済みなので、開き直しても消えない */
+const APP_VER=((document.querySelector(".ver")||{}).textContent||"").match(/v(\d+\.\d+\.\d+)/)?.[1]||"",UPD_KEY="workhub_autoupd_v1";
+const verNewer=(a,b)=>{const x=String(a).split(".").map(Number),y=String(b).split(".").map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0)}return false};
+let updNext="",updChecking=false,updLast=0;
+function updBusy(){
+  if(receiptSaving||receiptSelecting||receiptSending||shareRunning)return true;
+  if(ui.gsync&&(ui.gsync.busy||Date.now()-(ui.gsync.at||0)<60e3))return true;
+  if(Object.keys(ui).some(k=>/Busy$/.test(k)&&ui[k]))return true;
+  if(["new","rform"].includes(ui.view)||(ui.keepDirty&&ui.keepDirty.size)||document.querySelector("dialog[open]"))return true;
+  const a=document.activeElement;return !!(a&&a!==document.body&&(a.matches("input,textarea,select")||a.isContentEditable));
+}
+function updTry(){
+  if(!updNext||updBusy())return false;
+  let tried=null;try{tried=JSON.parse(sessionStorage.getItem(UPD_KEY)||"null")}catch(e){}
+  if(tried&&tried.v===updNext&&Date.now()-tried.at<5*60e3)return false;
+  try{sessionStorage.setItem(UPD_KEY,JSON.stringify({v:updNext,at:Date.now(),from:APP_VER}))}catch(e){}
+  updGo(location.pathname+"?u="+encodeURIComponent(updNext)+location.hash);return true;
+}
+let updGo=url=>location.replace(url);
+async function updCheck(force){
+  if(updChecking||!APP_VER||document.visibilityState==="hidden")return;const now=Date.now();if(!force&&now-updLast<60e3)return;updChecking=true;updLast=now;
+  try{const r=await fetch("./index.html?vc="+now,{cache:"no-store",credentials:"omit"});if(!r.ok)return;
+    const m=(await r.text()).match(/class="ver"[^>]*>v(\d+\.\d+\.\d+)/);if(m&&verNewer(m[1],APP_VER)){updNext=m[1];updTry()}}
+  catch(e){}finally{updChecking=false}
+}
+/* 更新して開き直したとき：URLの印を消し、「新しい版にしました」と出す */
+try{const q=new URLSearchParams(location.search);if(q.has("u"))history.replaceState(null,"",location.pathname+location.hash);
+  const t=JSON.parse(sessionStorage.getItem(UPD_KEY)||"null");if(t&&t.v===APP_VER){sessionStorage.removeItem(UPD_KEY);setTimeout(()=>toast("新しい版（v"+APP_VER+"）にしました",4000),300)}}catch(e){}
+if(typeof window.addEventListener==="function"){
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")updCheck(true)});
+  window.addEventListener("focus",()=>updCheck(false));
+  setTimeout(()=>updCheck(true),5000);setInterval(()=>updCheck(true),10*60e3);setInterval(()=>{if(updNext)updTry()},15e3);
+}
 gCleanReadPrefs(false);gKeepLoad(); /* sanitize Google-only state before the first render */
 corpKeepLoad();
 render();
