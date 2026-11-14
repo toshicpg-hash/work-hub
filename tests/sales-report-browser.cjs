@@ -282,13 +282,24 @@ async function main(){
    assert.equal(await A.p.$eval('#home-summary .tiles',t=>t.firstElementChild.id),'home-orders','first tile');
    assert.ok(await overflow(A.p)<=0);assert.deepEqual(A.errors,[]);
    if(width===400)await A.p.locator('#home-orders').screenshot({path:path.join(require('node:os').tmpdir(),'ord-tile-400.png')});
+   /* v1.50.61 薄い青の背景。社長の端末は「タップして数字を入れる ›」があり、押すと売上報告の「数字を入れる」（今月）が開く */
+   assert.equal(await A.p.$eval('#home-orders',e=>getComputedStyle(e).backgroundColor),await A.p.evaluate(()=>{const d=document.createElement('div');d.style.background='var(--blue-soft)';document.body.appendChild(d);const c=getComputedStyle(d).backgroundColor;d.remove();return c}));
+   assert.match(await A.p.textContent('#home-orders .ord-go'),/タップして数字を入れる/);
+   await A.p.evaluate(()=>{BB.ui.salesMonth='2026-10';BB.ui.salesEdOpen=false;BB.render()});
+   await A.p.click('#home-orders');assert.equal(await A.p.evaluate(()=>BB.ui.view),'stats');
+   assert.equal(await A.p.$eval('#sales-edit',d=>d.open),true);assert.match(await A.p.textContent('#sales-edit>summary'),/数字を入れる（11月）/);
+   assert.ok(await A.p.$eval('details[data-fold="sales"]',d=>d.open));
+   const top=await A.p.$eval('#sales-edit',e=>e.getBoundingClientRect().top);assert.ok(top>=0&&top<900,'scrolled to the input '+top);
+   await A.p.evaluate(()=>{BB.ui.salesEdOpen=false;BB.go('home')});
    /* 社員の端末：自分の記録シートの「会社の数字の場所」から読む */
    G.files.rec00000000000000000001={id:'rec00000000000000000001',name:'記録',owner:STAFF,created:'2026-10-01T00:00:00Z',perms:[],tabs:[{title:'会社の数字の場所',sheetId:0,rows:[['会社','ファイルID'],['CP','numcp000000000000000001']]}]};
    const S=await device(width,s=>{window.__acct=s},STAFF);
    await S.p.evaluate(()=>{const d=BB.db.settings.data;d.ob={legacy:true};d.sheetId='rec00000000000000000001';BB.save();BB.go('home')});
    assert.equal(await S.p.$$eval('#home-orders',a=>a.length),0,'nothing before it arrives');
    await S.p.evaluate(()=>BB.gAuthorize(true));await S.p.evaluate(()=>BB.ordLoad());await S.p.evaluate(()=>BB.render());
-   assert.equal(await S.p.textContent('#home-orders'),tile,'same tile on the staff device');
+   assert.equal(await S.p.textContent('#home-orders'),tile.replace(/タップして数字を入れる ›$/,''),'same tile on the staff device (without the input link)');
+   assert.equal(await S.p.$$eval('#home-orders .ord-go',a=>a.length),0);assert.equal(await S.p.$eval('#home-orders',e=>e.tagName),'DIV');
+   if(width===400)await S.p.locator('#home-orders').screenshot({path:path.join(require('node:os').tmpdir(),'ord-tile-staff-400.png')});
    assert.ok(await overflow(S.p)<=0);assert.deepEqual(S.errors,[]);await S.c.close();
   });
   await A.c.close();
