@@ -104,6 +104,10 @@ async function main(){
   const r=await d.p.evaluate(()=>{const ctx={people:[{sheetId:'boss-sheet',email:HO.ADMIN,name:'社長役'},{sheetId:'s',email:'s@example.com',name:'見本 社員'}]},m={people:[]};
    return [HO.calHubOwner({private:false,creator:HO.ADMIN},ctx,m,[]),HO.calHubOwner({private:true,creator:'s@example.com'},ctx,m,[]),HO.calHubOwner({private:false,creator:'s@example.com'},ctx,m,[])?.person,HO.calHubOwner({private:false,owner:'見本 社員',creator:HO.ADMIN},ctx,m,[])?.person]});
   assert.deepEqual(r,[null,null,'s','s']);
+  /* v1.50.74 社長の「予定を入れる」（担当：社長、作成者が社長のGmail）は社長の予定。社員が「担当：社長」と書いても社長にはしない */
+  const r2=await d.p.evaluate(()=>{const ctx={people:[{sheetId:'boss-sheet',email:HO.ADMIN,name:'社長役'},{sheetId:'s',email:'s@example.com',name:'見本 社員'}]},m={people:[]};
+   return [HO.calHubOwner({private:false,owner:'社長',creator:HO.ADMIN},ctx,m,[])?.person,HO.calHubOwner({private:false,owner:'社長',creator:'s@example.com'},ctx,m,[])]});
+  assert.deepEqual(r2,['boss-sheet',null]);
   assert.ok(out.other.every(e=>!('owner' in e)),'other calendars unchanged');
  });
  await check('400px・360pxで横にはみ出さない・スクリプトのエラーなし',async()=>{
