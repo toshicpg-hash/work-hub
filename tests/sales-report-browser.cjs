@@ -68,6 +68,11 @@ async function main(){
   await A.p.evaluate(()=>{const d=BB.db.settings.data;d.admin=true;d.ob={legacy:true};d.folder='folder0000000000000000001';d.listId='list00000000000000000001';BB.save();BB.render()});
   await check('社長の端末：「数字」に売上報告（試作・社長だけ）が出て、試作用のシート（架空）を作ると、新しい月から出る '+width+'px',async()=>{
    await open(A.p);assert.match(await A.p.textContent('#stats-sales'),/試作・社長だけ/);
+   /* v1.50.54 数字タブのいちばん上がグループ各社売上報告、自動ToDoの期限設定は下のほう。見出しに「押して開く」 */
+   const order=await A.p.evaluate(()=>[...document.querySelectorAll('main details[data-fold], main section')].map(e=>e.dataset.fold||e.id||''));
+   assert.equal(order.filter(Boolean)[0],'sales','sales is the first item '+order.join(','));assert.ok(order.indexOf('todoDays')>order.indexOf('stats-won'),'todo days below the stats');
+   assert.equal(await A.p.$eval('details[data-fold="sales"]>summary',x=>getComputedStyle(x,'::after').content),'"閉じる"');
+   await A.p.evaluate(()=>document.querySelector('details[data-fold="sales"]').open=false);assert.equal(await A.p.$eval('details[data-fold="sales"]>summary',x=>getComputedStyle(x,'::after').content),'"押して開く"');await open(A.p);
    await A.p.click('[data-act=salesdemo]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);
    const t=await A.p.textContent('#stats-sales');assert.match(t,/試作用のシートを作りました/,t);
    const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）');assert.ok(f);assert.deepEqual(f.perms,[],'not shared');

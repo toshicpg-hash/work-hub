@@ -38,8 +38,11 @@ async function main(){
   const {c,p,errors}=await device(role);
   await check(role+'：390×844で、どのタブも1件目が画面の上から3分の1以内に見える',async()=>{
    for(const v of VIEWS){if(v==='company'&&role!=='admin')continue;await p.evaluate(v=>CT.go(v),v);
-    const top=await p.evaluate(sel=>{const e=document.querySelector(sel);return e?e.getBoundingClientRect().top:null},FIRST[v]);
+    /* v1.50.54 社長の端末の数字タブは、グループ各社売上報告がいちばん上（トシさんの指示）。見積決定率は画面の上半分に入ればよい */
+    const sel=v==='stats'&&role==='admin'?'details[data-fold="sales"]':FIRST[v];
+    const top=await p.evaluate(sel=>{const e=document.querySelector(sel);return e?e.getBoundingClientRect().top:null},sel);
     assert.ok(top!==null&&top<=844/3,v+' first item top '+top);
+    if(sel!==FIRST[v]){const t2=await p.evaluate(sel=>{const e=document.querySelector(sel);return e?e.getBoundingClientRect().top:null},FIRST[v]);assert.ok(t2!==null&&t2<=844/2,v+' stats panel top '+t2)}
     assert.ok(await overflow(p)<=0,v+' overflow');}
   });
   await check(role+'：説明の文章は常には出さず、開発者向けの言葉も出さない',async()=>{
@@ -107,7 +110,9 @@ async function main(){
  await check('360px・820×900でも横にはみ出さない',async()=>{
   for(const [w,h] of [[360,800],[820,900]]){const {c,p,errors}=await device('admin',w,h);
    for(const v of VIEWS){await p.evaluate(v=>CT.go(v),v);assert.ok(await overflow(p)<=0,w+' '+v)}
-   if(w===820)for(const v of VIEWS){await p.evaluate(v=>CT.go(v),v);const top=await p.evaluate(sel=>document.querySelector(sel)?.getBoundingClientRect().top,FIRST[v]);assert.ok(top<=900/3,w+' '+v+' '+top)}
+   /* v1.50.54 社長の端末の数字タブはグループ各社売上報告がいちばん上。見積決定率は上半分に入ればよい */
+   if(w===820)for(const v of VIEWS){await p.evaluate(v=>CT.go(v),v);const sel=v==='stats'?'details[data-fold="sales"]':FIRST[v];const top=await p.evaluate(sel=>document.querySelector(sel)?.getBoundingClientRect().top,sel);assert.ok(top<=900/3,w+' '+v+' '+top);
+    if(v==='stats'){const t2=await p.evaluate(sel=>document.querySelector(sel)?.getBoundingClientRect().top,FIRST[v]);assert.ok(t2<=900/2,w+' stats panel '+t2)}}
    assert.deepEqual(errors,[]);await c.close()}
  });
  console.log('ALL PASS',results.length);
