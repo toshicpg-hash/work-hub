@@ -518,8 +518,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.71" title="使い方マニュアルを開く">v1.50.71・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.71" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.72" title="使い方マニュアルを開く">v1.50.72・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.72" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -579,10 +579,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.71"></script>
+<script src="./share-management.js?v=1.50.72"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.71"></script>
-<script src="./calendar-view-scope.js?v=1.50.71"></script>
+<script src="./view-scope.js?v=1.50.72"></script>
+<script src="./calendar-view-scope.js?v=1.50.72"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -845,7 +845,10 @@ const staffOrder=()=>D().admin?D().staff:(ui.viewList||[]);
 /* 正規表示名と旧担当キーは分離。衝突を一覧順や役職で推測しない。 */
 const flatName=n=>String(n||"").replace(/[\s　]+/g,"");
 const ownNameProfile=()=>D().nameProfile?.sheetId===D().sheetId?D().nameProfile:null;
-const nameList=()=>staffOrder().length?staffOrder():(ownNameProfile()?[ownNameProfile()]:(RS().name?[{name:String(RS().name).trim(),sheetId:D().sheetId||""}]:[]));
+/* v1.50.72 社員の端末は社員一覧を持たないので、社長が記録シートの「担当の候補」に書いた社員の一覧（氏名・会社・シートID）を使う。
+   前は自分と「黒木」「トシ」しか選べず、名字だけの「黒木」（専務と祐次郎さんのどちらか分からない）を選ぶしかなかった */
+const nameCands=()=>{const c=D().nameCands;return c&&c.sheetId===D().sheetId&&Array.isArray(c.list)?c.list:null};
+const nameList=()=>staffOrder().length?staffOrder():nameCands()||(ownNameProfile()?[ownNameProfile()]:(RS().name?[{name:String(RS().name).trim(),sheetId:D().sheetId||""}]:[]));
 const ownOwner=()=>D().sheetId||(!staffOrder().length?String(RS().name||"").trim():"");
 const personOf=(name,owner)=>CPGNames.resolve(nameList(),name,owner,STAFF);
 const personLabel=p=>CPGNames.label(p,nameList());
@@ -873,7 +876,8 @@ function ownTantouValue(){
  if(!o&&D().admin)o=opts.find(x=>x.v===BOSS_TANTOU);
  return o?o.v:"";
 }
-const tantouOptsHtml=(sel)=>tantouOptions().map(o=>'<option value="'+h(o.v)+'"'+(o.disabled?' disabled':'')+(sel&&o.v===sel&&!o.disabled?' selected':'')+'>'+h(o.l)+(o.disabled?'（氏名重複・選択不可）':'')+'</option>').join("");
+/* v1.50.72 社員の端末では「社長」（トシ）を選べないようにする（トシさんの指示。社長の端末だけ残す）。今その値の案件を開いたときは出す */
+const tantouOptsHtml=(sel)=>tantouOptions().filter(o=>(!o.disabled||o.v===sel)&&(D().admin||o.v!==BOSS_TANTOU||o.v===sel)).map(o=>'<option value="'+h(o.v)+'"'+(o.disabled?' disabled':'')+(sel&&o.v===sel&&!o.disabled?' selected':'')+'>'+h(o.l)+(o.disabled?'（氏名重複・選択不可）':'')+'</option>').join("");
 const isEizen=c=>c.type==="eizen";
 const isTaikyo=c=>c.type==="taikyo";
 const itemsSum=(c,b)=>c.items.filter(i=>!b||i.burden===b).reduce((s,i)=>s+(Number(i.amount)||0),0);
@@ -2044,7 +2048,7 @@ async function gSyncAll(){
   const run=async()=>{
     try{if(localStorage.getItem(KEY)!==dbPersistedRaw)throw Error("別の画面で記録が更新されています。古い内容を送信しないため同期を止めました。入力を控え、再読み込みしてください。");}
     catch(err){const msg=err.message||"端末の最新記録を確認できないため同期を止めました。";manualStorageNotice(msg);ui.gsync={busy:false,rows:[{name:"端末の最新記録",ok:false,msg}]};render();return;}
-    const r=await gSyncAllRun();await bbAfterSync();await salesAfterSync();await ordAfterSync();return r;
+    const r=await gSyncAllRun();await bbAfterSync();await salesAfterSync();await ordAfterSync();try{await namesAfterSync()}catch(e){}return r;
   };
   manualTodoSyncPending=Promise.resolve().then(()=>globalThis.navigator?.locks?.request?navigator.locks.request(KEY+":manual-todo-edit",run):run());
   try{return await manualTodoSyncPending;}finally{manualTodoSyncPending=null;}
@@ -2397,7 +2401,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.71";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.72";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2566,7 +2570,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.71" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.71" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.72" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.72" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3185,7 +3189,11 @@ const sheetObjs=rows=>{const [hd,...rs]=rows||[];return rs.map(r=>Object.fromEnt
 const sheetCount=(rows,key)=>sheetObjs(rows).filter(r=>String(r[key]??"").trim()).length;
 async function sharedCheck(id){
   /* v1.50.18 同期で使う「情報」（前の中身）と「受付番号の記号」も、ここで一緒に読む（前は別々に読んでいた） */
-  const have=await sheetTabNames(id),rows=await sheetRead(id,["案件","入金","立替","ToDo","情報",CODE_TAB].filter(t=>have.includes(t)));
+  const have=await sheetTabNames(id),rows=await sheetRead(id,["案件","入金","立替","ToDo","情報",CODE_TAB,NAMES_TAB].filter(t=>have.includes(t)));
+  /* v1.50.72 担当の候補を受け取る（社長が書いた社員の一覧） */
+  if(!D().admin&&Array.isArray(rows[NAMES_TAB])&&JSON.stringify((rows[NAMES_TAB][0]||[]).map(String))===JSON.stringify(NAMES_COLS)){
+    const list=rows[NAMES_TAB].slice(1).filter(r=>r&&String(r[0]||"").trim()&&String(r[2]||"").trim()).map(r=>({name:String(r[0]).trim(),company:String(r[1]||""),sheetId:String(r[2]).trim()}));
+    const cur=nameCands();if(list.length&&JSON.stringify(cur)!==JSON.stringify(list)){D().nameCands={sheetId:id,list};save()}}
   const d=dataRows(),local={"案件":d.cases.length-1,"入金":d.pay.length-1,"立替":d.rc.length-1},shared={};
   for(const [t,k] of GUARD_TABS)shared[t]=sheetCount(rows[t],k);
   const block=GUARD_TABS.some(([t])=>shared[t]>0&&(!local[t]||t!=="入金"&&shared[t]>=4&&local[t]*2<shared[t]));
@@ -4065,6 +4073,23 @@ async function salesEdSave(ids){
   const list=(d.staff||[]).filter(s=>!s.removed&&s.sheetId&&s.sheetId!==d.sheetId&&(now.has(s.sheetId)||prev.has(s.sheetId)||coList(s).some(co=>d.numbers&&d.numbers[co])));let w=0;
   for(const s of list){if(await numPtrWrite(s,d.numbers||{}))w++}
   return w;
+}
+/* v1.50.72 担当の候補（社長の端末が書く。社員の端末は同期で読む） */
+const NAMES_TAB="担当の候補", NAMES_COLS=["氏名","会社","シートID"];
+const namesRows=staff=>[NAMES_COLS,...(staff||[]).filter(s=>!s.removed&&s.sheetId&&s.name).map(s=>[String(s.name).trim(),String(s.company||""),s.sheetId])];
+async function namesTabWrite(s,rows){
+ const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(NAMES_TAB))await addTab(s.sheetId,NAMES_TAB);
+ const prev=(await shareRead(()=>sheetRead(s.sheetId,[NAMES_TAB])))[NAMES_TAB]||[];
+ const norm=r=>JSON.stringify(r.map(x=>x.map(y=>String(y??""))).filter(x=>x.some(Boolean)));
+ if(norm(prev)===norm(rows))return false;
+ await sheetWrite(s.sheetId,NAMES_TAB,rows,prev);return true;
+}
+/* 社長の同期のあと：社員一覧が前に書いたときから変わっていれば、全員の記録シートに書き直す（同じなら何もしない） */
+async function namesAfterSync(){
+ const d=D();if(!d.admin||!gSignedIn())return;const rows=namesRows(d.staff),key=JSON.stringify(rows);if(d.namesWritten===key)return;
+ const list=(d.staff||[]).filter(s=>!s.removed&&s.sheetId&&s.sheetId!==d.sheetId);let bad=0;
+ await sharePool(list,async s=>{try{await namesTabWrite(s,rows)}catch(err){if(err.message==="signin")throw err;bad++}});
+ if(!bad){d.namesWritten=key;save()}
 }
 async function numPtrWrite(s,numbers){
  const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(NUMPTR_TAB))await addTab(s.sheetId,NUMPTR_TAB);

@@ -344,6 +344,9 @@ async function main(){
    G.files.numcp000000000000000001.perms=[{id:'pp1',emailAddress:STAFF,role:'reader',type:'user'}];G.files.numat000000000000000001.perms=[{id:'pp2',emailAddress:STAFF,role:'writer',type:'user'}];G.patches=[];
    await sync(A.p);await A.p.waitForFunction(()=>BB.ui.gsync.rows.some(x=>x.name==='売上報告'));
    assert.deepEqual(G.patches,[['numcp000000000000000001',STAFF,'writer']],'only the reader is raised');
+   /* v1.50.72 社長の同期で、社員の記録シートに「担当の候補」（社員全員のフルネーム）を書く */
+   await A.p.waitForFunction(()=>String(BB.db.settings.data.namesWritten||'').includes('rec00000000000000000001'));
+   assert.deepEqual(tabOf(rec,'担当の候補'),[['氏名','会社','シートID'],['見本 専務','CP','rec00000000000000000001']]);
    assert.match((await A.p.evaluate(()=>BB.ui.gsync.rows)).find(x=>x.name==='売上報告').msg,/会社の数字の編集者にしました：1件/);
    assert.deepEqual(await A.p.evaluate(()=>BB.db.settings.data.numbers),{CP:'numcp000000000000000001',AT:'numat000000000000000001'},'found and remembered');
    G.files.numcp000000000000000001.perms=[];G.files.numat000000000000000001.perms=[];await open(A.p);/* 同期でホームに戻るので、売上報告を開き直す */
@@ -365,6 +368,10 @@ async function main(){
    {const rows=tabOf(G.files.numcp000000000000000001,'今月の受注');assert.equal(rows.length,4);assert.equal(rows[1][6],'2026-11-09')}
    delete G.files.numcp000000000000000001.writers;
    assert.equal(await E2.p.$$eval('[data-act=salescheck]',a=>a.length),0,'boss check is only for the boss');assert.equal(await E2.p.$$eval('#sales-eds,[data-act=salesdemo]',a=>a.length),0,'no admin controls');
+   /* v1.50.72 社員の端末：担当の候補があれば、担当はフルネームから選ぶ（名字だけの「黒木」は出ない） */
+   {await E2.p.evaluate(()=>{const d=BB.db.settings.data;d.nameCands={sheetId:d.sheetId,list:[{name:'黒木 見本一',company:'CP',sheetId:'recA'},{name:'黒木 見本二',company:'CPY',sheetId:'recB'},{name:'見本 専務',company:'CP',sheetId:'rec00000000000000000001'}]};BB.save();BB.go('new')});
+    const o=await E2.p.$$eval('#n_tantou option',a=>a.map(x=>x.value));assert.ok(o.includes('黒木 見本一')&&o.includes('黒木 見本二')&&!o.includes('黒木')&&!o.includes('トシ'),o.join());/* 社員の端末に「社長」は出さない */
+    assert.equal(await E2.p.$eval('#n_tantou',x=>x.value),'見本 専務','own name selected first');}
    await E2.p.evaluate(()=>BB.go('home'));assert.match(await E2.p.textContent('#home-orders .ord-go'),/タップして数字を入れる/);
    await E2.p.click('#home-orders');assert.equal(await E2.p.$eval('#sales-edit',d=>d.open),true);
    await E2.p.click('[data-sales-edco="AT"]');await E2.p.click('[data-sales-edkind="day"]');await E2.p.selectOption('#se_day','12');
