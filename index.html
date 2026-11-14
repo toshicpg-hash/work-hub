@@ -519,8 +519,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.75" title="使い方マニュアルを開く">v1.50.75・11/15更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.75" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.76" title="使い方マニュアルを開く">v1.50.76・11/15更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.76" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -580,10 +580,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.75"></script>
+<script src="./share-management.js?v=1.50.76"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.75"></script>
-<script src="./calendar-view-scope.js?v=1.50.75"></script>
+<script src="./view-scope.js?v=1.50.76"></script>
+<script src="./calendar-view-scope.js?v=1.50.76"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2294,13 +2294,14 @@ function planAddSec(){
     '<div style="display:flex;flex-direction:column;gap:8px">'+
     '<div class="sales-lab">種類を選ぶ</div><div class="picks plan-kinds" role="group" aria-label="予定の種類">'+PLAN_KINDS.map(([n])=>'<button class="pick'+(planRest(n)?' rest':'')+'" type="button" data-plan-kind="'+h(n)+'" aria-pressed="'+(n===k)+'">'+h(n)+'</button>').join("")+'</div>'+
     '<label class="f">内容'+(planRest(k)?'（書かなくてよい）':'')+'<input type="text" id="pl_text" maxlength="60" autocomplete="off" placeholder="例：見積書作成／○○様邸" value="'+h(f.text||"")+'"></label>'+
+    (planRest(k)?'':'<label class="f">場所<input type="text" id="pl_place" maxlength="100" autocomplete="off" placeholder="例：○○マンション 101号室（住所）／会社" value="'+h(f.place||"")+'"></label>')+/* v1.50.76 場所（社員には場所を入れるよう指示している。トシさんの指示）。休みには出さない */
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px"><label class="f">日付<input type="date" id="pl_date" value="'+h(f.date||ui.calDay||todayS())+'"></label>'+
     (all?'<p class="note" style="margin:0;align-self:end">終日の予定で入ります</p>':'<label class="f">開始'+hm("pl_start",f.start)+'</label><label class="f">終了'+hm("pl_end",f.end)+'</label>')+'</div>'+
     '<p class="note" style="margin:0">予定の名前：<b>'+h(k?(k+(f.text?"　"+f.text:"")):"（種類を選んでください）")+'</b></p>'+
     '<div class="row"><button class="btn pri" type="button" data-act="planadd"'+busy+'>'+(ui.planBusy?'登録しています…':'「CPG HUB」に登録')+'</button></div>'+msg+
     '<p class="note" style="margin:0">直す・消すときは、Googleカレンダーのアプリで「CPG HUB」の予定を開いてください。</p></div></details></section>';
 }
-const planRead=()=>{const f=ui.plan=ui.plan||{};f.text=val("pl_text").trim();f.date=val("pl_date");if(!planAllDay(f.kind)){f.start=val("pl_start");f.end=val("pl_end")}return f};
+const planRead=()=>{const f=ui.plan=ui.plan||{};f.text=val("pl_text").trim();if(document.getElementById("pl_place"))f.place=val("pl_place").trim();f.date=val("pl_date");if(!planAllDay(f.kind)){f.start=val("pl_start");f.end=val("pl_end")}return f};
 async function planAdd(){
   const f=planRead(),k=f.kind;
   if(!k)throw Error("種類を選んでください");
@@ -2308,11 +2309,12 @@ async function planAdd(){
   const all=planAllDay(k);
   if(!all){if(!/^\d{2}:\d{2}$/.test(f.start||"")||!/^\d{2}:\d{2}$/.test(f.end||""))throw Error("開始と終了の時刻を入れてください");if(f.end<=f.start)throw Error("終了は開始より後の時刻にしてください")}
   if(!planRest(k)&&!f.text)throw Error("内容を書いてください（例：見積書作成）");
+  if(!planRest(k)&&!f.place)throw Error("場所を書いてください（例：物件名・部屋番号・住所。会社にいるときは「会社」）");
   await gAuthorize();if(!G.cals)await gLoadCalendars();
   const cal=planSharedCal();if(!cal)throw Error("「CPG HUB」カレンダーに書き込めません。Gmailに届いた「CPG HUB」の共有のお知らせから、カレンダーを追加してください");
   f.id=f.id||gRand();/* やり直しても2つにならないように、同じIDで送る */
   const when=all?{start:{date:f.date},end:{date:addDays(f.date,1)}}:{start:{dateTime:f.date+"T"+f.start+":00+09:00",timeZone:"Asia/Tokyo"},end:{dateTime:f.date+"T"+f.end+":00+09:00",timeZone:"Asia/Tokyo"}};
-  const body={id:f.id,summary:k+(f.text?"　"+f.text:""),description:["種類："+k,"担当："+planOwnerName(),"（CPG HUBから登録）"].join("\n"),status:"confirmed",...when,extendedProperties:{private:{cpgHubPlan:k}}};
+  const body={id:f.id,summary:k+(f.text?"　"+f.text:""),description:["種類："+k,"担当："+planOwnerName(),"（CPG HUBから登録）"].join("\n"),status:"confirmed",...(planRest(k)||!f.place?{}:{location:f.place}),...when,extendedProperties:{private:{cpgHubPlan:k}}};
   try{await gApi("calendars/"+encodeURIComponent(cal.id)+"/events",{method:"POST",body})}catch(err){if(err.status!==409)throw err}
   return body.summary;
 }
@@ -2445,7 +2447,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.75";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.76";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2614,7 +2616,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.75" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.75" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.76" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.76" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -5045,7 +5047,7 @@ document.addEventListener("click",e=>{
   if(a==="salessave"){if(ui.salesBusy)return;ui.salesBusy=true;ui.salesMsg=null;ui.salesEdOpen=true;
     salesSave().then(n=>{ui.salesMsg={ok:true,text:n?"シートに保存しました（"+n+"か所）":"変わったところはありません"}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?(err.status===403?"このシートに書く権限がありません":dMsg(err)):err.message}}).finally(()=>{ui.salesBusy=false;render()});render();return}
   if(a==="planadd"){if(ui.planBusy)return;try{planRead()}catch(e){}ui.planBusy=true;ui.planMsg=null;render();
-    planAdd().then(t=>{ui.planMsg={ok:true,text:"「"+t+"」を「CPG HUB」に登録しました"};const d=ui.plan.date;ui.plan={kind:"",date:d};gResetReads();toast("予定を登録しました")},err=>{ui.planMsg={ok:false,text:err.message==="signin"?"Googleにログインしてから登録してください":err.message==="http"?"登録できませんでした（"+dMsg(err)+"）":err.message}}).finally(()=>{ui.planBusy=false;render()});return}
+    planAdd().then(t=>{ui.planMsg={ok:true,text:"「"+t+"」を「CPG HUB」に登録しました"};const d=ui.plan.date;ui.plan={kind:"",date:d};/* 場所も空にする */gResetReads();toast("予定を登録しました")},err=>{ui.planMsg={ok:false,text:err.message==="signin"?"Googleにログインしてから登録してください":err.message==="http"?"登録できませんでした（"+dMsg(err)+"）":err.message}}).finally(()=>{ui.planBusy=false;render()});return}
   if(a==="salesfix"){if(ui.salesBusy)return;const v=Math.round(Number(val("se_fixdays")));ui.salesBusy=true;ui.salesMsg=null;ui.salesFixOpen=true;render();
     salesFixSave(v).then(()=>{ui.salesMsg={ok:true,text:"確定日を「月末から"+v+"日」にしました"}},err=>{ui.salesMsg={ok:false,text:"保存できませんでした："+(err.message==="http"?dMsg(err):err.message)}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="saleseds"){if(ui.salesBusy)return;const ids=[...document.querySelectorAll('[data-sales-ed]')].filter(x=>x.checked).map(x=>x.dataset.salesEd);ui.salesBusy=true;ui.salesMsg=null;ui.salesEdsOpen=true;render();

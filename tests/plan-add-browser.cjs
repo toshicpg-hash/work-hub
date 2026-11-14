@@ -41,8 +41,11 @@ async function main(){
    /* 時刻がないと登録しない */
    await add(d.p);assert.match(await d.p.textContent('#plan-add'),/開始と終了の時刻を入れてください/);
    await d.p.fill('#pl_start','15:00');await d.p.fill('#pl_end','13:00');await add(d.p);assert.match(await d.p.textContent('#plan-add'),/終了は開始より後/);
-   await d.p.fill('#pl_start','13:00');await d.p.fill('#pl_end','15:00');await add(d.p);
-   const b=posts(d)[0];assert.equal(b.path,'/calendar/v3/calendars/'+SHARED+'/events','only the shared CPG HUB calendar');
+   await d.p.fill('#pl_start','13:00');await d.p.fill('#pl_end','15:00');
+   /* v1.50.76 場所がないと登録しない */
+   await add(d.p);assert.match(await d.p.textContent('#plan-add'),/場所を書いてください/);assert.equal(posts(d).length,0);
+   await d.p.fill('#pl_place','見本ビル 101号室');await add(d.p);
+   const b=posts(d)[0];assert.equal(b.body.location,'見本ビル 101号室');assert.equal(b.path,'/calendar/v3/calendars/'+SHARED+'/events','only the shared CPG HUB calendar');
    assert.equal(b.body.summary,'在社　見積書作成');assert.equal(b.body.start.dateTime,'2026-11-06T13:00:00+09:00');assert.equal(b.body.end.dateTime,'2026-11-06T15:00:00+09:00');
    assert.match(b.body.description,/担当：見本 一郎/);assert.match(b.body.description,/（CPG HUBから登録）/);assert.equal(b.body.extendedProperties.private.cpgHubPlan,'在社');
    assert.ok(!posts(d).some(x=>x.path.includes(OWN)),'never written to the personal calendar');
@@ -51,9 +54,9 @@ async function main(){
   });
   await check('公休は終日・内容なしで登録。休み以外は内容がいる '+width+'px',async()=>{
    await d.p.click('[data-plan-kind="会議"]');await d.p.fill('#pl_start','09:00');await d.p.fill('#pl_end','10:00');await add(d.p);assert.match(await d.p.textContent('#plan-add'),/内容を書いてください/);
-   await d.p.click('[data-plan-kind="公休"]');assert.equal(await d.p.$$eval('#pl_start',a=>a.length),0,'no time for all-day');
+   await d.p.click('[data-plan-kind="公休"]');assert.equal(await d.p.$$eval('#pl_start',a=>a.length),0,'no time for all-day');assert.equal(await d.p.$$eval('#pl_place',a=>a.length),0,'no place for rest');
    await d.p.fill('#pl_date','2026-11-08');await add(d.p);
-   const b=posts(d).at(-1);assert.equal(b.body.summary,'公休');assert.deepEqual(b.body.start,{date:'2026-11-08'});assert.deepEqual(b.body.end,{date:'2026-11-09'});
+   const b=posts(d).at(-1);assert.equal(b.body.summary,'公休');assert.deepEqual(b.body.start,{date:'2026-11-08'});assert.deepEqual(b.body.end,{date:'2026-11-09'});assert.ok(!('location' in b.body));
    assert.ok(await overflow(d.p)<=0);assert.deepEqual(d.errors,[]);
   });
   await d.c.close();
