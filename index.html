@@ -5305,8 +5305,8 @@ if(typeof window.addEventListener==="function"){
   setTimeout(()=>updCheck(true),5000);setInterval(()=>updCheck(true),10*60e3);setInterval(()=>{if(updNext)updTry()},15e3);
 }
 /* v1.50.70 上の固定欄（header.top）の高さを覚え、会社・人の切り替えをそのすぐ下に止める */
-{const hd=document.querySelector("header.top"),setH=()=>{if(hd)document.documentElement.style.setProperty("--hdr-h",hd.offsetHeight+"px")};setH();
- if(hd&&typeof ResizeObserver==="function")new ResizeObserver(setH).observe(hd);if(typeof window.addEventListener==="function")window.addEventListener("resize",setH)}
+try{const hd=document.querySelector("header.top"),setH=()=>{if(hd&&document.documentElement)document.documentElement.style.setProperty("--hdr-h",hd.offsetHeight+"px")};setH();
+ if(hd&&typeof ResizeObserver==="function")new ResizeObserver(setH).observe(hd);if(typeof window.addEventListener==="function")window.addEventListener("resize",setH)}catch(e){}
 gCleanReadPrefs(false);gKeepLoad(); /* sanitize Google-only state before the first render */
 corpKeepLoad();
 render();
