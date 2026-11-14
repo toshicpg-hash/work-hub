@@ -15,7 +15,8 @@ function sheetsFixture(request,network){
  const tables={
   'staff-list':{'社員':[['氏名','Gmail','シートID','シートのリンク','状態','追加日','最終同期','共有ID','会社','役割','GMの会社','指示箱ID','担当の会社','表示名','受付番号の記号'],['架空の担当A','synthetic@example.invalid','employee-sheet','','共有中','2026-10-20','','','CP','社員','','','','','QX']]},
   /* v1.50.17 受付番号の記号は社員一覧と記録シートで同じ（同期で書かない） */
-  'employee-sheet':{'受付番号の記号':[['受付番号の記号'],['QX']],'案件':[['受付番号']],'入金':[['受付番号']],'立替':[['ID']],'情報':[['項目','値'],['最終同期','2026-10-27 12:00']],'ToDo':[['内容','期限','担当','受付番号','物件','部屋','種類','状態'],[staleTitle,'2026-10-26','架空の担当A','','','','リクエスト','期限切れ'],['別の架空手入力','2026-10-30','架空の担当A','','','','手入力','今後']],'指示':[['指示ID','内容','期限','指示日','状態','完了日','完了メモ'],['request-ledger-one',freshTitle,'2026-10-30','2026-10-25',network.requestState,'','']]}
+  /* v1.50.72 担当の候補も社員一覧と同じ（同期で書かない） */
+  'employee-sheet':{'担当の候補':[['氏名','会社','シートID'],['架空の担当A','CP','employee-sheet']],'受付番号の記号':[['受付番号の記号'],['QX']],'案件':[['受付番号']],'入金':[['受付番号']],'立替':[['ID']],'情報':[['項目','値'],['最終同期','2026-10-27 12:00']],'ToDo':[['内容','期限','担当','受付番号','物件','部屋','種類','状態'],[staleTitle,'2026-10-26','架空の担当A','','','','リクエスト','期限切れ'],['別の架空手入力','2026-10-30','架空の担当A','','','','手入力','今後']],'指示':[['指示ID','内容','期限','指示日','状態','完了日','完了メモ'],['request-ledger-one',freshTitle,'2026-10-30','2026-10-25',network.requestState,'','']]}
  };
  if(!tail){const names=id==='own-sheet'?['案件','入金','立替','情報','ToDo']:Object.keys(tables[id]||{});return {sheets:names.map((title,i)=>({properties:{title,sheetId:i,gridProperties:{rowCount:1000,columnCount:32}}}))};}
  if(tail==='/values:batchGet')return {valueRanges:u.searchParams.getAll('ranges').map(r=>{const name=r.replace(/^'|'$/g,'');return {range:r,values:tables[id]?.[name]||[]};})};
