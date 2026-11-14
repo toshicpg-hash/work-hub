@@ -26,6 +26,9 @@ async function context(width){
 }
 const overflow=p=>p.evaluate(()=>{const d=document.documentElement;return d.scrollWidth-d.clientWidth});
 const verText=p=>p.textContent('.ver');
+/* 開き直しが n 回目に届くまで、時計を進めながら待つ（URLの待ちは今のURLでもすぐ終わるので使わない） */
+const waitDocs=async(p,n)=>{for(let i=0;i<60&&state.docs.length<n;i++){await p.clock.runFor(1000).catch(()=>{});await new Promise(r=>setTimeout(r,100))}
+ assert.ok(state.docs.length>=n,'reload '+n+' '+JSON.stringify(state.docs));await p.waitForLoadState('load');await p.waitForFunction(()=>!!window.AU)};
 async function main(){
  server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0]));if(!f.startsWith(root+path.sep)){res.writeHead(403).end();return}try{res.end(fs.readFileSync(f))}catch{res.writeHead(404).end()}}).listen(0);
  await new Promise(r=>server.once('listening',r));origin='http://127.0.0.1:'+server.address().port;
@@ -78,8 +81,7 @@ async function main(){
    await p.evaluate(()=>AU.check(true));await p.clock.runFor(16000);assert.equal(state.docs.length,3,'sync busy');
    await p.evaluate(()=>{AU.ui.gsync=null;const d=document.createElement('dialog');d.id='au_dlg';document.body.appendChild(d);d.show()});
    await p.clock.runFor(16000);assert.equal(state.docs.length,3,'dialog open');
-   const nav=p.waitForURL(u=>true,{waitUntil:'load'}).catch(()=>{});
-   await p.evaluate(()=>document.getElementById('au_dlg').close());await p.clock.runFor(16000);await nav;await p.waitForFunction(()=>!!window.AU);
+   await p.evaluate(()=>document.getElementById('au_dlg').close());await waitDocs(p,4);
    assert.equal(state.docs[3],'/?u=9.0.3');assert.match(await verText(p),/v9\.0\.3/);
   });
   await check('案件などの記録（workhub_proto_v1）は開き直しても残る '+width+'px',async()=>{

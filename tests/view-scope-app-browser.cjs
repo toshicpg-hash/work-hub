@@ -19,7 +19,7 @@ await p.evaluate(()=>SC.go('company'));/* v1.50.57 人ごとの行は最初は�
  assert.ok(at('同期の状況')<at('ToDo')&&at('ToDo')<at('動いている案件')&&at('動いている案件')<at('未入金'),JSON.stringify(hs));
  const html=await p.innerHTML('main');assert.ok(html.indexOf('<h3>ToDo</h3>')<html.indexOf('data-act="reqsend"')||!html.includes('data-act="reqsend"'),'request form after ToDo');
  assert.ok(html.indexOf('data-act="reqsend"')<0||html.indexOf('data-act="reqsend"')<html.indexOf('動いている案件'),'request form before cases');
- await p.click('details.corp-p>summary');await p.evaluate(()=>SC.render());assert.equal(await p.$eval('details.corp-p',d=>d.open),true,'remembered across render');}
+ await p.click('details.corp-p>summary');await p.waitForFunction(()=>Object.values(SC.ui.corpOpen||{}).some(Boolean));/* 開け閉めの印は toggle のあとに付くので待つ */await p.evaluate(()=>SC.render());assert.equal(await p.$eval('details.corp-p',d=>d.open),true,'remembered across render');}
 await p.$$eval('details.corp-p',a=>a.forEach(d=>d.open=true));assert.match(await p.locator('main').innerText(),/合成案件fixture-2/);assert(!/合成案件fixture-5/.test(await p.locator('main').innerText()));
 await p.evaluate(()=>SC.go('requests',{sentRequests:true}));assert.match(await p.locator('main').innerText(),/合成宛先指示/);
 await p.evaluate(()=>SC.go('rcpt'));assert.equal(await p.locator('.shared-receipt').count(),1);assert.match(await p.locator('.shared-receipt').innerText(),/合成店舗/);assert.equal(await p.locator('[data-act=rnew],[data-rclaim],[data-rsettle]').count(),0);assert.equal(await p.evaluate(()=>SC.scopeHomeReceipts(['未提出']).length),1);

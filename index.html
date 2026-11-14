@@ -221,6 +221,9 @@ ol.hist li{overflow-wrap:anywhere}
 /* v1.50.46 見出し「グループ各社売上報告」を目立たせる */
 main details[data-fold="sales"]>summary.foldh{background:var(--accent);color:var(--accent-fg);border-radius:12px;padding:10px 14px}
 details[data-fold="sales"]>summary.foldh h2{font-size:22px;font-weight:800;color:var(--accent-fg)}
+/* v1.50.63 まわりの見出し（緑がかった色）と同化しないよう、青に（トシさんの指示）。暗い画面でも同じ青と白 */
+main details[data-fold="sales"]>summary.foldh{background:#1d5fb8;color:#fff;box-shadow:0 2px 6px rgba(29,95,184,.35)}
+main details[data-fold="sales"]>summary.foldh h2{color:#fff}
 .foldw{display:inline-block}/* v1.50.57 「グループ各／社売上報告」と途中で切れないように */
 .foldsub{display:block;font-size:14px;font-weight:700;opacity:.9;margin-top:2px}
 .sales-pct{display:block;font-size:11.5px;color:var(--muted);font-weight:400}
@@ -271,7 +274,7 @@ details.statfold[open]>summary{margin-bottom:8px}
 main details[data-fold="sales"]>summary.foldh{display:flex;align-items:center;gap:8px;list-style:none}
 main details[data-fold="sales"]>summary.foldh::-webkit-details-marker{display:none}
 main details[data-fold="sales"]>summary.foldh::before{content:none;display:none}
-main details[data-fold="sales"]>summary.foldh::after{content:"タップして開く ▼";margin-left:auto;font-size:13px;font-weight:700;color:var(--accent-fg);border:1.5px solid var(--accent-fg);border-radius:99px;padding:2px 10px;white-space:nowrap}main details[data-fold="sales"][open]>summary.foldh::after{content:"閉じる ▲"}
+main details[data-fold="sales"]>summary.foldh::after{content:"タップして開く ▼";margin-left:auto;font-size:13px;font-weight:700;color:#fff;border:1.5px solid #fff;border-radius:99px;padding:2px 10px;white-space:nowrap}main details[data-fold="sales"][open]>summary.foldh::after{content:"閉じる ▲"}
 /* v1.50.50 選べるもの（月・会社・入れるもの）は色の付いたボタン。選んでいるものは塗りつぶしと ✓ */
 #stats-sales .pick{background:var(--accent-soft);border:2px solid var(--accent);color:var(--accent);font-weight:700;min-height:44px;border-radius:99px;padding:0 14px;font-size:14px;cursor:pointer}
 #stats-sales .pick[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}#stats-sales .pick[aria-pressed="true"]::before{content:"✓ "}
@@ -506,8 +509,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.62" title="使い方マニュアルを開く">v1.50.62・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.62" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.63" title="使い方マニュアルを開く">v1.50.63・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.63" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -567,10 +570,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.62"></script>
+<script src="./share-management.js?v=1.50.63"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.62"></script>
-<script src="./calendar-view-scope.js?v=1.50.62"></script>
+<script src="./view-scope.js?v=1.50.63"></script>
+<script src="./calendar-view-scope.js?v=1.50.63"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2376,7 +2379,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.62";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.63";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2513,8 +2516,8 @@ function vStats(){
       '<div class="panel"><h3>物件別</h3>'+tbl("物件",group(c=>c.property||"（物件名なし）").map(row).join(""))+'<p class="note" style="margin:0">遅れの長い順です。案件一覧の「入金待ちだけ」でも確認できます。</p></div>'
       :'<div class="empty">未入金の案件はありません</div>'),"stats-unpaid");
   return (hasExamples()?'<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>':'')+
-  /* v1.50.54 グループ各社売上報告は数字タブのいちばん上（社長の端末だけ） */
-  (salesCan()?foldSec("sales","グループ各社|売上報告",salesSec(),!!ui.salesBusy,SALES_OLD_NAME):'')+
+  /* v1.50.54 グループ各社売上報告は数字タブのいちばん上（社長の端末だけ）。v1.50.63 名前を「グループ各社売上進捗報告」に（トシさんの指示） */
+  (salesCan()?foldSec("sales","グループ各社|売上進捗報告",salesSec(),!!ui.salesBusy,SALES_OLD_NAME):'')+
   statsWhoSeg()+(coMode&&!coMode.cases?statsCompanyEmpty(coMode):
   (coMode||scopeState().usable)?(coMode?'<section class="sec">'+statsCompanyNote(coMode)+'</section>'+unpaidSec:statsNote()?'<section class="sec">'+statsNote()+'</section>':'')+
   '<section class="sec" id="stats-won">'+statsPeriodControls()+(undatedLost.length?'<p class="banner stats-undated">失注日が未入力の案件 '+undatedLost.length+'件（案件を開いて日付を入れてください）</p>':'')+'<div class="sec-h stats-modebar">'+statsModeSeg()+'</div>'+
@@ -2545,7 +2548,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.62" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.62" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.63" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.63" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
