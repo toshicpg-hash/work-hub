@@ -606,7 +606,7 @@ const SCHEMA_VERSION=2;
 const CASE_DEFAULTS=()=>({company:"",addr:"",items:[],note:"",symptom:"",planDate:"",planTime:"",planEnd:"",cancelledAt:"",cancelReason:"",estAmount:null,estSentDate:"",siteDate:"",lossReason:"",lossDate:"",holdDate:"",orderDate:"",jobNo:"",billingTenant:"入居者に直接",handedDate:"",gcal:null,builtDate:"",billDate:"",billAmount:null,billTo:"",payDue:"",payments:[],paidDate:"",payLog:[]});
 const TODO_DEFAULTS=()=>({title:"",due:"",tantou:"",done:false});
 const RECEIPT_DEFAULTS=()=>({date:"",payee:"",item:"",amount:null,company:"CP",method:"立替",cardId:"",cat:"材料費",caseId:"",site:"",jobNo:"",note:"",photos:[],pext:{},status:"未提出",claimNo:"",submitDate:"",settleDate:"",closeNo:"",createdAt:"",everSub:false,returnedFrom:"",edits:[],drive:{}});
-const RSET_DEFAULTS=()=>({name:"",payDays:{CP:2,CPY:4,AT:-1},to:{CP:"桜田",CPY:"桜田",AT:"大須"},useCard:false,cards:[],lastCo:"CP",noSeq:{}});
+const RSET_DEFAULTS=()=>({name:"",payDays:{CP:4,CPY:2,AT:-1},to:{CP:"桜田",CPY:"桜田",AT:"大須"},useCard:false,cards:[],lastCo:"CP",noSeq:{}});
 const DATA_DEFAULTS=()=>({sheetId:"",sheetName:"",lastSync:"",rFolder:"",rShared:false,admin:false,folder:"",listId:"",staff:[],viewListId:"",viewEmail:""});
 const SETTINGS_DEFAULTS=()=>({rcpt:RSET_DEFAULTS(),data:DATA_DEFAULTS(),schedule:2,quote:3,reply:14,jobno:1,billAfter:3,payRule:"m1end",acctWait:3,gShow:null,gWrite:""});
 const withDefaults=(o,defs)=>{for(const k in defs)if(o[k]===undefined)o[k]=defs[k];return o};
@@ -625,6 +625,9 @@ function upgrade(db){
   if(!obj(db.settings.rcpt))db.settings.rcpt={};
   const RD=RSET_DEFAULTS();withDefaults(db.settings.rcpt,RD);
   if(!obj(db.settings.rcpt.payDays))db.settings.rcpt.payDays=RD.payDays;else withDefaults(db.settings.rcpt.payDays,RD.payDays);
+  /* v1.50.59 精算日は CP（本社）が木曜・CPY が火曜（進藤さん確認）。前の初期値は逆（CP 火曜・CPY 木曜）だったので、
+     初期値のまま（CP 火曜・CPY 木曜）の端末だけ入れ替える。自分で変えた端末はそのまま。1回だけ（pdFix） */
+  {const R=db.settings.rcpt,pd=R.payDays;if(!R.pdFix){if(Number(pd.CP)===2&&Number(pd.CPY)===4){pd.CP=4;pd.CPY=2}R.pdFix=1}}
   if(!obj(db.settings.rcpt.to))db.settings.rcpt.to=RD.to;else withDefaults(db.settings.rcpt.to,RD.to);
   if(!Array.isArray(db.settings.rcpt.cards))db.settings.rcpt.cards=[];
   if(!obj(db.settings.rcpt.noSeq))db.settings.rcpt.noSeq={};
