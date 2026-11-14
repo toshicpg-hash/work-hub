@@ -42,6 +42,18 @@ async function main(){
    await p.evaluate(()=>BT.go('home'));await p.click('#home-access');assert.equal(await p.evaluate(()=>BT.ui.builtOnly),false,'other tiles clear it');
    assert.ok(await overflow(p)<=0);assert.deepEqual(errors,[]);
   });
+  /* v1.50.70 会社・人の切り替えは、下までスクロールしても見出しのすぐ下に残る */
+  await check('会社・人の切り替えは上の固定欄に残る '+width+'px',async()=>{
+   await p.setViewportSize({width,height:500});
+   for(const v of ['stats','cases','home']){
+    await p.evaluate(v=>{BT.go(v);window.scrollTo(0,document.body.scrollHeight)},v);await p.waitForTimeout(100);
+    const r=await p.evaluate(()=>{const h=document.querySelector('header.top').getBoundingClientRect(),b=document.querySelector('main>.scope-bar').getBoundingClientRect(),y=scrollY;return {hb:h.bottom,bt:b.top,bb:b.bottom,y}});
+    assert.ok(r.y>0,v+' scrolled '+JSON.stringify(r));assert.ok(Math.abs(r.bt-r.hb)<=6&&r.bb<250,v+' stays under the header '+JSON.stringify(r));
+    const sel=await p.$('[data-scope-company]');if(sel){const hit=await p.evaluate(()=>{const e=document.querySelector('[data-scope-company]'),b=e.getBoundingClientRect();const t=document.elementFromPoint(b.left+b.width/2,b.top+b.height/2);return e===t||e.contains(t)||(t&&t.closest&&t.closest('label')===e.closest('label'))});assert.ok(hit,v+' selector can be tapped')}
+    assert.ok(await overflow(p)<=0);
+   }
+   assert.deepEqual(errors,[]);
+  });
   await c.close();
  }
  console.log('ALL PASS',results.length);
