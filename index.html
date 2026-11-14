@@ -509,8 +509,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.66" title="使い方マニュアルを開く">v1.50.66・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.66" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.67" title="使い方マニュアルを開く">v1.50.67・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.67" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -570,10 +570,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.66"></script>
+<script src="./share-management.js?v=1.50.67"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.66"></script>
-<script src="./calendar-view-scope.js?v=1.50.66"></script>
+<script src="./view-scope.js?v=1.50.67"></script>
+<script src="./calendar-view-scope.js?v=1.50.67"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1044,7 +1044,8 @@ async function salesAfterSync(){
   const g=ui.gsync;if(!D().admin||!D().salesId||!g||!Array.isArray(g.rows)||!gSignedIn())return;
   let row;try{await salesLoad();const S=ui.sales,mt=S&&S.modified;row={name:"売上報告",ok:S&&S.today?true:"warn",msg:S&&S.today?"今日の更新を読みました（"+salesLast(S)+"）":"シートが今日はまだ更新されていません（最終更新 "+salesLast(S)+"）"};
     /* v1.50.60 今月の受注を、社員に共有済みの会社の数字のファイルに書き出す（失敗しても売上報告の行は変えず、理由を足す） */
-    try{const w=await ordWriteAll(ordSummary(S));if(w.errs.length)row.msg+="（社員への今月の受注：書けなかった会社 "+w.errs.join("・")+"）"}catch(err){row.msg+="（社員への今月の受注：書けませんでした）"}}
+    try{await numbersEnsure();const w=await ordWriteAll(ordSummary(S));if(w.errs.length)row.msg+="（社員への今月の受注：書けなかった会社 "+w.errs.join("・")+"）"}catch(err){row.msg+="（社員への今月の受注：書けませんでした）"}
+    try{const n=await ordWriterFix();if(n)row.msg+="（3社を入れられる人を、会社の数字の編集者にしました："+n+"件）"}catch(err){if(err.message==="signin")throw err;row.msg+="（会社の数字の編集者にできませんでした："+(err.message==="http"?dMsg(err):err.message)+"）"}}
   catch(err){row={name:"売上報告",ok:false,msg:"読めませんでした（"+(err.message==="http"?dMsg(err):err.message==="signin"?"ログインが切れました":err.message)+"）"}}
   ui.gsync={...ui.gsync,rows:ui.gsync.rows.concat([row])};render();
 }
@@ -2386,7 +2387,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.66";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.67";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2555,7 +2556,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.66" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.66" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.67" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.67" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -4008,21 +4009,39 @@ async function caseCodeWrite(s){
 }
 /* v1.50.64 入力できる人が数字を入れられる会社（トシさんの決定：本部長＝3社、GMは自分の会社だけ）。社長はいつも3社 */
 const salesEdCos=s=>s.role==="全社"?SALES_ORDER.slice():s.role==="GM"&&COMPANIES.includes(s.gmCo)?[s.gmCo]:coList(s);
+/* v1.50.67 社長の端末：会社の数字のファイル（会社ごと）を覚えていなければ、データのフォルダから名前で探して覚える（作りはしない） */
+async function numbersEnsure(){
+  const d=D();if(!d.admin||!d.folder)return d.numbers||{};d.numbers=d.numbers||{};let ch=false;
+  for(const co of COMPANIES){if(d.numbers[co])continue;try{const f=await driveFind("name="+dq("CPG HUB_会社の数字_"+co)+" and mimeType='application/vnd.google-apps.spreadsheet' and "+dq(d.folder)+" in parents");if(f.length){d.numbers[co]=f[0].id;ch=true}}catch(err){if(err.message==="signin")throw err}}
+  if(ch)save();return d.numbers;
+}
+/* v1.50.67 3社を入れられる人（専務）が会社の数字を「見るだけ」なら「編集者」にする（今月の受注を書き出すため。トシさんの指示）。
+   社長の端末の同期のたびに確かめる。HUBが作ったファイルだけ。上げるだけで、下げたり外したりはしない */
+async function ordWriterFix(){
+  const d=D();if(!d.admin)return 0;const nums=await numbersEnsure(),ws=(d.staff||[]).filter(ordWriter);if(!ws.length)return 0;let n=0;
+  for(const co of COMPANIES){const id=nums[co];if(!id)continue;
+    const ps=await permList(id);
+    for(const w of ws){const p=ps.find(x=>x.type==="user"&&eq(x.emailAddress,w.email));
+      if(p&&p.role==="reader"&&!(p.permissionDetails||[]).some(x=>x.inherited)){await gReq(DRIVE+"/"+encodeURIComponent(id)+"/permissions/"+encodeURIComponent(p.id)+"?fields=id,role",{method:"PATCH",body:{role:"writer"}});n++}}}
+  return n;
+}
 /* v1.50.62 入力できる人を保存：社員一覧の「HUBの設定」に残し、各社員の記録シートの「会社の数字の場所」を書き直す（変わらない人は書かない） */
 async function salesEdSave(ids){
   const d=D();if(!d.admin)throw Error("社長の端末で選んでください");if(!d.listId)throw Error("社員一覧がありません");await gAuthorize(true);
-  const prev=new Set(d.salesEditors||[]),now=new Set(ids);d.salesEditors=ids;save();await hubSetWrite(SALES_ED_KEY,ids.join(","));
+  const prev=new Set(d.salesEditors||[]),now=new Set(ids);d.salesEditors=ids;save();await hubSetWrite(SALES_ED_KEY,ids.join(","));await numbersEnsure();
   /* 書き直すのは、選んだ人・外した人と、もともと会社の数字の場所がある人だけ（ほかの人の記録シートにタブを増やさない） */
   const list=(d.staff||[]).filter(s=>!s.removed&&s.sheetId&&s.sheetId!==d.sheetId&&(now.has(s.sheetId)||prev.has(s.sheetId)||coList(s).some(co=>d.numbers&&d.numbers[co])));let w=0;
   for(const s of list){if(await numPtrWrite(s,d.numbers||{}))w++}
   return w;
 }
 async function numPtrWrite(s,numbers){
- const rows=[NUMPTR_COLS,...coList(s).filter(co=>numbers&&numbers[co]).map(co=>[co,numbers[co]])];
- /* v1.50.62 売上報告に数字を入れられる人だけ、売上報告のシートの場所も書く（社員の端末の「会社の数字」は会社の行だけ読むので影響しない） */
- if(D().salesId&&(D().salesEditors||[]).includes(s.sheetId))rows.push([SALES_PTR,D().salesId,salesEdCos(s).join(",")]);/* v1.50.64 3列目＝入れられる会社 */
  const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(NUMPTR_TAB))await addTab(s.sheetId,NUMPTR_TAB);
  const prev=(await shareRead(()=>sheetRead(s.sheetId,[NUMPTR_TAB])))[NUMPTR_TAB]||[];
+ /* v1.50.67 この端末が覚えていない会社のファイルは、前に書いた行をそのまま残す（前は消していた。社長の端末によっては会社の数字の場所を覚えていない） */
+ const old=co=>{const r=prev.slice(1).find(x=>String((x||[])[0]||"").trim()===co);return r?sheetIdOf(String(r[1]||"")):""};
+ const rows=[NUMPTR_COLS,...coList(s).map(co=>[co,(numbers&&numbers[co])||old(co)]).filter(x=>x[1])];
+ /* v1.50.62 売上報告に数字を入れられる人だけ、売上報告のシートの場所も書く（社員の端末の「会社の数字」は会社の行だけ読むので影響しない） */
+ if(D().salesId&&(D().salesEditors||[]).includes(s.sheetId))rows.push([SALES_PTR,D().salesId,salesEdCos(s).join(",")]);/* v1.50.64 3列目＝入れられる会社 */
  const norm=r=>JSON.stringify(r.map(x=>x.map(y=>String(y??""))).filter(x=>x.some(Boolean)));
  if(norm(prev)===norm(rows))return false; /* v1.50.12 変わらなければ書かない */
  await sheetWrite(s.sheetId,NUMPTR_TAB,rows,prev);
