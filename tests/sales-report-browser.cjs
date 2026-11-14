@@ -304,6 +304,22 @@ async function main(){
    if(width===400)await S.p.locator('#home-orders').screenshot({path:path.join(require('node:os').tmpdir(),'ord-tile-staff-400.png')});
    assert.ok(await overflow(S.p)<=0);assert.deepEqual(S.errors,[]);await S.c.close();
   });
+  /* v1.50.68 売上の確定：月末から N 日（45日）。確定前の月は「速報」。社長は日数を変えられる */
+  await check('速報：確定前の月に「速報」、日数を変えると確定日が変わる '+width+'px',async()=>{
+   await open(A.p);await A.p.click('[data-sales-month="2026-09"]');
+   assert.match(await A.p.textContent('[data-sales-month="2026-09"]'),/速報/);
+   assert.match(await A.p.textContent('#stats-sales .sales-prebar'),/9月の売上は 11\/14 に確定します（月末から45日）/);
+   await A.p.evaluate(()=>{document.getElementById('sales-fix').open=true});await A.p.fill('#se_fixdays','35');
+   await A.p.click('[data-act=salesfix]');await A.p.waitForFunction(()=>!BB.ui.salesBusy&&BB.ui.salesMsg);
+   assert.equal(await A.p.evaluate(()=>BB.ui.salesMsg.ok),true,await A.p.evaluate(()=>BB.ui.salesMsg.text));
+   assert.ok(tabOf(G.files.list00000000000000000001,'HUBの設定').some(r=>r[0]==='売上確定までの日数'&&r[1]==='35'));
+   /* 9/30＋35日＝11/4 は過ぎているので確定 */
+   assert.doesNotMatch(await A.p.textContent('[data-sales-month="2026-09"]'),/速報/);assert.match(await A.p.textContent('#stats-sales'),/9月の売上は確定しています（11\/4）/);
+   assert.match(await A.p.textContent('[data-sales-month="2026-10"]'),/速報/);
+   assert.ok(await overflow(A.p)<=0);
+   await A.p.fill('#se_fixdays','45');await A.p.click('[data-act=salesfix]');await A.p.waitForFunction(()=>!BB.ui.salesBusy&&BB.ui.salesMsg&&/45日/.test(BB.ui.salesMsg.text));
+   assert.deepEqual(A.errors,[]);
+  });
   /* v1.50.62 入力できる人（例：専務）：社長が選ぶと、その人の端末の数字タブに売上報告と「数字を入れる」が出て、シートに書ける。外すと消える */
   await check('入力できる人：社長が選ぶとその人の端末で売上報告に数字を入れられ、外すと出なくなる '+width+'px',async()=>{
    const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）'),rec=G.files.rec00000000000000000001;
