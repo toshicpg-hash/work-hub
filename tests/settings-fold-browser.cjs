@@ -35,11 +35,14 @@ async function main(){
    assert.ok(!(await p.isVisible('#setForm')));
    assert.ok(await overflow(p)<=0);
   });
-  await check('集計の部分は今まで通り開いたまま '+width+'px',async()=>{
+  /* v1.50.55 トシさんの指示で、集計のまとまり（見積と受注・未入金・担当別・失注の理由・依頼の種類別）も畳める。最初は畳み、見出しは見える */
+  await check('集計のまとまりは最初は畳み、見出し（「タップして開く ▼」）は見える '+width+'px',async()=>{
    assert.ok(await p.isVisible('h2:text("未入金")'));
    assert.ok(await p.isVisible('h2:text-matches("月の見積と受注")'));
    assert.ok(await p.isVisible('h2:text-matches("月の担当別")'));
-   assert.equal(await p.$$eval('details[data-fold] h2',a=>a.filter(x=>/未入金|見積と受注|担当別|失注の理由/.test(x.textContent)).length),0);
+   const st=await p.$$eval('details.statfold',a=>a.map(d=>[d.dataset.fold,d.open]));
+   assert.deepEqual(st.map(x=>x[0]).sort(),['st_reasons','st_tantou','st_types','st_unpaid','st_won']);assert.ok(st.every(x=>x[1]===false),'closed at first');
+   assert.equal(await p.$eval('details.statfold>summary',x=>getComputedStyle(x,'::after').content),'"タップして開く ▼"');
   });
   await check('開くと中のボタンはそのまま使え、開け閉めは端末に覚える（別のキー） '+width+'px',async()=>{
    await p.click('details[data-fold="todoDays"] > summary');

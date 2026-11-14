@@ -5,12 +5,14 @@ let playwright;try{playwright=require('playwright')}catch{playwright=require('/o
 const root=path.resolve(__dirname,'..');
 const hook='window.ST={get db(){return DB},ui,go,render,roBuild,save,vStats,caseDateOpen,caseDateSave,dataRows,CASE_DEFAULTS};';
 const TODAY='2026-10-29';
+/* v1.50.55 数字タブのまとまりは最初は畳む。この試験は中の数字を見るので、開いた状態にしておく */
+const OPEN_STATS=()=>{try{const k='workhub_fold_v1',v=JSON.parse(localStorage.getItem(k)||'{}');for(const x of ['st_won','st_unpaid','st_tantou','st_reasons','st_types'])if(!(x in v))v[x]=true;localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let server,browser,origin;const results=[];
 const check=async(name,fn)=>{await fn();results.push(name);console.log('PASS',name)};
 async function page(width){
  const c=await browser.newContext({viewport:{width,height:844},timezoneId:'Asia/Tokyo',locale:'ja-JP',serviceWorkers:'block'});
  await c.route('**/*',async r=>{const u=r.request().url();if(u===origin+'/')return r.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(root,'index.html'),'utf8').replace('corpKeepLoad();\nrender();',hook+'\ncorpKeepLoad();\nrender();')});if(u.startsWith(origin+'/'))return r.continue();return r.fulfill({status:200,body:''})});
- const p=await c.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));await p.clock.install({time:new Date(TODAY+'T03:00:00Z')});await p.goto(origin+'/');await p.waitForFunction(()=>!!window.ST);return {c,p,errors};
+ const p=await c.newPage(),errors=[];await p.addInitScript(OPEN_STATS);p.on('pageerror',e=>errors.push(e.message));await p.clock.install({time:new Date(TODAY+'T03:00:00Z')});await p.goto(origin+'/');await p.waitForFunction(()=>!!window.ST);return {c,p,errors};
 }
 const sum=p=>p.$$eval('.sum .k',a=>Object.fromEntries(a.map(k=>[k.textContent,k.nextElementSibling.textContent])));
 const unpaidHead=p=>p.$eval('h2:text("未入金")+span',e=>e.textContent);

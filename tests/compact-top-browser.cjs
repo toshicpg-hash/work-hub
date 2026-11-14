@@ -6,7 +6,7 @@ const root=path.resolve(__dirname,'..');
 const hook='window.CT={get db(){return DB},get ui(){return ui},go,render,save,roBuild,CASE_DEFAULTS,RECEIPT_DEFAULTS};';
 const VIEWS=['home','cases','todo','cal','gantt','stats','rcpt','requests','company'];
 /* 各タブで「本来見たいもの」の1件目 */
-const FIRST={home:'#home-summary .tile',cases:'.card[data-open]',todo:'main .reqbox, main .list > *',cal:'[data-day]',gantt:'.gwrap',stats:'#stats-won .panel',rcpt:'main .scope-bar ~ .panel, main [data-act=rnew]',requests:'main .list > *',company:'main .sec .panel'};
+const FIRST={home:'#home-summary .tile',cases:'.card[data-open]',todo:'main .reqbox, main .list > *',cal:'[data-day]',gantt:'.gwrap',stats:'#stats-won details.statfold>summary',rcpt:'main .scope-bar ~ .panel, main [data-act=rnew]',requests:'main .list > *',company:'main .sec .panel'};
 const DEV=/要求範囲|混在|未識別|所有者|共通選択|閲覧範囲全体/;
 let server,browser,origin;const results=[];
 const check=async(name,fn)=>{await fn();results.push(name);console.log('PASS',name)};

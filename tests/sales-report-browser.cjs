@@ -72,8 +72,8 @@ async function main(){
    /* v1.50.54 数字タブのいちばん上がグループ各社売上報告、自動ToDoの期限設定は下のほう。見出しに「押して開く」 */
    const order=await A.p.evaluate(()=>[...document.querySelectorAll('main details[data-fold], main section')].map(e=>e.dataset.fold||e.id||''));
    assert.equal(order.filter(Boolean)[0],'sales','sales is the first item '+order.join(','));assert.ok(order.indexOf('todoDays')>order.indexOf('stats-won'),'todo days below the stats');
-   assert.equal(await A.p.$eval('details[data-fold="sales"]>summary',x=>getComputedStyle(x,'::after').content),'"閉じる"');
-   await A.p.evaluate(()=>document.querySelector('details[data-fold="sales"]').open=false);assert.equal(await A.p.$eval('details[data-fold="sales"]>summary',x=>getComputedStyle(x,'::after').content),'"押して開く"');await open(A.p);
+   assert.equal(await A.p.$eval('details[data-fold="sales"]>summary',x=>getComputedStyle(x,'::after').content),'"閉じる ▲"');
+   await A.p.evaluate(()=>document.querySelector('details[data-fold="sales"]').open=false);assert.equal(await A.p.$eval('details[data-fold="sales"]>summary',x=>getComputedStyle(x,'::after').content),'"タップして開く ▼"');await open(A.p);
    await A.p.click('[data-act=salesdemo]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);
    const t=await A.p.textContent('#stats-sales');assert.match(t,/試作用のシートを作りました/,t);
    /* 最初は会社のカードを畳み、見出しに売上と粗利。押すと開き、描き直しても開いたまま */
