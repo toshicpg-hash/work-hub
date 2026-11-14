@@ -58,7 +58,8 @@ async function main(){
  server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0]));if(!f.startsWith(root+path.sep)){res.writeHead(403).end();return}try{res.setHeader('content-type',f.endsWith('.js')?'text/javascript':'text/html');res.end(fs.readFileSync(f))}catch{res.writeHead(404).end()}}).listen(0,'127.0.0.1');
  await new Promise(r=>server.once('listening',r));origin='http://127.0.0.1:'+server.address().port;
  browser=await playwright.chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
- const open=async p=>{await p.evaluate(()=>{BB.go('stats');document.querySelectorAll('details[data-fold="sales"]').forEach(d=>d.open=true)});await p.waitForSelector('#stats-sales')};
+ /* v1.50.54 会社のカードは最初は畳んである。試験では開いて中を見る */
+ const open=async p=>{await p.evaluate(()=>{BB.ui.salesCoOpen={CP:true,AT:true,CPY:true};BB.go('stats');document.querySelectorAll('details[data-fold="sales"]').forEach(d=>d.open=true)});await p.waitForSelector('#stats-sales')};
  for(const width of [400,360]){
   G.files={};G.n=0;G.mod='2026-11-09T01:30:00Z';
   /* 社員一覧（HUBの設定を書く先）とフォルダ */
@@ -75,6 +76,13 @@ async function main(){
    await A.p.evaluate(()=>document.querySelector('details[data-fold="sales"]').open=false);assert.equal(await A.p.$eval('details[data-fold="sales"]>summary',x=>getComputedStyle(x,'::after').content),'"押して開く"');await open(A.p);
    await A.p.click('[data-act=salesdemo]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);
    const t=await A.p.textContent('#stats-sales');assert.match(t,/試作用のシートを作りました/,t);
+   /* 最初は会社のカードを畳み、見出しに売上と粗利。押すと開き、描き直しても開いたまま */
+   await A.p.evaluate(()=>{BB.ui.salesCoOpen={};BB.render()});
+   assert.deepEqual(await A.p.$$eval('#stats-sales details.sales-card',a=>a.map(d=>[d.dataset.salesCo,d.open])),[['CP',false],['AT',false],['CPY',false]]);
+   assert.match(await A.p.textContent('#stats-sales details.sales-card[data-sales-co="CP"]>summary'),/CP本社.*売上 [\d,]+円・粗利 [\d,]+円（\d+%）/);
+   await A.p.click('#stats-sales details.sales-card[data-sales-co="AT"]>summary');await A.p.waitForFunction(()=>BB.ui.salesCoOpen&&BB.ui.salesCoOpen.AT===true);await A.p.evaluate(()=>BB.render());
+   assert.deepEqual(await A.p.$$eval('#stats-sales details.sales-card',a=>a.map(d=>d.open)),[false,true,false],'remembers the opened card');
+   await open(A.p);
    const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）');assert.ok(f);assert.deepEqual(f.perms,[],'not shared');
    assert.deepEqual(f.tabs.map(x=>x.title),['2026-09','2026-10','2026-11'].flatMap(m=>['会社','担当','受注','確認'].map(p=>m+' '+p)));
    for(const t of f.tabs){assert.deepEqual(t.grid,{frozenRowCount:1,frozenColumnCount:1},t.title+' frozen');if(t.title.endsWith('確認'))assert.ok(t.fmt.some(q=>q.setDataValidation&&q.setDataValidation.rule.condition.type==='BOOLEAN'),t.title+' checkboxes');else assert.ok(t.fmt.some(q=>q.repeatCell&&q.repeatCell.cell.userEnteredFormat.numberFormat&&q.repeatCell.cell.userEnteredFormat.numberFormat.pattern==='#,##0'),t.title+' #,##0');assert.ok(t.fmt.some(q=>q.repeatCell&&q.repeatCell.cell.userEnteredFormat.textFormat),t.title+' header');assert.ok(t.fmt.some(q=>q.updateDimensionProperties),t.title+' widths');assert.equal(t.rows[0][0],'会社',t.title+' header on row 1')}
@@ -86,7 +94,7 @@ async function main(){
    assert.match(t1,/3社の合計/);assert.match(t1,/25,650,000円/,'10月 = half of 9月 total');
    assert.match(t1,/達成 35%/);assert.match(t,/本社/);
    await A.p.click('[data-sales-month="2026-09"]');assert.match(await A.p.textContent('#stats-sales'),/51,300,000円/);
-   for(const sm of await A.p.$$('#stats-sales details:not([data-fold]):not([hidden]) > summary'))await sm.click();
+   for(const sm of await A.p.$$('#stats-sales details:not([data-fold]):not([hidden]):not(.sales-card) > summary'))await sm.click();
    const t2=await A.p.textContent('#stats-sales');
    for(const k of ['前月の金額','最終粗利予想','目標粗利率','確認日　社長','見本 一郎','第1事業部','第2事業部','完了物件','施工中','合計','1件単価','営業外売上','毎日の受注受注Total','更新日'])assert.ok(t2.includes(k),k);
    assert.equal(await A.p.$$eval('#stats-sales .sales-col[data-sales-day^="CP|"]',a=>a.length),30);
@@ -153,7 +161,7 @@ async function main(){
    t=await box().textContent();assert.match(t,/社長 ✓ 済/);assert.match(t,/今月（9日まで）：社長 9日/);assert.equal(await box().locator('[data-act=salescheck]').count(),0);
    assert.match(await A.p.textContent('#stats-sales'),/CP：今日の社長の確認を付けました/);
    assert.match(await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).textContent(),/確認日\s*社長 11\/09/);
-   for(const sm of await A.p.$$('#stats-sales details:not([data-fold]):not([hidden]) > summary'))await sm.click();
+   for(const sm of await A.p.$$('#stats-sales details:not([data-fold]):not([hidden]):not(.sales-card) > summary'))await sm.click();
    /* v1.50.53 完了の行の数字は少し太く、施工中の行はふつう */
    assert.deepEqual(await A.p.evaluate(()=>{const w=sel=>getComputedStyle(document.querySelector(sel)).fontWeight;return [w('#stats-sales .sales-st tbody tr.sales-done:not(.sales-sum) td.num'),w('#stats-sales .sales-st tbody tr:not(.sales-done):not(.sales-sum) td.num')]}),['600','400']);
    const done=await A.p.$$eval('#stats-sales tr.sales-done',a=>a.map(r=>r.textContent));assert.ok(done.length>=7&&done.every(x=>/完了/.test(x)),'完了 rows are tinted');

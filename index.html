@@ -245,6 +245,13 @@ tr.sales-sum td{border-top:2px solid var(--line)}
 .sales-profbox{background:var(--green-soft);border-radius:10px;padding:8px 10px}
 /* v1.50.50 粗利の枠は横いっぱい（文字が大きい端末で細かく折り返していた）。売上はその下 */
 .sales-main{display:flex;flex-direction:column;gap:8px}
+/* v1.50.54 会社のカード（畳める） */
+#stats-sales details.sales-card>summary{list-style:none;cursor:pointer;flex-wrap:wrap}#stats-sales details.sales-card>summary::-webkit-details-marker{display:none}
+#stats-sales details.sales-card>summary h3::before{content:"▶ ";font-size:14px;color:var(--accent)}#stats-sales details.sales-card[open]>summary h3::before{content:"▼ "}
+#stats-sales details.sales-card>summary::after{content:"押して開く";font-size:12px;font-weight:700;color:var(--accent);margin-left:auto}#stats-sales details.sales-card[open]>summary::after{content:"閉じる"}
+.sales-co-sum{flex-basis:100%;font-size:13.5px;color:var(--fg)}.sales-co-sum b{font-weight:800}
+#stats-sales details.sales-card{padding:8px}
+.sales-card-body{display:flex;flex-direction:column;gap:10px;margin-top:10px;padding:0 6px 6px}
 /* v1.50.51 開け閉めする見出し（毎日の受注・担当者別・グラフで見る）を、押せると分かる色の帯に */
 #stats-sales details.sales-open>summary{list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-height:48px;padding:8px 12px;border-radius:10px;background:var(--accent-soft);border-left:6px solid var(--accent);color:var(--fg);font-weight:800;font-size:16px;cursor:pointer}
 #stats-sales details.sales-open>summary::-webkit-details-marker{display:none}
@@ -3603,7 +3610,10 @@ function salesSec(){
       (curM&&tdc&&!tdc.boss?'<div class="row"><button class="btn sm pri" type="button" data-act="salescheck" data-co="'+h(c.co)+'"'+busy+'>社長の確認をした（今日）</button></div>':'')+
       (curM&&!tdc?'<p class="note" style="margin:0">シートの確認のタブに今日の行がありません</p>':'')+'</div>':'';
     const st=M.staff.filter(x=>x.co===c.co),ds=M.days.filter(x=>x.co===c.co),ra=pc(c["実績売上"],c["目標売上"]),rp=pc(c["実績粗利"],c["目標粗利"]),dn=sumBy(ds,"n"),da=sumBy(ds,"amt");
-    return '<div class="panel" style="display:flex;flex-direction:column;gap:10px"><div class="sales-co"><h3>'+h(c.co)+'<span>'+h(CO_LABEL[c.co]||"")+'</span></h3><span class="sales-upd">更新日 <b>'+h(c["更新日"]||"—")+'</b></span></div>'+
+    /* v1.50.54 会社のカードは最初は畳む（会社名と売上・粗利だけ）。押すと中身が開く。開けたかどうかは覚える */
+    const opened=!!(ui.salesCoOpen||{})[c.co];
+    return '<details class="panel sales-card" data-sales-co="'+h(c.co)+'"'+(opened?' open':'')+'><summary class="sales-co"><h3>'+h(c.co)+'<span>'+h(CO_LABEL[c.co]||"")+'</span></h3><span class="sales-upd">更新日 <b>'+h(c["更新日"]||"—")+'</b></span>'+
+      '<span class="sales-co-sum num">売上 <b>'+y(c["実績売上"])+'</b>・粗利 <b>'+y(c["実績粗利"])+'</b>（'+pt(pc(c["実績粗利"],c["実績売上"]))+'）</span></summary><div class="sales-card-body">'+
     '<div class="sales-main">'+
     /* v1.50.50 並びは見慣れた 売上 → 粗利。粗利は枠で目立たせ、粗利率を太字に */
     '<div><div class="sales-lab">売上（実績）</div><div class="num sales-big">'+y(c["実績売上"])+'</div><div class="note num">目標 '+y(c["目標売上"])+'・達成 '+pt(ra)+'</div>'+bar(ra,'var(--blue)')+'</div>'+
@@ -3612,7 +3622,7 @@ function salesSec(){
     /* v1.50.51 並び：毎日の受注 → 確認日・毎日の確認 → 担当者別。開け閉めする見出しは色の帯（.sales-open） */
     '<details class="sales-open"'+(ds.length?'':' hidden')+'><summary>毎日の受注<span class="sales-open-sub">受注Total '+cnt(dn)+'・'+y(da)+'・1件単価 '+(dn?y(da/dn):"—")+'</span></summary>'+dayChart(c.co,ds)+'</details>'+
     '<div class="note"><span class="sales-lab">確認日</span>　社長 '+h(lastChk("boss")||c["社長確認日"]||"—")+'・本部長 '+h(lastChk("hq")||c["本部長確認日"]||"—")+'・'+h(c["GMの名前"]||"GM")+' '+h(lastChk("gm")||c["GM確認日"]||"—")+'</div>'+chkBox+
-    (st.length?'<details class="sales-open"><summary>担当者別<span class="sales-open-sub">'+new Set(st.map(x=>x.name)).size+'人</span></summary>'+stTable(st)+'</details>':'')+'</div>'};
+    (st.length?'<details class="sales-open"><summary>担当者別<span class="sales-open-sub">'+new Set(st.map(x=>x.name)).size+'人</span></summary>'+stTable(st)+'</details>':'')+'</div></details>'};
   /* v1.50.45 会社の順は CP・AT・CPY（シートの行の順によらない） */
   const cos=M.cos.slice().sort((a,b)=>SALES_ORDER.indexOf(a.co)-SALES_ORDER.indexOf(b.co));
   const bad=M.bad.length?'<p class="banner" role="status" style="margin:0">読めなかったところがあります：'+h(M.bad.slice(0,5).join("・"))+(M.bad.length>5?" ほか":"")+'</p>':'';
@@ -4956,6 +4966,8 @@ document.addEventListener("input",e=>{
 document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("req-to"))ui.reqToOpen=e.target.open},true);
 /* v1.50.50 「数字を入れる」の開け閉めを覚える（描き直しても閉じない） */
 document.addEventListener("toggle",e=>{if(e.target.classList&&e.target.classList.contains("sales-edit"))ui.salesEdOpen=e.target.open},true);
+/* v1.50.54 会社のカードの開け閉めを覚える（描き直しても閉じない） */
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("sales-card")){ui.salesCoOpen={...(ui.salesCoOpen||{}),[d.dataset.salesCo]:d.open}}},true);
 document.addEventListener("change",e=>{
   if(e.target.id==="se_day"){ui.salesEd={...(ui.salesEd||{}),day:Number(e.target.value)};ui.salesEdOpen=true;render();return}
   /* v1.50.30 タスクリクエストの宛先のチェック：描き直さずに、選んだ人と見出しだけ変える（開いたままにする） */
