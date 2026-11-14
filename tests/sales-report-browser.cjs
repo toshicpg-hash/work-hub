@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..'),ADMIN='toshi.cpg@gmail.com',STAFF='staff.sample@example.com',STAFF2='gm.sample@example.com',KEY='workhub_proto_v1';
-const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,ordLoad,gAuthorize,ordAfterSync,'+
+const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,ordLoad,gAuthorize,ordAfterSync,numSpecs,'+
  'mock(){gLoadCalendarsRun=async()=>{G.cals=[];return G.cals};gReadRange=async()=>({events:[],calendars:[],missing:0});gKeepSave=()=>{};corpRun=async()=>[]}};';
 const GIS="window.google={accounts:{oauth2:{initTokenClient(cfg){return {requestAccessToken(){setTimeout(()=>cfg.callback({access_token:'tok:'+window.__acct,expires_in:3600,scope:cfg.scope}),5)}}}}}};";
 const G={files:{},n:0,calls:[]};
@@ -315,6 +315,9 @@ async function main(){
    assert.deepEqual(tabOf(rec,'会社の数字の場所').find(r=>r[0]==='CP'),['CP','numcp000000000000000001'],'company row kept');
    assert.ok(tabOf(G.files.list00000000000000000001,'HUBの設定').some(r=>r[0]==='売上報告を入れる人'&&r[1]==='rec00000000000000000001'));
    assert.match(await A.p.textContent('#sales-eds>summary'),/見本 専務/);
+   /* v1.50.66 共有を合わせるとき：3社を入れられる人は会社の数字をどの会社も「編集者」、ふつうの社員はその会社だけ「見るだけ」 */
+   {const sp=await A.p.evaluate(STAFF=>BB.numSpecs(BB.db.settings.data.staff.concat([{sheetId:'recX',email:'x@example.com',name:'見本 社員',role:'社員',company:'AT'}]),{CP:'n1',AT:'n2',CPY:'n3'},[]).map(x=>[x.label,x.want]),STAFF);
+    assert.deepEqual(sp,[['会社の数字（CP）',[{email:STAFF,role:'writer'}]],['会社の数字（CPY）',[{email:STAFF,role:'writer'}]],['会社の数字（AT）',[{email:STAFF,role:'writer'},{email:'x@example.com',role:'reader'}]]])}
    /* 共有（編集者）がまだのとき：その人の端末に理由が出る */
    const E2=await device(width,s=>{window.__acct=s},STAFF);
    await E2.p.evaluate(()=>{const d=BB.db.settings.data;d.ob={legacy:true};d.sheetId='rec00000000000000000001';BB.save()});
@@ -324,6 +327,14 @@ async function main(){
    f.writers=[STAFF];
    await E2.p.evaluate(()=>BB.ordAfterSync());await E2.p.evaluate(()=>{BB.go('stats');document.querySelectorAll('details[data-fold="sales"]').forEach(d=>d.open=true)});
    const t=await E2.p.textContent('#stats-sales');assert.match(t,/入力できる人/);assert.doesNotMatch(t,/共有（編集者）を頼んで/);
+   /* v1.50.66 3社を入れられる人（全社）は今月の受注も書き出す。会社の数字が「見るだけ」なら書けない理由を出す */
+   assert.match(t,/社員への今月の受注を書けなかった会社：CP：書く共有がありません（見るだけ）/);
+   G.files.numcp000000000000000001.writers=[STAFF];G.calls=[];
+   await E2.p.evaluate(()=>BB.ordAfterSync());await E2.p.evaluate(()=>{BB.go('stats');document.querySelectorAll('details[data-fold="sales"]').forEach(d=>d.open=true)});
+   assert.doesNotMatch(await E2.p.textContent('#stats-sales'),/書けなかった会社/);
+   assert.ok(G.calls.some(c=>c[0]===STAFF&&c[1]!=='GET'&&c[2].includes('numcp000000000000000001')),'written by the editor');
+   {const rows=tabOf(G.files.numcp000000000000000001,'今月の受注');assert.equal(rows.length,4);assert.equal(rows[1][6],'2026-11-09')}
+   delete G.files.numcp000000000000000001.writers;
    assert.equal(await E2.p.$$eval('[data-act=salescheck]',a=>a.length),0,'boss check is only for the boss');assert.equal(await E2.p.$$eval('#sales-eds,[data-act=salesdemo]',a=>a.length),0,'no admin controls');
    await E2.p.evaluate(()=>BB.go('home'));assert.match(await E2.p.textContent('#home-orders .ord-go'),/タップして数字を入れる/);
    await E2.p.click('#home-orders');assert.equal(await E2.p.$eval('#sales-edit',d=>d.open),true);
