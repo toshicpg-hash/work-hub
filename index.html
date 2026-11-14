@@ -377,6 +377,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 .bar i{display:block;height:100%;background:var(--accent)}
 .brk{display:grid;grid-template-columns:7.5em 1fr 3em;gap:8px;align-items:center;font-size:13.5px}
 .big{font-family:var(--f-display);font-weight:900;font-size:40px;line-height:1.1;font-variant-numeric:tabular-nums}
+.banner.updok{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--green-soft,#e3f3e8);color:var(--fg);border:2px solid var(--green);font-weight:700}.banner.updok>span{flex:1 1 200px}.banner.updok a{white-space:nowrap}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + 14px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
 .empty{color:var(--muted);font-size:14px;padding:14px;border:1px dashed var(--line);border-radius:12px;text-align:center}
 .calnav{display:flex;align-items:center;gap:8px}
@@ -499,8 +500,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.57" title="使い方マニュアルを開く">v1.50.57・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.57" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.58" title="使い方マニュアルを開く">v1.50.58・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.58" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -560,10 +561,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.57"></script>
+<script src="./share-management.js?v=1.50.58"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.57"></script>
-<script src="./calendar-view-scope.js?v=1.50.57"></script>
+<script src="./view-scope.js?v=1.50.58"></script>
+<script src="./calendar-view-scope.js?v=1.50.58"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2361,7 +2362,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.57";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.58";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2530,7 +2531,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.57" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.57" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.58" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.58" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -4564,6 +4565,8 @@ function render(){
   main.innerHTML=v();
   keepRestore();
   const scopeMarkup=scopeHeader();if(ui.view==="home")main.querySelector("#home-sync")?.insertAdjacentHTML("afterend",scopeMarkup);else main.insertAdjacentHTML("afterbegin",scopeMarkup);
+  /* v1.50.58 自動で新しい版にしたら、画面のいちばん上に出す（下に出すと見えないことがあるため）。「閉じる」を押すまで消えない */
+  if(ui.updDone)main.insertAdjacentHTML("afterbegin",'<div class="banner updok" role="status"><span>✓ 新しい版（v'+h(ui.updDone)+'）にしました。<a href="./manual.html?v='+encodeURIComponent(ui.updDone)+'#history">変わったことを見る</a></span><button class="btn xs" type="button" data-act="upddone">閉じる</button></div>');
   scopePickDecorate();
   document.querySelector(".proto").hidden=!hasExamples();
   const ml=document.getElementById("manualLink");if(ml)ml.setAttribute("href",manualHref()); /* 社長・全社・GMの端末は管理者向けのマニュアル */
@@ -4640,6 +4643,7 @@ document.addEventListener("click",e=>{
   if(el.dataset.act==='cddateclose'){caseDateClose();return}
   if(el.dataset.caseidentity){caseIdentityOpen(el.dataset.caseidentity);return}
   if(el.dataset.caseprevious!=null){try{caseIdentityFill(caseIdentityApi().previousFields(caseIdentityHistoryRows[Number(el.dataset.caseprevious)],caseIdentitySession.id));document.getElementById("caseIdentityStatus").textContent="以前の物件名・号室を編集欄に戻しました。保存すると新しい履歴を残します。進捗は変わりません。";}catch(error){toast(error.message,5000)}return}
+  if(el.dataset.act==="upddone"){ui.updDone="";render();return}
   if(el.dataset.act==="caseidentityclose"){caseIdentityClose();return}
   if(el.dataset.act==="caseidentitybackup"||el.dataset.act==="caseidentitydraft"){caseIdentityDownload(el.dataset.act==="caseidentitydraft");return}
   if(el.dataset.mtdcancel){manualTodoCancelOpen(el.dataset.mtdcancel);return}
@@ -5094,7 +5098,7 @@ async function updCheck(force){
 }
 /* 更新して開き直したとき：URLの印を消し、「新しい版にしました」と出す */
 try{const q=new URLSearchParams(location.search);if(q.has("u"))history.replaceState(null,"",location.pathname+location.hash);
-  const t=JSON.parse(sessionStorage.getItem(UPD_KEY)||"null");if(t&&t.v===APP_VER){sessionStorage.removeItem(UPD_KEY);setTimeout(()=>toast("新しい版（v"+APP_VER+"）にしました",4000),300)}}catch(e){}
+  const t=JSON.parse(sessionStorage.getItem(UPD_KEY)||"null");if(t&&t.v===APP_VER){sessionStorage.removeItem(UPD_KEY);ui.updDone=APP_VER}}catch(e){}
 if(typeof window.addEventListener==="function"){
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")updCheck(true)});
   window.addEventListener("focus",()=>updCheck(false));
