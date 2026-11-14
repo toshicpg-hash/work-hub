@@ -20,6 +20,7 @@ async function google(r){
  if(p==='/drive/v3/files'&&m==='POST'){const b=req.postDataJSON(),id='bbsheet'+String(++G.n).padStart(20,'0');G.files[id]={id,name:b.name,owner:acct,created:new Date(Date.UTC(2026,10,1)+G.n*1000).toISOString(),perms:[],tabs:[{title:'シート1',sheetId:0,rows:[]}]};return J({id,name:b.name})}
  let mm=p.match(/^\/drive\/v3\/files\/([^/]+)$/);
  if(mm&&m==='GET'){const f=G.files[mm[1]];if(!f||f.owner!==acct||G.driveHidden)return J({},404);return J({modifiedTime:f.modified||f.created,name:f.name})}
+ {const pm=p.match(/^\/drive\/v3\/files\/([^/]+)\/permissions\/([^/]+)$/);if(pm&&m==='PATCH'){const f=G.files[pm[1]];if(!f||f.owner!==acct)return J({},403);const x=(f.perms||[]).find(q=>q.id===pm[2]);if(!x)return J({},404);x.role=req.postDataJSON().role;G.patches=(G.patches||[]).concat([[pm[1],x.emailAddress,x.role]]);return J({id:x.id,role:x.role})}}
  mm=p.match(/^\/drive\/v3\/files\/([^/]+)\/permissions$/);
  if(mm){const f=G.files[mm[1]];if(!f||f.owner!==acct)return J({},403);return J({permissions:[{id:'owner',emailAddress:f.owner,role:'owner',type:'user'}].concat(f.perms)})}
  mm=p.match(/^\/v4\/spreadsheets\/([^/:]+)(.*)$/);
@@ -318,6 +319,18 @@ async function main(){
    /* v1.50.66 共有を合わせるとき：3社を入れられる人は会社の数字をどの会社も「編集者」、ふつうの社員はその会社だけ「見るだけ」 */
    {const sp=await A.p.evaluate(STAFF=>BB.numSpecs(BB.db.settings.data.staff.concat([{sheetId:'recX',email:'x@example.com',name:'見本 社員',role:'社員',company:'AT'}]),{CP:'n1',AT:'n2',CPY:'n3'},[]).map(x=>[x.label,x.want]),STAFF);
     assert.deepEqual(sp,[['会社の数字（CP）',[{email:STAFF,role:'writer'}]],['会社の数字（CPY）',[{email:STAFF,role:'writer'}]],['会社の数字（AT）',[{email:STAFF,role:'writer'},{email:'x@example.com',role:'reader'}]]])}
+   /* v1.50.67 この端末が会社の数字のファイルを覚えていなくても、保存で会社の行を消さない */
+   await A.p.evaluate(()=>{const d=BB.db.settings.data;BB.__keep={numbers:d.numbers,folder:d.folder};d.numbers={};d.folder='';BB.save()});
+   await A.p.evaluate(()=>{document.getElementById('sales-eds').open=true});await A.p.click('[data-act=saleseds]');await A.p.waitForFunction(()=>!BB.ui.salesBusy&&BB.ui.salesMsg);
+   assert.deepEqual(tabOf(rec,'会社の数字の場所').find(r=>r[0]==='CP'),['CP','numcp000000000000000001'],'company row kept');
+   /* v1.50.67 社長の同期で：会社の数字のファイルを探して覚え、3社を入れられる人の「見るだけ」を「編集者」に上げる */
+   await A.p.evaluate(()=>{BB.db.settings.data.folder=BB.__keep.folder;BB.save()});
+   G.files.numcp000000000000000001.perms=[{id:'pp1',emailAddress:STAFF,role:'reader',type:'user'}];G.files.numat000000000000000001.perms=[{id:'pp2',emailAddress:STAFF,role:'writer',type:'user'}];G.patches=[];
+   await sync(A.p);await A.p.waitForFunction(()=>BB.ui.gsync.rows.some(x=>x.name==='売上報告'));
+   assert.deepEqual(G.patches,[['numcp000000000000000001',STAFF,'writer']],'only the reader is raised');
+   assert.match((await A.p.evaluate(()=>BB.ui.gsync.rows)).find(x=>x.name==='売上報告').msg,/会社の数字の編集者にしました：1件/);
+   assert.deepEqual(await A.p.evaluate(()=>BB.db.settings.data.numbers),{CP:'numcp000000000000000001',AT:'numat000000000000000001'},'found and remembered');
+   G.files.numcp000000000000000001.perms=[];G.files.numat000000000000000001.perms=[];await open(A.p);/* 同期でホームに戻るので、売上報告を開き直す */
    /* 共有（編集者）がまだのとき：その人の端末に理由が出る */
    const E2=await device(width,s=>{window.__acct=s},STAFF);
    await E2.p.evaluate(()=>{const d=BB.db.settings.data;d.ob={legacy:true};d.sheetId='rec00000000000000000001';BB.save()});
