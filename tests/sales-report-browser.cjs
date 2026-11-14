@@ -3,8 +3,8 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
-const root=path.resolve(__dirname,'..'),ADMIN='toshi.cpg@gmail.com',KEY='workhub_proto_v1';
-const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,'+
+const root=path.resolve(__dirname,'..'),ADMIN='toshi.cpg@gmail.com',STAFF='staff.sample@example.com',KEY='workhub_proto_v1';
+const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,ordLoad,gAuthorize,'+
  'mock(){gLoadCalendarsRun=async()=>{G.cals=[];return G.cals};gReadRange=async()=>({events:[],calendars:[],missing:0});gKeepSave=()=>{};corpRun=async()=>[]}};';
 const GIS="window.google={accounts:{oauth2:{initTokenClient(cfg){return {requestAccessToken(){setTimeout(()=>cfg.callback({access_token:'tok:'+window.__acct,expires_in:3600,scope:cfg.scope}),5)}}}}}};";
 const G={files:{},n:0,calls:[]};
@@ -23,9 +23,9 @@ async function google(r){
  mm=p.match(/^\/drive\/v3\/files\/([^/]+)\/permissions$/);
  if(mm){const f=G.files[mm[1]];if(!f||f.owner!==acct)return J({},403);return J({permissions:[{id:'owner',emailAddress:f.owner,role:'owner',type:'user'}].concat(f.perms)})}
  mm=p.match(/^\/v4\/spreadsheets\/([^/:]+)(.*)$/);
- if(mm){const f=G.files[mm[1]],rest=mm[2];if(!f||f.owner!==acct)return J({},403);
-  if(m==='GET'&&!rest)return J({properties:{title:f.name},sheets:f.tabs.map(t=>({properties:{title:t.title,sheetId:t.sheetId,gridProperties:{rowCount:1000,columnCount:26}}}))});
-  if(rest==='/values:batchGet'){const ts=u.searchParams.getAll('ranges').map(x=>f.tabs.find(t=>t.title===tabName(x)));if(ts.some(t=>!t))return J({},400);const fm=u.searchParams.get('valueRenderOption')==='FORMULA';
+ if(mm){const f=G.files[mm[1]],rest=mm[2];if(!f||(f.owner!==acct&&!(m==='GET'&&(f.readers||[]).includes(acct))))return J({},403);
+  if(m==='GET'&&!rest&&(f.owner===acct||(f.readers||[]).includes(acct)))return J({properties:{title:f.name},sheets:f.tabs.map(t=>({properties:{title:t.title,sheetId:t.sheetId,gridProperties:{rowCount:1000,columnCount:26}}}))});
+  if(rest==='/values:batchGet'&&(f.owner===acct||(f.readers||[]).includes(acct))){const ts=u.searchParams.getAll('ranges').map(x=>f.tabs.find(t=>t.title===tabName(x)));if(ts.some(t=>!t))return J({},400);const fm=u.searchParams.get('valueRenderOption')==='FORMULA';
    return J({valueRanges:ts.map(t=>{const v=structuredClone(t.rows);if(fm&&t.formulas)for(const [k,x] of Object.entries(t.formulas)){const [r,c]=k.split(',').map(Number);v[r][c]=x}return {values:v}})})}
   if(rest==='/values:batchUpdate'&&m==='POST'){const b=req.postDataJSON();G.batch=(G.batch||[]).concat([b]);f.modified=G.mod;
    for(const d of b.data){const mm2=d.range.match(/^'(.+)'!([A-Z])(\d+)$/),t=f.tabs.find(x=>x.title===mm2[1].replace(/''/g,"'"));const r=Number(mm2[3])-1,c=mm2[2].charCodeAt(0)-65;while(t.rows.length<=r)t.rows.push([]);t.rows[r][c]=d.values[0][0]}return J({})}
@@ -37,7 +37,7 @@ async function google(r){
  }
  return J({},404);
 }
-async function device(width,init){
+async function device(width,init,arg){
  const c=await browser.newContext({viewport:{width,height:900},timezoneId:'Asia/Tokyo',locale:'ja-JP',serviceWorkers:'block'});
  await c.route('**/*',async r=>{const u=r.request().url();
   if(u.startsWith(origin+'/')){const pn=new URL(u).pathname;if(pn==='/'||pn==='/index.html')return r.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(root,'index.html'),'utf8').replace('corpKeepLoad();\nrender();',hook+'\ncorpKeepLoad();\nrender();')});return r.continue()}
@@ -45,7 +45,7 @@ async function device(width,init){
   if(/https:\/\/(www|sheets)\.googleapis\.com\//.test(u))return google(r);
   return r.fulfill({status:200,body:''})});
  await c.addInitScript(a=>{window.__acct=a},ADMIN);
- if(init)await c.addInitScript(init);
+ if(init)await c.addInitScript(init,arg);
  const p=await c.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));
  await p.clock.setFixedTime(new Date('2026-11-09T03:00:00Z'));await p.goto(origin+'/');await p.waitForFunction(()=>!!window.BB&&window.google&&google.accounts);await p.evaluate(()=>BB.mock());
  return {c,p,errors};
@@ -262,6 +262,34 @@ async function main(){
    const sr2=(await A.p.evaluate(()=>BB.ui.gsync.rows)).find(x=>x.name==='売上報告');assert.equal(sr2.ok,true);assert.match(sr2.msg,/今日の更新を読みました（11\/9 00:00）/);
    await open(A.p);await A.p.click('[data-sales-month="2026-10"]');const t=await A.p.textContent('#stats-sales');assert.match(t,/12,345,000円/,'read again by sync');assert.doesNotMatch(t,/今日はまだ更新されていません/);
    assert.ok(await overflow(A.p)<=0);assert.deepEqual(A.errors,[]);
+  });
+  /* v1.50.60 今月の受注（今日まで）：社長の同期で会社の数字のファイルに書き出し、ホームのタイルに出す。社員の端末はそれを読んで同じタイルを出す */
+  await check('今月の受注のタイル：社長の同期で会社の数字に書き出し、社員の端末も読んで出す '+width+'px',async()=>{
+   for(const [id,co] of [['numcp000000000000000001','CP'],['numat000000000000000001','AT']])G.files[id]={id,name:'CPG HUB_会社の数字_'+co,owner:ADMIN,created:'2026-10-01T00:00:00Z',perms:[],readers:[STAFF],tabs:[{title:'会社の数字',sheetId:0,rows:[]},{title:'情報',sheetId:1,rows:[['項目','値'],['会社',co]]}]};
+   await A.p.evaluate(()=>{BB.db.settings.data.numbers={CP:'numcp000000000000000001',AT:'numat000000000000000001'};BB.save()});
+   const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）'),days=tabOf(f,'2026-11 受注').slice(1).filter(r=>Number(r[1])<=9);
+   const want=co=>{const ds=days.filter(r=>r[0]===co),n=v=>Number(String(v??'').replace(/,/g,''))||0;return [ds.reduce((s,r)=>s+n(r[2]),0),ds.reduce((s,r)=>s+n(r[3]),0)]};
+   await sync(A.p);await A.p.waitForFunction(()=>BB.ui.gsync.rows.some(x=>x.name==='売上報告'));await A.p.evaluate(()=>BB.go('home'));
+   for(const id of ['numcp000000000000000001','numat000000000000000001']){const rows=tabOf(G.files[id],'今月の受注');assert.ok(rows&&rows.length===4,JSON.stringify(rows));assert.deepEqual(rows[1].slice(0,3),['CP',...want('CP').map(String)]);assert.equal(rows[1][6],'2026-11-09')}
+   const tile=await A.p.textContent('#home-orders');
+   assert.match(tile,/今月の受注（11\/9まで）/);
+   for(const co of ['CP','AT','CPY']){const [n,a]=want(co);assert.ok(tile.includes(co+n+'件 '+a.toLocaleString('ja-JP')+'円'),co+' '+tile)}
+   const [tn,ta]=['CP','AT','CPY'].map(want).reduce((s,x)=>[s[0]+x[0],s[1]+x[1]],[0,0]);assert.ok(tile.includes('合計'+tn+'件 '+ta.toLocaleString('ja-JP')+'円'),tile);
+   assert.match(tile,/今日 /);assert.doesNotMatch(tile,/粗利/);
+   /* 1件単価（客単価）：金額÷件数（四捨五入） */
+   for(const co of ['CP','AT','CPY']){const [n,a]=want(co);if(n)assert.ok(tile.includes('1件単価 '+Math.round(a/n).toLocaleString('ja-JP')+'円'),co+' unit '+tile)}
+   assert.ok(tile.includes('1件単価 '+Math.round(ta/tn).toLocaleString('ja-JP')+'円'),'total unit');
+   assert.equal(await A.p.$eval('#home-summary .tiles',t=>t.firstElementChild.id),'home-orders','first tile');
+   assert.ok(await overflow(A.p)<=0);assert.deepEqual(A.errors,[]);
+   if(width===400)await A.p.locator('#home-orders').screenshot({path:path.join(require('node:os').tmpdir(),'ord-tile-400.png')});
+   /* 社員の端末：自分の記録シートの「会社の数字の場所」から読む */
+   G.files.rec00000000000000000001={id:'rec00000000000000000001',name:'記録',owner:STAFF,created:'2026-10-01T00:00:00Z',perms:[],tabs:[{title:'会社の数字の場所',sheetId:0,rows:[['会社','ファイルID'],['CP','numcp000000000000000001']]}]};
+   const S=await device(width,s=>{window.__acct=s},STAFF);
+   await S.p.evaluate(()=>{const d=BB.db.settings.data;d.ob={legacy:true};d.sheetId='rec00000000000000000001';BB.save();BB.go('home')});
+   assert.equal(await S.p.$$eval('#home-orders',a=>a.length),0,'nothing before it arrives');
+   await S.p.evaluate(()=>BB.gAuthorize(true));await S.p.evaluate(()=>BB.ordLoad());await S.p.evaluate(()=>BB.render());
+   assert.equal(await S.p.textContent('#home-orders'),tile,'same tile on the staff device');
+   assert.ok(await overflow(S.p)<=0);assert.deepEqual(S.errors,[]);await S.c.close();
   });
   await A.c.close();
   /* 社員の端末には出ない */
