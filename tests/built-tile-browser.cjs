@@ -39,12 +39,15 @@ async function main(){
    for(const id of ['T-1','T-2','T-3'])assert.ok(ids.includes('見本'+id),id);
    for(const id of ['T-4','T-5','T-6'])assert.ok(!ids.includes('見本'+id),id);
    assert.equal(await p.$eval('#builtOnly',x=>x.checked),true);
+   /* v1.50.71 絞り込みは畳んだまま、見出しにかかっている絞り込みの名前 */
+   assert.equal(await p.$eval('details.filters',d=>d.open),false);assert.match(await p.textContent('details.filters>summary'),/絞り込み：今月完工だけ/);
+   await p.click('details.filters>summary');await p.waitForFunction(()=>BT.ui.filtersOpen===true);await p.evaluate(()=>BT.render());assert.equal(await p.$eval('details.filters',d=>d.open),true,'remembered');
    await p.evaluate(()=>BT.go('home'));await p.click('#home-access');assert.equal(await p.evaluate(()=>BT.ui.builtOnly),false,'other tiles clear it');
    assert.ok(await overflow(p)<=0);assert.deepEqual(errors,[]);
   });
   /* v1.50.70 会社・人の切り替えは、下までスクロールしても見出しのすぐ下に残る */
   await check('会社・人の切り替えは上の固定欄に残る '+width+'px',async()=>{
-   await p.setViewportSize({width,height:500});
+   await p.setViewportSize({width,height:360});/* v1.50.71 絞り込みを畳んで案件の画面が短くなったので、低い画面で見る */
    for(const v of ['stats','cases','home']){
     await p.evaluate(v=>{BT.go(v);window.scrollTo(0,document.body.scrollHeight)},v);await p.waitForTimeout(100);
     const r=await p.evaluate(()=>{const h=document.querySelector('header.top').getBoundingClientRect(),b=document.querySelector('main>.scope-bar').getBoundingClientRect(),y=scrollY;return {hb:h.bottom,bt:b.top,bb:b.bottom,y}});
