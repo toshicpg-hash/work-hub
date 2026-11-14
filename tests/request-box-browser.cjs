@@ -141,6 +141,7 @@ async function main(){
   const g=await viewer(GM,width);
   await check('GMの端末：自分の会社の社員にだけ出せ、指示箱に1行足して読み戻す '+width+'px',async()=>{
    /* v1.50.30 会社の動きのいちばん上の「タスクリクエストを出す」：宛先はプルダウンを開いてチェック */
+   await g.p.$eval('#req-compose details.corp-p',d=>d.open=true);/* v1.50.59 欄は最初は畳む */
    await g.p.click('#req-compose .req-sum');
    const names=await g.p.evaluate(()=>[...document.querySelectorAll('[data-req-to]')].map(b=>RB.ui.corp.data.find(x=>x.s.sheetId===b.dataset.reqTo).s.name));
    assert.deepEqual(names,['社員 二郎']);
@@ -183,6 +184,7 @@ async function main(){
  });
  await check('全社の人は全員に出せ、GMの出したものは見えない（自分の分だけ）',async()=>{
   const z=await viewer(ZEN,400);
+  await z.p.$eval('#req-compose details.corp-p',d=>d.open=true);/* v1.50.59 欄は最初は畳む */
   await z.p.click('#req-compose .req-sum');
   const names=await z.p.evaluate(()=>[...document.querySelectorAll('[data-req-to]')].map(b=>RB.ui.corp.data.find(x=>x.s.sheetId===b.dataset.reqTo).s.name).sort());
   assert.deepEqual(names,['社員 一郎','社員 二郎','管理 見本'].sort());
@@ -199,6 +201,9 @@ async function main(){
    const z=await viewer(ZEN,width);
    assert.equal(await z.p.$$eval('#req-compose',a=>a.length),1,'one compose box');
    assert.equal(await z.p.$$eval('[data-badd],[data-oadd],[id^="bi_t"],[id^="oi_t"]',a=>a.length),0,'per-person forms are gone');
+   /* v1.50.59 タスクリクエストを出す欄は最初は畳む。見出しは見える */
+   assert.equal(await z.p.$eval('#req-compose details.corp-p',d=>d.open),false,'compose starts closed');assert.ok(await z.p.isVisible('#req-compose summary h3'));
+   await z.p.click('#req-compose details.corp-p>summary');assert.equal(await z.p.$eval('#req-compose details.corp-p',d=>d.open),true);
    assert.equal(await z.p.$$eval('#req-compose details.req-to[open]',a=>a.length),0,'recipient list starts closed');
    await z.p.click('#req-compose .req-sum');assert.equal(await z.p.$$eval('#req-compose details.req-to[open]',a=>a.length),1);
    await z.p.click('[data-act="reqall"]');
@@ -248,6 +253,7 @@ async function main(){
  });
  await check('v1.50.30 社長の入力欄：宛先は社員全員、出すと各社員の記録シートの「指示」に入る',async()=>{
   await A.p.evaluate(()=>RB.go('company'));
+  await A.p.$eval('#req-compose details.corp-p',d=>d.open=true);/* v1.50.59 欄は最初は畳む */
   await A.p.click('#req-compose .req-sum');
   const names=await A.p.evaluate(()=>[...document.querySelectorAll('[data-req-to]')].map(b=>RB.ui.corp.data.find(x=>x.s.sheetId===b.dataset.reqTo).s.name).sort());
   assert.deepEqual(names,['社員 一郎','社員 二郎','管理 見本','見本 太郎'].sort());
