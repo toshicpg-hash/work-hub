@@ -380,7 +380,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 /* v1.50.60 今月の受注のタイル */
 .ordtile{display:flex;flex-direction:column;gap:4px;align-items:stretch;text-align:left}
 .ordtile .ord-r{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 10px;font-size:15px}.ordtile .ord-r>b{min-width:3.2em}.ordtile .ord-r .num{font-weight:700}
-.ordtile .ord-t{font-size:13px;color:var(--muted)}.ordtile .ord-r .ord-t{font-weight:600}.ordtile .ord-sum{border-top:1px solid var(--line);padding-top:4px;font-size:16px}
+.ordtile .ord-t{font-size:13px;color:var(--muted);flex-basis:100%;padding-left:calc(3.2em + 10px)}.ordtile .ord-r .ord-t{font-weight:600}.ordtile .ord-sum{border-top:1px solid var(--line);padding-top:4px;font-size:16px}
 .banner.updok{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--green-soft,#e3f3e8);color:var(--fg);border:2px solid var(--green);font-weight:700}.banner.updok>span{flex:1 1 200px}.banner.updok a{white-space:nowrap}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + 14px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
 .empty{color:var(--muted);font-size:14px;padding:14px;border:1px dashed var(--line);border-radius:12px;text-align:center}
@@ -3543,8 +3543,10 @@ function ordTile(){
   const tag=admin?'button type="button" data-nav="stats"':'div',end=admin?'button':'div';
   if(!v||v.key!==t.slice(0,7))return '<'+tag+' class="tile wide ordtile" id="home-orders"><span class="k">今月の受注</span><span class="s">今月の分はまだ届いていません（'+(admin?'同期すると売上報告から出ます':'社長の端末の同期のあと、同期すると出ます')+'）</span></'+end+'>';
   const isToday=v.date===t,sumN=v.cos.reduce((s,c)=>s+c.n,0),sumA=v.cos.reduce((s,c)=>s+c.amt,0);
-  const tdy=c=>isToday?'<span class="ord-t num">今日 '+(c.tn==null?'まだ':c.tn+'件 '+yen(c.tamt||0))+'</span>':'';
-  const tn=v.cos.filter(c=>c.tn!=null),tdyAll=isToday?'<span class="ord-t num">今日 '+(tn.length?tn.reduce((s,c)=>s+c.tn,0)+'件 '+yen(tn.reduce((s,c)=>s+(c.tamt||0),0)):'まだ')+'</span>':'';
+  /* v1.50.60 トシさんの指示：1件単価（客単価）も出す。2行目に「1件単価・今日の分」 */
+  const unit=(n,a)=>n?yen(Math.round(a/n)):"—";
+  const tdy=c=>'<span class="ord-t num">1件単価 '+unit(c.n,c.amt)+(isToday?'・今日 '+(c.tn==null?'まだ':c.tn+'件 '+yen(c.tamt||0)):'')+'</span>';
+  const tn=v.cos.filter(c=>c.tn!=null),tdyAll='<span class="ord-t num">1件単価 '+unit(sumN,sumA)+(isToday?'・今日 '+(tn.length?tn.reduce((s,c)=>s+c.tn,0)+'件 '+yen(tn.reduce((s,c)=>s+(c.tamt||0),0)):'まだ'):'')+'</span>';
   return '<'+tag+' class="tile wide ordtile" id="home-orders"><span class="k">今月の受注（'+md(v.date)+'まで）</span>'+
     v.cos.map(c=>'<span class="ord-r"><b>'+h(c.co)+'</b><span class="num">'+c.n+'件 '+yen(c.amt)+'</span>'+tdy(c)+'</span>').join("")+
     '<span class="ord-r ord-sum"><b>合計</b><span class="num">'+sumN+'件 '+yen(sumA)+'</span>'+tdyAll+'</span>'+

@@ -276,6 +276,9 @@ async function main(){
    for(const co of ['CP','AT','CPY']){const [n,a]=want(co);assert.ok(tile.includes(co+n+'件 '+a.toLocaleString('ja-JP')+'円'),co+' '+tile)}
    const [tn,ta]=['CP','AT','CPY'].map(want).reduce((s,x)=>[s[0]+x[0],s[1]+x[1]],[0,0]);assert.ok(tile.includes('合計'+tn+'件 '+ta.toLocaleString('ja-JP')+'円'),tile);
    assert.match(tile,/今日 /);assert.doesNotMatch(tile,/粗利/);
+   /* 1件単価（客単価）：金額÷件数（四捨五入） */
+   for(const co of ['CP','AT','CPY']){const [n,a]=want(co);if(n)assert.ok(tile.includes('1件単価 '+Math.round(a/n).toLocaleString('ja-JP')+'円'),co+' unit '+tile)}
+   assert.ok(tile.includes('1件単価 '+Math.round(ta/tn).toLocaleString('ja-JP')+'円'),'total unit');
    assert.equal(await A.p.$eval('#home-summary .tiles',t=>t.firstElementChild.id),'home-orders','first tile');
    assert.ok(await overflow(A.p)<=0);assert.deepEqual(A.errors,[]);
    if(width===400)await A.p.locator('#home-orders').screenshot({path:path.join(require('node:os').tmpdir(),'ord-tile-400.png')});
