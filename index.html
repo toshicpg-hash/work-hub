@@ -377,6 +377,10 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 .bar i{display:block;height:100%;background:var(--accent)}
 .brk{display:grid;grid-template-columns:7.5em 1fr 3em;gap:8px;align-items:center;font-size:13.5px}
 .big{font-family:var(--f-display);font-weight:900;font-size:40px;line-height:1.1;font-variant-numeric:tabular-nums}
+/* v1.50.60 今月の受注のタイル */
+.ordtile{display:flex;flex-direction:column;gap:4px;align-items:stretch;text-align:left}
+.ordtile .ord-r{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 10px;font-size:15px}.ordtile .ord-r>b{min-width:3.2em}.ordtile .ord-r .num{font-weight:700}
+.ordtile .ord-t{font-size:13px;color:var(--muted)}.ordtile .ord-r .ord-t{font-weight:600}.ordtile .ord-sum{border-top:1px solid var(--line);padding-top:4px;font-size:16px}
 .banner.updok{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--green-soft,#e3f3e8);color:var(--fg);border:2px solid var(--green);font-weight:700}.banner.updok>span{flex:1 1 200px}.banner.updok a{white-space:nowrap}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + 14px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
 .empty{color:var(--muted);font-size:14px;padding:14px;border:1px dashed var(--line);border-radius:12px;text-align:center}
@@ -500,8 +504,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.59" title="使い方マニュアルを開く">v1.50.59・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.59" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.60" title="使い方マニュアルを開く">v1.50.60・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.60" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -561,10 +565,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.59"></script>
+<script src="./share-management.js?v=1.50.60"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.59"></script>
-<script src="./calendar-view-scope.js?v=1.50.59"></script>
+<script src="./view-scope.js?v=1.50.60"></script>
+<script src="./calendar-view-scope.js?v=1.50.60"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1030,7 +1034,9 @@ function calShareManual(busy){
 /* v1.50.41 売上報告は毎日更新するので、社長の端末の同期のたびに読み直す（失敗しても同期の結果は変えない。結果に1行足す） */
 async function salesAfterSync(){
   const g=ui.gsync;if(!D().admin||!D().salesId||!g||!Array.isArray(g.rows)||!gSignedIn())return;
-  let row;try{await salesLoad();const S=ui.sales,mt=S&&S.modified;row={name:"売上報告",ok:S&&S.today?true:"warn",msg:S&&S.today?"今日の更新を読みました（"+salesLast(S)+"）":"シートが今日はまだ更新されていません（最終更新 "+salesLast(S)+"）"}}
+  let row;try{await salesLoad();const S=ui.sales,mt=S&&S.modified;row={name:"売上報告",ok:S&&S.today?true:"warn",msg:S&&S.today?"今日の更新を読みました（"+salesLast(S)+"）":"シートが今日はまだ更新されていません（最終更新 "+salesLast(S)+"）"};
+    /* v1.50.60 今月の受注を、社員に共有済みの会社の数字のファイルに書き出す（失敗しても売上報告の行は変えず、理由を足す） */
+    try{const w=await ordWriteAll(ordSummary(S));if(w.errs.length)row.msg+="（社員への今月の受注：書けなかった会社 "+w.errs.join("・")+"）"}catch(err){row.msg+="（社員への今月の受注：書けませんでした）"}}
   catch(err){row={name:"売上報告",ok:false,msg:"読めませんでした（"+(err.message==="http"?dMsg(err):err.message==="signin"?"ログインが切れました":err.message)+"）"}}
   ui.gsync={...ui.gsync,rows:ui.gsync.rows.concat([row])};render();
 }
@@ -1114,6 +1120,7 @@ function vHome(){
   return loadProblemBanner()+obPanel()+'<section class="sec" id="home-sync">'+homeSyncNotice()+gSyncPanel(true)+'</section>'+
   (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）のサンプルを含みます。</div>':'')+
   '<section class="sec" id="home-summary"><div class="sec-h"><h2>今日のまとめ</h2></div><div class="tiles">'+
+    ordTile()+ /* v1.50.60 今月の受注（今日まで） */
 
     '<button type="button" class="tile'+(over.length?" alert":"")+'" data-nav="todo"><span class="k">期限切れのToDo</span><span class="v">'+over.length+'</span></button>'+
     '<button type="button" class="tile" data-nav="todo"><span class="k">今日までのToDo</span><span class="v">'+todayT.length+'</span></button>'+
@@ -2014,7 +2021,7 @@ async function gSyncAll(){
   const run=async()=>{
     try{if(localStorage.getItem(KEY)!==dbPersistedRaw)throw Error("別の画面で記録が更新されています。古い内容を送信しないため同期を止めました。入力を控え、再読み込みしてください。");}
     catch(err){const msg=err.message||"端末の最新記録を確認できないため同期を止めました。";manualStorageNotice(msg);ui.gsync={busy:false,rows:[{name:"端末の最新記録",ok:false,msg}]};render();return;}
-    const r=await gSyncAllRun();await bbAfterSync();await salesAfterSync();return r;
+    const r=await gSyncAllRun();await bbAfterSync();await salesAfterSync();await ordAfterSync();return r;
   };
   manualTodoSyncPending=Promise.resolve().then(()=>globalThis.navigator?.locks?.request?navigator.locks.request(KEY+":manual-todo-edit",run):run());
   try{return await manualTodoSyncPending;}finally{manualTodoSyncPending=null;}
@@ -2367,7 +2374,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.59";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.60";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2536,7 +2543,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.59" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.59" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.60" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.60" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3483,6 +3490,65 @@ async function salesLoad(){
   const cur=months.find(m=>m.key===t.slice(0,7)),upd=cur?cur.cos.map(c=>md(c["更新日"])).filter(Boolean).sort().at(-1)||"":"";
   ui.sales={at:Date.now(),id,modified,name,upd,tabs:all,today:(!!modified&&jstDay(modified)===jstDay(new Date().toISOString()))||upd===t.slice(5,7)+"/"+t.slice(8),months};
   if(!ui.salesMonth||!tabs.includes(ui.salesMonth))ui.salesMonth=tabs.at(-1)||"";
+  {const sum=ordSummary(ui.sales);if(sum)ordKeepSave(sum)}
+}
+/* v1.50.60 今月の受注（今日まで）をホームのタイルに出す（トシさんの指示。全員が見る。今までの3社報告書も社員全体に公開していた）。
+   数字は売上報告の「毎日の受注」（会社ごとの件数・金額、今日の分）。粗利・担当者別は出さない。
+   売上報告のシートはHUBの外で作ったものなので、HUBから共有できない。そこで社長の端末が同期で売上報告を読んだあと、
+   社員に共有済みの「会社の数字」のファイルに「今月の受注」タブを書き出し、社員・見る人の端末は同期のあとにそれを読む（読むだけ） */
+const ORD_TAB="今月の受注", ORD_COLS=["会社","今月の受注件数","今月の受注金額","今日の受注件数","今日の受注金額","月","今日","シートの更新日","書き出し日時"], ORD_KEY="workhub_ordtile_v1";
+function ordSummary(S){
+  if(!S||!Array.isArray(S.months))return null;
+  const t=todayS(),key=t.slice(0,7),day=Number(t.slice(8)),M=S.months.find(m=>m.key===key);if(!M)return null;
+  const num=v=>v==null||v===""||!Number.isFinite(Number(v))?null:Number(v);
+  const cos=SALES_ORDER.filter(co=>M.days.some(x=>x.co===co)).map(co=>{const ds=M.days.filter(x=>x.co===co&&Number(x.day)<=day),td=ds.find(x=>Number(x.day)===day);
+    return {co,n:ds.reduce((s,x)=>s+(num(x.n)||0),0),amt:ds.reduce((s,x)=>s+(num(x.amt)||0),0),tn:td?num(td.n):null,tamt:td?num(td.amt):null}});
+  return cos.length?{key,date:t,upd:S.upd||"",at:new Date().toISOString(),cos}:null;
+}
+function ordKeep(){try{const v=JSON.parse(localStorage.getItem(ORD_KEY)||"null");return v&&Array.isArray(v.cos)?v:null}catch(e){return null}}
+function ordKeepSave(v){try{localStorage.setItem(ORD_KEY,JSON.stringify(v))}catch(e){}}
+const ordRows=sum=>[ORD_COLS,...sum.cos.map(c=>[c.co,String(c.n),String(c.amt),c.tn==null?"":String(c.tn),c.tamt==null?"":String(c.tamt),sum.key,sum.date,sum.upd,sum.at])];
+function ordParse(rows){
+  if(!rows||JSON.stringify((rows[0]||[]).map(String))!==JSON.stringify(ORD_COLS))return null;
+  const body=rows.slice(1).filter(r=>r&&COMPANIES.includes(String(r[0]||"")));if(!body.length)return null;
+  const n=v=>String(v??"")===""||!Number.isFinite(Number(v))?null:Number(v),f=body[0];
+  return {key:String(f[5]||""),date:String(f[6]||""),upd:String(f[7]||""),at:String(f[8]||""),cos:SALES_ORDER.map(co=>body.find(r=>String(r[0])===co)).filter(Boolean).map(r=>({co:String(r[0]),n:n(r[1])||0,amt:n(r[2])||0,tn:n(r[3]),tamt:n(r[4])}))};
+}
+/* 社長の端末：会社の数字のファイル（会社ごと）すべてに同じ「今月の受注」を書き、読み戻して確かめる */
+async function ordWriteAll(sum){
+  const d=D();if(!d.admin||!d.numbers||!sum)return {n:0,errs:[]};
+  const rows=ordRows(sum),ids=[...new Set(COMPANIES.map(co=>d.numbers[co]).filter(Boolean))],errs=[];let n=0;
+  for(const id of ids){const co=COMPANIES.find(c=>d.numbers[c]===id);
+    try{const tabs=await sheetTabNames(id);if(!tabs.includes(ORD_TAB))await addTab(id,ORD_TAB);
+      const prev=(await sheetRead(id,[ORD_TAB]))[ORD_TAB]||[];await sheetWrite(id,ORD_TAB,rows,prev);
+      const back=ordParse((await sheetRead(id,[ORD_TAB]))[ORD_TAB]||[]);if(!back||back.at!==sum.at)throw Error("書き出したあとの確認ができません");n++}
+    catch(err){if(err.message==="signin")throw err;errs.push(co+"："+(err.message==="http"?dMsg(err):err.message))}}
+  return {n,errs};
+}
+/* 社員・見る人の端末：自分の記録シートの「会社の数字の場所」から、会社の数字のファイルの「今月の受注」を読む（どれか1つ読めればよい） */
+async function ordLoad(){
+  if(D().admin||!D().sheetId||!gSignedIn())return null;
+  const tabs=await sheetTabNames(D().sheetId);if(!tabs.includes(NUMPTR_TAB))return null;
+  const ptr=((await sheetRead(D().sheetId,[NUMPTR_TAB]))[NUMPTR_TAB]||[]).slice(1),ids=[...new Set(ptr.filter(r=>COMPANIES.includes(String(r[0]||"").trim())).map(r=>sheetIdOf(String(r[1]||""))).filter(Boolean))];
+  let best=null;
+  for(const id of ids){try{const v=ordParse((await sheetRead(id,[ORD_TAB]))[ORD_TAB]||[]);if(v&&(!best||v.at>best.at))best=v}catch(err){if(err.message==="signin")throw err}}
+  if(best)ordKeepSave(best);
+  return best;
+}
+async function ordAfterSync(){if(D().admin||!D().sheetId||!gSignedIn())return;try{if(await ordLoad())render()}catch(e){}}
+/* ホームのタイル。社長の端末は押すと数字タブ（売上報告）へ */
+function ordTile(){
+  const t=todayS(),admin=!!D().admin,v=(admin&&ui.sales&&ordSummary(ui.sales))||ordKeep();
+  if(!v&&!(admin&&D().salesId))return "";
+  const tag=admin?'button type="button" data-nav="stats"':'div',end=admin?'button':'div';
+  if(!v||v.key!==t.slice(0,7))return '<'+tag+' class="tile wide ordtile" id="home-orders"><span class="k">今月の受注</span><span class="s">今月の分はまだ届いていません（'+(admin?'同期すると売上報告から出ます':'社長の端末の同期のあと、同期すると出ます')+'）</span></'+end+'>';
+  const isToday=v.date===t,sumN=v.cos.reduce((s,c)=>s+c.n,0),sumA=v.cos.reduce((s,c)=>s+c.amt,0);
+  const tdy=c=>isToday?'<span class="ord-t num">今日 '+(c.tn==null?'まだ':c.tn+'件 '+yen(c.tamt||0))+'</span>':'';
+  const tn=v.cos.filter(c=>c.tn!=null),tdyAll=isToday?'<span class="ord-t num">今日 '+(tn.length?tn.reduce((s,c)=>s+c.tn,0)+'件 '+yen(tn.reduce((s,c)=>s+(c.tamt||0),0)):'まだ')+'</span>':'';
+  return '<'+tag+' class="tile wide ordtile" id="home-orders"><span class="k">今月の受注（'+md(v.date)+'まで）</span>'+
+    v.cos.map(c=>'<span class="ord-r"><b>'+h(c.co)+'</b><span class="num">'+c.n+'件 '+yen(c.amt)+'</span>'+tdy(c)+'</span>').join("")+
+    '<span class="ord-r ord-sum"><b>合計</b><span class="num">'+sumN+'件 '+yen(sumA)+'</span>'+tdyAll+'</span>'+
+    '<span class="s">売上報告の毎日の受注'+(v.upd?'・シートの更新日 '+h(v.upd):'')+(isToday?'':'（'+md(v.date)+'の時点）')+'</span></'+end+'>';
 }
 /* 試作用：架空の数字だけのシートを作る（実在の名前・金額は入れない） */
 function salesDemoRows(ym,k,upto=20){
