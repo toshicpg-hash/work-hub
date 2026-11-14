@@ -24,7 +24,7 @@ async function main(){
   for(const role of ['employee','admin','company','gm']){
    const a=await setup(role),p=a.p;await p.setViewportSize({width,height:width===390?844:900});await fixture(p,role,false);
    const raw=await p.evaluate(KEY=>localStorage.getItem(KEY),KEY);
-   assert.equal(await p.locator('#home-summary .tile').count(),8);
+   assert.equal(await p.locator('#home-summary .tile').count(),9);/* v1.50.65 今月の完工を足して9つ */
    assert.equal(await p.locator('#home-company').count(),role==='employee'?0:1);
    assert.equal(await p.locator('main table').count(),0);assert.equal(await p.locator('[data-open]').count(),0);
    const counts=await p.evaluate(()=>{const all=ST.allCases(),t='2026-10-31',todos=ST.genTodos().concat(ST.roTodos());return [todos.filter(x=>x.due&&x.due<t).length,todos.filter(x=>x.due===t).length,all.filter(x=>x.type==='kinkyu'&&['new','site'].includes(x.stage)).length]});
@@ -32,13 +32,14 @@ async function main(){
    assert.equal(await p.locator('#home-summary .tile').nth(0).evaluate(e=>e.classList.contains('alert')),true);
    assert.equal(await p.locator('.sync-result').count(),1);assert.equal(await p.locator('#home-access .v').innerText(),'1件');assert.equal(await p.locator('#home-access.alert').count(),1);
    if(['employee','admin','company'].includes(role))await p.screenshot({path:path.join(root,'docs/preview/home-'+role+'-'+width+'.png')});
-   for(const [n,view] of [[0,'todo'],[1,'todo'],[2,'cases'],[3,'cases'],[4,'cases'],[5,'stats'],[6,'rcpt'],[7,'rcpt']]){
+   /* v1.50.65 5番目に「今月の完工」（案件） */for(const [n,view] of [[0,'todo'],[1,'todo'],[2,'cases'],[3,'cases'],[4,'cases'],[5,'cases'],[6,'stats'],[7,'rcpt'],[8,'rcpt']]){
     await p.locator('#home-summary .tile').nth(n).click();assert.equal(await p.evaluate(()=>ST.ui.view),view);
     if(n===2){assert.equal(await p.evaluate(()=>ST.ui.type),'kinkyu');assert.match(await p.locator('main').innerText(),/合成・緊急点検/);assert.ok(await p.locator('[data-since]').count()>0);}
     if(n===4){assert.equal(await p.locator('#handoffOnly').isChecked(),true);assert.deepEqual(await p.locator('[data-open]').evaluateAll(xs=>xs.map(x=>x.dataset.open)),['SYN-WAIT']);}
     if(n===3)assert.equal(await p.evaluate(()=>ST.ui.type),'all');
-    if(n===5){assert.equal(await p.locator('#stats-unpaid').count(),1);const box=await p.locator('#stats-unpaid').boundingBox();assert.ok(box.y<150);}
-    if(n===7)assert.equal(await p.evaluate(()=>ST.ui.rTab),'claims');
+    if(n===5)assert.equal(await p.locator('#builtOnly').isChecked(),true);
+    if(n===6){assert.equal(await p.locator('#stats-unpaid').count(),1);const box=await p.locator('#stats-unpaid').boundingBox();assert.ok(box.y<150);}
+    if(n===8)assert.equal(await p.evaluate(()=>ST.ui.rTab),'claims');
     await p.evaluate(()=>ST.go('home'));
    }
    await p.locator('#home-requests').click();assert.equal(await p.evaluate(()=>ST.ui.view),role==='employee'?'todo':'requests');await p.evaluate(()=>ST.go('home'));
@@ -63,7 +64,7 @@ async function main(){
  const boundary=await setup('admin');await boundary.p.evaluate(()=>{const mk=(id,o)=>Object.assign(ST.CASE_DEFAULTS(),{id,type:'reno',company:'CP',stage:'won',property:'合成境界 '+id,jobNo:''},o);ST.db.cases=[mk('WAIT',{}),mk('SPACE',{jobNo:'  '}),mk('NUMBER',{jobNo:'JOB-123'}),mk('CANCEL',{cancelledAt:'2026-10-29T00:00:00Z'}),mk('LOST',{stage:'lost'}),mk('HANDED',{stage:'handed',jobNo:'JOB-456'}),mk('PAID',{stage:'paid'}),mk('WORKING',{stage:'working'}),mk('QUOTED',{stage:'quoted'})];ST.ui.corpTodo=[];const s={sheetId:'synthetic-boundary',name:'合成社員',company:'CP',role:'社員'};ST.db.settings.data.staff=[s];ST.ui.corp={at:Date.now(),data:[{s,ok:true,cases:[{'受付番号':'RO-WAIT','種類':'リノベーション','段階キー':'won','会社':'CP','物件':'合成境界共有'}],todo:[],orders:[],rc:[]}]};ST.roBuild(ST.ui.corp.data);CPGViewScope.save(localStorage,{account:'toshi.cpg@gmail.com',record:ST.db.settings.data.sheetId,viewer:ST.db.settings.data.listId||''},{company:'all',person:'all'});ST.render();});
  assert.equal(await boundary.p.locator('#home-access .v').innerText(),'3件');await boundary.p.locator('#home-access').click();assert.deepEqual((await boundary.p.locator('[data-open]').evaluateAll(xs=>xs.map(x=>x.dataset.open))).sort(),['RO-WAIT・synthetic-boundary','SPACE','WAIT']);
  await boundary.p.locator('#handoffOnly').uncheck();assert.ok(await boundary.p.locator('[data-open]').count()>3);await boundary.p.evaluate(()=>{ST.db.cases=[];ST.ui.corpRO=[];ST.ui.corp.data.forEach(x=>x.cases=[]);ST.go('home')});assert.equal(await boundary.p.locator('#home-access .v').innerText(),'0件');assert.equal(await boundary.p.locator('#home-access.alert').count(),0);await boundary.ctx.close();results.push('Access waiting: same tile/list predicate, whitespace, existing number, cancellation/lost/handed/working/paid/quoted, readonly, zero and clear filter');
- const a=await setup('employee');await a.p.setViewportSize({width:360,height:800});await a.p.evaluate(()=>{ST.db.cases=[];ST.db.todos=[];ST.render()});assert.equal(await a.p.locator('#home-summary .tile').count(),8);assert.equal(await a.p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await a.ctx.close();results.push('360px empty tiles retained without horizontal overflow');
+ const a=await setup('employee');await a.p.setViewportSize({width:360,height:800});await a.p.evaluate(()=>{ST.db.cases=[];ST.db.todos=[];ST.render()});assert.equal(await a.p.locator('#home-summary .tile').count(),9);assert.equal(await a.p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await a.ctx.close();results.push('360px empty tiles retained without horizontal overflow');
  console.log(results.map(x=>'PASS '+x).join('\n'));console.log('ALL PASS',results.length);
 }
 main().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();if(server)server.close()});
