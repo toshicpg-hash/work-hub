@@ -171,6 +171,7 @@ async function main(){
    assert.match(await A.p.locator('#stats-sales .sales-st tbody tr.sales-done td').first().textContent(),/^見本 .郎完了$/);
    assert.deepEqual(await A.p.$$eval('#stats-sales .sales-st',a=>a.map(t=>{const w=t.closest('.tbl-wrap');return w.scrollWidth-w.clientWidth<=1})),[true,true,true],'staff tables fit');
    assert.match(await A.p.textContent('details[data-fold="sales"] > summary'),/グループ各社売上報告/);
+   assert.match(await A.p.textContent('details[data-fold="sales"] > summary .foldsub'),/（旧3社報告書）/);/* v1.50.56 前の呼び名を添える */
    /* 施工中の粗利が空なら「—」。合計に「その他」（営業外売上）は入れない */
    const sums=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-st tr.sales-sum').allTextContents();
    assert.match(sums[1],/施工中.*—$/);

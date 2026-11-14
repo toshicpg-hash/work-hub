@@ -221,6 +221,7 @@ ol.hist li{overflow-wrap:anywhere}
 /* v1.50.46 見出し「グループ各社売上報告」を目立たせる */
 main details[data-fold="sales"]>summary.foldh{background:var(--accent);color:var(--accent-fg);border-radius:12px;padding:10px 14px}
 details[data-fold="sales"]>summary.foldh h2{font-size:22px;font-weight:800;color:var(--accent-fg)}
+.foldsub{display:block;font-size:14px;font-weight:700;opacity:.9;margin-top:2px}
 .sales-pct{display:block;font-size:11.5px;color:var(--muted);font-weight:400}
 .sales-upd{font-size:15px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:2px 10px;white-space:nowrap}
 .sales-chk{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
@@ -2350,10 +2351,13 @@ function statsCases(){
 const FOLDKEY="workhub_fold_v1";
 const foldGet=()=>{try{const v=JSON.parse(localStorage.getItem(FOLDKEY)||"{}");return v&&typeof v==="object"?v:{}}catch(e){return {}}};
 function foldSet(k,open){try{const v=foldGet();v[k]=!!open;localStorage.setItem(FOLDKEY,JSON.stringify(v))}catch(e){}}
-function foldSec(key,title,body,force){
+/* v1.50.56 見出しの下に小さく添える言葉（sub）。売上報告の「（旧3社報告書）」に使う */
+/* v1.50.56 トシさんの指示：前の呼び名を見出しの下に添える。みんなに浸透したら "" にすれば消える */
+const SALES_OLD_NAME="（旧3社報告書）";
+function foldSec(key,title,body,force,sub){
   if(!body)return "";
   const open=force||foldGet()[key];
-  return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+'</h2></summary>'+body+'</details>';
+  return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+h(title)+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
 const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.56";
@@ -2494,7 +2498,7 @@ function vStats(){
       :'<div class="empty">未入金の案件はありません</div>'),"stats-unpaid");
   return (hasExamples()?'<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>':'')+
   /* v1.50.54 グループ各社売上報告は数字タブのいちばん上（社長の端末だけ） */
-  (D().admin?foldSec("sales","グループ各社売上報告",salesSec(),!!ui.salesBusy):'')+
+  (D().admin?foldSec("sales","グループ各社売上報告",salesSec(),!!ui.salesBusy,SALES_OLD_NAME):'')+
   statsWhoSeg()+(coMode&&!coMode.cases?statsCompanyEmpty(coMode):
   (coMode||scopeState().usable)?(coMode?'<section class="sec">'+statsCompanyNote(coMode)+'</section>'+unpaidSec:statsNote()?'<section class="sec">'+statsNote()+'</section>':'')+
   '<section class="sec" id="stats-won">'+statsPeriodControls()+(undatedLost.length?'<p class="banner stats-undated">失注日が未入力の案件 '+undatedLost.length+'件（案件を開いて日付を入れてください）</p>':'')+'<div class="sec-h stats-modebar">'+statsModeSeg()+'</div>'+
