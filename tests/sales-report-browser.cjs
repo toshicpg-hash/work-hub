@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..'),ADMIN='toshi.cpg@gmail.com',STAFF='staff.sample@example.com',KEY='workhub_proto_v1';
-const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,ordLoad,gAuthorize,'+
+const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,ordLoad,gAuthorize,ordAfterSync,'+
  'mock(){gLoadCalendarsRun=async()=>{G.cals=[];return G.cals};gReadRange=async()=>({events:[],calendars:[],missing:0});gKeepSave=()=>{};corpRun=async()=>[]}};';
 const GIS="window.google={accounts:{oauth2:{initTokenClient(cfg){return {requestAccessToken(){setTimeout(()=>cfg.callback({access_token:'tok:'+window.__acct,expires_in:3600,scope:cfg.scope}),5)}}}}}};";
 const G={files:{},n:0,calls:[]};
@@ -23,9 +23,9 @@ async function google(r){
  mm=p.match(/^\/drive\/v3\/files\/([^/]+)\/permissions$/);
  if(mm){const f=G.files[mm[1]];if(!f||f.owner!==acct)return J({},403);return J({permissions:[{id:'owner',emailAddress:f.owner,role:'owner',type:'user'}].concat(f.perms)})}
  mm=p.match(/^\/v4\/spreadsheets\/([^/:]+)(.*)$/);
- if(mm){const f=G.files[mm[1]],rest=mm[2];if(!f||(f.owner!==acct&&!(m==='GET'&&(f.readers||[]).includes(acct))))return J({},403);
-  if(m==='GET'&&!rest&&(f.owner===acct||(f.readers||[]).includes(acct)))return J({properties:{title:f.name},sheets:f.tabs.map(t=>({properties:{title:t.title,sheetId:t.sheetId,gridProperties:{rowCount:1000,columnCount:26}}}))});
-  if(rest==='/values:batchGet'&&(f.owner===acct||(f.readers||[]).includes(acct))){const ts=u.searchParams.getAll('ranges').map(x=>f.tabs.find(t=>t.title===tabName(x)));if(ts.some(t=>!t))return J({},400);const fm=u.searchParams.get('valueRenderOption')==='FORMULA';
+ if(mm){const f=G.files[mm[1]],rest=mm[2];const can=f&&(f.owner===acct||(f.writers||[]).includes(acct)||(m==='GET'&&(f.readers||[]).includes(acct)));if(!can)return J({},403);
+  if(m==='GET'&&!rest)return J({properties:{title:f.name},sheets:f.tabs.map(t=>({properties:{title:t.title,sheetId:t.sheetId,gridProperties:{rowCount:1000,columnCount:26}}}))});
+  if(rest==='/values:batchGet'){const ts=u.searchParams.getAll('ranges').map(x=>f.tabs.find(t=>t.title===tabName(x)));if(ts.some(t=>!t))return J({},400);const fm=u.searchParams.get('valueRenderOption')==='FORMULA';
    return J({valueRanges:ts.map(t=>{const v=structuredClone(t.rows);if(fm&&t.formulas)for(const [k,x] of Object.entries(t.formulas)){const [r,c]=k.split(',').map(Number);v[r][c]=x}return {values:v}})})}
   if(rest==='/values:batchUpdate'&&m==='POST'){const b=req.postDataJSON();G.batch=(G.batch||[]).concat([b]);f.modified=G.mod;
    for(const d of b.data){const mm2=d.range.match(/^'(.+)'!([A-Z])(\d+)$/),t=f.tabs.find(x=>x.title===mm2[1].replace(/''/g,"'"));const r=Number(mm2[3])-1,c=mm2[2].charCodeAt(0)-65;while(t.rows.length<=r)t.rows.push([]);t.rows[r][c]=d.values[0][0]}return J({})}
@@ -292,7 +292,7 @@ async function main(){
    const top=await A.p.$eval('#sales-edit',e=>e.getBoundingClientRect().top);assert.ok(top>=0&&top<900,'scrolled to the input '+top);
    await A.p.evaluate(()=>{BB.ui.salesEdOpen=false;BB.go('home')});
    /* 社員の端末：自分の記録シートの「会社の数字の場所」から読む */
-   G.files.rec00000000000000000001={id:'rec00000000000000000001',name:'記録',owner:STAFF,created:'2026-10-01T00:00:00Z',perms:[],tabs:[{title:'会社の数字の場所',sheetId:0,rows:[['会社','ファイルID'],['CP','numcp000000000000000001']]}]};
+   G.files.rec00000000000000000001={id:'rec00000000000000000001',name:'記録',owner:ADMIN,readers:[STAFF],created:'2026-10-01T00:00:00Z',perms:[],tabs:[{title:'会社の数字の場所',sheetId:0,rows:[['会社','ファイルID'],['CP','numcp000000000000000001']]}]};
    const S=await device(width,s=>{window.__acct=s},STAFF);
    await S.p.evaluate(()=>{const d=BB.db.settings.data;d.ob={legacy:true};d.sheetId='rec00000000000000000001';BB.save();BB.go('home')});
    assert.equal(await S.p.$$eval('#home-orders',a=>a.length),0,'nothing before it arrives');
@@ -301,6 +301,45 @@ async function main(){
    assert.equal(await S.p.$$eval('#home-orders .ord-go',a=>a.length),0);assert.equal(await S.p.$eval('#home-orders',e=>e.tagName),'DIV');
    if(width===400)await S.p.locator('#home-orders').screenshot({path:path.join(require('node:os').tmpdir(),'ord-tile-staff-400.png')});
    assert.ok(await overflow(S.p)<=0);assert.deepEqual(S.errors,[]);await S.c.close();
+  });
+  /* v1.50.62 入力できる人（例：専務）：社長が選ぶと、その人の端末の数字タブに売上報告と「数字を入れる」が出て、シートに書ける。外すと消える */
+  await check('入力できる人：社長が選ぶとその人の端末で売上報告に数字を入れられ、外すと出なくなる '+width+'px',async()=>{
+   const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）'),rec=G.files.rec00000000000000000001;
+   await A.p.evaluate(STAFF=>{const d=BB.db.settings.data;d.staff=[{sheetId:'rec00000000000000000001',email:STAFF,name:'見本 専務',role:'全社',company:'CP'}];BB.save()},STAFF);
+   await open(A.p);await A.p.evaluate(()=>{document.getElementById('sales-eds').open=true});
+   assert.match(await A.p.textContent('#sales-eds>summary'),/社長だけ/);
+   await A.p.check('[data-sales-ed="rec00000000000000000001"]');await A.p.click('[data-act=saleseds]');await A.p.waitForFunction(()=>!BB.ui.salesBusy&&BB.ui.salesMsg);
+   assert.equal(await A.p.evaluate(()=>BB.ui.salesMsg.ok),true,await A.p.evaluate(()=>BB.ui.salesMsg.text));
+   assert.deepEqual(tabOf(rec,'会社の数字の場所').find(r=>r[0]==='売上報告'),['売上報告',f.id]);
+   assert.deepEqual(tabOf(rec,'会社の数字の場所').find(r=>r[0]==='CP'),['CP','numcp000000000000000001'],'company row kept');
+   assert.ok(tabOf(G.files.list00000000000000000001,'HUBの設定').some(r=>r[0]==='売上報告を入れる人'&&r[1]==='rec00000000000000000001'));
+   assert.match(await A.p.textContent('#sales-eds>summary'),/見本 専務/);
+   /* 共有（編集者）がまだのとき：その人の端末に理由が出る */
+   const E2=await device(width,s=>{window.__acct=s},STAFF);
+   await E2.p.evaluate(()=>{const d=BB.db.settings.data;d.ob={legacy:true};d.sheetId='rec00000000000000000001';BB.save()});
+   await E2.p.evaluate(()=>BB.gAuthorize(true));await E2.p.evaluate(()=>BB.ordAfterSync());await E2.p.evaluate(()=>{BB.go('stats');document.querySelectorAll('details[data-fold="sales"]').forEach(d=>d.open=true)});
+   assert.match(await E2.p.textContent('#stats-sales'),/共有（編集者）を頼んでください/);
+   /* 社長がGoogleで編集者に加えたあと */
+   f.writers=[STAFF];
+   await E2.p.evaluate(()=>BB.ordAfterSync());await E2.p.evaluate(()=>{BB.go('stats');document.querySelectorAll('details[data-fold="sales"]').forEach(d=>d.open=true)});
+   const t=await E2.p.textContent('#stats-sales');assert.match(t,/入力できる人/);assert.doesNotMatch(t,/共有（編集者）を頼んで/);
+   assert.equal(await E2.p.$$eval('[data-act=salescheck]',a=>a.length),0,'boss check is only for the boss');assert.equal(await E2.p.$$eval('#sales-eds,[data-act=salesdemo]',a=>a.length),0,'no admin controls');
+   await E2.p.evaluate(()=>BB.go('home'));assert.match(await E2.p.textContent('#home-orders .ord-go'),/タップして数字を入れる/);
+   await E2.p.click('#home-orders');assert.equal(await E2.p.$eval('#sales-edit',d=>d.open),true);
+   await E2.p.click('[data-sales-edco="AT"]');await E2.p.click('[data-sales-edkind="day"]');await E2.p.selectOption('#se_day','12');
+   await E2.p.fill('#se_day_n','3');await E2.p.fill('#se_day_amt','333,000');G.calls=[];
+   await E2.p.click('[data-act=salessave]');await E2.p.waitForFunction(()=>!BB.ui.salesBusy&&BB.ui.salesMsg);
+   assert.equal(await E2.p.evaluate(()=>BB.ui.salesMsg.ok),true,await E2.p.evaluate(()=>BB.ui.salesMsg.text));
+   const row=tabOf(f,'2026-11 受注').find(r=>r[0]==='AT'&&Number(r[1])===12);assert.ok(row,'row');assert.equal(Number(String(row[2]).replace(/,/g,'')),3);assert.equal(Number(String(row[3]).replace(/,/g,'')),333000);
+   assert.ok(G.calls.some(c=>c[0]===STAFF&&c[1]!=='GET'&&c[2].includes(f.id)),'written by the editor');
+   assert.ok(await overflow(E2.p)<=0);
+   /* 社長が外すと、次の同期で出なくなる */
+   await A.p.evaluate(()=>{document.getElementById('sales-eds').open=true});await A.p.uncheck('[data-sales-ed="rec00000000000000000001"]');await A.p.click('[data-act=saleseds]');await A.p.waitForFunction(()=>!BB.ui.salesBusy&&BB.ui.salesMsg);
+   assert.ok(!tabOf(rec,'会社の数字の場所').some(r=>r[0]==='売上報告'));
+   await E2.p.evaluate(()=>BB.ordAfterSync());await E2.p.evaluate(()=>BB.go('stats'));assert.equal(await E2.p.$$eval('#stats-sales',a=>a.length),0);
+   await E2.p.evaluate(()=>BB.go('home'));assert.equal(await E2.p.$$eval('#home-orders .ord-go',a=>a.length),0);
+   assert.deepEqual(E2.errors,[]);assert.deepEqual(A.errors,[]);await E2.c.close();delete f.writers;
+   await A.p.evaluate(()=>{BB.db.settings.data.staff=[];BB.save()});
   });
   await A.c.close();
   /* 社員の端末には出ない */

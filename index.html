@@ -506,8 +506,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.61" title="使い方マニュアルを開く">v1.50.61・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.61" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.62" title="使い方マニュアルを開く">v1.50.62・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.62" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -567,10 +567,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.61"></script>
+<script src="./share-management.js?v=1.50.62"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.61"></script>
-<script src="./calendar-view-scope.js?v=1.50.61"></script>
+<script src="./view-scope.js?v=1.50.62"></script>
+<script src="./calendar-view-scope.js?v=1.50.62"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2376,7 +2376,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.61";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.62";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2514,7 +2514,7 @@ function vStats(){
       :'<div class="empty">未入金の案件はありません</div>'),"stats-unpaid");
   return (hasExamples()?'<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>':'')+
   /* v1.50.54 グループ各社売上報告は数字タブのいちばん上（社長の端末だけ） */
-  (D().admin?foldSec("sales","グループ各社|売上報告",salesSec(),!!ui.salesBusy,SALES_OLD_NAME):'')+
+  (salesCan()?foldSec("sales","グループ各社|売上報告",salesSec(),!!ui.salesBusy,SALES_OLD_NAME):'')+
   statsWhoSeg()+(coMode&&!coMode.cases?statsCompanyEmpty(coMode):
   (coMode||scopeState().usable)?(coMode?'<section class="sec">'+statsCompanyNote(coMode)+'</section>'+unpaidSec:statsNote()?'<section class="sec">'+statsNote()+'</section>':'')+
   '<section class="sec" id="stats-won">'+statsPeriodControls()+(undatedLost.length?'<p class="banner stats-undated">失注日が未入力の案件 '+undatedLost.length+'件（案件を開いて日付を入れてください）</p>':'')+'<div class="sec-h stats-modebar">'+statsModeSeg()+'</div>'+
@@ -2545,7 +2545,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.61" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.61" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.62" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.62" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3414,6 +3414,8 @@ async function adminSync(log){
   d.staff=CPGNames.overlay(next,await namesRead(d.listId));save();found.list=true;found.n=d.staff.length;
   await viewListResolve(listV[HUBSET_TAB],log);
   {const sid=hubSetGet(listV[HUBSET_TAB],SALES_KEY);if(sid&&d.salesId!==sid){d.salesId=sid;save()}}
+  /* v1.50.62 売上報告に数字を入れられる人（社長が選ぶ。シートIDの並び） */
+  {const raw=hubSetGet(listV[HUBSET_TAB],SALES_ED_KEY),ids=raw?raw.split(",").map(x=>x.trim()).filter(Boolean):null;if(ids&&JSON.stringify(ids)!==JSON.stringify(d.salesEditors||[])){d.salesEditors=ids;save()}}
   return found;
 }
 /* v1.50.36 見る人用一覧は、社長のどの端末でも同じ1つを使う。どれを使うかは社員一覧のファイルの「HUBの設定」タブに残す（社長の端末どうしで共通）。
@@ -3441,7 +3443,7 @@ async function viewListResolve(setRows,log){
    読むだけで書かない（試作用のシートを作るときだけ、架空の数字を書く）。共有はしない。どのシートかは社員一覧の「HUBの設定」に残す（社長の端末どうしで同じ）。
    入力の形：1か月を1つのタブ（名前は「2026-10」のように年-月）。下の3つの表の見出しの行を探して読むので、行の位置は前後してもよい。
    v1.50.44 スマホで見やすいように、表ごとにタブを分けてもよい（「2026-10 会社」「2026-10 担当」「2026-10 受注」）。同じ月のタブはまとめて読む */
-const SALES_ORDER=["CP","AT","CPY"],SALES_KEY="売上報告ID",
+const SALES_ORDER=["CP","AT","CPY"],SALES_KEY="売上報告ID",SALES_ED_KEY="売上報告を入れる人",SALES_PTR="売上報告",
   SALES_CO=["会社","目標売上","目標粗利","実績売上","実績粗利","前月売上","前月粗利","最終粗利予想","人件費","Notes未入力","社長確認日","本部長確認日","GM確認日","GMの名前","更新日"],
   SALES_ST=["会社","区分","担当","状態","物件数","基準値","金額","粗利"],
   SALES_DAY=["会社","日","受注件数","受注金額"],
@@ -3472,8 +3474,11 @@ function salesParse(rows,only){
   if(!okDay&&want("day"))out.bad.push("毎日の受注の表の見出し（"+SALES_DAY.join("｜")+"）が見つかりません");
   return out;
 }
+/* v1.50.62 売上報告を開ける端末：社長と、社長が「入力できる人」に選んだ人（例：専務） */
+const salesSrc=()=>D().admin?D().salesId:D().salesEditId||"";
+const salesCan=()=>!!(D().admin||D().salesEditId);
 async function salesLoad(){
-  const id=D().salesId;if(!id)return;await gAuthorize(true);
+  const id=salesSrc();if(!id)return;await gAuthorize(true);
   const all=(await sheetTabNames(id)).filter(t=>SALES_TAB.test(t)),tabs=[...new Set(all.map(t=>t.slice(0,7)))].sort();
   const v=all.length?await sheetRead(id,all):{};
   /* 同じ月のタブを1つずつ読んでまとめる。表を分けたタブは、その表だけを探す。読めなかったところにはタブの名前を付ける */
@@ -3537,11 +3542,22 @@ async function ordLoad(){
   if(best)ordKeepSave(best);
   return best;
 }
-async function ordAfterSync(){if(D().admin||!D().sheetId||!gSignedIn())return;try{if(await ordLoad())render()}catch(e){}}
+async function ordAfterSync(){if(D().admin||!D().sheetId||!gSignedIn())return;
+  try{await salesEdPtr()}catch(e){}
+  if(D().salesEditId){try{await salesLoad();ui.salesErr=""}catch(err){ui.salesErr=err.message==="http"?(err.status===403||err.status===404?"売上報告のシートを開けません。社長にシートの共有（編集者）を頼んでください":dMsg(err)):err.message}}
+  try{await ordLoad()}catch(e){}render()}
+/* v1.50.62 入力できる人の端末：自分の記録シートの「会社の数字の場所」の「売上報告」の行を読む（社長が書く）。なければ入力できない */
+async function salesEdPtr(){
+  const d=D();if(d.admin||!d.sheetId)return;
+  const tabs=await sheetTabNames(d.sheetId);
+  const ptr=tabs.includes(NUMPTR_TAB)?((await sheetRead(d.sheetId,[NUMPTR_TAB]))[NUMPTR_TAB]||[]).slice(1):[];
+  const r=ptr.find(x=>String(x[0]||"").trim()===SALES_PTR),id=r?sheetIdOf(String(r[1]||"")):"";
+  if((d.salesEditId||"")!==(id||"")){d.salesEditId=id||"";if(!id)ui.sales=null;save()}
+}
 /* ホームのタイル。社長の端末は押すと数字タブ（売上報告）へ */
 function ordTile(){
-  const t=todayS(),admin=!!D().admin,v=(admin&&ui.sales&&ordSummary(ui.sales))||ordKeep();
-  if(!v&&!(admin&&D().salesId))return "";
+  const t=todayS(),admin=salesCan(),v=(admin&&ui.sales&&ordSummary(ui.sales))||ordKeep();
+  if(!v&&!(admin&&salesSrc()))return "";
   /* v1.50.61 社長の端末は押すと「数字を入れる」（売上報告の入力欄）へ。分かるように下に「タップして数字を入れる ›」 */
   const tag=admin?'button type="button" data-nav="stats" data-ordgo="1" data-jump="sales-edit"':'div',end=admin?'button':'div',go=admin?'<span class="ord-go">タップして数字を入れる ›</span>':'';
   if(!v||v.key!==t.slice(0,7))return '<'+tag+' class="tile wide ordtile" id="home-orders"><span class="k">今月の受注</span><span class="s">今月の分はまだ届いていません（'+(admin?'同期すると売上報告から出ます':'社長の端末の同期のあと、同期すると出ます')+'）</span>'+go+'</'+end+'>';
@@ -3649,17 +3665,27 @@ async function salesCheck(co){
 const salesLast=S=>S&&S.modified?salesWhen(S.modified):S&&S.upd?S.upd.replace(/^0/,"").replace("/0","/")+"（会社の更新日）":"不明";
 const salesWhen=iso=>iso?new Date(iso).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo",month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"不明";
 const addMonths=(ym,n)=>{const [y,m]=ym.split("-").map(Number),t=y*12+(m-1)+n;return Math.floor(t/12)+"-"+String(t%12+1).padStart(2,"0")};
+/* v1.50.62 社長の端末：売上報告に数字を入れられる人を選ぶ（社長は選ばなくても入れられる）。
+   選ぶと、その人の端末の「数字」に売上報告と「数字を入れる」が出る。シートの共有（編集者）は社長がGoogleで付ける（HUBの外で作ったシートなので、HUBからは共有できない） */
+function salesEdPanel(){
+  const d=D(),ids=new Set(d.salesEditors||[]),list=(d.staff||[]).filter(s=>!s.removed&&s.sheetId&&s.sheetId!==d.sheetId);
+  const sel=list.filter(s=>ids.has(s.sheetId));
+  return '<details class="sales-open sub" id="sales-eds"'+(ui.salesEdsOpen?' open':'')+'><summary>入力できる人<span class="sales-open-sub">'+(sel.length?sel.map(s=>h(dispName(s))).join("・"):'社長だけ')+'</span></summary>'+
+    '<div style="display:flex;flex-direction:column;gap:6px">'+list.map(s=>'<label class="req-opt"><input type="checkbox" data-sales-ed="'+h(s.sheetId)+'"'+(ids.has(s.sheetId)?' checked':'')+'>'+personBadge(s.name,false,s.sheetId)+'<span class="note">'+h(s.role||"")+'</span></label>').join("")+
+    '<div class="row"><button class="btn sm pri" type="button" data-act="saleseds"'+(ui.salesBusy?' disabled':'')+'>入力できる人を保存</button></div>'+
+    '<p class="note" style="margin:0">選んだ人の端末では、同期すると「数字」に売上報告と「数字を入れる」が出ます（社長の確認の印は社長だけ）。<b>あわせて、Googleスプレッドシートの「共有」で、その人を売上報告のシートの「編集者」に加えてください</b>（このシートはHUBの外で作ったので、HUBからは共有できません）。</p></div></details>';
+}
 function salesSec(){
-  const d=D(),S=ui.sales,busy=ui.salesBusy?' disabled':'',msg=ui.salesMsg?'<p role="status" style="margin:0;color:'+(ui.salesMsg.ok?'var(--green)':'var(--red)')+'">'+h(ui.salesMsg.text)+'</p>':'';
+  const d=D(),src=salesSrc(),admin=!!d.admin,S=ui.sales,busy=ui.salesBusy?' disabled':'',msg=ui.salesMsg?'<p role="status" style="margin:0;color:'+(ui.salesMsg.ok?'var(--green)':'var(--red)')+'">'+h(ui.salesMsg.text)+'</p>':'';
   /* v1.50.46 本物のシート（名前に「試作」がない）を読んでいるときは「社長だけ」、作り直すボタンも出さない（押すと架空のシートに戻るため） */
   /* v1.50.52 名前が分からないときは試作と見なさない（作り直すボタンを出さない） */
-  const demo=!!S&&S.id===d.salesId&&!!S.name&&S.name.includes("試作");
-  const head='<div class="row" style="gap:6px"><span class="chip">'+(demo||!d.salesId?'試作・社長だけ':'社長だけ')+'</span></div>';
+  const demo=admin&&!!S&&S.id===d.salesId&&!!S.name&&S.name.includes("試作");
+  const head='<div class="row" style="gap:6px"><span class="chip">'+(!admin?'入力できる人':demo||!d.salesId?'試作・社長だけ':(d.salesEditors||[]).length?'社長と入力できる人':'社長だけ')+'</span></div>'+(!admin&&ui.salesErr?'<p class="banner" role="status" style="margin:0">'+h(ui.salesErr)+'</p>':'');
   const wrap=b=>'<section class="sec" id="stats-sales" style="display:flex;flex-direction:column;gap:10px">'+head+b+msg+'</section>';
-  if(!d.salesId)return wrap('<p class="note" style="margin:0">Googleスプレッドシートの売上報告を読んで、今の3社報告と同じ項目を出します。今は試作で、社長の端末にだけ出ます（社員には見えません）。</p><div class="row"><button class="btn pri" type="button" data-act="salesdemo"'+busy+'>試作用のシートを作る（架空のデータ）</button></div>');
-  const link='<a class="btn sm" href="https://docs.google.com/spreadsheets/d/'+h(d.salesId)+'/edit" target="_blank" rel="noopener" style="text-decoration:none">シートを開く</a>';
+  if(!src)return wrap('<p class="note" style="margin:0">Googleスプレッドシートの売上報告を読んで、今の3社報告と同じ項目を出します。今は試作で、社長の端末にだけ出ます（社員には見えません）。</p><div class="row"><button class="btn pri" type="button" data-act="salesdemo"'+busy+'>試作用のシートを作る（架空のデータ）</button></div>');
+  const link='<a class="btn sm" href="https://docs.google.com/spreadsheets/d/'+h(src)+'/edit" target="_blank" rel="noopener" style="text-decoration:none">シートを開く</a>';
   const ctl='<div class="row"><button class="btn sm" type="button" data-act="salesload"'+busy+'>'+(ui.salesBusy?'読んでいます…':S?'読み直す':'読み込む')+'</button>'+link+(demo?'<button class="btn sm" type="button" data-act="salesdemo"'+busy+'>試作用のシートを作り直す（架空）</button>':'')+'</div>';
-  if(!S||S.id!==d.salesId)return wrap(ctl);
+  if(!S||S.id!==src)return wrap(ctl+(admin?salesEdPanel():''));
   const M=S.months.find(x=>x.key===ui.salesMonth);
   const tabs='<div class="picks" role="group" aria-label="月">'+S.months.map(x=>'<button class="pick" aria-pressed="'+(x.key===ui.salesMonth)+'" type="button" data-sales-month="'+h(x.key)+'">'+Number(x.key.slice(0,4))+'年'+Number(x.key.slice(5))+'月</button>').join("")+'</div>';
   if(!M)return wrap('<p class="note" style="margin:0">「2026-10」のような名前のタブがありません。</p>'+ctl);
@@ -3702,7 +3728,7 @@ function salesSec(){
     const chkBox=ck.length?'<div class="sales-chk"><div class="sales-lab">毎日の確認'+(curM?'（今日 '+tdN+'日）':'')+'</div>'+
       (curM?'<div class="row" style="gap:6px">'+SALES_ROLES.map(([k,l])=>{const on=!!(tdc&&tdc[k]);return '<span class="sales-chip '+(on?'on':'off')+'">'+l+' '+(on?'✓ 済':'未')+'</span>'}).join("")+'</div>':'')+
       '<div class="note num">'+(curM?'今月':'この月')+'（'+upto+'日まで）：'+SALES_ROLES.map(([k,l])=>l+' '+ck.filter(x=>x[k]&&x.day<=upto).length+'日').join("・")+'</div>'+
-      (curM&&tdc&&!tdc.boss?'<div class="row"><button class="btn sm pri" type="button" data-act="salescheck" data-co="'+h(c.co)+'"'+busy+'>社長の確認をした（今日）</button></div>':'')+
+      (admin&&curM&&tdc&&!tdc.boss?'<div class="row"><button class="btn sm pri" type="button" data-act="salescheck" data-co="'+h(c.co)+'"'+busy+'>社長の確認をした（今日）</button></div>':'')+
       (curM&&!tdc?'<p class="note" style="margin:0">シートの確認のタブに今日の行がありません</p>':'')+'</div>':'';
     const st=M.staff.filter(x=>x.co===c.co),ds=M.days.filter(x=>x.co===c.co),ra=pc(c["実績売上"],c["目標売上"]),rp=pc(c["実績粗利"],c["目標粗利"]),dn=sumBy(ds,"n"),da=sumBy(ds,"amt");
     /* v1.50.54 会社のカードは最初は畳む（会社名と売上・粗利だけ）。押すと中身が開く。開けたかどうかは覚える */
@@ -3735,7 +3761,7 @@ function salesSec(){
     '<div class="sales-lab">入れるものを選ぶ</div><div class="picks" role="group" aria-label="入れるもの">'+[["day","毎日の受注"],["co","会社の数字"],["st","担当者別"]].map(([k,l])=>'<button class="pick" type="button" data-sales-edkind="'+k+'" aria-pressed="'+(k===ekind)+'">'+l+'</button>').join("")+'</div>'+
     '<div class="sales-in-wrap">'+eform+'</div><div class="row"><button class="btn pri" type="button" data-act="salessave"'+busy+'>シートに保存</button></div>'+
     '<p class="note" style="margin:0">変えたマスだけを書きます。会社の「更新日」は今日になります。シートで誰かが先に変えていたら、書かずに止めます。</p></div></details>';
-  return wrap(tabs+fresh+bad+editor+total+cos.map(card).join("")+'<p class="note" style="margin:0">「'+h(M.key)+'」の月のタブを読んでいます（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）。共有はしていません。</p>'+ctl);
+  return wrap(tabs+fresh+bad+editor+(admin?salesEdPanel():'')+total+cos.map(card).join("")+'<p class="note" style="margin:0">「'+h(M.key)+'」の月のタブを読んでいます（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）。共有はしていません。</p>'+ctl);
 }
 /* 古い見る人用一覧に「移転先」を書く。見る人の端末は、次の同期でそれを見て新しい一覧に移る */
 async function viewListMarkOld(){const d=D();if(!d.viewListId)return 0;let n=0;
@@ -3952,8 +3978,19 @@ async function caseCodeWrite(s){
  if(codeNorm((back[1]||[])[0])!==s.caseCode)throw Error(s.name+"：受付番号の記号を保存確認できません。");
  return true;
 }
+/* v1.50.62 入力できる人を保存：社員一覧の「HUBの設定」に残し、各社員の記録シートの「会社の数字の場所」を書き直す（変わらない人は書かない） */
+async function salesEdSave(ids){
+  const d=D();if(!d.admin)throw Error("社長の端末で選んでください");if(!d.listId)throw Error("社員一覧がありません");await gAuthorize(true);
+  const prev=new Set(d.salesEditors||[]),now=new Set(ids);d.salesEditors=ids;save();await hubSetWrite(SALES_ED_KEY,ids.join(","));
+  /* 書き直すのは、選んだ人・外した人と、もともと会社の数字の場所がある人だけ（ほかの人の記録シートにタブを増やさない） */
+  const list=(d.staff||[]).filter(s=>!s.removed&&s.sheetId&&s.sheetId!==d.sheetId&&(now.has(s.sheetId)||prev.has(s.sheetId)||coList(s).some(co=>d.numbers&&d.numbers[co])));let w=0;
+  for(const s of list){if(await numPtrWrite(s,d.numbers||{}))w++}
+  return w;
+}
 async function numPtrWrite(s,numbers){
  const rows=[NUMPTR_COLS,...coList(s).filter(co=>numbers&&numbers[co]).map(co=>[co,numbers[co]])];
+ /* v1.50.62 売上報告に数字を入れられる人だけ、売上報告のシートの場所も書く（社員の端末の「会社の数字」は会社の行だけ読むので影響しない） */
+ if(D().salesId&&(D().salesEditors||[]).includes(s.sheetId))rows.push([SALES_PTR,D().salesId]);
  const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(NUMPTR_TAB))await addTab(s.sheetId,NUMPTR_TAB);
  const prev=(await shareRead(()=>sheetRead(s.sheetId,[NUMPTR_TAB])))[NUMPTR_TAB]||[];
  const norm=r=>JSON.stringify(r.map(x=>x.map(y=>String(y??""))).filter(x=>x.some(Boolean)));
@@ -4856,6 +4893,8 @@ document.addEventListener("click",e=>{
     adminCodesSave(r.changes,(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()}).then(()=>{ui.dCodes=false;ui.dCodesDraft=null},err=>{log.push({ok:false,text:"途中で止まりました："+(err.message==="http"?dMsg(err):err.message||dMsg(err))})}).finally(()=>{ui.dbusy=false;render()});return}
   if(a==="salessave"){if(ui.salesBusy)return;ui.salesBusy=true;ui.salesMsg=null;ui.salesEdOpen=true;
     salesSave().then(n=>{ui.salesMsg={ok:true,text:n?"シートに保存しました（"+n+"か所）":"変わったところはありません"}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?(err.status===403?"このシートに書く権限がありません":dMsg(err)):err.message}}).finally(()=>{ui.salesBusy=false;render()});render();return}
+  if(a==="saleseds"){if(ui.salesBusy)return;const ids=[...document.querySelectorAll('[data-sales-ed]')].filter(x=>x.checked).map(x=>x.dataset.salesEd);ui.salesBusy=true;ui.salesMsg=null;ui.salesEdsOpen=true;render();
+    salesEdSave(ids).then(w=>{ui.salesMsg={ok:true,text:"入力できる人を保存しました（記録シートを書き直した人 "+w+"人）。選んだ人を、シートの共有で編集者に加えてください"}},err=>{ui.salesMsg={ok:false,text:"保存できませんでした："+(err.message==="http"?dMsg(err):err.message)}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="salescheck"){if(ui.salesBusy)return;const co=el.dataset.co;ui.salesBusy=true;ui.salesMsg=null;render();
     salesCheck(co).then(()=>{ui.salesMsg={ok:true,text:co+"：今日の社長の確認を付けました"}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="salesdemo"||a==="salesload"){if(ui.salesBusy)return;ui.salesBusy=true;ui.salesMsg=null;render();
