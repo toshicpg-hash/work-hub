@@ -279,9 +279,9 @@ main details[data-fold="sales"]>summary.foldh::-webkit-details-marker{display:no
 main details[data-fold="sales"]>summary.foldh::before{content:none;display:none}
 main details[data-fold="sales"]>summary.foldh::after{content:"タップして開く ▼";margin-left:auto;font-size:13px;font-weight:700;color:#fff;border:1.5px solid #fff;border-radius:99px;padding:2px 10px;white-space:nowrap}main details[data-fold="sales"][open]>summary.foldh::after{content:"閉じる ▲"}
 /* v1.50.50 選べるもの（月・会社・入れるもの）は色の付いたボタン。選んでいるものは塗りつぶしと ✓ */
-#stats-sales .pick{background:var(--accent-soft);border:2px solid var(--accent);color:var(--accent);font-weight:700;min-height:44px;border-radius:99px;padding:0 14px;font-size:14px;cursor:pointer}
-#stats-sales .pick[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}#stats-sales .pick[aria-pressed="true"]::before{content:"✓ "}
-#stats-sales .picks{display:flex;flex-wrap:wrap;gap:6px}
+#stats-sales .pick,#plan-add .pick{background:var(--accent-soft);border:2px solid var(--accent);color:var(--accent);font-weight:700;min-height:44px;border-radius:99px;padding:0 14px;font-size:14px;cursor:pointer}
+#stats-sales .pick[aria-pressed="true"],#plan-add .pick[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}#stats-sales .pick[aria-pressed="true"]::before,#plan-add .pick[aria-pressed="true"]::before{content:"✓ "}
+#stats-sales .picks,#plan-add .picks{display:flex;flex-wrap:wrap;gap:6px}
 /* 入れられる欄は薄い黄色 */
 #stats-sales .sales-in input,#stats-sales .sales-in select{background:var(--amber-soft);border:2px solid var(--amber);border-radius:8px;color:var(--fg)}
 #stats-sales .sales-big{font-size:24px;font-weight:800;line-height:1.2}
@@ -332,7 +332,7 @@ details.fold>.panel>h3:first-child{display:none}
 .seg{display:flex;gap:6px;flex-wrap:wrap}
 .seg button{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 12px;font-size:13px;cursor:pointer;font-weight:700;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
-input[type=text],input[type=search],input[type=date],input[type=number],input[type=datetime-local],select,textarea{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 11px;min-height:42px}
+input[type=text],input[type=search],input[type=date],input[type=number],input[type=datetime-local],#plan-add input[type=time],select,textarea{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 11px;min-height:42px}
 textarea{min-height:80px;resize:vertical}
 label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:var(--muted);min-width:0}
 .form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -394,6 +394,7 @@ div.ordtile{cursor:default}
 /* v1.50.68 売上の速報 */
 .sales-pre{margin-left:6px;font-size:11px;font-weight:800;color:var(--amber);background:var(--amber-soft);border-radius:99px;padding:1px 6px}
 .sales-prebar{margin:0;padding:8px 12px;border-radius:10px;background:var(--amber-soft);font-size:13.5px}.sales-prebar b{color:var(--amber)}
+#plan-add .plan-kinds .pick.rest{border-color:var(--amber);color:var(--amber);background:var(--amber-soft)}#plan-add .plan-kinds .pick.rest[aria-pressed="true"]{background:var(--amber);color:#fff}/* v1.50.73 休みの種類は色を変える */
 .filters-on{color:var(--accent);font-weight:700}/* v1.50.71 かかっている絞り込み */
 .banner.updok{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--green-soft,#e3f3e8);color:var(--fg);border:2px solid var(--green);font-weight:700}.banner.updok>span{flex:1 1 200px}.banner.updok a{white-space:nowrap}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + 14px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
@@ -518,8 +519,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.72" title="使い方マニュアルを開く">v1.50.72・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.72" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.73" title="使い方マニュアルを開く">v1.50.73・11/15更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.73" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -579,10 +580,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.72"></script>
+<script src="./share-management.js?v=1.50.73"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.72"></script>
-<script src="./calendar-view-scope.js?v=1.50.72"></script>
+<script src="./view-scope.js?v=1.50.73"></script>
+<script src="./calendar-view-scope.js?v=1.50.73"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2273,7 +2274,44 @@ async function calendarScopeSave(){
  ui.calendarMapError=CPGCalendarScope.save(localStorage,scopeIdentity(),rows)?'':'設定を保存・読み戻し確認できませんでした。成功扱いにせず再読込して確認してください。';if(ui.calendarMapError)ui.keepDirty.add('calendarScopeForm');render();if(!ui.calendarMapError)toast('この端末の仕事用対応を保存しました');
 }
 
-function vCal(){
+/* v1.50.73 予定を入れる（トシさんの指示）：日報を自動で作るため、予定の名前の最初の言葉を決まった12語から選ぶ。
+   入れる先はいつも共有カレンダー「CPG HUB」（全員が見られる）。説明に「担当：氏名」「（CPG HUBから登録）」を書くので、予定画面で誰の予定か分かる */
+const PLAN_KINDS=[["在社",0],["会議",0],["打合せ",0],["直行",0],["直帰",0],["営業",0],["資材",0],["緊急",0],["公休",1],["有給",1],["午前休",0],["午後休",0]];
+const planAllDay=k=>(PLAN_KINDS.find(x=>x[0]===k)||[])[1]===1;
+const planRest=k=>["公休","有給","午前休","午後休"].includes(k);
+const planOwnerName=()=>D().admin?BOSS_LABEL:String((ownNameProfile()&&ownNameProfile().name)||RS().name||"").trim();
+const planSharedCal=()=>gWritable().find(c=>c.name===GSHARED)||null;
+function planAddSec(){
+  const f=ui.plan||{},k=f.kind||"",all=planAllDay(k),busy=ui.planBusy?' disabled':'',hm=(id,v)=>'<input type="time" id="'+id+'" step="300" value="'+h(v||"")+'">';
+  const msg=ui.planMsg?'<p role="status" style="margin:0;color:'+(ui.planMsg.ok?'var(--green)':'var(--red)')+'">'+h(ui.planMsg.text)+'</p>':'';
+  return '<section class="sec"><details class="statfold plan-add" id="plan-add"'+(ui.planOpen?' open':'')+'><summary><h2 class="statfold-t">＋ 予定を入れる</h2><span class="statfold-sub">在社・会議・公休など、案件以外の予定（「CPG HUB」カレンダーに入ります）</span></summary>'+
+    '<div style="display:flex;flex-direction:column;gap:8px">'+
+    '<div class="sales-lab">種類を選ぶ</div><div class="picks plan-kinds" role="group" aria-label="予定の種類">'+PLAN_KINDS.map(([n])=>'<button class="pick'+(planRest(n)?' rest':'')+'" type="button" data-plan-kind="'+h(n)+'" aria-pressed="'+(n===k)+'">'+h(n)+'</button>').join("")+'</div>'+
+    '<label class="f">内容'+(planRest(k)?'（書かなくてよい）':'')+'<input type="text" id="pl_text" maxlength="60" autocomplete="off" placeholder="例：見積書作成／○○様邸" value="'+h(f.text||"")+'"></label>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px"><label class="f">日付<input type="date" id="pl_date" value="'+h(f.date||ui.calDay||todayS())+'"></label>'+
+    (all?'<p class="note" style="margin:0;align-self:end">終日の予定で入ります</p>':'<label class="f">開始'+hm("pl_start",f.start)+'</label><label class="f">終了'+hm("pl_end",f.end)+'</label>')+'</div>'+
+    '<p class="note" style="margin:0">予定の名前：<b>'+h(k?(k+(f.text?"　"+f.text:"")):"（種類を選んでください）")+'</b></p>'+
+    '<div class="row"><button class="btn pri" type="button" data-act="planadd"'+busy+'>'+(ui.planBusy?'登録しています…':'「CPG HUB」に登録')+'</button></div>'+msg+
+    '<p class="note" style="margin:0">直す・消すときは、Googleカレンダーのアプリで「CPG HUB」の予定を開いてください。</p></div></details></section>';
+}
+const planRead=()=>{const f=ui.plan=ui.plan||{};f.text=val("pl_text").trim();f.date=val("pl_date");if(!planAllDay(f.kind)){f.start=val("pl_start");f.end=val("pl_end")}return f};
+async function planAdd(){
+  const f=planRead(),k=f.kind;
+  if(!k)throw Error("種類を選んでください");
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(f.date||""))throw Error("日付を選んでください");
+  const all=planAllDay(k);
+  if(!all){if(!/^\d{2}:\d{2}$/.test(f.start||"")||!/^\d{2}:\d{2}$/.test(f.end||""))throw Error("開始と終了の時刻を入れてください");if(f.end<=f.start)throw Error("終了は開始より後の時刻にしてください")}
+  if(!planRest(k)&&!f.text)throw Error("内容を書いてください（例：見積書作成）");
+  await gAuthorize();if(!G.cals)await gLoadCalendars();
+  const cal=planSharedCal();if(!cal)throw Error("「CPG HUB」カレンダーに書き込めません。Gmailに届いた「CPG HUB」の共有のお知らせから、カレンダーを追加してください");
+  f.id=f.id||gRand();/* やり直しても2つにならないように、同じIDで送る */
+  const when=all?{start:{date:f.date},end:{date:addDays(f.date,1)}}:{start:{dateTime:f.date+"T"+f.start+":00+09:00",timeZone:"Asia/Tokyo"},end:{dateTime:f.date+"T"+f.end+":00+09:00",timeZone:"Asia/Tokyo"}};
+  const body={id:f.id,summary:k+(f.text?"　"+f.text:""),description:["種類："+k,"担当："+planOwnerName(),"（CPG HUBから登録）"].join("\n"),status:"confirmed",...when,extendedProperties:{private:{cpgHubPlan:k}}};
+  try{await gApi("calendars/"+encodeURIComponent(cal.id)+"/events",{method:"POST",body})}catch(err){if(err.status!==409)throw err}
+  return body.summary;
+}
+function vCal(){return planAddSec()+vCalBody()}
+function vCalBody(){
   const t=todayS();
   const dueToday=scopeTodos().filter(x=>!x.done&&/^\d{4}-\d{2}-\d{2}$/.test(x.due||"")&&x.due<=t);
   const day=s=>({td:s===t?dueToday:[]});
@@ -2401,7 +2439,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.72";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.73";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2570,7 +2608,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.72" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.72" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.73" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.73" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -4876,6 +4914,7 @@ document.addEventListener("click",e=>{
   if(el.dataset.act==="mtdbackup"||el.dataset.act==="mtddraft"){manualTodoDownload(el.dataset.act==="mtddraft");return}
   if(el.dataset.drift){const c=DB.cases.find(c=>c.id===el.dataset.drift);if(c&&calendarDriftCases().includes(c)){go("detail",{caseId:c.id});const panel=document.getElementById("case-google-calendar");if(panel){panel.style.scrollMarginTop=(document.querySelector("header.top").getBoundingClientRect().height+12)+"px";panel.scrollIntoView({block:"start"});}}return}
   if(el.dataset.open){go("detail",{caseId:el.dataset.open});return}
+  if(el.dataset.planKind){planRead();ui.plan.kind=el.dataset.planKind;ui.planOpen=true;ui.planMsg=null;render();return}
   if(el.dataset.ordgo){foldSet("sales",true);ui.salesEdOpen=true;const k=todayS().slice(0,7);if(ui.sales&&ui.sales.months.some(m=>m.key===k))ui.salesMonth=k}/* v1.50.61 今月の受注のタイル → 売上報告の「数字を入れる」を開く */
   if(el.dataset.nav){const ex={csv:false};if(el.dataset.nav==="requests"){ex.sentRequests=!!el.dataset.sent;ex.sentAuthor="all";}if(el.closest("#home-summary")&&el.dataset.nav==="cases"){ex.q="";ex.cCo="all";ex.showEnded=false;}if(el.dataset.sharedReceipts)ex.rScope="shared";if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";if(el.dataset.nav==="cases"){ex.filtersOpen=false;ex.payOnly=!!el.dataset.pay;ex.handoffOnly=!!el.dataset.handoff;ex.builtOnly=!!el.dataset.built;}if(el.dataset.nav==="rcpt"&&el.closest(".tile")){ex.rTab=el.dataset.rtab2||"list";ex.rScope="own";}go(el.dataset.nav,ex);if(el.dataset.jump&&ui.view===el.dataset.nav)document.getElementById(el.dataset.jump)?.scrollIntoView();return}
   if(el.dataset.rscope){ui.rScope=el.dataset.rscope;rClearDl();render();return;}
@@ -4999,6 +5038,8 @@ document.addEventListener("click",e=>{
     adminCodesSave(r.changes,(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()}).then(()=>{ui.dCodes=false;ui.dCodesDraft=null},err=>{log.push({ok:false,text:"途中で止まりました："+(err.message==="http"?dMsg(err):err.message||dMsg(err))})}).finally(()=>{ui.dbusy=false;render()});return}
   if(a==="salessave"){if(ui.salesBusy)return;ui.salesBusy=true;ui.salesMsg=null;ui.salesEdOpen=true;
     salesSave().then(n=>{ui.salesMsg={ok:true,text:n?"シートに保存しました（"+n+"か所）":"変わったところはありません"}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?(err.status===403?"このシートに書く権限がありません":dMsg(err)):err.message}}).finally(()=>{ui.salesBusy=false;render()});render();return}
+  if(a==="planadd"){if(ui.planBusy)return;try{planRead()}catch(e){}ui.planBusy=true;ui.planMsg=null;render();
+    planAdd().then(t=>{ui.planMsg={ok:true,text:"「"+t+"」を「CPG HUB」に登録しました"};const d=ui.plan.date;ui.plan={kind:"",date:d};gResetReads();toast("予定を登録しました")},err=>{ui.planMsg={ok:false,text:err.message==="signin"?"Googleにログインしてから登録してください":err.message==="http"?"登録できませんでした（"+dMsg(err)+"）":err.message}}).finally(()=>{ui.planBusy=false;render()});return}
   if(a==="salesfix"){if(ui.salesBusy)return;const v=Math.round(Number(val("se_fixdays")));ui.salesBusy=true;ui.salesMsg=null;ui.salesFixOpen=true;render();
     salesFixSave(v).then(()=>{ui.salesMsg={ok:true,text:"確定日を「月末から"+v+"日」にしました"}},err=>{ui.salesMsg={ok:false,text:"保存できませんでした："+(err.message==="http"?dMsg(err):err.message)}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="saleseds"){if(ui.salesBusy)return;const ids=[...document.querySelectorAll('[data-sales-ed]')].filter(x=>x.checked).map(x=>x.dataset.salesEd);ui.salesBusy=true;ui.salesMsg=null;ui.salesEdsOpen=true;render();
@@ -5221,6 +5262,7 @@ document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target
 document.addEventListener("toggle",e=>{if(e.target.classList&&e.target.classList.contains("sales-edit"))ui.salesEdOpen=e.target.open},true);
 /* v1.50.71 案件の絞り込みの開け閉めを覚える（描き直しても変わらない） */
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("filters"))ui.filtersOpen=d.open},true);
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.id==="plan-add")ui.planOpen=d.open},true);
 /* v1.50.54 会社のカードの開け閉めを覚える（描き直しても閉じない） */
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("sales-card")){ui.salesCoOpen={...(ui.salesCoOpen||{}),[d.dataset.salesCo]:d.open}}},true);
 document.addEventListener("change",e=>{

@@ -39,7 +39,8 @@ async function main(){
   await check(role+'：390×844で、どのタブも1件目が画面の上から3分の1以内に見える',async()=>{
    for(const v of VIEWS){if(v==='company'&&role!=='admin')continue;await p.evaluate(v=>CT.go(v),v);
     /* v1.50.54 社長の端末の数字タブは、グループ各社売上報告がいちばん上（トシさんの指示）。見積決定率は画面の上半分に入ればよい */
-    const sel=v==='stats'&&role==='admin'?'details[data-fold="sales"]':FIRST[v];
+    /* v1.50.73 予定タブは「＋ 予定を入れる」（畳んだ見出し）がいちばん上。予定そのものは画面の上半分に入ればよい */
+    const sel=v==='stats'&&role==='admin'?'details[data-fold="sales"]':v==='cal'?'#plan-add':FIRST[v];
     const top=await p.evaluate(sel=>{const e=document.querySelector(sel);return e?e.getBoundingClientRect().top:null},sel);
     assert.ok(top!==null&&top<=844/3,v+' first item top '+top);
     if(sel!==FIRST[v]){const t2=await p.evaluate(sel=>{const e=document.querySelector(sel);return e?e.getBoundingClientRect().top:null},FIRST[v]);assert.ok(t2!==null&&t2<=844/2,v+' stats panel top '+t2)}
