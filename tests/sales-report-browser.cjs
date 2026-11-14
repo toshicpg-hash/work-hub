@@ -3,7 +3,7 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
-const root=path.resolve(__dirname,'..'),ADMIN='toshi.cpg@gmail.com',STAFF='staff.sample@example.com',KEY='workhub_proto_v1';
+const root=path.resolve(__dirname,'..'),ADMIN='toshi.cpg@gmail.com',STAFF='staff.sample@example.com',STAFF2='gm.sample@example.com',KEY='workhub_proto_v1';
 const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,ordLoad,gAuthorize,ordAfterSync,'+
  'mock(){gLoadCalendarsRun=async()=>{G.cals=[];return G.cals};gReadRange=async()=>({events:[],calendars:[],missing:0});gKeepSave=()=>{};corpRun=async()=>[]}};';
 const GIS="window.google={accounts:{oauth2:{initTokenClient(cfg){return {requestAccessToken(){setTimeout(()=>cfg.callback({access_token:'tok:'+window.__acct,expires_in:3600,scope:cfg.scope}),5)}}}}}};";
@@ -311,7 +311,7 @@ async function main(){
    assert.match(await A.p.textContent('#sales-eds>summary'),/社長だけ/);
    await A.p.check('[data-sales-ed="rec00000000000000000001"]');await A.p.click('[data-act=saleseds]');await A.p.waitForFunction(()=>!BB.ui.salesBusy&&BB.ui.salesMsg);
    assert.equal(await A.p.evaluate(()=>BB.ui.salesMsg.ok),true,await A.p.evaluate(()=>BB.ui.salesMsg.text));
-   assert.deepEqual(tabOf(rec,'会社の数字の場所').find(r=>r[0]==='売上報告'),['売上報告',f.id]);
+   assert.deepEqual(tabOf(rec,'会社の数字の場所').find(r=>r[0]==='売上報告'),['売上報告',f.id,'CP,AT,CPY'],'全社の人は3社');
    assert.deepEqual(tabOf(rec,'会社の数字の場所').find(r=>r[0]==='CP'),['CP','numcp000000000000000001'],'company row kept');
    assert.ok(tabOf(G.files.list00000000000000000001,'HUBの設定').some(r=>r[0]==='売上報告を入れる人'&&r[1]==='rec00000000000000000001'));
    assert.match(await A.p.textContent('#sales-eds>summary'),/見本 専務/);
@@ -339,7 +339,27 @@ async function main(){
    assert.ok(!tabOf(rec,'会社の数字の場所').some(r=>r[0]==='売上報告'));
    await E2.p.evaluate(()=>BB.ordAfterSync());await E2.p.evaluate(()=>BB.go('stats'));assert.equal(await E2.p.$$eval('#stats-sales',a=>a.length),0);
    await E2.p.evaluate(()=>BB.go('home'));assert.equal(await E2.p.$$eval('#home-orders .ord-go',a=>a.length),0);
-   assert.deepEqual(E2.errors,[]);assert.deepEqual(A.errors,[]);await E2.c.close();delete f.writers;
+   assert.deepEqual(E2.errors,[]);await E2.c.close();
+   /* v1.50.64 GMは自分の会社（GMの会社）だけ入れられる */
+   G.files.rec00000000000000000002={id:'rec00000000000000000002',name:'記録2',owner:ADMIN,readers:[STAFF2],tabs:[{title:'会社の数字の場所',sheetId:0,rows:[['会社','ファイルID']]}]};f.writers=[STAFF2];
+   await A.p.evaluate(STAFF2=>{const d=BB.db.settings.data;d.staff.push({sheetId:'rec00000000000000000002',email:STAFF2,name:'見本 GM',role:'GM',gmCo:'CPY',company:'CPY'});BB.save();BB.render()},STAFF2);
+   await A.p.evaluate(()=>{document.getElementById('sales-eds').open=true});
+   assert.match(await A.p.textContent('#sales-eds'),/GM・入れられる会社 CPY/);
+   await A.p.check('[data-sales-ed="rec00000000000000000002"]');await A.p.click('[data-act=saleseds]');await A.p.waitForFunction(()=>!BB.ui.salesBusy&&BB.ui.salesMsg&&/保存しました/.test(BB.ui.salesMsg.text));
+   assert.deepEqual(tabOf(G.files.rec00000000000000000002,'会社の数字の場所').find(r=>r[0]==='売上報告'),['売上報告',f.id,'CPY']);
+   const E3=await device(width,s=>{window.__acct=s},STAFF2);
+   await E3.p.evaluate(()=>{const d=BB.db.settings.data;d.ob={legacy:true};d.sheetId='rec00000000000000000002';BB.save()});
+   await E3.p.evaluate(()=>BB.gAuthorize(true));await E3.p.evaluate(()=>BB.ordAfterSync());
+   await E3.p.evaluate(()=>{BB.ui.salesEdOpen=true;BB.go('stats');document.querySelectorAll('details[data-fold="sales"]').forEach(d=>d.open=true)});
+   assert.deepEqual(await E3.p.$$eval('[data-sales-edco]',a=>a.map(x=>x.dataset.salesEdco)),['CPY'],'only own company');
+   /* 画面を通さずに別の会社を選んでも書かない */
+   const before=JSON.stringify(tabOf(f,'2026-11 受注'));
+   await E3.p.evaluate(()=>{BB.ui.salesEd={co:'AT',kind:'day',day:12};BB.render()});
+   await E3.p.click('[data-act=salessave]');await E3.p.waitForFunction(()=>!BB.ui.salesBusy&&BB.ui.salesMsg);
+   assert.equal(await E3.p.evaluate(()=>BB.ui.salesMsg.ok),false);assert.match(await E3.p.evaluate(()=>BB.ui.salesMsg.text),/ATの数字は入れられません/);
+   assert.equal(JSON.stringify(tabOf(f,'2026-11 受注')),before,'nothing written');
+   assert.ok(await overflow(E3.p)<=0);assert.deepEqual(E3.errors,[]);await E3.c.close();
+   assert.deepEqual(A.errors,[]);delete f.writers;
    await A.p.evaluate(()=>{BB.db.settings.data.staff=[];BB.save()});
   });
   await A.c.close();
