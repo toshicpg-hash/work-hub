@@ -170,7 +170,8 @@ async function main(){
    /* v1.50.48 状態は名前の下。表は右が切れない（横にはみ出さない） */
    assert.match(await A.p.locator('#stats-sales .sales-st tbody tr.sales-done td').first().textContent(),/^見本 .郎完了$/);
    assert.deepEqual(await A.p.$$eval('#stats-sales .sales-st',a=>a.map(t=>{const w=t.closest('.tbl-wrap');return w.scrollWidth-w.clientWidth<=1})),[true,true,true],'staff tables fit');
-   assert.match(await A.p.textContent('details[data-fold="sales"] > summary'),/グループ各社売上報告/);
+   assert.match(await A.p.textContent('details[data-fold="sales"] > summary'),/グループ各社売上進捗報告/);/* v1.50.63 名前と青 */
+   assert.equal(await A.p.$eval('details[data-fold="sales"] > summary',e=>getComputedStyle(e).backgroundColor),'rgb(29, 95, 184)');
    assert.match(await A.p.textContent('details[data-fold="sales"] > summary .foldsub'),/（旧3社報告書）/);/* v1.50.56 前の呼び名を添える */
    /* 施工中の粗利が空なら「—」。合計に「その他」（営業外売上）は入れない */
    const sums=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-st tr.sales-sum').allTextContents();
