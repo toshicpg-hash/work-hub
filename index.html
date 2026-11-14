@@ -626,8 +626,10 @@ function upgrade(db){
   const RD=RSET_DEFAULTS();withDefaults(db.settings.rcpt,RD);
   if(!obj(db.settings.rcpt.payDays))db.settings.rcpt.payDays=RD.payDays;else withDefaults(db.settings.rcpt.payDays,RD.payDays);
   /* v1.50.59 精算日は CP（本社）が木曜・CPY が火曜（進藤さん確認）。前の初期値は逆（CP 火曜・CPY 木曜）だったので、
-     初期値のまま（CP 火曜・CPY 木曜）の端末だけ入れ替える。自分で変えた端末はそのまま。1回だけ（pdFix） */
-  {const R=db.settings.rcpt,pd=R.payDays;if(!R.pdFix){if(Number(pd.CP)===2&&Number(pd.CPY)===4){pd.CP=4;pd.CPY=2}R.pdFix=1}}
+     初期値のまま（CP 火曜・CPY 木曜）の端末だけ入れ替える。自分で変えた端末はそのまま。1回だけ */
+  /* 済んだ印は記録（workhub_proto_v1）に入れず、端末の別のキー（workhub_pdfix_v1）に置く */
+  {const pd=db.settings.rcpt.payDays;let done=false;try{done=localStorage.getItem("workhub_pdfix_v1")==="1"}catch(e){}
+   if(!done){if(Number(pd.CP)===2&&Number(pd.CPY)===4){pd.CP=4;pd.CPY=2}try{localStorage.setItem("workhub_pdfix_v1","1")}catch(e){}}}
   if(!obj(db.settings.rcpt.to))db.settings.rcpt.to=RD.to;else withDefaults(db.settings.rcpt.to,RD.to);
   if(!Array.isArray(db.settings.rcpt.cards))db.settings.rcpt.cards=[];
   if(!obj(db.settings.rcpt.noSeq))db.settings.rcpt.noSeq={};

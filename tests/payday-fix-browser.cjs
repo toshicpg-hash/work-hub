@@ -15,12 +15,12 @@ async function main(){
  await c.route(u=>!u.href.startsWith(origin),r=>r.fulfill({status:200,body:''}));
  const p=await c.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));
  const load=async()=>{await p.goto(origin+'/');await p.waitForFunction(()=>!!window.PD)};
- const pd=()=>p.evaluate(()=>({...PD.db.settings.rcpt.payDays,fix:PD.db.settings.rcpt.pdFix}));
+ const pd=()=>p.evaluate(()=>({...PD.db.settings.rcpt.payDays,fix:localStorage.getItem('workhub_pdfix_v1')==='1'?1:0,inDb:'pdFix' in PD.db.settings.rcpt}));
  /* 前の版の端末を作る：pdFix なしで値を入れて保存 */
- const old=async(CP,CPY)=>{await p.evaluate(([CP,CPY])=>{const R=PD.db.settings.rcpt;R.payDays.CP=CP;R.payDays.CPY=CPY;delete R.pdFix;PD.save()},[CP,CPY]);await load()};
+ const old=async(CP,CPY)=>{await p.evaluate(([CP,CPY])=>{const R=PD.db.settings.rcpt;R.payDays.CP=CP;R.payDays.CPY=CPY;localStorage.removeItem('workhub_pdfix_v1');PD.save()},[CP,CPY]);await load()};
  await load();
  await check('新しい端末は CP 木曜・CPY 火曜',async()=>{const x=await pd();assert.equal(x.CP,4);assert.equal(x.CPY,2);assert.equal(x.AT,-1)});
- await check('前の初期値のまま（CP 火曜・CPY 木曜）の端末は入れ替える',async()=>{await old(2,4);const x=await pd();assert.deepEqual([x.CP,x.CPY,x.fix],[4,2,1])});
+ await check('前の初期値のまま（CP 火曜・CPY 木曜）の端末は入れ替える',async()=>{await old(2,4);const x=await pd();assert.deepEqual([x.CP,x.CPY,x.fix,x.inDb],[4,2,1,false],'the done mark is not in the app data')});
  await check('自分で変えた端末はそのまま',async()=>{await old(1,4);let x=await pd();assert.deepEqual([x.CP,x.CPY,x.fix],[1,4,1]);await old(2,5);x=await pd();assert.deepEqual([x.CP,x.CPY],[2,5])});
  await check('入れ替えは1回だけ（あとで CP 火曜・CPY 木曜に自分で戻しても、もう入れ替えない）',async()=>{
   await p.evaluate(()=>{const R=PD.db.settings.rcpt;R.payDays.CP=2;R.payDays.CPY=4;PD.save()});await load();const x=await pd();assert.deepEqual([x.CP,x.CPY],[2,4]);
