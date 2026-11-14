@@ -168,6 +168,8 @@ async function main(){
   const g=await viewer(GM,400);
   let t=await g.p.textContent('main');
   assert.ok(t.includes('あなたが出したタスクリクエスト')&&t.includes('✓ 10/30完了')&&t.includes('メモ：先方に送付済み（テスト）'),t.slice(0,600));
+  /* v1.50.57 人ごとの行は最初は畳むので、開いてから押す */
+  await g.p.$$eval('details.corp-p',a=>a.forEach(d=>d.open=true));
   const cancels=await g.p.$$eval('[data-bcancel]',a=>a.map(x=>x.dataset.bcancel));
   assert.equal(cancels.length,1,'only the open request can be cancelled');assert.ok(cancels[0].endsWith(r2[0]));
   await g.p.click('[data-bcancel="'+cancels[0]+'"]');await g.p.click('[data-act=bcanceldo]');
