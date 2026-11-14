@@ -378,7 +378,9 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 .brk{display:grid;grid-template-columns:7.5em 1fr 3em;gap:8px;align-items:center;font-size:13.5px}
 .big{font-family:var(--f-display);font-weight:900;font-size:40px;line-height:1.1;font-variant-numeric:tabular-nums}
 /* v1.50.60 今月の受注のタイル */
-.ordtile{display:flex;flex-direction:column;gap:4px;align-items:stretch;text-align:left}
+.ordtile{display:flex;flex-direction:column;gap:4px;align-items:stretch;text-align:left;background:var(--blue-soft);border-color:var(--blue)}/* v1.50.61 薄い青の背景 */
+div.ordtile{cursor:default}
+.ordtile .ord-go{align-self:flex-end;margin-top:2px;font-size:14px;font-weight:800;color:var(--blue);border:1.5px solid var(--blue);border-radius:99px;padding:3px 12px;background:var(--surface)}
 .ordtile .ord-r{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 10px;font-size:15px}.ordtile .ord-r>b{min-width:3.2em}.ordtile .ord-r .num{font-weight:700}
 .ordtile .ord-t{font-size:13px;color:var(--muted);flex-basis:100%;padding-left:calc(3.2em + 10px)}.ordtile .ord-r .ord-t{font-weight:600}.ordtile .ord-sum{border-top:1px solid var(--line);padding-top:4px;font-size:16px}
 .banner.updok{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--green-soft,#e3f3e8);color:var(--fg);border:2px solid var(--green);font-weight:700}.banner.updok>span{flex:1 1 200px}.banner.updok a{white-space:nowrap}
@@ -504,8 +506,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.60" title="使い方マニュアルを開く">v1.50.60・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.60" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.61" title="使い方マニュアルを開く">v1.50.61・11/14更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.61" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -565,10 +567,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.60"></script>
+<script src="./share-management.js?v=1.50.61"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.60"></script>
-<script src="./calendar-view-scope.js?v=1.50.60"></script>
+<script src="./view-scope.js?v=1.50.61"></script>
+<script src="./calendar-view-scope.js?v=1.50.61"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2374,7 +2376,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.60";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.61";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2543,7 +2545,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.60" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.60" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.61" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.61" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3540,8 +3542,9 @@ async function ordAfterSync(){if(D().admin||!D().sheetId||!gSignedIn())return;tr
 function ordTile(){
   const t=todayS(),admin=!!D().admin,v=(admin&&ui.sales&&ordSummary(ui.sales))||ordKeep();
   if(!v&&!(admin&&D().salesId))return "";
-  const tag=admin?'button type="button" data-nav="stats"':'div',end=admin?'button':'div';
-  if(!v||v.key!==t.slice(0,7))return '<'+tag+' class="tile wide ordtile" id="home-orders"><span class="k">今月の受注</span><span class="s">今月の分はまだ届いていません（'+(admin?'同期すると売上報告から出ます':'社長の端末の同期のあと、同期すると出ます')+'）</span></'+end+'>';
+  /* v1.50.61 社長の端末は押すと「数字を入れる」（売上報告の入力欄）へ。分かるように下に「タップして数字を入れる ›」 */
+  const tag=admin?'button type="button" data-nav="stats" data-ordgo="1" data-jump="sales-edit"':'div',end=admin?'button':'div',go=admin?'<span class="ord-go">タップして数字を入れる ›</span>':'';
+  if(!v||v.key!==t.slice(0,7))return '<'+tag+' class="tile wide ordtile" id="home-orders"><span class="k">今月の受注</span><span class="s">今月の分はまだ届いていません（'+(admin?'同期すると売上報告から出ます':'社長の端末の同期のあと、同期すると出ます')+'）</span>'+go+'</'+end+'>';
   const isToday=v.date===t,sumN=v.cos.reduce((s,c)=>s+c.n,0),sumA=v.cos.reduce((s,c)=>s+c.amt,0);
   /* v1.50.60 トシさんの指示：1件単価（客単価）も出す。2行目に「1件単価・今日の分」 */
   const unit=(n,a)=>n?yen(Math.round(a/n)):"—";
@@ -3550,7 +3553,7 @@ function ordTile(){
   return '<'+tag+' class="tile wide ordtile" id="home-orders"><span class="k">今月の受注（'+md(v.date)+'まで）</span>'+
     v.cos.map(c=>'<span class="ord-r"><b>'+h(c.co)+'</b><span class="num">'+c.n+'件 '+yen(c.amt)+'</span>'+tdy(c)+'</span>').join("")+
     '<span class="ord-r ord-sum"><b>合計</b><span class="num">'+sumN+'件 '+yen(sumA)+'</span>'+tdyAll+'</span>'+
-    '<span class="s">売上報告の毎日の受注'+(v.upd?'・シートの更新日 '+h(v.upd):'')+(isToday?'':'（'+md(v.date)+'の時点）')+'</span></'+end+'>';
+    '<span class="s">売上報告の毎日の受注'+(v.upd?'・シートの更新日 '+h(v.upd):'')+(isToday?'':'（'+md(v.date)+'の時点）')+'</span>'+go+'</'+end+'>';
 }
 /* 試作用：架空の数字だけのシートを作る（実在の名前・金額は入れない） */
 function salesDemoRows(ym,k,upto=20){
@@ -3727,7 +3730,7 @@ function salesSec(){
   const eform=ekind==="day"?'<label class="f sales-in"><span>日</span><select id="se_day">'+Array.from({length:lastD},(_,i)=>'<option value="'+(i+1)+'"'+(i+1===eday?' selected':'')+'>'+(i+1)+'日</option>').join("")+'</select></label>'+inp("se_day_n","受注件数",dx&&dx.n)+inp("se_day_amt","受注金額（円）",dx&&dx.amt,true)+(dx?'':'<p class="note" style="margin:0">この日はまだシートにありません。保存すると行を足します</p>')
     :ekind==="co"?(ec?["目標売上","目標粗利","実績売上","実績粗利","前月売上","前月粗利","最終粗利予想"].map(k=>inp("se_co_"+SALES_COLS.co[k],k+"（円）",ec[k],true)).join(""):'<p class="note" style="margin:0">'+eco+'の会社の行がシートにありません</p>')
     :M.staff.filter(x=>x.co===eco).map((x,i)=>'<div class="sales-in-st"><b>'+h(x.name)+'</b><span class="note">'+h(x.state)+'</span><div class="row" style="gap:6px">'+inp("se_st_"+i+"_n","物件数",x.n)+inp("se_st_"+i+"_amt","金額（円）",x.amt,true)+(x.state==="施工中"?'':inp("se_st_"+i+"_prof","粗利（円）",x.prof,true))+'</div></div>').join("")||'<p class="note" style="margin:0">担当者の行がシートにありません</p>';
-  const editor='<details class="sales-edit sales-open"'+(ui.salesEdOpen?' open':'')+'><summary>数字を入れる（'+Number(M.key.slice(5))+'月）</summary><div style="display:flex;flex-direction:column;gap:8px">'+
+  const editor='<details id="sales-edit" class="sales-edit sales-open"'+(ui.salesEdOpen?' open':'')+'><summary>数字を入れる（'+Number(M.key.slice(5))+'月）</summary><div style="display:flex;flex-direction:column;gap:8px">'+
     '<div class="sales-lab">会社を選ぶ</div><div class="picks" role="group" aria-label="会社">'+SALES_ORDER.map(k=>'<button class="pick" type="button" data-sales-edco="'+k+'" aria-pressed="'+(k===eco)+'">'+k+'</button>').join("")+'</div>'+
     '<div class="sales-lab">入れるものを選ぶ</div><div class="picks" role="group" aria-label="入れるもの">'+[["day","毎日の受注"],["co","会社の数字"],["st","担当者別"]].map(([k,l])=>'<button class="pick" type="button" data-sales-edkind="'+k+'" aria-pressed="'+(k===ekind)+'">'+l+'</button>').join("")+'</div>'+
     '<div class="sales-in-wrap">'+eform+'</div><div class="row"><button class="btn pri" type="button" data-act="salessave"'+busy+'>シートに保存</button></div>'+
@@ -4730,6 +4733,7 @@ document.addEventListener("click",e=>{
   if(el.dataset.act==="mtdbackup"||el.dataset.act==="mtddraft"){manualTodoDownload(el.dataset.act==="mtddraft");return}
   if(el.dataset.drift){const c=DB.cases.find(c=>c.id===el.dataset.drift);if(c&&calendarDriftCases().includes(c)){go("detail",{caseId:c.id});const panel=document.getElementById("case-google-calendar");if(panel){panel.style.scrollMarginTop=(document.querySelector("header.top").getBoundingClientRect().height+12)+"px";panel.scrollIntoView({block:"start"});}}return}
   if(el.dataset.open){go("detail",{caseId:el.dataset.open});return}
+  if(el.dataset.ordgo){foldSet("sales",true);ui.salesEdOpen=true;const k=todayS().slice(0,7);if(ui.sales&&ui.sales.months.some(m=>m.key===k))ui.salesMonth=k}/* v1.50.61 今月の受注のタイル → 売上報告の「数字を入れる」を開く */
   if(el.dataset.nav){const ex={csv:false};if(el.dataset.nav==="requests"){ex.sentRequests=!!el.dataset.sent;ex.sentAuthor="all";}if(el.closest("#home-summary")&&el.dataset.nav==="cases"){ex.q="";ex.cCo="all";ex.showEnded=false;}if(el.dataset.sharedReceipts)ex.rScope="shared";if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";if(el.dataset.nav==="cases"){ex.payOnly=!!el.dataset.pay;ex.handoffOnly=!!el.dataset.handoff;}if(el.dataset.nav==="rcpt"&&el.closest(".tile")){ex.rTab=el.dataset.rtab2||"list";ex.rScope="own";}go(el.dataset.nav,ex);if(el.dataset.jump&&ui.view===el.dataset.nav)document.getElementById(el.dataset.jump)?.scrollIntoView();return}
   if(el.dataset.rscope){ui.rScope=el.dataset.rscope;rClearDl();render();return;}
   if(el.dataset.rtab){ui.rTab=el.dataset.rtab;rClearDl();ui.rcCancel=null;render();return}
