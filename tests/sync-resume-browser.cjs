@@ -6,7 +6,9 @@ const root=path.resolve(__dirname,'..');
 /* gSyncAllRun を差し替える：plan の順に、complete（true/false）で終わる。hideDuring なら途中で裏に回る */
 const hook=`window.SR={get ui(){return ui},get db(){return DB},G,save,go,render,sync:gSyncAll,calls:0,plan:[],
  signIn(){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000},
- stub(){gSyncAllRun=async()=>{SR.calls++;const p=SR.plan.shift()||{complete:true};ui.gsync={busy:true,rows:[]};render();
+ stub(){gSyncAllRun=async()=>{SR.calls++;const p=SR.plan.shift()||{complete:true};
+   if(p.timed){const rows=[];ui.gsync={busy:true,rows};render();await new Promise(r=>setTimeout(r,120));rows.push({name:"Googleにログイン",ok:true,msg:""});await new Promise(r=>setTimeout(r,300));rows.push({name:"記録シート「案件」",ok:true,msg:"1行"});ui.gsync={busy:false,at:Date.now(),rows,complete:true};render();return}
+   ui.gsync={busy:true,rows:[]};render();
    if(p.hideDuring){SR.setVis('hidden')}await new Promise(r=>setTimeout(r,50));
    ui.gsync={busy:false,at:Date.now(),complete:p.complete,rows:[{name:"Googleにログイン",ok:true,msg:""},{name:"記録シート「案件」",ok:p.complete,msg:p.complete?"1行":"通信できませんでした"}]};render()}},
  vis:'visible',setVis(v){SR.vis=v;document.dispatchEvent(new Event('visibilitychange'))}};
@@ -54,6 +56,18 @@ const mark=p=>p.evaluate(()=>localStorage.getItem('workhub_sync_resume_v1'));
   });
   assert.deepEqual(d.errors,[]);await d.c.close();
  }
+ await check('v1.50.85 同期にかかった時間：合計と長かったものを出し、端末に残す（行の形は変えない）',async()=>{
+  const d=await device(400);
+  await d.p.evaluate(()=>{SR.signIn();SR.plan=[{timed:true}]});
+  await d.p.evaluate(()=>SR.sync());
+  const t=await d.p.evaluate(()=>SR.ui.gsync.timing);assert.ok(t.total>=400,JSON.stringify(t));
+  assert.deepEqual(t.steps.map(x=>x.name),['Googleにログイン','記録シート「案件」']);assert.ok(t.steps[1].ms>=250,JSON.stringify(t.steps));
+  assert.ok(await d.p.evaluate(()=>SR.ui.gsync.rows.every(x=>Object.keys(x).every(k=>['name','ok','msg'].includes(k)))),'rows unchanged');
+  assert.equal(await d.p.evaluate(()=>!!localStorage.getItem('workhub_sync_timing_v1')&&!SR.db.settings.data.syncTiming),true,'kept on the device, not in the records');
+  await d.p.evaluate(()=>{SR.go('home')});await d.p.evaluate(()=>{const x=document.querySelector('details.sync-result');if(x)x.open=true});const note=await d.p.textContent('.sync-time');
+  assert.match(note,/かかった時間：合計 0\.\d秒（長かったもの：記録シート「案件」/);
+  assert.deepEqual(d.errors,[]);await d.c.close();
+ });
  await check('アプリを閉じて開き直したとき、止まったままなら上に出す（印が残っている）',async()=>{
   const d=await device(400,`try{localStorage.setItem('workhub_sync_resume_v1',JSON.stringify({at:Date.now(),sheet:''}))}catch(e){}`);
   await d.p.evaluate(()=>SR.render());assert.equal(await banner(d.p),1);assert.deepEqual(d.errors,[]);await d.c.close();
