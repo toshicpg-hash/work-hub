@@ -522,8 +522,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.82" title="使い方マニュアルを開く">v1.50.82・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.82" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.83" title="使い方マニュアルを開く">v1.50.83・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.83" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -583,10 +583,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.82"></script>
+<script src="./share-management.js?v=1.50.83"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.82"></script>
-<script src="./calendar-view-scope.js?v=1.50.82"></script>
+<script src="./view-scope.js?v=1.50.83"></script>
+<script src="./calendar-view-scope.js?v=1.50.83"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2319,6 +2319,22 @@ const planAllDay=k=>(PLAN_KINDS.find(x=>x[0]===k)||[])[1]===1;
 const planRest=k=>["公休","有給","午前休","午後休"].includes(k);
 const planOwnerName=()=>D().admin?BOSS_LABEL:String((ownNameProfile()&&ownNameProfile().name)||RS().name||"").trim();
 const planSharedCal=()=>gWritable().find(c=>c.name===GSHARED)||null;
+/* v1.50.83 「作業」は案件を選べる（営業の社員が、原状回復などの工程が多い案件の作業を自分でする日。トシさんの指示）。
+   選ぶと内容に物件名・部屋、場所に物件名・部屋と住所を入れ、説明に受付番号を書く。案件の日程（現調・実施など）は変えない */
+const planCases=()=>(DB.cases||[]).filter(c=>c&&c.id&&!ended(c)&&!c.cancelledAt).sort((a,b)=>String(b.id).localeCompare(String(a.id))).slice(0,80);
+const planCaseName=c=>[c.property,c.room].filter(Boolean).join(" ");
+/* v1.50.83 場所の候補（キーも料金もいらない形）：この端末で前に入れた場所・自分の案件の物件名と住所・会社（社長が社員一覧の「HUBの設定」の「会社の住所」に入れたもの） */
+const PLAN_PLACES_KEY="workhub_plan_places_v1";
+const planPlacesSaved=()=>{try{const a=JSON.parse(localStorage.getItem(PLAN_PLACES_KEY)||"[]");return Array.isArray(a)?a.filter(x=>typeof x==="string"&&x.trim()):[]}catch(e){return []}};
+function planPlaceRemember(p){p=String(p||"").trim();if(!p)return;try{localStorage.setItem(PLAN_PLACES_KEY,JSON.stringify([p,...planPlacesSaved().filter(x=>x!==p)].slice(0,20)))}catch(e){}}
+function planPlaceOptions(){
+  const out=[],add=(v,l)=>{v=String(v||"").trim();if(v&&!out.some(o=>o.v===v))out.push({v,l:l||""})};
+  for(const a of officeAddrs())add(a.addr?a.name+"　"+a.addr:a.name,"会社");
+  add("会社","");
+  for(const p of planPlacesSaved())add(p,"前に入れた場所");
+  for(const c of planCases())if(c.addr)add((planCaseName(c)?planCaseName(c)+"　":"")+c.addr,c.id);
+  return out.slice(0,60);
+}
 function planAddSec(){
   const f=ui.plan||{},k=f.kind||"",all=planAllDay(k),busy=ui.planBusy?' disabled':'',/* v1.50.80 時刻は「時」「分」のプルダウン（Androidの時計の画面は、表示を大きくしていると決定ボタンが画面の外に出て押せない。11/16 専務） */
     hp=v=>/^\d{2}:\d{2}$/.test(v||"")?v.split(":"):["",""],
@@ -2330,14 +2346,17 @@ function planAddSec(){
     '<div style="display:flex;flex-direction:column;gap:8px">'+
     '<div class="sales-lab">種類を選ぶ</div><div class="picks plan-kinds" role="group" aria-label="予定の種類">'+PLAN_KINDS.map(([n])=>'<button class="pick'+(planRest(n)?' rest':'')+'" type="button" data-plan-kind="'+h(n)+'" aria-pressed="'+(n===k)+'">'+h(n)+'</button>').join("")+'</div>'+
     '<label class="f">内容'+(planRest(k)?'（書かなくてよい）':'')+'<input type="text" id="pl_text" maxlength="60" autocomplete="off" placeholder="'+h(planEx(k)[0])+'" value="'+h(f.text||"")+'"></label>'+
-    (planRest(k)?'':'<label class="f">場所（できるだけ住所つきで）<input type="text" id="pl_place" maxlength="100" autocomplete="off" placeholder="'+h(planEx(k)[1])+'" value="'+h(f.place||"")+'"></label>')+/* v1.50.76 場所（社員には場所を入れるよう指示している。トシさんの指示）。休みには出さない */
+    (k==="作業"?'<label class="f">案件（選ぶと内容と場所が入ります）<select id="pl_case" data-plan-case="1"><option value="">案件なし</option>'+planCases().map(c=>'<option value="'+h(c.id)+'"'+(c.id===f.caseId?' selected':'')+'>'+h(c.id+"　"+(planCaseName(c)||c.client||""))+'</option>').join("")+'</select></label>':'')+
+    (planRest(k)?'':'<label class="f">場所（できるだけ住所つきで）<input type="text" id="pl_place" maxlength="100" autocomplete="off" list="pl_place_list" placeholder="'+h(planEx(k)[1])+'" value="'+h(f.place||"")+'"></label>'+
+      '<datalist id="pl_place_list">'+planPlaceOptions().map(o=>'<option value="'+h(o.v)+'"'+(o.l?' label="'+h(o.l)+'"':'')+'></option>').join("")+'</datalist>'+
+      '<div class="row"><button class="btn sm" type="button" data-act="planmap">地図で確かめる</button><span class="note">場所を押すと、前に入れた場所・案件の物件・会社から選べます</span></div>')+/* v1.50.76 場所（社員には場所を入れるよう指示している。トシさんの指示）。休みには出さない */
     '<label class="f">日付<input type="date" id="pl_date" value="'+h(f.date||ui.calDay||todayS())+'"></label>'+
     (all?'<p class="note" style="margin:0">終日の予定で入ります</p>':'<div class="form plan-time" style="width:100%">'+sel("pl_sh","開始（時）",HH,sh)+sel("pl_sm","開始（分）",MM,sm)+sel("pl_eh","終了（時）",HH,eh)+sel("pl_em","終了（分）",MM,em)+'</div>')+
     '<p class="note" style="margin:0">予定の名前：<b>'+h(k?(k+(f.text?"　"+f.text:"")):"（種類を選んでください）")+'</b></p>'+
     '<div class="row"><button class="btn pri plan-go" type="button" data-act="planadd"'+busy+'>'+(ui.planBusy?'登録しています…':'「CPG HUB」に登録')+'</button></div>'+msg+
     '<p class="note" style="margin:0">直す・消すときは、Googleカレンダーのアプリで「CPG HUB」の予定を開いてください。</p></div></details></section>';
 }
-const planRead=()=>{const f=ui.plan=ui.plan||{};f.text=val("pl_text").trim();if(document.getElementById("pl_place"))f.place=val("pl_place").trim();f.date=val("pl_date");if(!planAllDay(f.kind)&&document.getElementById("pl_sh")){const t=(a,b)=>val(a)&&val(b)?val(a)+":"+val(b):"";f.start=t("pl_sh","pl_sm");f.end=t("pl_eh","pl_em")}return f};
+const planRead=()=>{const f=ui.plan=ui.plan||{};f.text=val("pl_text").trim();if(document.getElementById("pl_case"))f.caseId=val("pl_case");if(document.getElementById("pl_place"))f.place=val("pl_place").trim();f.date=val("pl_date");if(!planAllDay(f.kind)&&document.getElementById("pl_sh")){const t=(a,b)=>val(a)&&val(b)?val(a)+":"+val(b):"";f.start=t("pl_sh","pl_sm");f.end=t("pl_eh","pl_em")}return f};
 async function planAdd(){
   const f=planRead(),k=f.kind;
   if(!k)throw Error("種類を選んでください");
@@ -2350,7 +2369,7 @@ async function planAdd(){
   const cal=planSharedCal();if(!cal)throw Error("「CPG HUB」カレンダーに書き込めません。Gmailに届いた「CPG HUB」の共有のお知らせから、カレンダーを追加してください");
   f.id=f.id||gRand();/* やり直しても2つにならないように、同じIDで送る */
   const when=all?{start:{date:f.date},end:{date:addDays(f.date,1)}}:{start:{dateTime:f.date+"T"+f.start+":00+09:00",timeZone:"Asia/Tokyo"},end:{dateTime:f.date+"T"+f.end+":00+09:00",timeZone:"Asia/Tokyo"}};
-  const body={id:f.id,summary:k+(f.text?"　"+f.text:""),description:["種類："+k,"担当："+planOwnerName(),"（CPG HUBから登録）"].join("\n"),status:"confirmed",...(planRest(k)||!f.place?{}:{location:f.place}),...when,extendedProperties:{private:{cpgHubPlan:k}}};
+  const body={id:f.id,summary:k+(f.text?"　"+f.text:""),description:["種類："+k,...(k==="作業"&&f.caseId?["受付番号："+f.caseId]:[]),"担当："+planOwnerName(),"（CPG HUBから登録）"].join("\n"),status:"confirmed",...(planRest(k)||!f.place?{}:{location:f.place}),...when,extendedProperties:{private:{cpgHubPlan:k,...(k==="作業"&&f.caseId?{cpgHubPlanCase:f.caseId}:{})}}};
   try{await gApi("calendars/"+encodeURIComponent(cal.id)+"/events",{method:"POST",body})}catch(err){if(err.status!==409)throw err}
   return body.summary;
 }
@@ -2483,7 +2502,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.82";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.83";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2652,7 +2671,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.82" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.82" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.83" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.83" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3271,7 +3290,11 @@ const sheetObjs=rows=>{const [hd,...rs]=rows||[];return rs.map(r=>Object.fromEnt
 const sheetCount=(rows,key)=>sheetObjs(rows).filter(r=>String(r[key]??"").trim()).length;
 async function sharedCheck(id){
   /* v1.50.18 同期で使う「情報」（前の中身）と「受付番号の記号」も、ここで一緒に読む（前は別々に読んでいた） */
-  const have=await sheetTabNames(id),rows=await sheetRead(id,["案件","入金","立替","ToDo","情報",CODE_TAB,NAMES_TAB].filter(t=>have.includes(t)));
+  const have=await sheetTabNames(id),rows=await sheetRead(id,["案件","入金","立替","ToDo","情報",CODE_TAB,NAMES_TAB,OFFICE_TAB].filter(t=>have.includes(t)));
+  /* v1.50.83 会社の住所を受け取る（社長が書いた分） */
+  if(!D().admin&&Array.isArray(rows[OFFICE_TAB])&&JSON.stringify((rows[OFFICE_TAB][0]||[]).map(String))===JSON.stringify(OFFICE_COLS)){
+    const a=rows[OFFICE_TAB].slice(1).map(r=>({name:String((r||[])[0]||"").trim()||"会社",addr:String((r||[])[1]||"").trim()})).filter(x=>x.addr).slice(0,10);
+    if(JSON.stringify(a)!==JSON.stringify(officeAddrs())){D().officeAddrs=a;save()}}
   /* v1.50.72 担当の候補を受け取る（社長が書いた社員の一覧） */
   if(!D().admin&&Array.isArray(rows[NAMES_TAB])&&JSON.stringify((rows[NAMES_TAB][0]||[]).map(String))===JSON.stringify(NAMES_COLS)){
     const list=rows[NAMES_TAB].slice(1).filter(r=>r&&String(r[0]||"").trim()&&String(r[2]||"").trim()).map(r=>({name:String(r[0]).trim(),company:String(r[1]||""),sheetId:String(r[2]).trim()}));
@@ -3528,6 +3551,8 @@ async function adminSync(log){
   /* v1.50.68 売上の確定：月末から何日（社長が決める） */
   {const v=Number(hubSetGet(listV[HUBSET_TAB],SALES_FIX_KEY));if(v>=1&&v<=120&&d.salesFixDays!==v){d.salesFixDays=v;save()}}
   /* v1.50.62 売上報告に数字を入れられる人（社長が選ぶ。シートIDの並び） */
+  /* v1.50.83 会社の住所（予定を入れるの場所の候補） */
+  {const a=officeParse(hubSetGet(listV[HUBSET_TAB],OFFICE_KEY));if(JSON.stringify(a)!==JSON.stringify(officeAddrs())){d.officeAddrs=a;save()}}
   {const raw=hubSetGet(listV[HUBSET_TAB],SALES_ED_KEY),ids=raw?raw.split(",").map(x=>x.trim()).filter(Boolean):null;if(ids&&JSON.stringify(ids)!==JSON.stringify(d.salesEditors||[])){d.salesEditors=ids;save()}}
   return found;
 }
@@ -4159,19 +4184,24 @@ async function salesEdSave(ids){
 }
 /* v1.50.72 担当の候補（社長の端末が書く。社員の端末は同期で読む） */
 const NAMES_TAB="担当の候補", NAMES_COLS=["氏名","会社","シートID"];
+/* v1.50.83 会社の住所（予定を入れるの場所の候補）。社長が社員一覧の「HUBの設定」の「会社の住所」に「名前｜住所」を1行ずつ入れる。社長の同期で全員の記録シートの「会社の住所」タブに書く */
+const OFFICE_KEY="会社の住所",OFFICE_TAB="会社の住所",OFFICE_COLS=["名前","住所"];
+const officeParse=raw=>String(raw||"").split(/\n+/).map(x=>x.trim()).filter(Boolean).map(x=>{const m=x.split(/[｜|]/);return m.length>1?{name:m[0].trim()||"会社",addr:m.slice(1).join("|").trim()}:{name:"会社",addr:x}}).filter(x=>x.addr).slice(0,10);
+const officeAddrs=()=>Array.isArray(D().officeAddrs)?D().officeAddrs:[];
+const officeRows=()=>[OFFICE_COLS,...officeAddrs().map(a=>[a.name,a.addr])];
 const namesRows=staff=>[NAMES_COLS,...(staff||[]).filter(s=>!s.removed&&s.sheetId&&s.name).map(s=>[String(s.name).trim(),String(s.company||""),s.sheetId])];
-async function namesTabWrite(s,rows){
- const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(NAMES_TAB))await addTab(s.sheetId,NAMES_TAB);
- const prev=(await shareRead(()=>sheetRead(s.sheetId,[NAMES_TAB])))[NAMES_TAB]||[];
+async function namesTabWrite(s,rows,tab=NAMES_TAB){
+ const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(tab))await addTab(s.sheetId,tab);
+ const prev=(await shareRead(()=>sheetRead(s.sheetId,[tab])))[tab]||[];
  const norm=r=>JSON.stringify(r.map(x=>x.map(y=>String(y??""))).filter(x=>x.some(Boolean)));
  if(norm(prev)===norm(rows))return false;
- await sheetWrite(s.sheetId,NAMES_TAB,rows,prev);return true;
+ await sheetWrite(s.sheetId,tab,rows,prev);return true;
 }
 /* 社長の同期のあと：社員一覧が前に書いたときから変わっていれば、全員の記録シートに書き直す（同じなら何もしない） */
 async function namesAfterSync(){
- const d=D();if(!d.admin||!gSignedIn())return;const rows=namesRows(d.staff),key=JSON.stringify(rows);if(d.namesWritten===key)return;
+ const d=D();if(!d.admin||!gSignedIn())return;const rows=namesRows(d.staff),offs=officeRows(),key=JSON.stringify(offs.length>1?[rows,offs]:rows);if(d.namesWritten===key)return;
  const list=(d.staff||[]).filter(s=>!s.removed&&s.sheetId&&s.sheetId!==d.sheetId);let bad=0;
- await sharePool(list,async s=>{try{await namesTabWrite(s,rows)}catch(err){if(err.message==="signin")throw err;bad++}});
+ await sharePool(list,async s=>{try{await namesTabWrite(s,rows);if(offs.length>1)await namesTabWrite(s,offs,OFFICE_TAB)}catch(err){if(err.message==="signin")throw err;bad++}});
  if(!bad){d.namesWritten=key;save()}
 }
 async function numPtrWrite(s,numbers){
@@ -5084,8 +5114,9 @@ document.addEventListener("click",e=>{
     adminCodesSave(r.changes,(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()}).then(()=>{ui.dCodes=false;ui.dCodesDraft=null},err=>{log.push({ok:false,text:"途中で止まりました："+(err.message==="http"?dMsg(err):err.message||dMsg(err))})}).finally(()=>{ui.dbusy=false;render()});return}
   if(a==="salessave"){if(ui.salesBusy)return;ui.salesBusy=true;ui.salesMsg=null;ui.salesEdOpen=true;
     salesSave().then(n=>{ui.salesMsg={ok:true,text:n?"シートに保存しました（"+n+"か所）":"変わったところはありません"}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?(err.status===403?"このシートに書く権限がありません":dMsg(err)):err.message}}).finally(()=>{ui.salesBusy=false;render()});render();return}
+  if(a==="planmap"){const p=val("pl_place").trim();if(!p){toast("場所を入れてください");return}window.open("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p),"_blank","noopener");return}
   if(a==="planadd"){if(ui.planBusy)return;try{planRead()}catch(e){}ui.planBusy=true;ui.planMsg=null;render();
-    planAdd().then(t=>{ui.planMsg={ok:true,text:"「"+t+"」を「CPG HUB」に登録しました"};const d=ui.plan.date;ui.plan={kind:"",date:d};/* 場所も空にする */gResetReads();toast("予定を登録しました")},err=>{ui.planMsg={ok:false,text:err.message==="signin"?"Googleにログインしてから登録してください":err.message==="http"?"登録できませんでした（"+dMsg(err)+"）":err.message}}).finally(()=>{ui.planBusy=false;render()});return}
+    planAdd().then(t=>{ui.planMsg={ok:true,text:"「"+t+"」を「CPG HUB」に登録しました"};if(!planRest(ui.plan.kind))planPlaceRemember(ui.plan.place);const d=ui.plan.date;ui.plan={kind:"",date:d};/* 場所も空にする */gResetReads();toast("予定を登録しました")},err=>{ui.planMsg={ok:false,text:err.message==="signin"?"Googleにログインしてから登録してください":err.message==="http"?"登録できませんでした（"+dMsg(err)+"）":err.message}}).finally(()=>{ui.planBusy=false;render()});return}
   if(a==="salesfix"){if(ui.salesBusy)return;const v=Math.round(Number(val("se_fixdays")));ui.salesBusy=true;ui.salesMsg=null;ui.salesFixOpen=true;render();
     salesFixSave(v).then(()=>{ui.salesMsg={ok:true,text:"確定日を「月末から"+v+"日」にしました"}},err=>{ui.salesMsg={ok:false,text:"保存できませんでした："+(err.message==="http"?dMsg(err):err.message)}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="saleseds"){if(ui.salesBusy)return;const ids=[...document.querySelectorAll('[data-sales-ed]')].filter(x=>x.checked).map(x=>x.dataset.salesEd);ui.salesBusy=true;ui.salesMsg=null;ui.salesEdsOpen=true;render();
@@ -5309,6 +5340,9 @@ document.addEventListener("toggle",e=>{if(e.target.classList&&e.target.classList
 /* v1.50.71 案件の絞り込みの開け閉めを覚える（描き直しても変わらない） */
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("filters"))ui.filtersOpen=d.open},true);
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.id==="plan-add")ui.planOpen=d.open},true);
+/* v1.50.83 「作業」で案件を選んだら、内容に物件名・部屋、場所に物件名・部屋と住所を入れる */
+document.addEventListener("change",e=>{const t=e.target;if(!t||t.id!=="pl_case")return;planRead();const c=planCases().find(x=>x.id===t.value);
+  if(c){const n=planCaseName(c);if(n)ui.plan.text=n;ui.plan.place=(n?n+(c.addr?"　":""):"")+(c.addr||"")}render()});
 /* v1.50.54 会社のカードの開け閉めを覚える（描き直しても閉じない） */
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("sales-card")){ui.salesCoOpen={...(ui.salesCoOpen||{}),[d.dataset.salesCo]:d.open}}},true);
 document.addEventListener("change",e=>{

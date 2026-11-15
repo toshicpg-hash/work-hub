@@ -348,6 +348,10 @@ async function main(){
    await A.p.waitForFunction(()=>String(BB.db.settings.data.namesWritten||'').includes('rec00000000000000000001'));
    assert.deepEqual(tabOf(rec,'担当の候補'),[['氏名','会社','シートID'],['見本 専務','CP','rec00000000000000000001']]);
    assert.match((await A.p.evaluate(()=>BB.ui.gsync.rows)).find(x=>x.name==='売上報告').msg,/会社の数字の編集者にしました：1件/);
+   /* v1.50.83 会社の住所があれば、社長の同期で社員の記録シートの「会社の住所」にも書く（予定を入れるの場所の候補） */
+   await A.p.evaluate(()=>{BB.db.settings.data.officeAddrs=[{name:'本社',addr:'○○県○○市○○町1-2-3'}];BB.save()});
+   await sync(A.p);await A.p.waitForFunction(()=>String(BB.db.settings.data.namesWritten||'').includes('○○町1-2-3'));
+   assert.deepEqual(tabOf(rec,'会社の住所'),[['名前','住所'],['本社','○○県○○市○○町1-2-3']]);
    assert.deepEqual(await A.p.evaluate(()=>BB.db.settings.data.numbers),{CP:'numcp000000000000000001',AT:'numat000000000000000001'},'found and remembered');
    G.files.numcp000000000000000001.perms=[];G.files.numat000000000000000001.perms=[];await open(A.p);/* 同期でホームに戻るので、売上報告を開き直す */
    /* 共有（編集者）がまだのとき：その人の端末に理由が出る */
