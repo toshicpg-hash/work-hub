@@ -352,6 +352,10 @@ async function main(){
    await A.p.evaluate(()=>{BB.db.settings.data.officeAddrs=[{name:'本社',addr:'○○県○○市○○町1-2-3'}];BB.save()});
    await sync(A.p);await A.p.waitForFunction(()=>String(BB.db.settings.data.namesWritten||'').includes('○○町1-2-3'));
    assert.deepEqual(tabOf(rec,'会社の住所'),[['名前','住所'],['本社','○○県○○市○○町1-2-3']]);
+   /* v1.50.84 地図の候補キーも社員の記録シートの「HUBの設定」に書く */
+   await A.p.evaluate(()=>{BB.db.settings.data.placesKey='FAKE-KEY';BB.save()});
+   await sync(A.p);await A.p.waitForFunction(()=>String(BB.db.settings.data.namesWritten||'').includes('FAKE-KEY'));
+   assert.deepEqual(tabOf(rec,'HUBの設定'),[['項目','値'],['地図の候補キー','FAKE-KEY']]);
    assert.deepEqual(await A.p.evaluate(()=>BB.db.settings.data.numbers),{CP:'numcp000000000000000001',AT:'numat000000000000000001'},'found and remembered');
    G.files.numcp000000000000000001.perms=[];G.files.numat000000000000000001.perms=[];await open(A.p);/* 同期でホームに戻るので、売上報告を開き直す */
    /* 共有（編集者）がまだのとき：その人の端末に理由が出る */

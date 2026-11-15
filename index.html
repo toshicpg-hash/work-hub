@@ -395,6 +395,7 @@ div.ordtile{cursor:default}
 .sales-pre{margin-left:6px;font-size:11px;font-weight:800;color:var(--amber);background:var(--amber-soft);border-radius:99px;padding:1px 6px}
 .sales-prebar{margin:0;padding:8px 12px;border-radius:10px;background:var(--amber-soft);font-size:13.5px}.sales-prebar b{color:var(--amber)}
 /* v1.50.80 予定を入れる：スマホで押しやすく（トシさんの指示）。登録ボタンは横いっぱい・高さ52px、日付・時刻の欄は高さ48px・字は16px */
+.pl-gsug{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}.pl-gsug[hidden]{display:none}.pl-gopt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;min-height:48px;padding:8px 12px;border:0;border-bottom:1px solid var(--line);background:none;font:inherit;color:inherit;cursor:pointer}.pl-gopt span{font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}/* v1.50.84 */
 #plan-add .btn.plan-go{width:100%;min-height:52px;font-size:17px}#plan-add select,#plan-add input[type=date]{min-height:48px;font-size:16px}
 #plan-add .plan-kinds .pick.rest{border-color:var(--amber);color:var(--amber);background:var(--amber-soft)}#plan-add .plan-kinds .pick.rest[aria-pressed="true"]{background:var(--amber);color:#fff}/* v1.50.73 休みの種類は色を変える */
 .filters-on{color:var(--accent);font-weight:700}/* v1.50.71 かかっている絞り込み */
@@ -522,8 +523,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.83" title="使い方マニュアルを開く">v1.50.83・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.83" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.84" title="使い方マニュアルを開く">v1.50.84・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.84" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -583,10 +584,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.83"></script>
+<script src="./share-management.js?v=1.50.84"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.83"></script>
-<script src="./calendar-view-scope.js?v=1.50.83"></script>
+<script src="./view-scope.js?v=1.50.84"></script>
+<script src="./calendar-view-scope.js?v=1.50.84"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2349,6 +2350,7 @@ function planAddSec(){
     '<label class="f">内容'+(planRest(k)?'（書かなくてよい）':'')+'<input type="text" id="pl_text" maxlength="60" autocomplete="off" placeholder="'+h(planEx(k)[0])+'" value="'+h(f.text||"")+'"></label>'+
     (k==="作業"?'<label class="f">案件（選ぶと内容と場所が入ります）<select id="pl_case" data-plan-case="1"><option value="">案件なし</option>'+planCases().map(c=>'<option value="'+h(c.id)+'"'+(c.id===f.caseId?' selected':'')+'>'+h(c.id+"　"+(planCaseName(c)||c.client||""))+'</option>').join("")+'</select></label>':'')+
     (planRest(k)?'':'<label class="f">場所（できるだけ住所つきで）<input type="text" id="pl_place" maxlength="100" autocomplete="off" list="pl_place_list" placeholder="'+h(planEx(k)[1])+'" value="'+h(f.place||"")+'"></label>'+
+      (placesKey()?'<div id="pl_gsug" class="pl-gsug" role="listbox" aria-label="Googleの場所の候補" hidden></div>':'')+
       '<datalist id="pl_place_list">'+planPlaceOptions().map(o=>'<option value="'+h(o.v)+'"'+(o.l?' label="'+h(o.l)+'"':'')+'></option>').join("")+'</datalist>'+
       '<div class="row"><button class="btn sm" type="button" data-act="planmap">地図で確かめる</button><span class="note">場所を押すと、前に入れた場所・案件の物件・会社から選べます</span></div>')+/* v1.50.76 場所（社員には場所を入れるよう指示している。トシさんの指示）。休みには出さない */
     '<label class="f">日付<input type="date" id="pl_date" value="'+h(f.date||ui.calDay||todayS())+'"></label>'+
@@ -2503,7 +2505,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.83";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.84";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2672,7 +2674,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.83" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.83" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.84" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.84" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3291,7 +3293,10 @@ const sheetObjs=rows=>{const [hd,...rs]=rows||[];return rs.map(r=>Object.fromEnt
 const sheetCount=(rows,key)=>sheetObjs(rows).filter(r=>String(r[key]??"").trim()).length;
 async function sharedCheck(id){
   /* v1.50.18 同期で使う「情報」（前の中身）と「受付番号の記号」も、ここで一緒に読む（前は別々に読んでいた） */
-  const have=await sheetTabNames(id),rows=await sheetRead(id,["案件","入金","立替","ToDo","情報",CODE_TAB,NAMES_TAB,OFFICE_TAB].filter(t=>have.includes(t)));
+  const have=await sheetTabNames(id),rows=await sheetRead(id,["案件","入金","立替","ToDo","情報",CODE_TAB,NAMES_TAB,OFFICE_TAB,STAFFSET_TAB].filter(t=>have.includes(t)));
+  /* v1.50.84 社長が書いた設定（地図の候補キー）を受け取る */
+  if(!D().admin&&Array.isArray(rows[STAFFSET_TAB])&&JSON.stringify((rows[STAFFSET_TAB][0]||[]).map(String))===JSON.stringify(STAFFSET_COLS)){
+    const k=hubSetGet(rows[STAFFSET_TAB],PLACES_KEY);if(k!==placesKey()){D().placesKey=k;save()}}
   /* v1.50.83 会社の住所を受け取る（社長が書いた分） */
   if(!D().admin&&Array.isArray(rows[OFFICE_TAB])&&JSON.stringify((rows[OFFICE_TAB][0]||[]).map(String))===JSON.stringify(OFFICE_COLS)){
     const a=rows[OFFICE_TAB].slice(1).map(r=>({name:String((r||[])[0]||"").trim()||"会社",addr:String((r||[])[1]||"").trim()})).filter(x=>x.addr).slice(0,10);
@@ -3554,6 +3559,8 @@ async function adminSync(log){
   /* v1.50.62 売上報告に数字を入れられる人（社長が選ぶ。シートIDの並び） */
   /* v1.50.83 会社の住所（予定を入れるの場所の候補） */
   {const a=officeParse(hubSetGet(listV[HUBSET_TAB],OFFICE_KEY));if(JSON.stringify(a)!==JSON.stringify(officeAddrs())){d.officeAddrs=a;save()}}
+  /* v1.50.84 Googleの場所の候補のキー */
+  {const k=hubSetGet(listV[HUBSET_TAB],PLACES_KEY);if(k!==placesKey()){d.placesKey=k;save()}}
   {const raw=hubSetGet(listV[HUBSET_TAB],SALES_ED_KEY),ids=raw?raw.split(",").map(x=>x.trim()).filter(Boolean):null;if(ids&&JSON.stringify(ids)!==JSON.stringify(d.salesEditors||[])){d.salesEditors=ids;save()}}
   return found;
 }
@@ -4187,9 +4194,14 @@ async function salesEdSave(ids){
 const NAMES_TAB="担当の候補", NAMES_COLS=["氏名","会社","シートID"];
 /* v1.50.83 会社の住所（予定を入れるの場所の候補）。社長が社員一覧の「HUBの設定」の「会社の住所」に「名前｜住所」を1行ずつ入れる。社長の同期で全員の記録シートの「会社の住所」タブに書く */
 const OFFICE_KEY="会社の住所",OFFICE_TAB="会社の住所",OFFICE_COLS=["名前","住所"];
-const officeParse=raw=>String(raw||"").split(/\n+/).map(x=>x.trim()).filter(Boolean).map(x=>{const m=x.split(/[｜|]/);return m.length>1?{name:m[0].trim()||"会社",addr:m.slice(1).join("|").trim()}:{name:"会社",addr:x}}).filter(x=>x.addr).slice(0,10);
+const officeParse=raw=>String(raw||"").split(/\n+|\s*／\s*/).map(x=>x.trim()).filter(Boolean).map(x=>{const m=x.split(/[｜|]/);return m.length>1?{name:m[0].trim()||"会社",addr:m.slice(1).join("|").trim()}:{name:"会社",addr:x}}).filter(x=>x.addr).slice(0,10);
 const officeAddrs=()=>Array.isArray(D().officeAddrs)?D().officeAddrs:[];
 const officeRows=()=>[OFFICE_COLS,...officeAddrs().map(a=>[a.name,a.addr])];
+/* v1.50.84 Googleの場所の候補のキー。社長が社員一覧の「HUBの設定」の「地図の候補キー」に入れる（コードには書かない）。社長の同期で社員の記録シートの「HUBの設定」タブに書く。
+   キーはGoogle Cloudで、使えるサイトを toshicpg-hash.github.io だけ・使える機能を Places API (New) だけに絞ってある前提 */
+const PLACES_KEY="地図の候補キー",STAFFSET_TAB="HUBの設定",STAFFSET_COLS=["項目","値"];
+const placesKey=()=>String(D().placesKey||"").trim();
+const staffSetRows=()=>[STAFFSET_COLS,...(placesKey()?[[PLACES_KEY,placesKey()]]:[])];
 const namesRows=staff=>[NAMES_COLS,...(staff||[]).filter(s=>!s.removed&&s.sheetId&&s.name).map(s=>[String(s.name).trim(),String(s.company||""),s.sheetId])];
 async function namesTabWrite(s,rows,tab=NAMES_TAB){
  const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(tab))await addTab(s.sheetId,tab);
@@ -4200,10 +4212,10 @@ async function namesTabWrite(s,rows,tab=NAMES_TAB){
 }
 /* 社長の同期のあと：社員一覧が前に書いたときから変わっていれば、全員の記録シートに書き直す（同じなら何もしない） */
 async function namesAfterSync(){
- const d=D();if(!d.admin||!gSignedIn())return;const rows=namesRows(d.staff),offs=officeRows(),key=JSON.stringify(offs.length>1?[rows,offs]:rows);if(d.namesWritten===key)return;
+ const d=D();if(!d.admin||!gSignedIn())return;const rows=namesRows(d.staff),offs=officeRows(),sets=staffSetRows(),key=JSON.stringify(offs.length>1||sets.length>1?[rows,offs,...(sets.length>1?[sets]:[])]:rows);if(d.namesWritten===key)return;
  const list=(d.staff||[]).filter(s=>!s.removed&&s.sheetId&&s.sheetId!==d.sheetId);let bad=0;
- await sharePool(list,async s=>{try{await namesTabWrite(s,rows);if(offs.length>1)await namesTabWrite(s,offs,OFFICE_TAB)}catch(err){if(err.message==="signin")throw err;bad++}});
- if(!bad){d.namesWritten=key;save()}
+ await sharePool(list,async s=>{try{await namesTabWrite(s,rows);if(offs.length>1)await namesTabWrite(s,offs,OFFICE_TAB);if(sets.length>1||d.placesKeyWritten)await namesTabWrite(s,sets,STAFFSET_TAB)}catch(err){if(err.message==="signin")throw err;bad++}});
+ if(!bad){d.namesWritten=key;d.placesKeyWritten=sets.length>1;save()}
 }
 async function numPtrWrite(s,numbers){
  const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(NUMPTR_TAB))await addTab(s.sheetId,NUMPTR_TAB);
@@ -5323,6 +5335,40 @@ document.addEventListener("click",e=>{
   if(a==="hand"){const j=val("d_job").trim();if(!j){toast("Accessで振られた仕事番号を入力してください");return}c.jobNo=j;c.handedDate=todayS();c.stage="handed";save();render();toast("引渡済にしました");return}
   if(a==="csvone"){go("cases",{csv:true});return}
 });
+/* v1.50.84 Googleの場所の候補（Places API (New)）。まず端末の候補（会社・前に入れた場所・案件）を出し、打った文字がそこに無いときだけGoogleに聞く。
+   3文字以上・入力が0.3秒止まってから・日本だけ。セッション（同じ入力のあいだ同じ印）で聞き、選んだら住所（formattedAddress）だけ取る。1回の入力で15回まで */
+const gp={timer:0,token:"",n:0,seq:0};
+const gpToken=()=>{try{return crypto.randomUUID()}catch(e){return String(Date.now())+Math.random().toString(16).slice(2)}};
+const gpBox=()=>document.getElementById("pl_gsug");
+function gpHide(){const b=gpBox();if(b){b.hidden=true;b.innerHTML=""}}
+const gpAddr=a=>String(a||"").replace(/^日本、\s*/,"").replace(/^〒\d{3}-?\d{4}\s*/,"").trim();
+function gpSuggest(v){
+  clearTimeout(gp.timer);v=String(v||"").trim();
+  const local=planPlaceOptions().some(o=>o.v.toLowerCase().includes(v.toLowerCase()));
+  if(!placesKey()||v.length<3||local){gpHide();return}
+  gp.timer=setTimeout(async()=>{
+    if(gp.n>=15)return;if(!gp.token)gp.token=gpToken();gp.n++;const my=++gp.seq;
+    try{const r=await fetch("https://places.googleapis.com/v1/places:autocomplete",{method:"POST",headers:{"Content-Type":"application/json","X-Goog-Api-Key":placesKey()},
+        body:JSON.stringify({input:v,sessionToken:gp.token,languageCode:"ja",regionCode:"jp",includedRegionCodes:["jp"]})});
+      if(my!==gp.seq)return;if(!r.ok)throw Error("http "+r.status);const j=await r.json();
+      const list=(j.suggestions||[]).map(s=>s.placePrediction).filter(p=>p&&p.placeId).slice(0,5);const b=gpBox();if(!b)return;
+      if(!list.length){gpHide();return}
+      b.innerHTML=list.map(p=>{const m=(p.structuredFormat&&p.structuredFormat.mainText&&p.structuredFormat.mainText.text)||"",s=(p.structuredFormat&&p.structuredFormat.secondaryText&&p.structuredFormat.secondaryText.text)||(p.text&&p.text.text)||"";
+        return '<button type="button" class="pl-gopt" data-gp-id="'+h(p.placeId)+'" data-gp-name="'+h(m)+'"><b>'+h(m)+'</b><span>'+h(s)+'</span></button>'}).join("")+'<p class="note" style="margin:4px 6px">Googleの候補</p>';
+      b.hidden=false;
+    }catch(err){gpHide()}
+  },300);
+}
+async function gpPick(id,name){
+  const inp=document.getElementById("pl_place");gpHide();
+  try{const r=await fetch("https://places.googleapis.com/v1/places/"+encodeURIComponent(id)+"?languageCode=ja&regionCode=jp&sessionToken="+encodeURIComponent(gp.token||gpToken()),{headers:{"X-Goog-Api-Key":placesKey(),"X-Goog-FieldMask":"formattedAddress"}});
+    if(!r.ok)throw Error("http "+r.status);const j=await r.json(),addr=gpAddr(j.formattedAddress);
+    if(inp){inp.value=(name&&!addr.startsWith(name)?name+"　":"")+addr;if(ui.plan)ui.plan.place=inp.value}
+  }catch(err){if(inp&&name){inp.value=name;if(ui.plan)ui.plan.place=name}toast("住所を取れませんでした。場所を確かめてください")}
+  gp.token="";gp.n=0;
+}
+document.addEventListener("input",e=>{if(e.target&&e.target.id==="pl_place")gpSuggest(e.target.value)});
+document.addEventListener("click",e=>{const b=e.target&&e.target.closest&&e.target.closest("[data-gp-id]");if(b){e.preventDefault();gpPick(b.dataset.gpId,b.dataset.gpName)}});
 document.addEventListener("input",e=>{
   {const fm=e.target.closest&&e.target.closest("form");if(fm&&KEEP_FORMS.includes(fm.id))ui.keepDirty.add(fm.id)}
   if(caseSaveGuard()){e.preventDefault();return}
