@@ -398,6 +398,7 @@ div.ordtile{cursor:default}
 #plan-add .btn.plan-go{width:100%;min-height:52px;font-size:17px}#plan-add select,#plan-add input[type=date]{min-height:48px;font-size:16px}
 #plan-add .plan-kinds .pick.rest{border-color:var(--amber);color:var(--amber);background:var(--amber-soft)}#plan-add .plan-kinds .pick.rest[aria-pressed="true"]{background:var(--amber);color:#fff}/* v1.50.73 休みの種類は色を変える */
 .filters-on{color:var(--accent);font-weight:700}/* v1.50.71 かかっている絞り込み */
+.banner.syncres{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--red-soft,#fbe9e7);color:var(--fg);border:2px solid var(--red);font-weight:700}.banner.syncres>span{flex:1 1 200px}/* v1.50.82 */
 .banner.updok{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--green-soft,#e3f3e8);color:var(--fg);border:2px solid var(--green);font-weight:700}.banner.updok>span{flex:1 1 200px}.banner.updok a{white-space:nowrap}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + 14px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
 .empty{color:var(--muted);font-size:14px;padding:14px;border:1px dashed var(--line);border-radius:12px;text-align:center}
@@ -521,8 +522,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.81" title="使い方マニュアルを開く">v1.50.81・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.81" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.82" title="使い方マニュアルを開く">v1.50.82・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.82" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -582,10 +583,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.81"></script>
+<script src="./share-management.js?v=1.50.82"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.81"></script>
-<script src="./calendar-view-scope.js?v=1.50.81"></script>
+<script src="./view-scope.js?v=1.50.82"></script>
+<script src="./calendar-view-scope.js?v=1.50.82"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2043,6 +2044,27 @@ function calRange(){
 }
 /* 「Googleとまとめて同期」: sign in, read the calendar list, then the events. Each step's result is shown on its own */
 let manualTodoSyncPending=null;
+/* v1.50.82 同期の途中で電話などでアプリが裏に回り、同期が止まった・✗で終わったとき、アプリに戻ったら自動でやり直す（トシさんの指示）。
+   やり直すのは、同期の途中で裏に回ったときだけ。10分に2回まで。Googleのログインが切れている・入力の途中なら、自動ではやらず上に「もう一度同期」を出す。
+   アプリが閉じられて開き直したとき（iPhoneなど）は、ログインに本人の操作が要るので、上に「もう一度同期」を出す */
+const SYNC_RESUME_KEY="workhub_sync_resume_v1",SYNC_RESUME_MSG="同期が途中で止まりました。もう一度「Googleとまとめて同期」を押してください";
+let syncHid=false,syncResumeWant=false,syncResumeTries=[];
+const syncFailed=g=>!g||!g.complete||(g.rows||[]).some(r=>!r.ok&&r.name!=="日付の変わった案件");
+function syncResumeMark(on){try{if(on)localStorage.setItem(SYNC_RESUME_KEY,JSON.stringify({at:Date.now(),sheet:D().sheetId||""}));else localStorage.removeItem(SYNC_RESUME_KEY)}catch(e){}}
+function syncResumeAfter(){
+  /* 開き直したときの印は、同期が最後まで走れば消す（いつも読めない人がいるなどの ✗ で毎回出さないように） */
+  if(ui.gsync&&ui.gsync.complete)syncResumeMark(false);
+  if(!syncFailed(ui.gsync)){ui.syncResume=null;syncResumeWant=false}
+  else if(syncHid)syncResumeWant=true;
+  syncHid=false;if(syncResumeWant&&document.visibilityState==="visible")setTimeout(syncResumeTry,1500);
+}
+function syncResumeTry(){
+  if(!syncResumeWant||ui.gsync?.busy||manualTodoSyncPending||document.visibilityState!=="visible")return;
+  const now=Date.now();syncResumeTries=syncResumeTries.filter(t=>now-t<10*60e3);
+  const a=document.activeElement,typing=!!(a&&a!==document.body&&a.matches&&a.matches("input,textarea,select"))||!!document.querySelector("dialog[open]")||["new","rform"].includes(ui.view);
+  if(syncResumeTries.length>=2||!gSignedIn()||typing){syncResumeWant=false;ui.syncResume={text:SYNC_RESUME_MSG};render();return}
+  syncResumeWant=false;syncResumeTries.push(now);toast("途中で止まった同期をやり直します",4000);gSyncAll();
+}
 async function gSyncAll(){
   if(shareRunning){toast("共有の確認・処理が終わってから同期してください。");return;}
   if(ui.sgBusy){toast("共有の記録の取り込みが終わってから同期してください。");return;}
@@ -2053,7 +2075,8 @@ async function gSyncAll(){
   const run=async()=>{
     try{if(localStorage.getItem(KEY)!==dbPersistedRaw)throw Error("別の画面で記録が更新されています。古い内容を送信しないため同期を止めました。入力を控え、再読み込みしてください。");}
     catch(err){const msg=err.message||"端末の最新記録を確認できないため同期を止めました。";manualStorageNotice(msg);ui.gsync={busy:false,rows:[{name:"端末の最新記録",ok:false,msg}]};render();return;}
-    const r=await gSyncAllRun();await bbAfterSync();await salesAfterSync();await ordAfterSync();try{await namesAfterSync()}catch(e){}return r;
+    syncHid=syncHid||document.visibilityState==="hidden";syncResumeMark(true);ui.syncResume=null;
+    let r;try{r=await gSyncAllRun();await bbAfterSync();await salesAfterSync();await ordAfterSync();try{await namesAfterSync()}catch(e){}}finally{syncResumeAfter()}return r;
   };
   manualTodoSyncPending=Promise.resolve().then(()=>globalThis.navigator?.locks?.request?navigator.locks.request(KEY+":manual-todo-edit",run):run());
   try{return await manualTodoSyncPending;}finally{manualTodoSyncPending=null;}
@@ -2286,11 +2309,11 @@ async function calendarScopeSave(){
 
 /* v1.50.73 予定を入れる（トシさんの指示）：日報を自動で作るため、予定の名前の最初の言葉を決まった12語から選ぶ。
    入れる先はいつも共有カレンダー「CPG HUB」（全員が見られる）。説明に「担当：氏名」「（CPG HUBから登録）」を書くので、予定画面で誰の予定か分かる */
-const PLAN_KINDS=/* v1.50.77 「来社」を足して13語（トシさんの指示。業務管理・経理に来客を知らせる） */[["在社",0],["会議",0],["打合せ",0],["来社",0],["直行",0],["直帰",0],["営業",0],["資材",0],["緊急",0],["公休",1],["有給",1],["午前休",0],["午後休",0]];
+const PLAN_KINDS=/* v1.50.77 「来社」を足して13語（トシさんの指示。業務管理・経理に来客を知らせる） */[["在社",0],["会議",0],["打合せ",0],["来社",0],["直行",0],["直帰",0],["作業",0],["営業",0],["資材",0],["緊急",0],["公休",1],["有給",1],["午前休",0],["午後休",0]];
 /* v1.50.81 種類ごとの記入例（内容・場所）。架空の例だけ（トシさんの指示：ボタンごとに例が変わる） */
 const PLAN_EX={"在社":["例：見積書作成・請求書の整理","例：会社"],"会議":["例：営業会議","例：会社"],"打合せ":["例：○○様邸 リフォームの打合せ","例：○○マンション 101号室　○○市○○町1-2-3"],
  "来社":["例：○○銀行 来社・○○様 来社","例：会社"],"直行":["例：○○様邸 退去立会へ直行","例：○○ハイツ 201号室　○○市○○町1-2-3"],"直帰":["例：○○様邸の作業のあと直帰","例：○○ハイツ 201号室　○○市○○町1-2-3"],
- "営業":["例：管理会社まわり","例：○○不動産　○○市○○町1-2-3"],"資材":["例：資材の買い出し","例：○○ホームセンター ○○店　○○市○○町1-2-3"],"緊急":["例：漏水の対応","例：○○マンション 101号室　○○市○○町1-2-3"]};
+ "作業":["例：○○様邸 クリーニング作業","例：○○マンション 101号室　○○市○○町1-2-3"],"営業":["例：管理会社まわり","例：○○不動産　○○市○○町1-2-3"],"資材":["例：資材の買い出し","例：○○ホームセンター ○○店　○○市○○町1-2-3"],"緊急":["例：漏水の対応","例：○○マンション 101号室　○○市○○町1-2-3"]};
 const planEx=k=>PLAN_EX[k]||["例：見積書作成／○○様邸","例：○○マンション 101号室　○○市○○町1-2-3"];
 const planAllDay=k=>(PLAN_KINDS.find(x=>x[0]===k)||[])[1]===1;
 const planRest=k=>["公休","有給","午前休","午後休"].includes(k);
@@ -2460,7 +2483,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.81";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.82";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2629,7 +2652,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.81" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.81" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.82" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.82" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -4847,6 +4870,7 @@ function render(){
   keepRestore();
   const scopeMarkup=scopeHeader();if(ui.view==="home")main.querySelector("#home-sync")?.insertAdjacentHTML("afterend",scopeMarkup);else main.insertAdjacentHTML("afterbegin",scopeMarkup);
   /* v1.50.58 自動で新しい版にしたら、画面のいちばん上に出す（下に出すと見えないことがあるため）。「閉じる」を押すまで消えない */
+  if(ui.syncResume)main.insertAdjacentHTML("afterbegin",'<div class="banner syncres" role="status"><span>⚠ '+h(ui.syncResume.text)+'</span><button class="btn sm pri" type="button" data-act="gsync">Googleとまとめて同期</button></div>');
   if(ui.updDone)main.insertAdjacentHTML("afterbegin",'<div class="banner updok" role="status"><span>✓ 新しい版（v'+h(ui.updDone)+'）にしました。<a href="./manual.html?v='+encodeURIComponent(ui.updDone)+'#history">変わったことを見る</a></span><button class="btn xs" type="button" data-act="upddone">閉じる</button></div>');
   scopePickDecorate();
   document.querySelector(".proto").hidden=!hasExamples();
@@ -5393,7 +5417,7 @@ async function updCheck(force){
 try{const q=new URLSearchParams(location.search);if(q.has("u"))history.replaceState(null,"",location.pathname+location.hash);
   const t=JSON.parse(sessionStorage.getItem(UPD_KEY)||"null");if(t&&t.v===APP_VER){sessionStorage.removeItem(UPD_KEY);ui.updDone=APP_VER}}catch(e){}
 if(typeof window.addEventListener==="function"){
-  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")updCheck(true)});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){updCheck(true);if(syncResumeWant)setTimeout(syncResumeTry,1500)}else if(ui.gsync?.busy)syncHid=true});
   window.addEventListener("focus",()=>updCheck(false));
   setTimeout(()=>updCheck(true),5000);setInterval(()=>updCheck(true),10*60e3);setInterval(()=>{if(updNext)updTry()},15e3);
 }
@@ -5401,6 +5425,8 @@ if(typeof window.addEventListener==="function"){
 try{const hd=document.querySelector("header.top"),setH=()=>{if(hd&&document.documentElement)document.documentElement.style.setProperty("--hdr-h",hd.offsetHeight+"px")};setH();
  if(hd&&typeof ResizeObserver==="function")new ResizeObserver(setH).observe(hd);if(typeof window.addEventListener==="function")window.addEventListener("resize",setH)}catch(e){}
 gCleanReadPrefs(false);gKeepLoad(); /* sanitize Google-only state before the first render */
+/* v1.50.82 前に開いていたとき同期が途中で止まった（アプリが閉じられた）ままなら、上に「もう一度同期」を出す（12時間以内・同じ記録シート） */
+try{const m=JSON.parse(localStorage.getItem(SYNC_RESUME_KEY)||"null");if(m&&Date.now()-m.at<12*3600e3&&(m.sheet||"")===(D().sheetId||""))ui.syncResume={text:SYNC_RESUME_MSG};else if(m)localStorage.removeItem(SYNC_RESUME_KEY)}catch(e){}
 corpKeepLoad();
 render();
 })();

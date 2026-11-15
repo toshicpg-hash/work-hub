@@ -34,7 +34,7 @@ async function main(){
   const d=await device(width);
   await check('予定を入れる：12語のボタン、在社は時刻つきで「CPG HUB」に登録 '+width+'px',async()=>{
    await d.p.click('#plan-add>summary');
-   assert.deepEqual(await d.p.$$eval('[data-plan-kind]',a=>a.map(x=>x.dataset.planKind)),['在社','会議','打合せ','来社','直行','直帰','営業','資材','緊急','公休','有給','午前休','午後休']);
+   assert.deepEqual(await d.p.$$eval('[data-plan-kind]',a=>a.map(x=>x.dataset.planKind)),['在社','会議','打合せ','来社','直行','直帰','作業','営業','資材','緊急','公休','有給','午前休','午後休']);
    /* 種類を選ばないと登録しない */
    await add(d.p);assert.match(await d.p.textContent('#plan-add'),/種類を選んでください/);assert.equal(posts(d).length,0);
    await d.p.click('[data-plan-kind="在社"]');
