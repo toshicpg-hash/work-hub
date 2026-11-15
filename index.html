@@ -396,6 +396,7 @@ div.ordtile{cursor:default}
 .sales-prebar{margin:0;padding:8px 12px;border-radius:10px;background:var(--amber-soft);font-size:13.5px}.sales-prebar b{color:var(--amber)}
 /* v1.50.80 予定を入れる：スマホで押しやすく（トシさんの指示）。登録ボタンは横いっぱい・高さ52px、日付・時刻の欄は高さ48px・字は16px */
 .pl-gsug{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}.pl-gsug[hidden]{display:none}.pl-gopt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;min-height:48px;padding:8px 12px;border:0;border-bottom:1px solid var(--line);background:none;font:inherit;color:inherit;cursor:pointer}.pl-gopt span{font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}/* v1.50.84 */
+.scope-bar>.plan-fab{width:100%;min-height:44px;font-size:16px;margin-top:2px}#plan-add>summary{display:none}/* v1.50.86 開け閉めは上の固定欄のボタンで */
 #plan-add .btn.plan-go{width:100%;min-height:52px;font-size:17px}#plan-add select,#plan-add input[type=date]{min-height:48px;font-size:16px}
 #plan-add .plan-kinds .pick.rest{border-color:var(--amber);color:var(--amber);background:var(--amber-soft)}#plan-add .plan-kinds .pick.rest[aria-pressed="true"]{background:var(--amber);color:#fff}/* v1.50.73 休みの種類は色を変える */
 .filters-on{color:var(--accent);font-weight:700}/* v1.50.71 かかっている絞り込み */
@@ -523,8 +524,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.85" title="使い方マニュアルを開く">v1.50.85・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.85" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.86" title="使い方マニュアルを開く">v1.50.86・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.86" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -584,10 +585,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.85"></script>
+<script src="./share-management.js?v=1.50.86"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.85"></script>
-<script src="./calendar-view-scope.js?v=1.50.85"></script>
+<script src="./view-scope.js?v=1.50.86"></script>
+<script src="./calendar-view-scope.js?v=1.50.86"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2521,7 +2522,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.85";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.86";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2690,7 +2691,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.85" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.85" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.86" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.86" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -4928,6 +4929,8 @@ function render(){
   main.innerHTML=v();
   keepRestore();
   const scopeMarkup=scopeHeader();if(ui.view==="home")main.querySelector("#home-sync")?.insertAdjacentHTML("afterend",scopeMarkup);else main.insertAdjacentHTML("afterbegin",scopeMarkup);
+  /* v1.50.86 予定の画面では「＋ 予定を入れる」を上の固定欄（会社・人の切り替え）のいちばん下に置き、スクロールしても見えるようにする（トシさんの指示）。押すと入力欄を開いてそこへ動く。もう一度押すと閉じる */
+  if(ui.view==="cal")main.querySelector(":scope>.scope-bar")?.insertAdjacentHTML("beforeend",'<button type="button" class="btn pri plan-fab" data-act="planopen" aria-expanded="'+(!!ui.planOpen)+'">'+(ui.planOpen?'× 予定の入力を閉じる':'＋ 予定を入れる')+'</button>');
   /* v1.50.58 自動で新しい版にしたら、画面のいちばん上に出す（下に出すと見えないことがあるため）。「閉じる」を押すまで消えない */
   if(ui.syncResume)main.insertAdjacentHTML("afterbegin",'<div class="banner syncres" role="status"><span>⚠ '+h(ui.syncResume.text)+'</span><button class="btn sm pri" type="button" data-act="gsync">Googleとまとめて同期</button></div>');
   if(ui.updDone)main.insertAdjacentHTML("afterbegin",'<div class="banner updok" role="status"><span>✓ 新しい版（v'+h(ui.updDone)+'）にしました。<a href="./manual.html?v='+encodeURIComponent(ui.updDone)+'#history">変わったことを見る</a></span><button class="btn xs" type="button" data-act="upddone">閉じる</button></div>');
@@ -5143,6 +5146,10 @@ document.addEventListener("click",e=>{
     adminCodesSave(r.changes,(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()}).then(()=>{ui.dCodes=false;ui.dCodesDraft=null},err=>{log.push({ok:false,text:"途中で止まりました："+(err.message==="http"?dMsg(err):err.message||dMsg(err))})}).finally(()=>{ui.dbusy=false;render()});return}
   if(a==="salessave"){if(ui.salesBusy)return;ui.salesBusy=true;ui.salesMsg=null;ui.salesEdOpen=true;
     salesSave().then(n=>{ui.salesMsg={ok:true,text:n?"シートに保存しました（"+n+"か所）":"変わったところはありません"}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?(err.status===403?"このシートに書く権限がありません":dMsg(err)):err.message}}).finally(()=>{ui.salesBusy=false;render()});render();return}
+  if(a==="planopen"){const go=()=>{const d=document.getElementById("plan-add"),bar=document.querySelector("main>.scope-bar");if(d){const y=d.getBoundingClientRect().top+scrollY-((bar&&bar.getBoundingClientRect().bottom)||0)-8;scrollTo({top:Math.max(0,y),behavior:"smooth"})}};
+    /* 開いていても入力欄が画面の外（下にスクロールしたあと）なら、閉じずに入力欄へ動く */
+    if(ui.planOpen){const d=document.getElementById("plan-add"),bar=document.querySelector("main>.scope-bar"),r=d&&d.getBoundingClientRect(),lim=(bar&&bar.getBoundingClientRect().bottom)||0;if(r&&(r.top<lim-4||r.top>innerHeight-40)){go();return}}
+    if(document.getElementById("pl_text"))planRead();ui.planOpen=!ui.planOpen;render();if(ui.planOpen)go();return}
   if(a==="planmap"){const p=val("pl_place").trim();if(!p){toast("場所を入れてください");return}window.open("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p),"_blank","noopener");return}
   if(a==="planadd"){if(ui.planBusy)return;try{planRead()}catch(e){}ui.planBusy=true;ui.planMsg=null;render();
     planAdd().then(t=>{ui.planMsg={ok:true,text:"「"+t+"」を「CPG HUB」に登録しました"};if(!planRest(ui.plan.kind))planPlaceRemember(ui.plan.place);const d=ui.plan.date;ui.plan={kind:"",date:d};/* 場所も空にする */gResetReads();toast("予定を登録しました")},err=>{ui.planMsg={ok:false,text:err.message==="signin"?"Googleにログインしてから登録してください":err.message==="http"?"登録できませんでした（"+dMsg(err)+"）":err.message}}).finally(()=>{ui.planBusy=false;render()});return}

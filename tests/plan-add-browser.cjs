@@ -33,7 +33,15 @@ async function main(){
  for(const width of [360,400]){
   const d=await device(width);
   await check('予定を入れる：12語のボタン、在社は時刻つきで「CPG HUB」に登録 '+width+'px',async()=>{
-   await d.p.click('#plan-add>summary');
+   await d.p.click('[data-act=planopen]');
+   /* v1.50.86 「＋ 予定を入れる」は上の固定欄にあり、下にスクロールしても見えたまま。会社・人の切り替えと重ならない */
+   {await d.p.evaluate(()=>{window.scrollTo(0,document.body.scrollHeight)});await d.p.waitForTimeout(100);
+    const r=await d.p.evaluate(()=>{const b=document.querySelector('main>.scope-bar>.plan-fab').getBoundingClientRect(),sel=[...document.querySelectorAll('main>.scope-bar select,main>.scope-bar button:not(.plan-fab)')].map(e=>e.getBoundingClientRect()).filter(x=>x.width);
+     return {y:scrollY,top:b.top,bottom:b.bottom,vh:innerHeight,overlap:sel.some(s=>!(s.bottom<=b.top||s.top>=b.bottom||s.right<=b.left||s.left>=b.right)),text:document.querySelector('.plan-fab').textContent}});
+    assert.ok(r.y>100&&r.top>=0&&r.bottom<=r.vh/2,JSON.stringify(r));assert.equal(r.overlap,false,JSON.stringify(r));assert.match(r.text,/閉じる/);
+    /* 下にスクロールしたあと押すと、閉じずに入力欄へ戻る */
+    await d.p.click('.plan-fab');await d.p.waitForTimeout(700);assert.equal(await d.p.evaluate(()=>PA.ui.planOpen),true);assert.ok(await d.p.evaluate(()=>{const bar=document.querySelector('main>.scope-bar').getBoundingClientRect().bottom;return document.getElementById('plan-add').getBoundingClientRect().top>=bar-12}),'scrolled to the form');
+    await d.p.evaluate(()=>window.scrollTo(0,0))}
    assert.deepEqual(await d.p.$$eval('[data-plan-kind]',a=>a.map(x=>x.dataset.planKind)),['在社','会議','打合せ','来社','直行','直帰','作業','営業','資材','緊急','公休','有給','午前休','午後休']);
    /* 種類を選ばないと登録しない */
    await add(d.p);assert.match(await d.p.textContent('#plan-add'),/種類を選んでください/);assert.equal(posts(d).length,0);
@@ -73,7 +81,7 @@ async function main(){
   await d.p.evaluate(()=>{const D=PA.db.settings.data;D.officeAddrs=PA.officeParse('本社｜○○県○○市○○町1-2-3\n倉庫｜○○市○○町4-5-6');
    PA.db.cases.push({...PA.db.cases[0]||{},id:'TST-0001',property:'見本ハイツ',room:'201',addr:'○○市見本町1-1',client:'見本管理',stage:'handed',cancelledAt:''},{id:'TST-0002',property:'終わった荘',room:'1',addr:'x',stage:'paid'});PA.save();PA.render();
    window.__opened=[];window.open=(u)=>{window.__opened.push(u);return null}});
-  await d.p.click('#plan-add>summary');await d.p.click('[data-plan-kind="作業"]');
+  await d.p.click('[data-act=planopen]');await d.p.click('[data-plan-kind="作業"]');
   const opts=await d.p.$$eval('#pl_case option',a=>a.map(x=>x.value));assert.ok(opts.includes('TST-0001')&&!opts.includes('TST-0002'),JSON.stringify(opts));
   await d.p.selectOption('#pl_case','TST-0001');
   assert.equal(await d.p.inputValue('#pl_text'),'見本ハイツ 201');assert.equal(await d.p.inputValue('#pl_place'),'見本ハイツ 201　○○市見本町1-1');
@@ -88,7 +96,7 @@ async function main(){
   assert.ok(await overflow(d.p)<=0);assert.deepEqual(d.errors,[]);await d.c.close();
  });
  await check('「CPG HUB」に書けないときは理由を出して登録しない',async()=>{
-  const d=await device(400,false);await d.p.click('#plan-add>summary');await d.p.click('[data-plan-kind="公休"]');await add(d.p);
+  const d=await device(400,false);await d.p.click('[data-act=planopen]');await d.p.click('[data-plan-kind="公休"]');await add(d.p);
   assert.match(await d.p.textContent('#plan-add'),/「CPG HUB」カレンダーに書き込めません/);assert.equal(posts(d).length,0);assert.deepEqual(d.errors,[]);await d.c.close();
  });
  console.log('ALL PASS',results.length);
