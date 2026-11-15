@@ -102,8 +102,8 @@ async function main(){
   assert.ok(!('owner' in g2),'not from HUB');assert.equal(g2.creator,'x@example.com','v1.50.13 the creator is kept for direct events');assert.ok(!('owner' in g3)&&!('creator' in g3),'hidden private event');assert.equal(g4.owner,'試験 三郎');
   /* v1.50.13 社長が作った予定・非公開の予定は、作成者がいても割り当てない */
   const r=await d.p.evaluate(()=>{const ctx={people:[{sheetId:'boss-sheet',email:HO.ADMIN,name:'社長役'},{sheetId:'s',email:'s@example.com',name:'見本 社員'}]},m={people:[]};
-   return [HO.calHubOwner({private:false,creator:HO.ADMIN},ctx,m,[]),HO.calHubOwner({private:true,creator:'s@example.com'},ctx,m,[]),HO.calHubOwner({private:false,creator:'s@example.com'},ctx,m,[])?.person,HO.calHubOwner({private:false,owner:'見本 社員',creator:HO.ADMIN},ctx,m,[])?.person]});
-  assert.deepEqual(r,[null,null,'s','s']);
+   return [HO.calHubOwner({private:false,creator:HO.ADMIN},ctx,m,[])?.person,HO.calHubOwner({private:true,creator:'s@example.com'},ctx,m,[]),HO.calHubOwner({private:false,creator:'s@example.com'},ctx,m,[])?.person,HO.calHubOwner({private:false,owner:'見本 社員',creator:HO.ADMIN},ctx,m,[])?.person]});
+  assert.deepEqual(r,['boss-sheet',null,'s','s']);/* v1.50.83 社長が直接入れた予定（担当の行なし）は社長の予定 */
   /* v1.50.74 社長の「予定を入れる」（担当：社長、作成者が社長のGmail）は社長の予定。社員が「担当：社長」と書いても社長にはしない */
   const r2=await d.p.evaluate(()=>{const ctx={people:[{sheetId:'boss-sheet',email:HO.ADMIN,name:'社長役'},{sheetId:'s',email:'s@example.com',name:'見本 社員'}]},m={people:[]};
    return [HO.calHubOwner({private:false,owner:'社長',creator:HO.ADMIN},ctx,m,[])?.person,HO.calHubOwner({private:false,owner:'社長',creator:'s@example.com'},ctx,m,[])]});

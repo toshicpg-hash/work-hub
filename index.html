@@ -2213,7 +2213,8 @@ function calHubOwner(e,ctx,model,cases){
  const people=(ctx.people||[]).filter(p=>p&&p.sheetId),raw=String(e.owner||"").replace(/[（(][^（）()]*[）)]\s*$/,"").trim();
  let hit=[];
  /* v1.50.74 社長の端末の「予定を入れる」は「担当：社長」と書く。社長のGmailで作った予定だけ、社長（社員一覧の社長のGmailの人、社長の端末では自分）の予定にする。前は「持ち主不明」になった */
- if((raw===BOSS_LABEL||raw===BOSS_TANTOU)&&eq(e.creator,ADMIN_ACCOUNT)){
+ /* v1.50.83 社長がGoogleカレンダーのアプリで「CPG HUB」に直接入れた予定（担当の行なし）も、社長の予定にする（前は持ち主不明。トシさんの指摘） */
+ if((raw===BOSS_LABEL||raw===BOSS_TANTOU||!raw)&&eq(e.creator,ADMIN_ACCOUNT)){
   /* v1.50.75 社長の端末に社長の記録シートがない（社員一覧にも社長がいない）ときは、人に結び付けず「社長」の予定として出す（全社・全員のときだけ）。前は持ち主不明になった */
   const boss=people.find(p=>eq(p.email,ADMIN_ACCOUNT))||(D().admin&&ctx.selfId?people.find(p=>p.sheetId===ctx.selfId):null);if(!boss)return {boss:true};
   const cos=(model.people||[]).find(x=>x.sheetId===boss.sheetId)?.companies||[];return {person:boss.sheetId,company:cos.length===1?cos[0]:"unknown"};
