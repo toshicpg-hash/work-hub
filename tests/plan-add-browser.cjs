@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
-const hook='window.PA={get db(){return DB},get ui(){return ui},G,go,save,render,authorize(){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000}};';
+const hook='window.PA={get db(){return DB},get ui(){return ui},G,go,save,render,officeParse,authorize(){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000}};';
 let server,browser,origin;const results=[];
 const check=async(name,fn)=>{await fn();results.push(name);console.log('PASS',name)};
 const OWN='staff-own@example.com',SHARED='shared-hub@group.example.com';
@@ -68,6 +68,25 @@ async function main(){
   });
   await d.c.close();
  }
+ await check('v1.50.83 作業は案件を選ぶと内容・場所が入り、説明に受付番号。場所の候補（会社・案件・前に入れた場所）と地図',async()=>{
+  const d=await device(400);
+  await d.p.evaluate(()=>{const D=PA.db.settings.data;D.officeAddrs=PA.officeParse('本社｜○○県○○市○○町1-2-3\n倉庫｜○○市○○町4-5-6');
+   PA.db.cases.push({...PA.db.cases[0]||{},id:'TST-0001',property:'見本ハイツ',room:'201',addr:'○○市見本町1-1',client:'見本管理',stage:'handed',cancelledAt:''},{id:'TST-0002',property:'終わった荘',room:'1',addr:'x',stage:'paid'});PA.save();PA.render();
+   window.__opened=[];window.open=(u)=>{window.__opened.push(u);return null}});
+  await d.p.click('#plan-add>summary');await d.p.click('[data-plan-kind="作業"]');
+  const opts=await d.p.$$eval('#pl_case option',a=>a.map(x=>x.value));assert.ok(opts.includes('TST-0001')&&!opts.includes('TST-0002'),JSON.stringify(opts));
+  await d.p.selectOption('#pl_case','TST-0001');
+  assert.equal(await d.p.inputValue('#pl_text'),'見本ハイツ 201');assert.equal(await d.p.inputValue('#pl_place'),'見本ハイツ 201　○○市見本町1-1');
+  const list=await d.p.$$eval('#pl_place_list option',a=>a.map(x=>x.value));
+  assert.ok(list.includes('本社　○○県○○市○○町1-2-3')&&list.includes('倉庫　○○市○○町4-5-6')&&list.includes('会社')&&list.includes('見本ハイツ 201　○○市見本町1-1'),JSON.stringify(list));
+  await d.p.click('[data-act=planmap]');assert.match(await d.p.evaluate(()=>window.__opened[0]),/^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=/);
+  await d.p.selectOption('#pl_sh','09');await d.p.selectOption('#pl_sm','00');await d.p.selectOption('#pl_eh','12');await d.p.selectOption('#pl_em','00');await add(d.p);
+  const b=posts(d).at(-1);assert.equal(b.body.summary,'作業　見本ハイツ 201');assert.match(b.body.description,/受付番号：TST-0001/);assert.equal(b.body.extendedProperties.private.cpgHubPlanCase,'TST-0001');assert.equal(b.body.location,'見本ハイツ 201　○○市見本町1-1');
+  /* 前に入れた場所として覚える */
+  await d.p.click('[data-plan-kind="在社"]');assert.ok((await d.p.$$eval('#pl_place_list option',a=>a.map(x=>x.value))).includes('見本ハイツ 201　○○市見本町1-1'));
+  assert.equal(await d.p.$$eval('#pl_case',a=>a.length),0,'case picker only for 作業');
+  assert.ok(await overflow(d.p)<=0);assert.deepEqual(d.errors,[]);await d.c.close();
+ });
  await check('「CPG HUB」に書けないときは理由を出して登録しない',async()=>{
   const d=await device(400,false);await d.p.click('#plan-add>summary');await d.p.click('[data-plan-kind="公休"]');await add(d.p);
   assert.match(await d.p.textContent('#plan-add'),/「CPG HUB」カレンダーに書き込めません/);assert.equal(posts(d).length,0);assert.deepEqual(d.errors,[]);await d.c.close();
