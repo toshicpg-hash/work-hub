@@ -37,11 +37,14 @@ async function main(){
    assert.deepEqual(await d.p.$$eval('[data-plan-kind]',a=>a.map(x=>x.dataset.planKind)),['在社','会議','打合せ','来社','直行','直帰','営業','資材','緊急','公休','有給','午前休','午後休']);
    /* 種類を選ばないと登録しない */
    await add(d.p);assert.match(await d.p.textContent('#plan-add'),/種類を選んでください/);assert.equal(posts(d).length,0);
-   await d.p.click('[data-plan-kind="在社"]');await d.p.fill('#pl_text','見積書作成');await d.p.fill('#pl_date','2026-11-06');
+   await d.p.click('[data-plan-kind="在社"]');
+   /* v1.50.80 時刻はプルダウン（Androidの時計の画面を使わない）。分は5分刻み */
+   assert.equal(await d.p.$$eval('#plan-add input[type=time]',a=>a.length),0);
+   {const b=await d.p.$eval('[data-act=planadd]',e=>{const r=e.getBoundingClientRect();return {h:r.height,w:r.width}}),s=await d.p.$eval('#pl_sh',e=>e.getBoundingClientRect().height);assert.ok(b.h>=52&&b.w>=width-80,JSON.stringify(b));assert.ok(s>=48,'select '+s)}assert.deepEqual(await d.p.$$eval('#pl_sm option',a=>a.map(x=>x.value)).then(v=>[v.length,v[1],v.at(-1)]),[13,'00','55']);await d.p.fill('#pl_text','見積書作成');await d.p.fill('#pl_date','2026-11-06');
    /* 時刻がないと登録しない */
    await add(d.p);assert.match(await d.p.textContent('#plan-add'),/開始と終了の時刻を入れてください/);
-   await d.p.fill('#pl_start','15:00');await d.p.fill('#pl_end','13:00');await add(d.p);assert.match(await d.p.textContent('#plan-add'),/終了は開始より後/);
-   await d.p.fill('#pl_start','13:00');await d.p.fill('#pl_end','15:00');
+   await d.p.selectOption('#pl_sh','15');await d.p.selectOption('#pl_sm','00');await d.p.selectOption('#pl_eh','13');await d.p.selectOption('#pl_em','00');await add(d.p);assert.match(await d.p.textContent('#plan-add'),/終了は開始より後/);
+   await d.p.selectOption('#pl_sh','13');await d.p.selectOption('#pl_sm','00');await d.p.selectOption('#pl_eh','15');await d.p.selectOption('#pl_em','00');
    /* v1.50.76 場所がないと登録しない */
    await add(d.p);assert.match(await d.p.textContent('#plan-add'),/場所を書いてください/);assert.equal(posts(d).length,0);
    await d.p.fill('#pl_place','見本ビル 101号室');await add(d.p);
@@ -53,8 +56,8 @@ async function main(){
    assert.ok(await overflow(d.p)<=0);
   });
   await check('公休は終日・内容なしで登録。休み以外は内容がいる '+width+'px',async()=>{
-   await d.p.click('[data-plan-kind="会議"]');await d.p.fill('#pl_start','09:00');await d.p.fill('#pl_end','10:00');await add(d.p);assert.match(await d.p.textContent('#plan-add'),/内容を書いてください/);
-   await d.p.click('[data-plan-kind="公休"]');assert.equal(await d.p.$$eval('#pl_start',a=>a.length),0,'no time for all-day');assert.equal(await d.p.$$eval('#pl_place',a=>a.length),0,'no place for rest');
+   await d.p.click('[data-plan-kind="会議"]');await d.p.selectOption('#pl_sh','09');await d.p.selectOption('#pl_sm','00');await d.p.selectOption('#pl_eh','10');await d.p.selectOption('#pl_em','00');await add(d.p);assert.match(await d.p.textContent('#plan-add'),/内容を書いてください/);
+   await d.p.click('[data-plan-kind="公休"]');assert.equal(await d.p.$$eval('#pl_sh',a=>a.length),0,'no time for all-day');assert.equal(await d.p.$$eval('#pl_place',a=>a.length),0,'no place for rest');
    await d.p.fill('#pl_date','2026-11-08');await add(d.p);
    const b=posts(d).at(-1);assert.equal(b.body.summary,'公休');assert.deepEqual(b.body.start,{date:'2026-11-08'});assert.deepEqual(b.body.end,{date:'2026-11-09'});assert.ok(!('location' in b.body));
    assert.ok(await overflow(d.p)<=0);assert.deepEqual(d.errors,[]);
