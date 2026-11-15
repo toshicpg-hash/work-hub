@@ -38,6 +38,10 @@ async function main(){
    /* 種類を選ばないと登録しない */
    await add(d.p);assert.match(await d.p.textContent('#plan-add'),/種類を選んでください/);assert.equal(posts(d).length,0);
    await d.p.click('[data-plan-kind="在社"]');
+   /* v1.50.81 種類ごとの記入例 */
+   assert.match(await d.p.getAttribute('#pl_text','placeholder'),/見積書作成/);assert.equal(await d.p.getAttribute('#pl_place','placeholder'),'例：会社');
+   await d.p.click('[data-plan-kind="資材"]');assert.match(await d.p.getAttribute('#pl_text','placeholder'),/資材の買い出し/);assert.match(await d.p.getAttribute('#pl_place','placeholder'),/ホームセンター/);
+   await d.p.click('[data-plan-kind="在社"]');
    /* v1.50.80 時刻はプルダウン（Androidの時計の画面を使わない）。分は5分刻み */
    assert.equal(await d.p.$$eval('#plan-add input[type=time]',a=>a.length),0);
    {const b=await d.p.$eval('[data-act=planadd]',e=>{const r=e.getBoundingClientRect();return {h:r.height,w:r.width}}),s=await d.p.$eval('#pl_sh',e=>e.getBoundingClientRect().height);assert.ok(b.h>=52&&b.w>=width-80,JSON.stringify(b));assert.ok(s>=48,'select '+s)}assert.deepEqual(await d.p.$$eval('#pl_sm option',a=>a.map(x=>x.value)).then(v=>[v.length,v[1],v.at(-1)]),[13,'00','55']);await d.p.fill('#pl_text','見積書作成');await d.p.fill('#pl_date','2026-11-06');
