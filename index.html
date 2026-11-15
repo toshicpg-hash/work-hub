@@ -394,6 +394,8 @@ div.ordtile{cursor:default}
 /* v1.50.68 売上の速報 */
 .sales-pre{margin-left:6px;font-size:11px;font-weight:800;color:var(--amber);background:var(--amber-soft);border-radius:99px;padding:1px 6px}
 .sales-prebar{margin:0;padding:8px 12px;border-radius:10px;background:var(--amber-soft);font-size:13.5px}.sales-prebar b{color:var(--amber)}
+/* v1.50.80 予定を入れる：スマホで押しやすく（トシさんの指示）。登録ボタンは横いっぱい・高さ52px、日付・時刻の欄は高さ48px・字は16px */
+#plan-add .btn.plan-go{width:100%;min-height:52px;font-size:17px}#plan-add select,#plan-add input[type=date]{min-height:48px;font-size:16px}
 #plan-add .plan-kinds .pick.rest{border-color:var(--amber);color:var(--amber);background:var(--amber-soft)}#plan-add .plan-kinds .pick.rest[aria-pressed="true"]{background:var(--amber);color:#fff}/* v1.50.73 休みの種類は色を変える */
 .filters-on{color:var(--accent);font-weight:700}/* v1.50.71 かかっている絞り込み */
 .banner.updok{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--green-soft,#e3f3e8);color:var(--fg);border:2px solid var(--green);font-weight:700}.banner.updok>span{flex:1 1 200px}.banner.updok a{white-space:nowrap}
@@ -2304,7 +2306,7 @@ function planAddSec(){
     '<label class="f">日付<input type="date" id="pl_date" value="'+h(f.date||ui.calDay||todayS())+'"></label>'+
     (all?'<p class="note" style="margin:0">終日の予定で入ります</p>':'<div class="form plan-time" style="width:100%">'+sel("pl_sh","開始（時）",HH,sh)+sel("pl_sm","開始（分）",MM,sm)+sel("pl_eh","終了（時）",HH,eh)+sel("pl_em","終了（分）",MM,em)+'</div>')+
     '<p class="note" style="margin:0">予定の名前：<b>'+h(k?(k+(f.text?"　"+f.text:"")):"（種類を選んでください）")+'</b></p>'+
-    '<div class="row"><button class="btn pri" type="button" data-act="planadd"'+busy+'>'+(ui.planBusy?'登録しています…':'「CPG HUB」に登録')+'</button></div>'+msg+
+    '<div class="row"><button class="btn pri plan-go" type="button" data-act="planadd"'+busy+'>'+(ui.planBusy?'登録しています…':'「CPG HUB」に登録')+'</button></div>'+msg+
     '<p class="note" style="margin:0">直す・消すときは、Googleカレンダーのアプリで「CPG HUB」の予定を開いてください。</p></div></details></section>';
 }
 const planRead=()=>{const f=ui.plan=ui.plan||{};f.text=val("pl_text").trim();if(document.getElementById("pl_place"))f.place=val("pl_place").trim();f.date=val("pl_date");if(!planAllDay(f.kind)&&document.getElementById("pl_sh")){const t=(a,b)=>val(a)&&val(b)?val(a)+":"+val(b):"";f.start=t("pl_sh","pl_sm");f.end=t("pl_eh","pl_em")}return f};
