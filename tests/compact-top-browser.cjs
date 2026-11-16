@@ -59,6 +59,8 @@ async function main(){
      assert.equal(await p.locator('[data-info="'+k+'"]').first().getAttribute('aria-expanded'),'true');
      const t=await p.locator('[data-info-box="'+k+'"]').innerText();assert.ok(t.length>10,v+'/'+k);assert.doesNotMatch(t,DEV,v+'/'+k);
      assert.ok(await overflow(p)<=0,v+'/'+k+' overflow');
+     /* v1.50.92 ⓘの説明は固定欄（main>.scope-bar）の外 */
+     assert.equal(await p.locator('main>.scope-bar [data-info-box="'+k+'"]').count(),0,v+'/'+k+' not inside the sticky bar');
      await p.locator('[data-info="'+k+'"]').first().click();assert.equal(await p.locator('[data-info-box="'+k+'"]').count(),0);}}
   });
   await check(role+'：会社・人は細い1行（高さ44px）で、押すと選べる。大きな同期ボタンはホームだけ',async()=>{
