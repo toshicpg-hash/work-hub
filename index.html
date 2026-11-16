@@ -527,8 +527,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.93" title="使い方マニュアルを開く">v1.50.93・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.93" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.94" title="使い方マニュアルを開く">v1.50.94・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.94" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -588,10 +588,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.93"></script>
+<script src="./share-management.js?v=1.50.94"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.93"></script>
-<script src="./calendar-view-scope.js?v=1.50.93"></script>
+<script src="./view-scope.js?v=1.50.94"></script>
+<script src="./calendar-view-scope.js?v=1.50.94"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2586,7 +2586,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.93";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.94";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2755,7 +2755,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.93" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.93" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.94" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.94" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3172,6 +3172,7 @@ async function gReq(url,o){
   o=o||{};
   if(caseSaveUncertain&&o.method&&o.method!=="GET")throw Error(CASE_SAVE_NOTICE);
   if(!gSignedIn())throw new Error("signin");
+  if(o.method&&o.method!=="GET"&&String(url).startsWith(SHEETS+"/"))corpDirtyMark(decodeURIComponent(String(url).slice(SHEETS.length+1).split(/[/:?]/)[0]));
   const ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(),gReqTimeout);
   try{
     const r=await fetch(url,{method:o.method||"GET",signal:ctl.signal,cache:"no-store",credentials:"omit",
@@ -4668,6 +4669,32 @@ async function corpModTimes(){
   catch(err){if(err.message==="signin")throw err}
   return out;
 }
+/* v1.50.94 社長以外の見る人（専務・GM・業務管理）の端末でも、変わっていない人は読み直さない：
+   記録シート・指示箱は社長の端末のHUBが作ったので、更新日時をドライブから取れるのは社長の端末だけ（drive.file の権限では、
+   見る人の端末には一覧に出ない）。そこで社長の端末が同期のたびに、全員の更新日時と「取った時刻」を見る人用一覧の「更新日時」タブに書く。
+   見る人の端末は、その時刻から30分以内のときだけ使う。古い・読めない・形が違うときは今までどおり全員を読む（中身を古くしないことを先にする）。
+   30分にしたのは、社長が取った時刻のあとに社員が同期した分は、一覧が新しくなるまで見えないため。見えない時間を短くしておく。
+   自分の記録シートと、この端末が書き込んだシート（指示箱・指示など）は、書いたあと最初の読み込みで必ず読み直す */
+const MT_TAB="更新日時",MT_AT="（取った時刻）",MT_FRESH_MS=30*60e3,CDIRTY="workhub_corp_dirty_v1";
+function corpDirtyAll(){try{const v=JSON.parse(localStorage.getItem(CDIRTY)||"{}");return v&&typeof v==="object"&&!Array.isArray(v)?v:{}}catch(e){return {}}}
+function corpDirtyMark(id){if(!id)return;const a=corpDirtyAll(),now=Date.now();a[id]=now;for(const k of Object.keys(a))if(!(now-a[k]<2*86400e3))delete a[k];try{localStorage.setItem(CDIRTY,JSON.stringify(a))}catch(e){}}
+async function corpMtPublish(list,mts,at){
+  const id=D().viewListId;if(!id||!D().admin)return;
+  const rows=[["ファイルID","更新日時"],[MT_AT,new Date(at).toISOString()]];
+  for(const s of list)for(const f of [s.sheetId,s.boxId])if(f&&mts[f])rows.push([f,mts[f]]);
+  try{await sheetWrite(id,MT_TAB,rows)}
+  catch(err){if(err.message==="signin"||err.status!==400)throw err;
+    await gReq(SHEETS+"/"+encodeURIComponent(id)+":batchUpdate",{method:"POST",body:{requests:[{addSheet:{properties:{title:MT_TAB}}}]}});
+    await sheetWrite(id,MT_TAB,rows)}
+}
+async function corpMtShared(){
+  const id=D().viewListId;if(!id)return null;
+  let rows;try{rows=(await sheetRead(id,[MT_TAB]))[MT_TAB]||[]}catch(err){if(err.message==="signin")throw err;return null}
+  const head=rows[1]||[],at=Date.parse(String(head[1]||"")),age=Date.now()-at;
+  if(String(head[0]||"")!==MT_AT||!Number.isFinite(at)||age>MT_FRESH_MS||age<-5*60e3)return null;
+  const map={};for(const r of rows.slice(2))if(r&&r[0]&&r[1])map[String(r[0])]=String(r[1]);
+  return {map,age:Math.max(0,age)};
+}
 const corpReadKey=(viewer,me,s,noRc,boxOn)=>JSON.stringify([viewer?1:0,viewer&&me?[me.email,me.role,me.company,me.gmCo,me.charge,me.sheetId]:0,s.sheetId,s.boxId||"",noRc?1:0,boxOn?1:0]);
 async function corpLoad(){
   await gAuthorize(true);
@@ -4679,7 +4706,10 @@ async function corpLoad(){
   const t0=Date.now();
   const prev=Object.fromEntries(((ui.corp&&ui.corp.data)||[]).filter(x=>x&&x.ok&&x.s&&x.mt).map(x=>[x.s.sheetId,x]));
   /* 更新日時は毎回取る（次の読み込みで比べるため。初めての読み込みでも取っておく） */
-  const mts=list.length?await corpModTimes():{};
+  const mtAt=Date.now(), shared=viewer&&list.length?await corpMtShared():null;
+  const mts=!list.length?{}:viewer?(shared?shared.map:{}):await corpModTimes();
+  const pub=!viewer&&list.length?corpMtPublish(list,mts,mtAt).catch(err=>err):null;
+  const dirty=viewer?corpDirtyAll():{}, wrote=(id,t)=>!!id&&dirty[id]>=(t||0);
   /* v1.50.18 3人ずつ同時に読む（前は1人ずつ順番）。並びは一覧の順のまま。読めなかった人のやり直しは今までどおり */
   /* v1.50.43 だれかが回数制限（429）に当たったら、ほかの人の読み込みもその間は始めない（同時に読み続けると上限が戻らない） */
   let cool=0;const gate=async()=>{const w=cool-Date.now();if(w>0)await corpWait(w,"gate")};
@@ -4687,7 +4717,8 @@ async function corpLoad(){
     const started=Date.now();let tries=0,x=null,fresh=false;
     const noRc0=viewer&&noReceipts(me)&&s.sheetId!==me.sheetId, boxOn=!!s.boxId&&(!viewer||s.sheetId===me.sheetId||canOrder(me,s)), key=corpReadKey(viewer,me,s,noRc0,boxOn);
     const mt=mts[s.sheetId]||"", bmt=boxOn?(mts[s.boxId]||""):"", old=prev[s.sheetId];
-    if(old&&mt&&old.mt===mt&&(!boxOn||bmt&&old.bmt===bmt)&&old.rk===key&&Date.now()-(old.readAt||0)<CORP_REUSE_MS){
+    if(old&&mt&&old.mt===mt&&(!boxOn||bmt&&old.bmt===bmt)&&old.rk===key&&Date.now()-(old.readAt||0)<CORP_REUSE_MS
+      &&!(viewer&&(s.sheetId===me.sheetId||wrote(s.sheetId,old.readAt)||boxOn&&wrote(s.boxId,old.readAt)))){
       x=Object.assign({},old,{s:Object.assign(s,{lastSync:old.s.lastSync||""}),reused:true,ms:Date.now()-started,tries:0});return x}
     /* v1.50.5 読めなかった人だけ、少し待って最大2回やり直す（回数制限・Google側の不具合・時間切れ・通信の失敗のとき）。成功した人は読み直さない */
     for(;;){tries++;await gate();
@@ -4717,6 +4748,8 @@ async function corpLoad(){
   {let next=0,stop=null;const work=async()=>{while(!stop&&next<list.length){const i=next++;try{out[i]=await one(list[i])}catch(e){stop=stop||e}}};
    await Promise.all(Array.from({length:Math.min(CORP_POOL,list.length)},work));if(stop)throw stop;}
   out.timing={ms:Date.now()-t0,n:list.length,reused:out.filter(x=>x&&x.reused).length};
+  if(viewer)out.timing.shared=shared?Math.round(shared.age/60e3):null;
+  if(pub){const e=await pub;if(e&&e.message==="signin")throw e}
   save();return out;
 }
 /* v1.50.5 読み込めなかった理由を分けて出す（前は 429・5xx・通信の失敗が全部「通信できませんでした」だった） */
@@ -4729,7 +4762,7 @@ const CORP_RATE_WAITS=[10000,20000,30000,60000];
 function corpRetryWait(err,tries){const k=corpErrKind(err);if(!k||tries>(k==="rate"?CORP_RATE_WAITS.length:2))return null;const ra=err&&Number.isFinite(err.retryAfter)?Math.min(60,err.retryAfter)*1000:null;return ra!==null?ra:k==="rate"?CORP_RATE_WAITS[tries-1]:tries===1?5000:15000;}
 let corpWait=ms=>new Promise(r=>setTimeout(r,ms));
 const secText=ms=>Number.isFinite(ms)?(ms<10000?(Math.round(ms/100)/10):Math.round(ms/1000))+"秒":"";
-function corpTimingText(data){const t=data&&data.timing;if(!t||!t.n)return "";return "読み込み：全体 "+secText(t.ms)+"・1人あたり "+secText(t.ms/t.n)+(t.reused?"（前から変わっていない "+t.reused+"人は読み直していません）":"");}
+function corpTimingText(data){const t=data&&data.timing;if(!t||!t.n)return "";return "読み込み：全体 "+secText(t.ms)+"・1人あたり "+secText(t.ms/t.n)+(t.reused?"（前から変わっていない "+t.reused+"人は読み直していません"+(t.shared!=null?"・社長の端末が "+t.shared+"分前に取った更新日時で確かめました":"")+"）":t.shared===null?"（社長の端末の新しい更新日時がないので、全員を読みました）":"");}
 const objRows=rows=>{const [head,...rest]=rows||[];return head?rest.map(r=>Object.fromEntries(head.map((k,i)=>[k,r[i]??""]))):[]};
 /* 会社の動き：社員の案件を1件ずつカードで見せる（見るだけ） */
 function corpCaseCard(r){
