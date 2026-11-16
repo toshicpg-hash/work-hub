@@ -2776,7 +2776,7 @@ function vStats(){
   const jobCnt=jobSt.slice(0,3).map(st=>jobAll.filter(st.f).length), jobRed=jobSt.slice(1,3).reduce((n,st)=>n+jobAll.filter(c=>st.f(c)&&st.red(st.d(c))).length,0);
   const jobSec=coMode?"":statFold("st_jobno",'<h2>仕事番号の進み具合</h2>','施工中 '+jobCnt[0]+'件・未請求 '+jobCnt[1]+'件・入金待ち '+jobCnt[2]+'件'+(jobRed?'<span style="color:var(--red);font-weight:700">・赤 '+jobRed+'件</span>':''),
     '<div class="panel">'+(jobTbl||'<div class="empty">仕事番号が付いて、施工完了・請求・入金の途中にある案件はありません</div>')+jobSt.map(jobList).join("")+
-    '<p class="note" style="margin:0">仕事番号が付いた案件だけです（HUBで受付した案件のみ。Accessにだけある案件は出ません）。赤：完工から'+(Number(S.billAfter)||0)+'日を過ぎて未請求／請求から'+JOB_PAY_RED+'日たって入金待ち。施工中は日数だけ出します。</p></div>',"stats-jobno");
+    '<p class="note" style="margin:0">仕事番号が付いた工事の案件だけです（資材売上・契約研修費など、工事以外の売上は出ません）。赤：完工から'+(Number(S.billAfter)||0)+'日を過ぎて未請求／請求から'+JOB_PAY_RED+'日たって入金待ち。施工中は日数だけ出します。</p></div>',"stats-jobno");
   const unpaidSec=statFold("st_unpaid",'<h2>未入金</h2>',un.length+'件 '+yen(un.reduce((s,c)=>s+remainOf(c),0))+'（現在残高）'+(coMode&&maxLate?'<span style="color:var(--red);font-weight:700">・最長の遅れ '+maxLate+'日</span>':''),
     (un.length?'<div class="panel"><h3>担当者別</h3>'+tbl("担当",group(tl).map(row).join(""))+'</div>'+(!coMode&&acctList().length?acctPanel():'')+
       '<div class="panel"><h3>物件別</h3>'+tbl("物件",group(c=>c.property||"（物件名なし）").map(row).join(""))+'<p class="note" style="margin:0">遅れの長い順です。案件一覧の「入金待ちだけ」でも確認できます。</p></div>'
