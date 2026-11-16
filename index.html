@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.102" title="使い方マニュアルを開く">v1.50.102・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.102" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.103" title="使い方マニュアルを開く">v1.50.103・11/17更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.103" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.102"></script>
+<script src="./share-management.js?v=1.50.103"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.102"></script>
-<script src="./calendar-view-scope.js?v=1.50.102"></script>
+<script src="./view-scope.js?v=1.50.103"></script>
+<script src="./calendar-view-scope.js?v=1.50.103"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2297,6 +2297,10 @@ const gcalColor=name=>"gc"+((name in gcalColorIdx?gcalColorIdx[name]:(gcalColorI
 const gcalLabel=name=>name===GSHARED?"共有":String(name||"").split(/[\s　]/)[0].slice(0,4)||"予定";
 const hm=d=>pad(d.getHours())+":"+pad(d.getMinutes());
 /* Spread each event over the days it covers (all-day "end" is the day after the last day) */
+/* v1.50.103 「自宅」「職場」などは住所ではない。Googleマップで検索すると、地図を開いた人がGoogleに登録した自宅・職場が出る（トシさんの指摘：伊藤さんの「自宅」の予定で社長の家が出た）。
+   こういう場所には地図のボタンを出さない（場所の文字はそのまま出す）。前後の空白・全角半角の違いは同じとみる */
+const NOMAP_PLACES=["自宅","家","実家","職場","勤務先","会社","home","work"];
+const noMapPlace=v=>NOMAP_PLACES.includes(String(v||"").normalize("NFKC").replace(/\s+/g,"").toLowerCase());
 function gcalByDay(j,personOf){
   const by={};
   for(const e of (gSafeData(j)||{}).events||[]){
@@ -2569,7 +2573,7 @@ function vCalBody(){
   if(ui.calView==="day"){
     const sel=day(ui.calDay);
     const gRows=gday(ui.calDay).map(x=>'<div class="card gccard"><div class="row"><span class="ev '+evCls(x)+'" style="font-size:12px;padding:1px 6px">'+h(evLab(x))+'</span><span class="note num">'+h(x.time)+'</span></div>'+
-      '<div class="ttl">'+h(x.title)+'</div>'+(x.loc?'<div class="row note"><span style="min-width:0;overflow-wrap:anywhere">'+h(x.loc)+'</span><a class="btn sm" style="display:inline-flex;align-items:center;text-decoration:none" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(x.loc)+'">地図</a></div>':'')+'</div>').join("");
+      '<div class="ttl">'+h(x.title)+'</div>'+(x.loc?'<div class="row note"><span style="min-width:0;overflow-wrap:anywhere">'+h(x.loc)+'</span>'+(noMapPlace(x.loc)?'':'<a class="btn sm" style="display:inline-flex;align-items:center;text-decoration:none" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(x.loc)+'">地図</a>')+'</div>':'')+'</div>').join("");
     return '<section class="sec">'+
       nav(1,'<span class="dtitle '+dayKind(ui.calDay)+'">'+mdw(ui.calDay)+'</span>'+(holidayName(ui.calDay)?' <span class="hol-name">'+holidayName(ui.calDay)+'</span>':''),"今日","前の日","次の日")+
       gst+'<div class="list">'+unknown(ui.calDay)+gRows+sel.td.map(x=>'<button type="button" class="card" data-nav="todo">'+todoCardHeading(x,'<span class="chip">ToDo</span>')+'<span class="note">ToDo画面で確認する</span></button>').join("")+((gRows||sel.td.length||isUnknown(ui.calDay))?'':'<div class="empty">この日の予定とToDoはありません</div>')+'</div>'+note+'</section>';
@@ -2646,7 +2650,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.102";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.103";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2837,7 +2841,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.102" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.102" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.103" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.103" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -5354,7 +5358,7 @@ document.addEventListener("click",e=>{
   if(a==="photocollect"){if(ui.photoBusy)return;ui.photoBusy=true;ui.photoMsg=null;render();
     /* 許可の画面は押したその場で開く（ポップアップを止められないように） */
     gAuthorize(true,PHOTO_SCOPE).then(()=>{D().photoOn=true;save();return photoCollect()}).then(r=>{ui.photoMsg={ok:!r.bad,text:photoText(r)}},err=>{ui.photoMsg={ok:false,text:err.message==="signin"?"Googleの許可が取れませんでした。もう一度押してください":err.message==="http"?dMsg(err):gMsg(err)||err.message}}).finally(()=>{ui.photoBusy=false;render()});return}
-  if(a==="planmap"){const p=val("pl_place").trim();if(!p){toast("場所を入れてください");return}window.open("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p),"_blank","noopener");return}
+  if(a==="planmap"){const p=val("pl_place").trim();if(!p){toast("場所を入れてください");return}if(noMapPlace(p)){toast("「"+p+"」は住所ではないので地図を出しません（Googleマップでは、地図を開いた人の登録した場所が出てしまいます）",6000);return}window.open("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p),"_blank","noopener");return}
   if(a==="planadd"){if(ui.planBusy)return;try{planRead()}catch(e){}ui.planBusy=true;ui.planMsg=null;render();
     planAdd().then(t=>{ui.planMsg={ok:true,text:"「"+t+"」を「CPG HUB」に登録しました"};if(!planRest(ui.plan.kind))planPlaceRemember(ui.plan.place);const d=ui.plan.date;ui.plan={kind:"",date:d};/* 場所も空にする */gResetReads();toast("予定を登録しました")},err=>{ui.planMsg={ok:false,text:err.message==="signin"?"Googleにログインしてから登録してください":err.message==="http"?"登録できませんでした（"+dMsg(err)+"）":err.message}}).finally(()=>{ui.planBusy=false;render()});return}
   if(a==="salesfix"){if(ui.salesBusy)return;const v=Math.round(Number(val("se_fixdays")));ui.salesBusy=true;ui.salesMsg=null;ui.salesFixOpen=true;render();
