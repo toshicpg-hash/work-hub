@@ -527,8 +527,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.92" title="使い方マニュアルを開く">v1.50.92・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.92" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.93" title="使い方マニュアルを開く">v1.50.93・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.93" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -588,10 +588,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.92"></script>
+<script src="./share-management.js?v=1.50.93"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.92"></script>
-<script src="./calendar-view-scope.js?v=1.50.92"></script>
+<script src="./view-scope.js?v=1.50.93"></script>
+<script src="./calendar-view-scope.js?v=1.50.93"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1085,6 +1085,48 @@ async function bbAfterSync(){
   ui.gsync={...ui.gsync,rows:ui.gsync.rows.concat([row])};render();
 }
 /* v1.50.35 社長の端末の控え（数字 → 管理） */
+/* v1.50.93 社員の領収書の写真を、社長のドライブの「CPG HUB 領収書（会社）」に集める（トシさんの指示：辞めた・壊れた・消したときの心配）。
+   社員の写真は本人のドライブにあり、HUBの普段の権限（HUBが作ったファイルだけ）では読めない。社長の端末だけ「ドライブを見るだけ」の権限を足し、
+   社員ごとのフォルダに「コピー」する（コピーは社長の持ち物になり、元が消えても残る）。どれをコピーしたかは、コピーに付けた印（元のID）で見る */
+const PHOTO_SCOPE="https://www.googleapis.com/auth/drive.readonly",PHOTO_ROOT="CPG HUB 領収書（会社）";
+const photoIdsOf=link=>[...String(link||"").matchAll(/\/d\/([A-Za-z0-9_-]{10,})/g)].map(m=>m[1]);
+async function photoFolderEnsure(name,parent){
+  const q="name="+dq(name)+" and mimeType='application/vnd.google-apps.folder'"+(parent?" and "+dq(parent)+" in parents":"");
+  const f=await driveFind(q);if(f.length)return f[0].id;
+  return (await driveCreate({name,mimeType:"application/vnd.google-apps.folder",...(parent?{parents:[parent]}:{})})).id;
+}
+async function photoDone(folder){
+  const out=new Set();let pt="";
+  do{const r=await gReq(DRIVE+"?"+new URLSearchParams({q:dq(folder)+" in parents and trashed=false",fields:"nextPageToken,files(id,appProperties)",pageSize:"1000",...(pt?{pageToken:pt}:{})}));
+    for(const f of (r&&r.files)||[]){const s=f.appProperties&&f.appProperties.cpgSrc;if(s)out.add(s)}pt=(r&&r.nextPageToken)||""}while(pt);
+  return out;
+}
+async function photoCollect(limit=200){
+  const d=D();if(!d.admin)throw Error("社長の端末でしてください");if(!gHas(PHOTO_SCOPE))throw Error("signin");
+  const data=(ui.corp&&ui.corp.data)||[];if(!data.length)throw Error("先に「Googleとまとめて同期」で社員の記録を読み込んでください");
+  const root=d.photoRoot||(d.photoRoot=await photoFolderEnsure(PHOTO_ROOT,""));save();
+  const res={add:0,had:0,miss:0,bad:0,more:false};let n=0;
+  for(const x of data){if(!x||!x.ok||!x.s)continue;const rows=(x.rc||[]).filter(r=>photoIdsOf(r["写真リンク"]).length);if(!rows.length)continue;
+    const sub=await photoFolderEnsure(String(x.s.name||x.s.sheetId).trim(),root),done=await photoDone(sub);
+    for(const r of rows){const ids=photoIdsOf(r["写真リンク"]);
+      for(let i=0;i<ids.length;i++){const id=ids[i];if(done.has(id)){res.had++;continue}if(n>=limit){res.more=true;continue}n++;
+        const name=fileSafe([r["日付"],r["会社"],r["支払先"],r["金額"],r["受付ID"]].map(v=>String(v??"")).join("_")).slice(0,90)+(ids.length>1?"_"+(i+1):"");
+        for(let tries=1;;tries++){try{await gReq(DRIVE+"/"+encodeURIComponent(id)+"/copy?fields=id",{method:"POST",body:{name,parents:[sub],appProperties:{cpgSrc:id,cpgRc:String(r["受付ID"]||"")}}});res.add++;done.add(id);break}
+          catch(err){if(err.message==="signin")throw err;if(err.status===404||err.status===403){res.miss++;break}const w=corpErrKind(err)?corpRetryWait(err,tries):null;if(w==null||tries>=3){res.bad++;break}await corpWait(w)}}}}}
+  d.photoLast={at:new Date().toISOString(),...res};save();return res;
+}
+const photoText=r=>"新しく集めた "+r.add+"件・集め済み "+r.had+"件"+(r.miss?"・元が見つからない "+r.miss+"件（消された・共有が外れた）":"")+(r.bad?"・できなかった "+r.bad+"件（次の同期でもう一度）":"")+(r.more?"・残りは次の同期で集めます":"");
+/* 社長の同期のあと：権限が足してあれば、自動で集める */
+async function photoAfterSync(){const d=D();if(!d.admin||!d.photoOn||!gSignedIn()||!gHas(PHOTO_SCOPE))return;
+  let row;try{const r=await photoCollect();row={name:"領収書の写真（会社）",ok:!r.bad,msg:photoText(r)}}catch(err){if(err.message==="signin")return;row={name:"領収書の写真（会社）",ok:false,msg:err.message==="http"?dMsg(err):err.message}}
+  if(ui.gsync&&Array.isArray(ui.gsync.rows)){ui.gsync={...ui.gsync,rows:ui.gsync.rows.concat([row])};render()}}
+function photoPanel(){const d=D(),l=d.photoLast,busy=ui.photoBusy?' disabled':'';
+  return '<section class="sec" id="photo-collect" style="display:flex;flex-direction:column;gap:6px"><h4 style="margin:0">領収書の写真を会社のフォルダに集める</h4>'+
+    '<p class="note" style="margin:0">社員の領収書の写真は、本人のドライブにあります。辞めた・消した・スマホが壊れたときも残るよう、社長のドライブの「'+PHOTO_ROOT+'」に社員ごとにコピーします（コピーは社長の持ち物）。1回目だけ、Googleで「ドライブを見るだけ」の許可を押してください。そのあとは、同期のたびに新しい分を自動で集めます。</p>'+
+    '<div class="row"><button class="btn sm pri" type="button" data-act="photocollect"'+busy+'>'+(ui.photoBusy?'集めています…':(d.photoOn?'今すぐ集める':'許可して集め始める'))+'</button></div>'+
+    (ui.photoMsg?'<p role="status" style="margin:0;color:'+(ui.photoMsg.ok?'var(--green)':'var(--red)')+'">'+h(ui.photoMsg.text)+'</p>':'')+
+    (l?'<p class="note" style="margin:0">前回：'+h(hmd(l.at))+'　'+h(photoText(l))+'</p>':'')+'</section>';
+}
 function bbPanel(){const b=D().bossBackup,busy=ui.bbBusy?' disabled':'';
   const msg=ui.bbMsg?'<p role="status" style="margin:0;color:'+(ui.bbMsg.ok?'var(--green)':'var(--red)')+'">'+h(ui.bbMsg.text)+'</p>':'';
   const list=ui.bbList?(ui.bbList.length?'<ul class="dl">'+ui.bbList.map(x=>'<li><div class="row" style="justify-content:space-between"><b>'+h(x.name)+'</b><button class="btn sm" type="button" data-bbrestore="'+h(x.id)+'"'+busy+'>この控えから戻す</button></div><div class="note">'+(x.at?'控えた日時 '+h(new Date(x.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"})):'まだ控えていません')+'・'+h(bbCountText(x.counts))+'</div></li>').join("")+'</ul>':'<p class="note" style="margin:0">控えはまだありません。</p>'):'';
@@ -2092,7 +2134,7 @@ async function gSyncAll(){
       tm.button=Math.round(now()-t0);if(ui.gsync){ui.gsync.timing={...tm,partial:true};render()}
       /* v1.50.87 ボタンはもう戻っている。裏の社員の記録が終わってから、控え・売上報告などを順に（同時に読むとGoogleの回数制限（429）に当たりやすい。11/16 社長の端末で控えが429・売上報告が読めなかった） */
       if(corpBg)await corpBg.catch(()=>{});
-      for(const [n,fn] of [["共有の書き出し",bbAfterSync],["売上報告",salesAfterSync],["今月の受注",ordAfterSync],["担当の候補・会社の住所",namesAfterSync]]){const s=now();try{await fn()}catch(e){if(n!=="担当の候補・会社の住所")throw e}const ms=Math.round(now()-s);if(ms>=50)tm.after.push({name:n,ms})}
+      for(const [n,fn] of [["共有の書き出し",bbAfterSync],["売上報告",salesAfterSync],["今月の受注",ordAfterSync],["担当の候補・会社の住所",namesAfterSync],["領収書の写真（会社）",photoAfterSync]]){const s=now();try{await fn()}catch(e){if(n!=="担当の候補・会社の住所")throw e}const ms=Math.round(now()-s);if(ms>=50)tm.after.push({name:n,ms})}
 
     }finally{tm.total=Math.round(now()-t0);delete tm.partial;tm.at=new Date().toISOString();tm.ver=APP_VER;tm.ok=!!(ui.gsync&&ui.gsync.complete);syncTimingSave(tm);if(ui.gsync)ui.gsync.timing=tm;syncResumeAfter();render()}
     return r;
@@ -2157,7 +2199,7 @@ function gSyncPanel(home=false){
   /* 社員の記録・売上報告は、読めなくても（売上報告は今日まだ更新がなくても）同期そのものは済み。外に出して目立たせる */
   const companyRow=x=>(!!(D().admin||D().viewListId)&&x.name==='社員の記録')||(!!D().admin&&x.name==='売上報告');
   const resultList=rows=>rows?.length?'<ul class="gres" role="status">'+rows.map(x=>x.name==='日付の変わった案件'?'<li class="calendar-drift">'+calendarDriftList()+'</li>':x.ok==="warn"?'<li class="warn">△ '+h(x.name)+'：'+h(x.msg)+'</li>':'<li class="'+(x.ok?'ok':'ng')+'">'+(x.ok?'✓ ':'× ')+h(x.name)+'：'+h(x.msg)+'</li>').join("")+'</ul>':'';
-  const known=['Googleにログイン','カレンダー一覧','予定の読み込み','つないでいる記録シート','売上報告','この端末の控え','領収書の写真の控え','タスクリクエスト','指示箱（タスクリクエスト）','社員の記録',...['案件','入金','立替','ToDo','情報'].map(t=>'記録シート「'+t+'」')];
+  const known=['Googleにログイン','カレンダー一覧','予定の読み込み','つないでいる記録シート','売上報告','この端末の控え','領収書の写真（会社）','領収書の写真の控え','タスクリクエスト','指示箱（タスクリクエスト）','社員の記録',...['案件','入金','立替','ToDo','情報'].map(t=>'記録シート「'+t+'」')];
   const success=home&&r?.complete===true&&r.busy===false&&Number.isFinite(r.at)&&r.rows?.length>0&&!attention.blocked&&r.rows.some(x=>!companyRow(x))&&r.rows.every(x=>(x.ok===true||(companyRow(x)&&(x.ok===false||x.ok==="warn")))&&known.includes(x.name)&&Object.keys(x).every(k=>['name','ok','msg'].includes(k)));
   const companyErrors=success?r.rows.filter(x=>companyRow(x)&&x.ok!==true):[];
   const list=resultList(success?r.rows.filter(x=>!companyErrors.includes(x)):r?.rows);
@@ -2544,7 +2586,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.92";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.93";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2713,7 +2755,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.92" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.92" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.93" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.93" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -4889,7 +4931,7 @@ function dSettings(){
      :'<p class="note" style="margin:0">社長から届いた共有メールのリンク（またはシートID）を貼り付けて「つなぐ」を押してください。</p>'+
       '<label class="f">記録シートのリンク<input type="url" id="d_sheet" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://docs.google.com/spreadsheets/d/…/edit"></label>'+
       '<div class="row"><button class="btn pri" type="button" data-act="dlink">つなぐ</button></div>')+'</div>';
-  const admin=isAdminDevice()?'<div class="panel"><h3>管理（社長用）</h3>'+(d.admin?bbPanel():'')+
+  const admin=isAdminDevice()?'<div class="panel"><h3>管理（社長用）</h3>'+(d.admin?bbPanel()+photoPanel():'')+
       (!d.admin?'<p class="note" style="margin:0">社員ごとの記録シートを、社長のドライブのフォルダ「CPG HUB データ」に作ります。</p><div class="row"><button class="btn pri" type="button" data-act="dadmin">管理をはじめる</button></div>':
       ((n=>n?'<p class="note" role="status" style="margin:0;color:var(--amber)">受付番号の記号が2文字のままの人が '+n+'人います。「役割を変える」で3文字（例：大平→OHI）を入れて保存してください。入れ直すまでは、今の2文字で受付番号が付きます。</p>':'')(d.staff.filter(s=>!s.removed&&codeLegacy(s.caseCode)).length))+
       (d.staff.some(s=>!s.removed)?(ui.dCodes?codesForm():'<div class="row"><button class="btn sm" type="button" data-act="dcodes"'+(ui.dbusy?' disabled':'')+'>受付番号の記号をまとめて入れる</button></div>'):'')+
@@ -5192,6 +5234,9 @@ document.addEventListener("click",e=>{
     /* 開いていても入力欄が画面の外（下にスクロールしたあと）なら、閉じずに入力欄へ動く */
     if(ui.planOpen){const d=document.getElementById("plan-add"),bar=document.querySelector("main>.scope-bar"),r=d&&d.getBoundingClientRect(),lim=(bar&&bar.getBoundingClientRect().bottom)||0;if(r&&(r.top<lim-4||r.top>innerHeight-40)){go();return}}
     if(document.getElementById("pl_text"))planRead();ui.planOpen=!ui.planOpen;render();if(ui.planOpen)go();return}
+  if(a==="photocollect"){if(ui.photoBusy)return;ui.photoBusy=true;ui.photoMsg=null;render();
+    /* 許可の画面は押したその場で開く（ポップアップを止められないように） */
+    gAuthorize(true,PHOTO_SCOPE).then(()=>{D().photoOn=true;save();return photoCollect()}).then(r=>{ui.photoMsg={ok:!r.bad,text:photoText(r)}},err=>{ui.photoMsg={ok:false,text:err.message==="signin"?"Googleの許可が取れませんでした。もう一度押してください":err.message==="http"?dMsg(err):gMsg(err)||err.message}}).finally(()=>{ui.photoBusy=false;render()});return}
   if(a==="planmap"){const p=val("pl_place").trim();if(!p){toast("場所を入れてください");return}window.open("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p),"_blank","noopener");return}
   if(a==="planadd"){if(ui.planBusy)return;try{planRead()}catch(e){}ui.planBusy=true;ui.planMsg=null;render();
     planAdd().then(t=>{ui.planMsg={ok:true,text:"「"+t+"」を「CPG HUB」に登録しました"};if(!planRest(ui.plan.kind))planPlaceRemember(ui.plan.place);const d=ui.plan.date;ui.plan={kind:"",date:d};/* 場所も空にする */gResetReads();toast("予定を登録しました")},err=>{ui.planMsg={ok:false,text:err.message==="signin"?"Googleにログインしてから登録してください":err.message==="http"?"登録できませんでした（"+dMsg(err)+"）":err.message}}).finally(()=>{ui.planBusy=false;render()});return}
