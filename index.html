@@ -524,12 +524,13 @@ input,select,textarea{min-width:0;max-width:100%}
 .request-compact summary{min-width:0}.request-short,.request-person,.request-date{min-width:0;overflow-wrap:anywhere;white-space:normal}
 main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 .nav-in{height:auto;min-height:var(--nav-h)}.nav-in button{padding:6px 1px}
+.joblist{list-style:none;margin:6px 0;padding:0;display:grid;gap:6px}.joblist li{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;overflow-wrap:anywhere}.jobst>summary{cursor:pointer;font-weight:700}.linkbtn{background:none;border:0;padding:0;color:var(--accent);text-align:left;font:inherit;cursor:pointer;text-decoration:underline}
 .billfix{border-top:1px solid var(--line);padding-top:8px;display:grid;gap:8px}.billfix>summary{cursor:pointer;font-weight:700;color:var(--muted)}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.96" title="使い方マニュアルを開く">v1.50.96・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.96" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.97" title="使い方マニュアルを開く">v1.50.97・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.97" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -589,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.96"></script>
+<script src="./share-management.js?v=1.50.97"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.96"></script>
-<script src="./calendar-view-scope.js?v=1.50.96"></script>
+<script src="./view-scope.js?v=1.50.97"></script>
+<script src="./calendar-view-scope.js?v=1.50.97"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1168,6 +1169,9 @@ function obCheck(){
   if(!back||localStorage.getItem(KEY)!==dbPersistedRaw||realRecords(back)!==n)throw Error("保存した記録を読み戻せませんでした。再読み込みして、もう一度押してください。");
   obSet({check:D().sheetId});return n;
 }
+/* v1.50.97 同じ仕事番号の案件（この端末の案件と、読み込んだ社員の記録）。全角・半角・空白の違いは同じとみる */
+const jobNorm=v=>String(v??"").normalize("NFKC").replace(/\s+/g,"").toUpperCase();
+function jobNoDups(no,selfId){const k=jobNorm(no);if(!k)return [];const seen=new Set(),out=[];for(const x of DB.cases.concat(scopeSourceCases().filter(c=>c.ro))){if(!x||x.id===selfId||seen.has(x.id)||jobNorm(x.jobNo)!==k)continue;seen.add(x.id);out.push(x)}return out}
 const accessWaiting=c=>c.stage==="won"&&!c.cancelledAt&&!String(c.jobNo??"").trim();
 /* v1.50.21 端末の記録が読めない・見つからないときの知らせ（ホームの一番上）。記録は消していないことと、次にすることを出す */
 function loadProblemBanner(){
@@ -1553,7 +1557,8 @@ function billFixPanel(c){
     '<label class="f">請求日<input type="date" id="d_fixbdate" value="'+h(c.billDate||"")+'"></label>'+
     '<label class="f">入金予定日<input type="date" id="d_fixpdue" value="'+h(c.payDue||"")+'"></label></div>'+
     '<div class="row"><button class="btn sm pri" type="button" data-act="billfix">請求額を直す</button></div>'+
-    '<p class="note" style="margin:0">前の金額・直した日・理由は「入金についてのやり取り」に残ります。請求書は今までどおり作り直してください。</p></details>';
+    '<p class="note" style="margin:0">前の金額・直した日・理由は「入金についてのやり取り」に残ります。請求書は今までどおり作り直してください。</p>'+
+    '<p class="note" style="margin:0">仕事番号 '+h(c.jobNo||"（なし）")+'：同じ仕事番号のまま金額が変わったときだけ使います。追加工事で別の仕事番号が振られたら、新しく受付してください（ここで足すと二重に数えます）。</p></details>';
 }
 function emergencyTimeFields(value){
   const valid=typeof value==="string"&&/^([01]\d|2[0-3]):[0-5]\d$/.test(value), parts=valid?value.split(":"):[];
@@ -1647,7 +1652,8 @@ function vDetail(){
   }else if(c.stage==="won"){
     act='<div class="panel"><h3>次にやること：Accessへ引渡</h3>'+
       '<p class="note" style="margin:0">Accessで現場管理表を作成し、振られた仕事番号を入力してください。引渡後も、施工完了・請求・入金済みになるまで「動いている案件」に残ります。</p>'+
-      '<label class="f">仕事番号（Accessで振られた番号）<input type="text" id="d_job" placeholder="Accessの仕事番号"></label>'+
+      '<label class="f">仕事番号（Accessで振られた番号）<input type="text" id="d_job" placeholder="Accessの仕事番号" value="'+h(ui.jobDup&&ui.jobDup.id===c.id?ui.jobDup.no:"")+'"></label>'+
+      (ui.jobDup&&ui.jobDup.id===c.id?'<p class="note" role="alert" style="margin:0;color:var(--amber)"><b>同じ仕事番号の案件があります：</b>'+h(ui.jobDup.text)+'。別の工事なら、Accessで振られた番号を確かめてください。同じ工事の続きで間違いなければ、もう一度「引渡済にする」を押してください。</p>':'')+
       '<div class="row"><button class="btn pri" type="button" data-act="hand">引渡済にする</button><button class="btn sm" type="button" data-act="csvone">この案件をAccess用に書き出す</button></div></div>';
   }else if(c.stage==="lost"){
     act=c.cancelledAt?'<div class="ro"><b>受注後取消済み</b><br>'+h(japanStamp(c.cancelledAt))+'<br>理由：'+h(c.cancelReason)+'<br>元の記録を保持しています。毎日の一覧には出ません。再開はできません。</div>':'<div class="ro">失注（'+h(c.lossReason)+'・'+md(c.lossDate)+'）。毎日の一覧には出ません。<button class="btn sm" type="button" data-act="reopen">見積提出済に戻す</button></div>';
@@ -2617,7 +2623,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.96";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.97";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2749,6 +2755,28 @@ function vStats(){
   const tbl=(head,rows)=>'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>'+head+'</th><th>件数</th><th>未入金</th><th>最長の遅れ</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   /* v1.50.10 会社全体では、未入金（回収の遅れ）を一番上に。最長の遅れも見出しに出す */
   const maxLate=un.reduce((m,c)=>Math.max(m,lateDays(c)),0);
+  /* v1.50.97 仕事番号の進み具合（トシさんの指示：仕事番号が付いた案件が、もれなく施工完了→請求→入金まで進んでいるか）。
+     施工中は引渡（仕事番号を入れた日）からの日数だけ（赤にしない）。完工・未請求は施工完了日からの日数で、設定の「請求までの日数」を過ぎたら赤（自動ToDo「請求書を出す」と同じ目安）。
+     請求済み・入金待ちは請求日からの日数で、32日目から赤（トシさんの指示）。今月の入金済みは確認用。会社の数字（社員の端末の会社全体）には仕事番号が無いので出さない */
+  const JOB_PAY_RED=32, t0=todayS(), since=d=>d?Math.max(0,diffDays(t0,d)):null;
+  const jobAll=all.filter(c=>String(c.jobNo??"").trim()&&!c.cancelledAt&&c.stage!=="lost");
+  const jobSt=[
+    {k:"work",label:"施工中（未完工）",f:c=>c.stage==="handed"||c.stage==="working",d:c=>since(c.handedDate),red:()=>false,from:"引渡から"},
+    {k:"bill",label:"完工・未請求",f:c=>c.stage==="built",d:c=>since(c.builtDate),red:n=>n!=null&&n>(Number(S.billAfter)||0),from:"完工から"},
+    {k:"pay",label:"請求済み・入金待ち",f:c=>c.stage==="billed"&&remainOf(c)>0,d:c=>since(c.billDate),red:n=>n!=null&&n>=JOB_PAY_RED,from:"請求から"},
+    {k:"paid",label:"今月の入金済み",f:c=>c.stage==="paid"&&String(c.paidDate||"").slice(0,7)===t0.slice(0,7),d:c=>since(c.paidDate),red:()=>false,from:"入金から"}];
+  const jobKey=c=>(COMPANIES.includes(c.company)?c.company:"会社未設定")+"\t"+tl(c);
+  const jobKeys=[...new Set(jobAll.filter(c=>jobSt.some(x=>x.f(c))).map(jobKey))].sort();
+  const jobCell=(st,list)=>{if(!list.length)return '<td class="num">—</td>';const ds=list.map(st.d).filter(n=>n!=null),mx=ds.length?Math.max(...ds):null,red=list.some(c=>st.red(st.d(c)));
+    return '<td class="num"'+(red?' style="color:var(--red);font-weight:700"':'')+'>'+list.length+'件'+(mx!=null&&st.k!=="paid"?'<br><span class="note">最長 '+mx+'日</span>':'')+'</td>'};
+  const jobTbl=jobKeys.length?'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>会社・担当</th>'+jobSt.map(x=>'<th>'+x.label+'</th>').join("")+'</tr></thead><tbody>'+
+    jobKeys.map(k=>{const [co,n]=k.split("\t"),mine=jobAll.filter(c=>jobKey(c)===k);return '<tr><td>'+coChip(co)+' '+personBadge(n)+'</td>'+jobSt.map(st=>jobCell(st,mine.filter(st.f))).join("")+'</tr>'}).join("")+'</tbody></table></div>':'';
+  const jobList=st=>{const l=jobAll.filter(st.f).map(c=>[c,st.d(c)]).sort((a,b)=>(b[1]??-1)-(a[1]??-1));if(!l.length)return "";
+    return '<details class="jobst"'+(st.k!=="paid"&&l.some(([c,d])=>st.red(d))?' open':'')+'><summary>'+st.label+'（'+l.length+'件）</summary><ul class="joblist">'+l.map(([c,d])=>'<li><button type="button" class="linkbtn" data-open="'+h(c.id)+'"><span class="num">'+h(c.id)+'</span> '+coChip(c.company)+' '+h([c.property,c.room].filter(Boolean).join(" "))+'</button> <span class="note">'+personBadge(tl(c))+' 仕事番号 '+h(c.jobNo)+'</span> <span class="num"'+(st.red(d)?' style="color:var(--red);font-weight:700"':'')+'>'+(d==null?"日付なし":st.from+" "+d+"日")+'</span></li>').join("")+'</ul></details>'};
+  const jobCnt=jobSt.slice(0,3).map(st=>jobAll.filter(st.f).length), jobRed=jobSt.slice(1,3).reduce((n,st)=>n+jobAll.filter(c=>st.f(c)&&st.red(st.d(c))).length,0);
+  const jobSec=coMode?"":statFold("st_jobno",'<h2>仕事番号の進み具合</h2>','施工中 '+jobCnt[0]+'件・未請求 '+jobCnt[1]+'件・入金待ち '+jobCnt[2]+'件'+(jobRed?'<span style="color:var(--red);font-weight:700">・赤 '+jobRed+'件</span>':''),
+    '<div class="panel">'+(jobTbl||'<div class="empty">仕事番号が付いて、施工完了・請求・入金の途中にある案件はありません</div>')+jobSt.map(jobList).join("")+
+    '<p class="note" style="margin:0">仕事番号が付いた工事の案件だけです（資材売上・契約研修費など、工事以外の売上は出ません）。赤：完工から'+(Number(S.billAfter)||0)+'日を過ぎて未請求／請求から'+JOB_PAY_RED+'日たって入金待ち。施工中は日数だけ出します。</p></div>',"stats-jobno");
   const unpaidSec=statFold("st_unpaid",'<h2>未入金</h2>',un.length+'件 '+yen(un.reduce((s,c)=>s+remainOf(c),0))+'（現在残高）'+(coMode&&maxLate?'<span style="color:var(--red);font-weight:700">・最長の遅れ '+maxLate+'日</span>':''),
     (un.length?'<div class="panel"><h3>担当者別</h3>'+tbl("担当",group(tl).map(row).join(""))+'</div>'+(!coMode&&acctList().length?acctPanel():'')+
       '<div class="panel"><h3>物件別</h3>'+tbl("物件",group(c=>c.property||"（物件名なし）").map(row).join(""))+'<p class="note" style="margin:0">遅れの長い順です。案件一覧の「入金待ちだけ」でも確認できます。</p></div>'
@@ -2764,7 +2792,7 @@ function vStats(){
   '<div class="panel"><div class="row" style="align-items:flex-end;gap:18px"><div><div class="note">見積決定率（受注 ÷ 結論が出た件数）</div><div class="big">'+(rate==null?"—":rate+"%")+'</div></div>'+
   '<div class="note num">受注 '+won.length+'件 ／ 失注 '+lost.length+'件</div></div>'+
   '<div class="sum"><div><div class="k">見積提出</div><div class="v">'+sent.length+'件</div></div><div><div class="k">受注</div><div class="v">'+won.length+'件</div></div><div><div class="k">受注額（見積額）</div><div class="v">'+yen(wonAmt)+'</div></div></div></div></details></section>'+
-  (coMode?'':unpaidSec)+
+  (coMode?'':unpaidSec)+jobSec+
   statFold("st_tantou",'<h2>'+periodLabel+'の担当別</h2>','','<div class="panel">'+byTanTbl+'</div>')+
   statFold("st_reasons",'<h2>失注の理由</h2>',lost.length+'件','<div class="panel">'+
     reasons.map(([r,n])=>'<div class="brk"><span>'+r+'</span><span class="bar"><i style="width:'+(n/maxR*100)+'%"></i></span><span class="num">'+n+'件</span></div>').join("")+'</div>')+
@@ -2786,7 +2814,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.96" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.96" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.97" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.97" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -5521,7 +5549,10 @@ document.addEventListener("click",e=>{
         err=>{ui.cdelBusy=false;ui.cdelMsg="Googleカレンダーの予定を削除できなかったため、案件は削除していません（"+gMsg(err)+"）";render()});
     return}
   if(a==="reopen"){c.stage="quoted";c.lossReason="";c.lossDate="";save();render();return}
-  if(a==="hand"){const j=val("d_job").trim();if(!j){toast("Accessで振られた仕事番号を入力してください");return}c.jobNo=j;c.handedDate=todayS();c.stage="handed";save();render();toast("引渡済にしました");return}
+  if(a==="hand"){const j=val("d_job").trim();if(!j){toast("Accessで振られた仕事番号を入力してください");return}
+    /* v1.50.97 同じ仕事番号の案件がすでにあれば、いったん知らせる（止めはしない。2回目に押せば記録する） */
+    {const dup=jobNoDups(j,c.id);if(dup.length&&!(ui.jobDup&&ui.jobDup.id===c.id&&ui.jobDup.no===j)){ui.jobDup={id:c.id,no:j,text:dup.slice(0,3).map(x=>x.id+"（"+[x.property,x.room].filter(Boolean).join(" ")+"）").join("・")+(dup.length>3?" ほか"+(dup.length-3)+"件":"")};render();toast("同じ仕事番号の案件があります。確かめてください",5000);return}
+     ui.jobDup=null;}c.jobNo=j;c.handedDate=todayS();c.stage="handed";save();render();toast("引渡済にしました");return}
   if(a==="csvone"){go("cases",{csv:true});return}
 });
 /* v1.50.84 Googleの場所の候補（Places API (New)）。まず端末の候補（会社・前に入れた場所・案件）を出し、打った文字がそこに無いときだけGoogleに聞く。
