@@ -36,6 +36,14 @@ const check=async(n,fn)=>{await fn();results.push(n);console.log('PASS',n)};
   assert.equal(d18.filter(x=>x[1]==='打合せ').length,2,'owner unknown: different calendars are not merged');
   assert.equal(d18.filter(x=>x[2]).length,1,'the boss event in two calendars once');
  });
+ await check('v1.50.102 人のカレンダー（予定ごとの人は空、カレンダーの持ち主がその人）の予定も、「CPG HUB」の同じ予定とまとめる。持ち主の分からないカレンダーはまとめない',async()=>{
+  const by=await p.evaluate(()=>{const own='own@example.com',hub='hub@group.calendar.google.com',x='x@example.com';
+   return CD.byDay({events:[
+    {calendarId:own,calendar:'own',title:'見本自動車（車検）',start:'2026-11-19T10:00:00+09:00',end:'2026-11-19T11:00:00+09:00',location:'見本市1-1'},
+    {calendarId:hub,calendar:'CPG HUB',person:'S1',title:'見本自動車（車検）',start:'2026-11-19T10:00:00+09:00',end:'2026-11-19T11:00:00+09:00'},
+    {calendarId:x,calendar:'x',title:'見本自動車（車検）',start:'2026-11-19T10:00:00+09:00',end:'2026-11-19T11:00:00+09:00'}]},e=>e.calId==='own@example.com'?'S1':'')});
+  const d=by['2026-11-19'];assert.equal(d.length,2,JSON.stringify(d));assert.ok(d.some(e=>e.calId==='x@example.com'),'unknown-owner calendar stays');assert.ok(d.some(e=>e.loc==='見本市1-1'),'place kept');
+ });
  assert.deepEqual(errors,[]);await c.close();
  console.log('ALL PASS',results.length);
 })().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();if(server)server.close()});
