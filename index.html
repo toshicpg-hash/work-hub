@@ -524,8 +524,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.88" title="使い方マニュアルを開く">v1.50.88・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.88" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.89" title="使い方マニュアルを開く">v1.50.89・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.89" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -585,10 +585,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.88"></script>
+<script src="./share-management.js?v=1.50.89"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.88"></script>
-<script src="./calendar-view-scope.js?v=1.50.88"></script>
+<script src="./view-scope.js?v=1.50.89"></script>
+<script src="./calendar-view-scope.js?v=1.50.89"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2085,11 +2085,13 @@ async function gSyncAll(){
     let r;try{const p=gSyncAllRun();const rows=ui.gsync&&ui.gsync.rows;
       if(Array.isArray(rows)){const push=rows.push;rows.push=function(...a){const t=now();for(const x of a)tm.steps.push({name:String(x&&x.name||""),ms:Math.round(t-last)});last=t;return push.apply(this,a)}}
       r=await p;
+      /* v1.50.89 ボタンが戻った時点の時間をすぐ出す（全部の合計は、裏の処理が終わってから出る） */
+      tm.button=Math.round(now()-t0);if(ui.gsync){ui.gsync.timing={...tm,partial:true};render()}
       /* v1.50.87 ボタンはもう戻っている。裏の社員の記録が終わってから、控え・売上報告などを順に（同時に読むとGoogleの回数制限（429）に当たりやすい。11/16 社長の端末で控えが429・売上報告が読めなかった） */
       if(corpBg)await corpBg.catch(()=>{});
       for(const [n,fn] of [["共有の書き出し",bbAfterSync],["売上報告",salesAfterSync],["今月の受注",ordAfterSync],["担当の候補・会社の住所",namesAfterSync]]){const s=now();try{await fn()}catch(e){if(n!=="担当の候補・会社の住所")throw e}const ms=Math.round(now()-s);if(ms>=50)tm.after.push({name:n,ms})}
 
-    }finally{tm.total=Math.round(now()-t0);tm.at=new Date().toISOString();tm.ver=APP_VER;tm.ok=!!(ui.gsync&&ui.gsync.complete);syncTimingSave(tm);if(ui.gsync)ui.gsync.timing=tm;syncResumeAfter();render()}
+    }finally{tm.total=Math.round(now()-t0);delete tm.partial;tm.at=new Date().toISOString();tm.ver=APP_VER;tm.ok=!!(ui.gsync&&ui.gsync.complete);syncTimingSave(tm);if(ui.gsync)ui.gsync.timing=tm;syncResumeAfter();render()}
     return r;
   };
   manualTodoSyncPending=Promise.resolve().then(()=>globalThis.navigator?.locks?.request?navigator.locks.request(KEY+":manual-todo-edit",run):run());
@@ -2142,9 +2144,11 @@ const SYNC_TIME_KEY="workhub_sync_timing_v1";
 const syncTimingSave=t=>{try{localStorage.setItem(SYNC_TIME_KEY,JSON.stringify(t))}catch(e){}};
 const syncTimingLoad=()=>{try{const t=JSON.parse(localStorage.getItem(SYNC_TIME_KEY)||"null");return t&&Number.isFinite(t.total)?t:null}catch(e){return null}};
 const syncSec=ms=>(Math.round((Number(ms)||0)/100)/10).toFixed(1)+"秒";
-function syncTimingText(t){if(!t||!Number.isFinite(t.total))return "";const all=(t.steps||[]).concat(t.after||[]).filter(x=>x.ms>0).sort((a,b)=>b.ms-a.ms).slice(0,3);
-  return "合計 "+syncSec(t.total)+(all.length?"（長かったもの："+all.map(x=>x.name+" "+syncSec(x.ms)).join("・")+"）":"")}
-const syncTimingNote=t=>t&&Number.isFinite(t.total)?'<p class="note sync-time" style="margin:4px 0 0">かかった時間：'+h(syncTimingText(t))+'</p>':'';
+function syncTimingText(t){if(!t)return "";
+  if(t.partial&&Number.isFinite(t.button))return "ボタンが戻るまで "+syncSec(t.button)+"（続きの処理をしています。終わると合計が出ます）";
+  if(!Number.isFinite(t.total))return "";const all=(t.steps||[]).concat(t.after||[]).filter(x=>x.ms>0).sort((a,b)=>b.ms-a.ms).slice(0,3);
+  return "合計 "+syncSec(t.total)+(Number.isFinite(t.button)?"・ボタンが戻るまで "+syncSec(t.button):"")+(all.length?"（長かったもの："+all.map(x=>x.name+" "+syncSec(x.ms)).join("・")+"）":"")}
+const syncTimingNote=t=>t&&(Number.isFinite(t.total)||(t.partial&&Number.isFinite(t.button)))?'<p class="note sync-time" style="margin:4px 0 0">かかった時間：'+h(syncTimingText(t))+'</p>':'';
 function gSyncPanel(home=false){
   const r=ui.gsync,attention=home?homeSyncAttention():{blocked:false,html:''};
   /* 社員の記録・売上報告は、読めなくても（売上報告は今日まだ更新がなくても）同期そのものは済み。外に出して目立たせる */
@@ -2537,7 +2541,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.88";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.89";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2706,7 +2710,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.88" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.88" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.89" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.89" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
