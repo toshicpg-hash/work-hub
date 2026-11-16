@@ -60,12 +60,12 @@ const mark=p=>p.evaluate(()=>localStorage.getItem('workhub_sync_resume_v1'));
   const d=await device(400);
   await d.p.evaluate(()=>{SR.signIn();SR.plan=[{timed:true}]});
   await d.p.evaluate(()=>SR.sync());
-  const t=await d.p.evaluate(()=>SR.ui.gsync.timing);assert.ok(t.total>=400,JSON.stringify(t));
+  const t=await d.p.evaluate(()=>SR.ui.gsync.timing);assert.ok(t.total>=400,JSON.stringify(t));assert.ok(Number.isFinite(t.button)&&!t.partial,'button time kept, final');
   assert.deepEqual(t.steps.map(x=>x.name),['Googleにログイン','記録シート「案件」']);assert.ok(t.steps[1].ms>=250,JSON.stringify(t.steps));
   assert.ok(await d.p.evaluate(()=>SR.ui.gsync.rows.every(x=>Object.keys(x).every(k=>['name','ok','msg'].includes(k)))),'rows unchanged');
   assert.equal(await d.p.evaluate(()=>!!localStorage.getItem('workhub_sync_timing_v1')&&!SR.db.settings.data.syncTiming),true,'kept on the device, not in the records');
   await d.p.evaluate(()=>{SR.go('home')});await d.p.evaluate(()=>{const x=document.querySelector('details.sync-result');if(x)x.open=true});const note=await d.p.textContent('.sync-time');
-  assert.match(note,/かかった時間：合計 0\.\d秒（長かったもの：記録シート「案件」/);
+  assert.match(note,/かかった時間：合計 0\.\d秒・ボタンが戻るまで 0\.\d秒（長かったもの：記録シート「案件」/);
   assert.deepEqual(d.errors,[]);await d.c.close();
  });
  await check('アプリを閉じて開き直したとき、止まったままなら上に出す（印が残っている）',async()=>{
