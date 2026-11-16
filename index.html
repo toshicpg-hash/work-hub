@@ -524,11 +524,12 @@ input,select,textarea{min-width:0;max-width:100%}
 .request-compact summary{min-width:0}.request-short,.request-person,.request-date{min-width:0;overflow-wrap:anywhere;white-space:normal}
 main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 .nav-in{height:auto;min-height:var(--nav-h)}.nav-in button{padding:6px 1px}
+.billfix{border-top:1px solid var(--line);padding-top:8px;display:grid;gap:8px}.billfix>summary{cursor:pointer;font-weight:700;color:var(--muted)}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.95" title="使い方マニュアルを開く">v1.50.95・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.95" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.96" title="使い方マニュアルを開く">v1.50.96・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.96" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -588,10 +589,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.95"></script>
+<script src="./share-management.js?v=1.50.96"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.95"></script>
-<script src="./calendar-view-scope.js?v=1.50.95"></script>
+<script src="./view-scope.js?v=1.50.96"></script>
+<script src="./calendar-view-scope.js?v=1.50.96"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -900,6 +901,9 @@ const paidSum=c=>(c.payments||[]).reduce((s,x)=>s+(Number(x.amount)||0),0);
 const remainOf=c=>(Number(c.billAmount)||0)-paidSum(c);
 const unpaid=c=>c.stage==="billed"&&remainOf(c)>0;
 /* Accounting exchange: a request to 経理 is answered by a 経理連絡 payment record or a "まだ入金なし" reply made on or after it */
+/* v1.50.96 請求額を直した記録（入金についてのやり取りに残す）。例：請求額を変更 100,000円→120,000円（追加工事） */
+const billFixText=x=>"請求額を変更 "+yen(x.from)+"→"+yen(x.to)+(x.dates?"・"+x.dates:"")+(x.reason?"（"+x.reason+"）":"");
+const payLogText=(x,sheet)=>x.kind==="req"?"経理に入金確認を依頼":x.kind==="billFix"?billFixText(x):sheet?"経理から返事（まだ入金なし）":"経理から返事：まだ入金なし";
 const lastReq=c=>(c.payLog||[]).filter(x=>x.kind==="req").map(x=>x.at).sort().pop()||"";
 const acctReplied=c=>{const r=lastReq(c);return !r||(c.payLog||[]).some(x=>x.kind==="noPay"&&x.at>=r)||(c.payments||[]).some(x=>x.by==="経理連絡"&&(x.at||x.date)>=r)};
 const lateDays=c=>unpaid(c)&&c.payDue&&c.payDue<todayS()?diffDays(todayS(),c.payDue):0;
@@ -1497,7 +1501,7 @@ function acctMark(){
 function payHistory(c){
   const ev=[];
   if(c.billDate)ev.push([c.billDate,0,"請求 "+yen(c.billAmount)+"（"+c.billTo+"）"]);
-  for(const x of c.payLog||[])ev.push([x.at,1,x.kind==="req"?"経理に入金確認を依頼":"経理から返事：まだ入金なし"]);
+  for(const x of c.payLog||[])ev.push([x.at,1,payLogText(x)]);
   for(const x of c.payments||[])ev.push([x.date,2,"入金 "+yen(x.amount)+"（"+(x.by||"区分なし")+(x.at?"・"+md(x.at)+"記録":"")+"）"]);
   if(!ev.length)return "";
   ev.sort((a,b)=>a[0].localeCompare(b[0])||a[1]-b[1]);
@@ -1526,7 +1530,7 @@ function payPanel(c){
   const sum='<div class="sum"><div><div class="k">請求額</div><div class="v">'+yen(c.billAmount)+'</div></div><div><div class="k">入金済</div><div class="v">'+yen(paid)+'</div></div><div><div class="k">残額</div><div class="v"'+(rem>0&&late?' style="color:var(--red)"':'')+'>'+yen(Math.max(0,rem))+'</div></div></div>';
   if(c.stage==="paid")return '<div class="panel"><h3>入金済み（完了）</h3>'+sum+payHistory(c)+
     (rem<0?'<p class="note" style="margin:0;color:var(--amber)">請求額より '+yen(-rem)+' 多く入金されています。</p>':'')+
-    '<div class="row"><button class="btn sm" type="button" data-act="payundo">最後の入金記録を取り消す</button></div></div>';
+    '<div class="row"><button class="btn sm" type="button" data-act="payundo">最後の入金記録を取り消す</button></div>'+billFixPanel(c)+'</div>';
   return '<div class="panel"><h3>次にやること：入金の確認</h3>'+
     '<p style="margin:0" class="num">入金予定日 '+mdh(c.payDue)+(late?' <b style="color:var(--red)">'+late+'日遅れ</b>':'')+'　請求先 '+h(c.billTo)+'</p>'+
     (lastReq(c)?'<p style="margin:0" class="num">経理に確認依頼：'+md(lastReq(c))+(acctReplied(c)?'（返事あり）':'<b style="color:var(--amber)">（返事待ち）</b>')+'</p>':'')+sum+payHistory(c)+
@@ -1536,7 +1540,20 @@ function payPanel(c){
     '<label class="f full">だれからの情報か<select id="d_payby">'+["経理連絡","担当確認"].map(x=>'<option'+((lastReq(c)&&!acctReplied(c)?"経理連絡":"担当確認")===x?' selected':'')+'>'+x+'</option>').join("")+'</select></label></div>'+
     '<div class="row"><button class="btn pri" type="button" data-act="pay">入金を記録</button>'+(list?'<button class="btn sm" type="button" data-act="payundo">最後の入金記録を取り消す</button>':'')+'</div>'+
     (lastReq(c)&&!acctReplied(c)?'<div class="row"><button class="btn sm" type="button" data-act="acctnopay">経理から返事あり（まだ入金なし）</button></div>':'')+
-    '<p class="note" style="margin:0">一部だけの入金も記録できます。合計が請求額に届くと「入金済み（完了）」になります。</p></div>';
+    '<p class="note" style="margin:0">一部だけの入金も記録できます。合計が請求額に届くと「入金済み（完了）」になります。</p>'+billFixPanel(c)+'</div>';
+}
+/* v1.50.96 請求額を直す（追加工事・値引きなど。専務の質問 11/16）。請求済み・一部入金・入金済み（完了）のどれでも直せる。
+   直せるのは、今「請求」を記録できる人と同じ（その案件の担当の端末）。前の金額・直した日・理由を「入金についてのやり取り」に残す。
+   入金済みの合計が新しい請求額に届けば「入金済み（完了）」、届かなければ「入金待ち」に戻す。
+   入金済みの合計より少なくする（値引き・返金）のも止めない：完了のまま「請求額より○円多く入金されています」と出す */
+function billFixPanel(c){
+  return '<details class="billfix"'+(ui.billFixOpen===c.id?' open':'')+'><summary>請求額を直す（追加工事・値引きなど）</summary><div class="form">'+
+    '<label class="f">新しい請求額（税込・円）<input type="number" inputmode="numeric" min="1" id="d_fixamt" value="'+h(c.billAmount??"")+'"></label>'+
+    '<label class="f full">直す理由（必ず）<input type="text" id="d_fixwhy" maxlength="100" placeholder="例：追加工事"></label>'+
+    '<label class="f">請求日<input type="date" id="d_fixbdate" value="'+h(c.billDate||"")+'"></label>'+
+    '<label class="f">入金予定日<input type="date" id="d_fixpdue" value="'+h(c.payDue||"")+'"></label></div>'+
+    '<div class="row"><button class="btn sm pri" type="button" data-act="billfix">請求額を直す</button></div>'+
+    '<p class="note" style="margin:0">前の金額・直した日・理由は「入金についてのやり取り」に残ります。請求書は今までどおり作り直してください。</p></details>';
 }
 function emergencyTimeFields(value){
   const valid=typeof value==="string"&&/^([01]\d|2[0-3]):[0-5]\d$/.test(value), parts=valid?value.split(":"):[];
@@ -2600,7 +2617,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.95";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.96";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2769,7 +2786,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.95" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.95" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.96" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.96" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3311,7 +3328,7 @@ function dataRows(){
   for(const c of real){
     const base=[c.id,c.property,c.room,c.tantou];
     if(c.billDate)pay.push([...base,c.billDate,"請求",Number(c.billAmount)||0,c.billTo]);
-    for(const x of c.payLog||[])pay.push([...base,x.at,x.kind==="req"?"経理に入金確認を依頼":"経理から返事（まだ入金なし）","",""]);
+    for(const x of c.payLog||[])pay.push(x.kind==="billFix"?[...base,x.at,"請求額を変更",Number(x.to)||0,billFixText(x).replace(/^請求額を変更 /,"")]:[...base,x.at,payLogText(x,true),"",""]);
     for(const x of c.payments||[])pay.push([...base,x.date,"入金",Number(x.amount)||0,x.by||""]);
   }
   const S=RS();
@@ -3438,6 +3455,7 @@ async function sharedRestore(){
       if(k==="入金")c.payments.push({date:at,amount:Number(p["金額"])||0,by:str(p["区分"])});
       else if(k==="請求")c.billTo=str(p["区分"]);
       else if(k==="経理に入金確認を依頼")c.payLog.push({kind:"req",at});
+      else if(k==="請求額を変更"){const m=str(p["区分"]).match(/^([\d,]+)円→([\d,]+)円(?:・([^（]*))?(?:（(.*)）)?$/),n=x=>Number(String(x||"").replace(/,/g,""));c.payLog.push({kind:"billFix",at,from:m?n(m[1]):null,to:Number(p["金額"])||(m?n(m[2]):null),dates:m&&m[3]||"",reason:m&&m[4]||""})}
       else c.payLog.push({kind:"noPay",at});}
     next.cases.push(c);added.cases.push(no);}
   for(const r of sr){const rid=str(r["受付ID"]);if(next.receipts.some(x=>x.id===rid))continue;
@@ -5408,7 +5426,7 @@ document.addEventListener("click",e=>{
     viewerConnect(v).then(m=>{ui.obMsg={ok:true,text:"見る人用一覧につなぎました（"+roleLabel(m)+"）。"}},
       err=>{ui.obMsg={ok:false,text:err.message==="badid"?"リンクの形が違います（https://docs.google.com/spreadsheets/d/…）":err.message==="notview"?"見る人用の一覧ではありません。社長から届いた「見る人用のリンク」か確かめてください":err.message==="notviewer"?(err.me||"このアカウント")+" は、全社・GMの役割になっていません。社長に確かめてください":"つなげませんでした："+dMsg(err)}}).finally(()=>{ui.obBusy=false;render()});return}
   if(!c)return;
-  if(c.cancelledAt&&["plan","site","rushwin","quote","win","eizenwork","lose","hold","built","bill","pay","payundo","acctnopay","hand","reopen"].includes(a)){toast("受注後取消済みの案件は再開できません");return}
+  if(c.cancelledAt&&["plan","site","rushwin","quote","win","eizenwork","lose","hold","built","bill","billfix","pay","payundo","acctnopay","hand","reopen"].includes(a)){toast("受注後取消済みの案件は再開できません");return}
   if(a==="woncancelask"){if(c.stage!=="won"||c.cancelledAt)return;ui.wonCancel=c.id;render();document.getElementById("d_cancel_reason")?.focus();return}
   if(a==="woncancelno"){ui.wonCancel=null;render();return}
   if(a==="woncancelsave"){
@@ -5473,6 +5491,20 @@ document.addEventListener("click",e=>{
     if(remainOf(c)<=0){c.stage="paid";c.paidDate=pd;save();render();toast("入金済みにしました。この案件は完了です")}
     else{save();render();toast("入金を記録しました。残り "+yen(remainOf(c))+" です")}
     return}
+  if(a==="billfix"){if(!["billed","paid"].includes(c.stage)||!c.billDate)return;
+    const amt=Number(val("d_fixamt")),why=val("d_fixwhy").trim(),bd=val("d_fixbdate"),due=val("d_fixpdue");ui.billFixOpen=c.id;
+    if(!(amt>0)){toast("新しい請求額を入れてください");return}
+    if(!why){toast("直す理由を入れてください（例：追加工事）");return}
+    if(!bd||!due){toast("請求日と入金予定日を入れてください");return}
+    const from=Number(c.billAmount)||0,dates=[bd!==c.billDate?"請求日 "+md(c.billDate)+"→"+md(bd):"",due!==c.payDue?"入金予定日 "+md(c.payDue)+"→"+md(due):""].filter(Boolean).join("・");
+    if(amt===from&&!dates){toast("請求額も日付も変わっていません");return}
+    (c.payLog=c.payLog||[]).push({kind:"billFix",at:todayS(),from,to:amt,dates,reason:why});
+    Object.assign(c,{billAmount:amt,billDate:bd,payDue:due});
+    const paid=paidSum(c),was=c.stage;
+    if(paid>0&&paid>=amt){c.stage="paid";c.paidDate=c.paidDate||(c.payments||[]).map(x=>x.date).filter(Boolean).sort().pop()||todayS()}
+    else{c.stage="billed";c.paidDate=""}
+    ui.billFixOpen=null;save();render();
+    toast("請求額を "+yen(from)+" → "+yen(amt)+" に直しました"+(c.stage!==was?(c.stage==="paid"?"。入金済みの合計が届いているので「入金済み（完了）」にしました":"。残りがあるので「入金待ち」に戻しました"):"")+(paid>amt?"。入金済みのほうが "+yen(paid-amt)+" 多くなっています":""),7000);return}
   if(a==="acctnopay"){c.payLog.push({kind:"noPay",at:todayS()});save();render();toast("経理からの返事（まだ入金なし）を記録しました");return}
   if(a==="payundo"){if(!c.payments.length)return;c.payments.pop();if(c.stage==="paid"&&remainOf(c)>0){c.stage="billed";c.paidDate=""}save();render();toast("最後の入金記録を取り消しました");return}
   if(a==="cdel"){Object.assign(ui,{cdel:c.id,cdelMsg:"",cdelBusy:false,cdelCal:true});render();showAlert();return}
