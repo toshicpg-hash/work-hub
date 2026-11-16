@@ -41,7 +41,7 @@ async function main(){
    assert.ok(await p.isVisible('h2:text-matches("月の見積と受注")'));
    assert.ok(await p.isVisible('h2:text-matches("月の担当別")'));
    const st=await p.$$eval('details.statfold',a=>a.map(d=>[d.dataset.fold,d.open]));
-   assert.deepEqual(st.map(x=>x[0]).sort(),['st_reasons','st_tantou','st_types','st_unpaid','st_won']);assert.ok(st.every(x=>x[1]===false),'closed at first');
+   assert.deepEqual(st.map(x=>x[0]).sort(),['st_jobno','st_reasons','st_tantou','st_types','st_unpaid','st_won']);assert.ok(st.every(x=>x[1]===false),'closed at first');
    assert.equal(await p.$eval('details.statfold>summary',x=>getComputedStyle(x,'::after').content),'"タップして開く ▼"');
   });
   await check('開くと中のボタンはそのまま使え、開け閉めは端末に覚える（別のキー） '+width+'px',async()=>{
