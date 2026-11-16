@@ -527,8 +527,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.94" title="使い方マニュアルを開く">v1.50.94・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.94" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.95" title="使い方マニュアルを開く">v1.50.95・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.95" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -588,10 +588,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.94"></script>
+<script src="./share-management.js?v=1.50.95"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.94"></script>
-<script src="./calendar-view-scope.js?v=1.50.94"></script>
+<script src="./view-scope.js?v=1.50.95"></script>
+<script src="./calendar-view-scope.js?v=1.50.95"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1735,7 +1735,7 @@ function manualTodoHistoryRender(){const box=document.getElementById("manualTodo
 function manualTodoOpen(id){if(manualTodoBusy()){toast("同期などの処理が終わってから編集してください",5000);return}try{if(!manualTodoApi())throw Error("編集機能を読み込めません。再読み込みしてください。");const session=manualTodoApi().open(localStorage,KEY,id);manualTodoSession=session;manualTodoFill(session.before);document.getElementById("manualTodoStaff").innerHTML=tantouOptions().filter(o=>!o.disabled).map(o=>'<option value="'+h(o.v)+'" label="'+h(o.l)+'"></option>').join("")+[...new Set(DB.todos.map(t=>t.tantou).filter(Boolean))].filter(t=>!tantouOptions().some(o=>o.v===t)).map(t=>'<option value="'+h(t)+'"></option>').join("");document.getElementById("manualTodoState").textContent="手入力ToDo・この端末 ／ "+(session.before.cancelled?"取消済み（状態を保持）":session.before.done?"完了済み（状態を保持）":"未完了（入金確認などが済むまで保持）");document.getElementById("manualTodoStatus").textContent="編集前の控えを端末に残してから、同じToDoに保存します。";document.getElementById("manualTodoSave").disabled=false;manualTodoHistoryRender();document.getElementById("manualTodoEditor").showModal();}catch(error){toast(error.message,6500);}}
 function manualTodoClose(){if(manualTodoSaving)return;if(manualTodoSession){const input=manualTodoInputs(),before=manualTodoSession.before;if(["title","due","tantou"].some(k=>input[k]!==String(before[k]??""))&&!confirm("保存していない入力があります。閉じますか？"))return;}document.getElementById("manualTodoEditor").close();manualTodoSession=null;}
 function manualTodoDownload(draft){if(!manualTodoSession)return;try{const value=draft?{format:"workhub-manual-todo-draft-v1",id:manualTodoSession.id,fields:manualTodoInputs(),original:manualTodoSession.before,at:new Date().toISOString()}:{format:"workhub-manual-todo-before-v1",id:manualTodoSession.id,before:manualTodoSession.before,beforeRaw:manualTodoSession.beforeRaw,at:new Date().toISOString()};const blob=new Blob([JSON.stringify(value,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="CPG-HUB-ToDo-"+(draft?"draft-":"before-")+new Date().toLocaleDateString("sv-SE",{timeZone:"Asia/Tokyo"})+".json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}catch{document.getElementById("manualTodoStatus").textContent="控えファイルを保存できませんでした。入力内容は残しています。空き容量やダウンロードの設定を確認してください。";}}
-async function manualTodoSave(){if(manualTodoSaving||!manualTodoSession)return;if(manualTodoBusy()){document.getElementById("manualTodoStatus").textContent="同期などの処理中です。終了してから保存してください。入力は残しています。";return}const input=manualTodoInputs(),session=manualTodoSession;manualTodoSaving=true;const button=document.getElementById("manualTodoSave"),status=document.getElementById("manualTodoStatus");button.disabled=true;status.textContent="最新の記録と編集前の控えを照合しています…";try{const commit=()=>{if(manualTodoBusy())throw Error("ほかの処理中のため保存していません。入力は残しています。");return manualTodoApi().commit(localStorage,KEY,session,input,{operationId:crypto.randomUUID(),at:new Date().toISOString()});};const result=navigator.locks?.request?await navigator.locks.request(KEY+":manual-todo-edit",commit):commit();if(manualTodoSession!==session)throw Error("編集画面が変わりました。最新の記録を確認してください。");DB=upgrade(result.db);dbPersistedRaw=result.raw;document.getElementById("manualTodoStorageNotice").hidden=true;manualTodoSession=null;document.getElementById("manualTodoEditor").close();render();toast(result.changed?(result.proofSaved?"同じToDoを更新し、保存内容を読み戻して確認しました。完了状態は保持しています。":"ToDoの保存・読み戻しは確認済みです。履歴の確認記録だけ保存できませんでした。編集前の控えは残っています。") :"変更はありません。元の記録を保持しています。",6500);}catch(error){status.textContent=error.message;if(error.mayHaveSaved)status.textContent+=" 入力を控えてから画面を閉じ、再読み込みで確認してください。";manualTodoHistoryRender();}finally{manualTodoSaving=false;button.disabled=false;}}
+async function manualTodoSave(){if(manualTodoSaving||!manualTodoSession)return;if(manualTodoBusy()){document.getElementById("manualTodoStatus").textContent="同期などの処理中です。終了してから保存してください。入力は残しています。";return}const input=manualTodoInputs(),session=manualTodoSession;manualTodoSaving=true;const button=document.getElementById("manualTodoSave"),status=document.getElementById("manualTodoStatus");button.disabled=true;status.textContent="最新の記録と編集前の控えを照合しています…";try{const commit=()=>{if(manualTodoBusy())throw Error("ほかの処理中のため保存していません。入力は残しています。");return lockedAdopt(manualTodoApi().commit(localStorage,KEY,session,input,{operationId:crypto.randomUUID(),at:new Date().toISOString()}));};const result=navigator.locks?.request?await navigator.locks.request(KEY+":manual-todo-edit",commit):commit();if(manualTodoSession!==session)throw Error("編集画面が変わりました。最新の記録を確認してください。");document.getElementById("manualTodoStorageNotice").hidden=true;manualTodoSession=null;document.getElementById("manualTodoEditor").close();render();toast(result.changed?(result.proofSaved?"同じToDoを更新し、保存内容を読み戻して確認しました。完了状態は保持しています。":"ToDoの保存・読み戻しは確認済みです。履歴の確認記録だけ保存できませんでした。編集前の控えは残っています。") :"変更はありません。元の記録を保持しています。",6500);}catch(error){status.textContent=error.message;if(error.mayHaveSaved)status.textContent+=" 入力を控えてから画面を閉じ、再読み込みで確認してください。";manualTodoHistoryRender();}finally{manualTodoSaving=false;button.disabled=false;}}
 document.getElementById("manualTodoEditor").addEventListener("cancel",e=>{e.preventDefault();manualTodoClose();});
 window.addEventListener?.("storage",e=>{if(e.key!==KEY)return;manualStorageNotice("別のCPG HUB画面で記録が更新されました。入力を控え、最新の記録を確認してください。");if(manualTodoSession)document.getElementById("manualTodoStatus").textContent="別の画面で更新がありました。入力は残しています。保存時にこのToDoの最新状態を照合します。";});
 
@@ -1778,10 +1778,10 @@ async function caseIdentitySave(){
   const status=document.getElementById("caseIdentityStatus"),button=document.getElementById("caseIdentitySave");
   if(caseIdentityBusy()){status.textContent="同期などの処理中です。終了してから保存してください。入力は残しています。";return;}
   const session=caseIdentitySession,input=caseIdentityInputs();caseIdentitySaving=true;button.disabled=true;status.textContent="最新の記録と編集前の控えを照合しています…";
-  try{const commit=()=>{if(caseIdentityBusy())throw Error("ほかの処理中のため保存していません。入力は残しています。");return caseIdentityApi().commit(localStorage,KEY,session,input,{operationId:crypto.randomUUID(),at:new Date().toISOString()});};
+  try{const commit=()=>{if(caseIdentityBusy())throw Error("ほかの処理中のため保存していません。入力は残しています。");return lockedAdopt(caseIdentityApi().commit(localStorage,KEY,session,input,{operationId:crypto.randomUUID(),at:new Date().toISOString()}));};
     const result=navigator.locks?.request?await navigator.locks.request(KEY+":manual-todo-edit",commit):commit();
     if(caseIdentitySession!==session)throw Error("編集画面が変わりました。最新の記録を確認してください。");
-    DB=upgrade(result.db);dbPersistedRaw=result.raw;document.getElementById("manualTodoStorageNotice").hidden=true;caseIdentitySession=null;document.getElementById("caseIdentityEditor").close();render();
+    document.getElementById("manualTodoStorageNotice").hidden=true;caseIdentitySession=null;document.getElementById("caseIdentityEditor").close();render();
     toast(result.changed?(result.proofSaved?"物件名・号室を保存し、読み戻して確認しました。会社側へは「Googleとまとめて同期」で反映します。":"案件の保存・読み戻しは確認済みです。履歴の確認記録だけ保存できませんでした。編集前の控えは残っています。") :"変更はありません。元の記録を保持しています。",6500);
   }catch(error){status.textContent=error.message;if(error.mayHaveSaved)status.textContent+=" 入力を控え、再読み込みで確認してください。";caseIdentityHistoryRender();}
   finally{caseIdentitySaving=false;button.disabled=false;}
@@ -1809,8 +1809,8 @@ function manualTodoCancelBackup(){
 async function manualTodoCancelSave(){
  if(manualTodoCancelling||!manualTodoCancelSession)return;const status=document.getElementById("manualTodoCancelStatus"),button=document.getElementById("manualTodoCancelSave");if(manualTodoCancelBusy()){status.textContent="同期などの処理中です。終了してから操作してください。";return;}
  const session=manualTodoCancelSession,reason=val("manualTodoCancelReason");manualTodoCancelling=true;button.disabled=true;status.textContent="最新の記録と取消前の控えを照合しています…";
- try{const commit=()=>{if(manualTodoCancelBusy())throw Error("ほかの処理中のため取り消していません。入力は残しています。");return manualTodoApi().cancel(localStorage,KEY,session,reason,{operationId:crypto.randomUUID(),at:new Date().toISOString()});};const result=navigator.locks?.request?await navigator.locks.request(KEY+":manual-todo-edit",commit):commit();
-  if(manualTodoCancelSession!==session)throw Error("取消画面が変わりました。最新の記録を確認してください。");DB=upgrade(result.db);dbPersistedRaw=result.raw;manualTodoCancelSession=null;document.getElementById("manualTodoCancelEditor").close();document.getElementById("manualTodoStorageNotice").hidden=true;render();toast(result.changed?(result.proofSaved?"手入力ToDoを取り消し、読み戻して確認しました。元の記録は取消履歴に残しています。完了にはしていません。":"取消の保存・読み戻しは確認済みです。履歴の確認記録だけ保存できませんでした。取消前の控えは残っています。") :"すでに取消済みです。元の記録を保持しています。",6500);
+ try{const commit=()=>{if(manualTodoCancelBusy())throw Error("ほかの処理中のため取り消していません。入力は残しています。");return lockedAdopt(manualTodoApi().cancel(localStorage,KEY,session,reason,{operationId:crypto.randomUUID(),at:new Date().toISOString()}));};const result=navigator.locks?.request?await navigator.locks.request(KEY+":manual-todo-edit",commit):commit();
+  if(manualTodoCancelSession!==session)throw Error("取消画面が変わりました。最新の記録を確認してください。");manualTodoCancelSession=null;document.getElementById("manualTodoCancelEditor").close();document.getElementById("manualTodoStorageNotice").hidden=true;render();toast(result.changed?(result.proofSaved?"手入力ToDoを取り消し、読み戻して確認しました。元の記録は取消履歴に残しています。完了にはしていません。":"取消の保存・読み戻しは確認済みです。履歴の確認記録だけ保存できませんでした。取消前の控えは残っています。") :"すでに取消済みです。元の記録を保持しています。",6500);
  }catch(error){status.textContent=error.message;if(error.mayHaveSaved)status.textContent+=" もう一度押さず、再読み込みで確認してください。";}
  finally{manualTodoCancelling=false;button.disabled=false;}
 }
@@ -2114,32 +2114,46 @@ function syncResumeTry(){
   if(syncResumeTries.length>=2||!gSignedIn()||typing){syncResumeWant=false;ui.syncResume={text:SYNC_RESUME_MSG};render();return}
   syncResumeWant=false;syncResumeTries.push(now);toast("途中で止まった同期をやり直します",4000);gSyncAll();
 }
+/* v1.50.95 保存した中身を、鍵を持ったまま端末の記録（DB）に入れ替える。前は鍵を外してから入れ替えていたので、
+   その間に裏の処理（同期の続き）が save() すると「別の画面で記録が更新されました」と止まるすき間があった */
+function lockedAdopt(result){if(result&&result.db&&typeof result.raw==="string"){DB=upgrade(result.db);dbPersistedRaw=result.raw}return result}
 async function gSyncAll(){
   if(shareRunning){toast("共有の確認・処理が終わってから同期してください。");return;}
   if(ui.sgBusy){toast("共有の記録の取り込みが終わってから同期してください。");return;}
   if(D().sheetId&&obBefore("sync")){const b=obBefore("sync");ui.obMsg={ok:false,text:"先に「"+b+"」をしてください。"};render();toast("先に初期設定の「"+b+"」をしてください",5000);return;}
   if(caseSaveGuard())return;
   if(receiptSaving||receiptSelecting||receiptSending||ui.rSaveUncertain){toast("領収書の処理が終わってから同期してください。入力は残しています。",5000);return;}
-  if(manualTodoSyncPending)return manualTodoSyncPending;
+  /* v1.50.95 裏の処理（社員の記録・控え・売上報告など）の途中でもう一度押したとき：二重には動かさず、続けていることを出す（前は何も出なかった） */
+  if(manualTodoSyncPending){if(ui.syncAfterBusy)toast("前の同期の続き（社員の記録の読み込みなど）を裏で続けています。終わってから押してください",5000);return manualTodoSyncPending;}
+  /* v1.50.95 鍵（領収書・手入力ToDo・案件名の保存と同期が同時に記録を書かないための鍵）は、ボタンが戻るまでだけ持つ。
+     前は裏の処理が終わるまで持っていたので、その間（社長の端末で約3分）領収書などの保存が「保存しています…」のまま待たされた。
+     裏の処理は端末の記録（案件・領収書など）を書き換えない。保存する側は、端末の記録の入れ替えまでを鍵の中で済ませる */
+  let st=null;
   const run=async()=>{
     try{if(localStorage.getItem(KEY)!==dbPersistedRaw)throw Error("別の画面で記録が更新されています。古い内容を送信しないため同期を止めました。入力を控え、再読み込みしてください。");}
     catch(err){const msg=err.message||"端末の最新記録を確認できないため同期を止めました。";manualStorageNotice(msg);ui.gsync={busy:false,rows:[{name:"端末の最新記録",ok:false,msg}]};render();return;}
     syncHid=syncHid||document.visibilityState==="hidden";syncResumeMark(true);ui.syncResume=null;
     /* v1.50.85 同期にかかった時間を測る（トシさんの指示：同期を短くする前に、何にどれだけかかっているかを見る）。同期の中身（gSyncAllRun）は変えず、結果の行が足されるたびに時刻を控える */
     const now=()=>(globalThis.performance&&performance.now)?performance.now():Date.now(),t0=now(),tm={steps:[],after:[]};let last=t0;
-    let r;try{const p=gSyncAllRun();const rows=ui.gsync&&ui.gsync.rows;
-      if(Array.isArray(rows)){const push=rows.push;rows.push=function(...a){const t=now();for(const x of a)tm.steps.push({name:String(x&&x.name||""),ms:Math.round(t-last)});last=t;return push.apply(this,a)}}
-      r=await p;
-      /* v1.50.89 ボタンが戻った時点の時間をすぐ出す（全部の合計は、裏の処理が終わってから出る） */
-      tm.button=Math.round(now()-t0);if(ui.gsync){ui.gsync.timing={...tm,partial:true};render()}
-      /* v1.50.87 ボタンはもう戻っている。裏の社員の記録が終わってから、控え・売上報告などを順に（同時に読むとGoogleの回数制限（429）に当たりやすい。11/16 社長の端末で控えが429・売上報告が読めなかった） */
-      if(corpBg)await corpBg.catch(()=>{});
-      for(const [n,fn] of [["共有の書き出し",bbAfterSync],["売上報告",salesAfterSync],["今月の受注",ordAfterSync],["担当の候補・会社の住所",namesAfterSync],["領収書の写真（会社）",photoAfterSync]]){const s=now();try{await fn()}catch(e){if(n!=="担当の候補・会社の住所")throw e}const ms=Math.round(now()-s);if(ms>=50)tm.after.push({name:n,ms})}
-
-    }finally{tm.total=Math.round(now()-t0);delete tm.partial;tm.at=new Date().toISOString();tm.ver=APP_VER;tm.ok=!!(ui.gsync&&ui.gsync.complete);syncTimingSave(tm);if(ui.gsync)ui.gsync.timing=tm;syncResumeAfter();render()}
+    st={now,t0,tm};
+    const p=gSyncAllRun();const rows=ui.gsync&&ui.gsync.rows;
+    if(Array.isArray(rows)){const push=rows.push;rows.push=function(...a){const t=now();for(const x of a)tm.steps.push({name:String(x&&x.name||""),ms:Math.round(t-last)});last=t;return push.apply(this,a)}}
+    const r=await p;
+    /* v1.50.89 ボタンが戻った時点の時間をすぐ出す（全部の合計は、裏の処理が終わってから出る） */
+    tm.button=Math.round(now()-t0);if(ui.gsync){ui.gsync.timing={...tm,partial:true};render()}
     return r;
   };
-  manualTodoSyncPending=Promise.resolve().then(()=>globalThis.navigator?.locks?.request?navigator.locks.request(KEY+":manual-todo-edit",run):run());
+  const whole=async()=>{
+    let r;try{r=await (globalThis.navigator?.locks?.request?navigator.locks.request(KEY+":manual-todo-edit",run):run());
+      if(!st)return r;
+      /* v1.50.87 ボタンはもう戻っている。裏の社員の記録が終わってから、控え・売上報告などを順に（同時に読むとGoogleの回数制限（429）に当たりやすい。11/16 社長の端末で控えが429・売上報告が読めなかった） */
+      ui.syncAfterBusy=true;const {now,tm}=st;
+      if(corpBg)await corpBg.catch(()=>{});
+      for(const [n,fn] of [["共有の書き出し",bbAfterSync],["売上報告",salesAfterSync],["今月の受注",ordAfterSync],["担当の候補・会社の住所",namesAfterSync],["領収書の写真（会社）",photoAfterSync]]){const s=now();try{await fn()}catch(e){if(n!=="担当の候補・会社の住所")throw e}const ms=Math.round(now()-s);if(ms>=50)tm.after.push({name:n,ms})}
+    }finally{ui.syncAfterBusy=false;if(st){const {now,t0,tm}=st;tm.total=Math.round(now()-t0);delete tm.partial;tm.at=new Date().toISOString();tm.ver=APP_VER;tm.ok=!!(ui.gsync&&ui.gsync.complete);syncTimingSave(tm);if(ui.gsync)ui.gsync.timing=tm;syncResumeAfter();render()}}
+    return r;
+  };
+  manualTodoSyncPending=Promise.resolve().then(whole);
   try{return await manualTodoSyncPending;}finally{manualTodoSyncPending=null;}
 }
 /* v1.50.87 社員の記録の読み込みを裏に回す（トシさんの指示：同期のボタンが戻るまで長い。11/16 社長の端末で社員の記録 13.9秒）。
@@ -2586,7 +2600,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.94";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.95";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2755,7 +2769,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.94" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.94" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.95" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.95" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3148,9 +3162,9 @@ async function rSaveForm(){
   const method=val("r_method"),fields={date:val("r_date"),payee:val("r_payee").trim(),item:val("r_item").trim(),amount:Number(val("r_amount")),company:val("r_co"),method,cardId:method==="法人カード"?val("r_card"):"",cat:val("r_cat"),caseId:val("r_case"),caseRef:ui.rCasePick?.value===val("r_case")?ui.rCasePick.ref:null,site:val("r_site").trim(),room:val("r_room").trim(),jobNo:val("r_job").trim(),note:val("r_note").trim()};
   receiptSaving=true;receiptControls(true);receiptStatus("添付と保存前の控えを保存し、読み戻して確認しています…");
   const session=receiptSession;
-  try{const work=async()=>{if(receiptOtherBusy())throw Error("ほかの処理中です。入力は残しています。");return receiptFileApi().commit({storage:localStorage,key:KEY,db:await idb(),defaults:RECEIPT_DEFAULTS,historyFields:R_FIELDS},session,fields,ui.rNew||[],ui.rDel||[]);};
+  try{const work=async()=>{if(receiptOtherBusy())throw Error("ほかの処理中です。入力は残しています。");return lockedAdopt(await receiptFileApi().commit({storage:localStorage,key:KEY,db:await idb(),defaults:RECEIPT_DEFAULTS,historyFields:R_FIELDS},session,fields,ui.rNew||[],ui.rDel||[]));};
     const result=navigator.locks?.request?await navigator.locks.request(KEY+":manual-todo-edit",work):await work();
-    DB=upgrade(result.db);dbPersistedRaw=result.raw;receiptSaving=false;rFormClear();go("rcpt",{rTab:result.record.method==="法人カード"?"card":"list"});toast(result.record.id+"を保存し、読み戻して確認しました。",6000);
+    receiptSaving=false;rFormClear();go("rcpt",{rTab:result.record.method==="法人カード"?"card":"list"});toast(result.record.id+"を保存し、読み戻して確認しました。",6000);
   }catch(error){ui.rSaveUncertain=ui.rSaveUncertain||!!error.mayHaveSaved;const message=error.name==="QuotaExceededError"?"保存容量が不足して保存できませんでした。":error.name==="Error"?error.message:"添付または本文の保存を完了できませんでした。";receiptStatus(message+" 入力と選択済みの添付は残しています。");}
   finally{receiptSaving=false;receiptControls(!!ui.rSaveUncertain);const button=main.querySelector('#rForm button[type="submit"]');if(button){button.disabled=false;button.textContent=ui.rSaveUncertain?"保存状況を確認":"保存する";}}
 }
