@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
-const hook='window.RB={get db(){return DB},ui,go,render,roBuild,adminAdd,adminRoleSave,adminRemove,corpRun,boxState,corpKeepSave,permList,adminLightSave,adminCodesSave,noWait(){corpWait=async()=>{}}};';
+const hook='window.RB={get db(){return DB},ui,go,render,roBuild,adminAdd,adminRoleSave,adminRemove,corpRun,boxState,corpKeepSave,permList,adminLightSave,adminCodesSave,gReq,SHEETS,noWait(){corpWait=async()=>{}}};';
 const ADMIN='toshi.cpg@gmail.com',SA='test-staff-a@example.com',SB='test-staff-b@example.com',GM='test-gm-cpy@example.com',ZEN='test-zensha@example.com';
 const TODAY='2026-10-30';
 /* ---- in-memory Google ---- */
@@ -467,6 +467,50 @@ async function main(){
   mark=G.calls.length;await A.p.evaluate(()=>RB.corpRun());
   assert.equal(new Set(sheetReads(mark,ids)).size,ids.length,'all read after 12 hours');
   assert.deepEqual(A.errors,[]);
+ });
+ await check('v1.50.94 見る人の端末：社長の端末が30分以内に取った更新日時（見る人用一覧の「更新日時」タブ）で、変わっていない人は読み直さない。古い・自分のシート・自分が書いたシートは読む',async()=>{
+  const sheetReads=(from,ids)=>G.calls.slice(from).filter(c=>c[0]===ZEN&&c[1]==='GET'&&ids.some(id=>c[2].startsWith('/v4/spreadsheets/'+id))).map(c=>c[2].split('/')[3]);
+  await A.p.evaluate(()=>RB.corpRun());
+  const tA=await A.p.evaluate(()=>Date.now()),mt=tab(byName('CPG HUB_見る人用一覧'),'更新日時');
+  assert.deepEqual(mt[0],['ファイルID','更新日時']);assert.equal(mt[1][0],'（取った時刻）');assert.ok(Math.abs(Date.parse(mt[1][1])-tA)<60e3,'taken just now');
+  const z=await viewer(ZEN,400);await z.p.clock.setSystemTime(new Date(tA+60e3));
+  await z.p.evaluate(()=>RB.corpRun());/* 前の読み込みは古い一覧のときだったので、ここは全員読む */
+  const info=await z.p.evaluate(()=>RB.ui.corp.data.filter(x=>x.ok).map(x=>({id:x.s.sheetId,box:x.s.boxId||'',name:x.s.name,email:x.s.email})));
+  const own=info.find(x=>x.email===ZEN),others=info.filter(x=>x!==own),ids=info.flatMap(x=>[x.id,x.box]).filter(Boolean);assert.ok(others.length>=3,JSON.stringify(info));
+  /* 何も変わっていない：ほかの人は読まない。自分の記録シートは読む */
+  let mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
+  const read1=new Set(sheetReads(mark,ids));for(const x of others){assert.ok(!read1.has(x.id),'not reread: '+x.name);if(x.box)assert.ok(!read1.has(x.box))}
+  if(own)assert.ok(read1.has(own.id),'own sheet is always read');
+  assert.ok(!G.calls.slice(mark).some(c=>c[0]===ZEN&&c[1]==='GET'&&c[2]==='/drive/v3/files'),'the viewer does not list Drive');
+  let t=await z.p.evaluate(()=>RB.ui.corp.timing);assert.equal(t.reused,others.length);assert.equal(t.shared,1);
+  await z.p.evaluate(()=>RB.go('company'));await z.p.evaluate(()=>document.querySelectorAll('details').forEach(x=>x.open=true));
+  assert.match(await z.p.textContent('main'),/前から変わっていない \d+人は読み直していません・社長の端末が 1分前に取った更新日時で確かめました/);
+  /* 社員の記録シートが変わり、社長の端末が同期した：その人だけ読み直す */
+  const a=others.find(x=>x.name==='社員 一郎'),sA=G.files[a.id];touch(sA);
+  await A.p.evaluate(()=>RB.corpRun());
+  mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
+  assert.deepEqual([...new Set(sheetReads(mark,ids))].filter(id=>!own||id!==own.id&&id!==own.box).sort(),[a.id,a.box].filter(Boolean).sort(),'only the changed person');
+  /* この端末が書き込んだシート（指示箱）は、次の読み込みで必ず読み直す（社長の一覧はまだ古いまま） */
+  const b=others.find(x=>x.name==='管理 見本'&&x.box);
+  await z.p.evaluate(async id=>{await RB.gReq(RB.SHEETS+"/"+encodeURIComponent(id)+"/values/"+encodeURIComponent("'指示'!A1")+":append?valueInputOption=RAW",{method:"POST",body:{values:[['B-TEST-0094','自分で書いた（テスト）']]}})},b.box);
+  mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
+  assert.ok(new Set(sheetReads(mark,ids)).has(b.box),'a sheet this device wrote is reread');
+  assert.ok(await z.p.evaluate(id=>RB.ui.corp.data.find(x=>x.s.sheetId===id).box.some(o=>o['指示ID']==='B-TEST-0094'),b.id));
+  mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
+  assert.ok(!new Set(sheetReads(mark,ids)).has(b.box),'after that read, it is reused again');
+  /* 社長の端末が取ってから30分を過ぎた：全員読む */
+  await z.p.clock.setSystemTime(new Date(tA+31*60e3));
+  mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
+  assert.equal(new Set(sheetReads(mark,ids)).size,ids.length,'all read when the list is older than 30 minutes');
+  t=await z.p.evaluate(()=>RB.ui.corp.timing);assert.equal(t.reused,0);assert.equal(t.shared,null);
+  await z.p.evaluate(()=>RB.render());assert.match(await z.p.textContent('main'),/社長の端末の新しい更新日時がないので、全員を読みました/);
+  /* 一覧のタブが読めない（形が違う）：全員読む */
+  await A.p.clock.setSystemTime(new Date(tA+31*60e3));await A.p.evaluate(()=>RB.corpRun());
+  const vt=byName('CPG HUB_見る人用一覧').tabs.find(x=>x.title==='更新日時');vt.rows[1][0]='壊れた';
+  mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
+  assert.equal(new Set(sheetReads(mark,ids)).size,ids.length,'all read when the list is malformed');
+  assert.ok(await z.p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  assert.deepEqual(z.errors,[]);assert.deepEqual(A.errors,[]);await z.c.close();
  });
  await check('v1.50.32 ふつうの社員の追加は、その人の分（記録シート・指示箱・その人の会社の数字）だけ確かめて合わせ、ほかの人のファイルには触らない。GMの追加は今までどおり全員',async()=>{
   const others=await A.p.evaluate(()=>RB.db.settings.data.staff.filter(s=>!s.removed).flatMap(s=>[s.sheetId,s.boxId]).filter(Boolean));
