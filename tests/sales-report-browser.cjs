@@ -376,6 +376,9 @@ async function main(){
    await E2.p.evaluate(()=>BB.ordAfterSync());await E2.p.evaluate(()=>{BB.go('stats');document.querySelectorAll('details[data-fold="sales"]').forEach(d=>d.open=true)});
    assert.doesNotMatch(await E2.p.textContent('#stats-sales'),/書けなかった会社/);
    assert.ok(G.calls.some(c=>c[0]===STAFF&&c[1]!=='GET'&&c[2].includes('numcp000000000000000001')),'written by the editor');
+   /* v1.50.90 中身が同じなら、3社を入れられる人も次は書き直さない */
+   G.calls=[];await E2.p.evaluate(()=>BB.ordAfterSync());
+   assert.ok(!G.calls.some(c=>c[0]===STAFF&&c[1]!=='GET'&&c[2].includes('numcp000000000000000001')),'not rewritten when unchanged');
    {const rows=tabOf(G.files.numcp000000000000000001,'今月の受注');assert.equal(rows.length,4);assert.equal(rows[1][6],'2026-11-09')}
    delete G.files.numcp000000000000000001.writers;
    assert.equal(await E2.p.$$eval('[data-act=salescheck]',a=>a.length),0,'boss check is only for the boss');assert.equal(await E2.p.$$eval('#sales-eds,[data-act=salesdemo]',a=>a.length),0,'no admin controls');
