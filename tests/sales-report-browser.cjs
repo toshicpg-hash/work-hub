@@ -99,9 +99,9 @@ async function main(){
    const t2=await A.p.textContent('#stats-sales');
    for(const k of ['前月の金額','最終粗利予想','目標粗利率','確認日　社長','見本 一郎','第1事業部','第2事業部','完了物件','施工中','合計','1件単価','営業外売上','毎日の受注受注Total','更新日'])assert.ok(t2.includes(k),k);
    assert.equal(await A.p.$$eval('#stats-sales .sales-col[data-sales-day^="CP|"]',a=>a.length),30);
-   /* v1.50.51 並びは 毎日の受注 → 確認日 → 担当者別。開け閉めの見出しは色の帯 */
+   /* v1.50.100 並びは 担当者別 → 売上 → 確認日 → 毎日の受注（トシさんの指示で入れ替え）。開け閉めの見出しは色の帯 */
    const cpText=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).textContent();
-   assert.ok(cpText.indexOf('毎日の受注')<cpText.indexOf('確認日')&&cpText.indexOf('確認日')<cpText.indexOf('担当者別'),'order');assert.ok(cpText.indexOf('毎日の受注')<cpText.indexOf('売上（実績）'),'v1.50.56 開いたら先頭は毎日の受注（売上の上）');
+   assert.ok(cpText.indexOf('担当者別')<cpText.indexOf('売上（実績）')&&cpText.indexOf('売上（実績）')<cpText.indexOf('確認日')&&cpText.indexOf('確認日')<cpText.indexOf('毎日の受注'),'order: 担当者別 first, 毎日の受注 last');
    assert.ok(await A.p.$$eval('#stats-sales details.sales-open>summary',a=>a.length>0&&a.every(x=>getComputedStyle(x).backgroundColor!=='rgba(0, 0, 0, 0)')),'summaries are colored bands');
    /* v1.50.51 毎日の受注は表が先：曜日・件数・金額・その日までの累計。最後の累計 ＝ 合計 ＝ 受注Total */
    const dt=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-days').evaluate(t=>[...t.querySelectorAll('tbody tr')].map(r=>[...r.cells].map(c=>c.innerText.replace(/\n/g,' '))));
