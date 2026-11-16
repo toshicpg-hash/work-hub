@@ -1061,7 +1061,9 @@ function calShareManual(busy){
 /* v1.50.41 売上報告は毎日更新するので、社長の端末の同期のたびに読み直す（失敗しても同期の結果は変えない。結果に1行足す） */
 async function salesAfterSync(){
   const g=ui.gsync;if(!D().admin||!D().salesId||!g||!Array.isArray(g.rows)||!gSignedIn())return;
-  let row;try{await salesLoad();const S=ui.sales,mt=S&&S.modified;row={name:"売上報告",ok:S&&S.today?true:"warn",msg:S&&S.today?"今日の更新を読みました（"+salesLast(S)+"）":"シートが今日はまだ更新されていません（最終更新 "+salesLast(S)+"）"};
+  let row;try{/* v1.50.87 回数制限・通信の失敗・Google側の不具合のときは、待って2回までやり直す */
+    for(let tries=1;;tries++){try{await salesLoad();break}catch(err){const w=err&&err.message!=="signin"&&corpErrKind(err)?corpRetryWait(err,tries):null;if(w==null||tries>=3)throw err;await corpWait(w)}}
+    const S=ui.sales,mt=S&&S.modified;row={name:"売上報告",ok:S&&S.today?true:"warn",msg:S&&S.today?"今日の更新を読みました（"+salesLast(S)+"）":"シートが今日はまだ更新されていません（最終更新 "+salesLast(S)+"）"};
     /* v1.50.60 今月の受注を、社員に共有済みの会社の数字のファイルに書き出す（失敗しても売上報告の行は変えず、理由を足す） */
     try{await numbersEnsure();const w=await ordWriteAll(ordSummary(S));if(w.errs.length)row.msg+="（社員への今月の受注：書けなかった会社 "+w.errs.join("・")+"）"}catch(err){row.msg+="（社員への今月の受注：書けませんでした）"}
     try{const n=await ordWriterFix();if(n)row.msg+="（3社を入れられる人を、会社の数字の編集者にしました："+n+"件）"}catch(err){if(err.message==="signin")throw err;row.msg+="（会社の数字の編集者にできませんでした："+(err.message==="http"?dMsg(err):err.message)+"）"}}
@@ -1075,7 +1077,7 @@ async function bbAfterSync(){
      理由は日本語で出す（前は「signal is aborted without reason」のように英語のまま出ていた） */
   else{let tries=0;for(;;){tries++;
     try{const c=await bbWrite();row={name:"この端末の控え",ok:true,msg:"「"+BB_PREFIX+D().bossBackup.name+"」に控えました（"+bbCountText(c)+"）"+(tries>1?"（"+tries+"回目で控えました）":"")};break}
-    catch(err){if(err.message!=="signin"&&corpErrKind(err)&&tries<2){await corpWait(3000);continue}
+    catch(err){if(err.message!=="signin"&&corpErrKind(err)&&tries<3){await corpWait(corpRetryWait(err,tries)||3000);continue}
       row={name:"この端末の控え",ok:false,msg:err.message==="signin"?"ログインが切れたため控えられませんでした":corpErrKind(err)?corpReadMsg(err)+(tries>1?"・"+tries+"回試しました":""):err.message==="http"?dMsg(err):err.message};break}}}
   ui.gsync={...ui.gsync,rows:ui.gsync.rows.concat([row])};render();
 }
@@ -2083,9 +2085,10 @@ async function gSyncAll(){
     let r;try{const p=gSyncAllRun();const rows=ui.gsync&&ui.gsync.rows;
       if(Array.isArray(rows)){const push=rows.push;rows.push=function(...a){const t=now();for(const x of a)tm.steps.push({name:String(x&&x.name||""),ms:Math.round(t-last)});last=t;return push.apply(this,a)}}
       r=await p;
-      for(const [n,fn] of [["共有の書き出し",bbAfterSync],["売上報告",salesAfterSync],["今月の受注",ordAfterSync],["担当の候補・会社の住所",namesAfterSync]]){const s=now();try{await fn()}catch(e){if(n!=="担当の候補・会社の住所")throw e}const ms=Math.round(now()-s);if(ms>=50)tm.after.push({name:n,ms})}
-      /* v1.50.87 ボタンはもう戻っている。裏の社員の記録が終わるまで、この同期の処理としては待つ（二重に始めない・記録の取り込みと重ならないように） */
+      /* v1.50.87 ボタンはもう戻っている。裏の社員の記録が終わってから、控え・売上報告などを順に（同時に読むとGoogleの回数制限（429）に当たりやすい。11/16 社長の端末で控えが429・売上報告が読めなかった） */
       if(corpBg)await corpBg.catch(()=>{});
+      for(const [n,fn] of [["共有の書き出し",bbAfterSync],["売上報告",salesAfterSync],["今月の受注",ordAfterSync],["担当の候補・会社の住所",namesAfterSync]]){const s=now();try{await fn()}catch(e){if(n!=="担当の候補・会社の住所")throw e}const ms=Math.round(now()-s);if(ms>=50)tm.after.push({name:n,ms})}
+
     }finally{tm.total=Math.round(now()-t0);tm.at=new Date().toISOString();tm.ver=APP_VER;tm.ok=!!(ui.gsync&&ui.gsync.complete);syncTimingSave(tm);if(ui.gsync)ui.gsync.timing=tm;syncResumeAfter();render()}
     return r;
   };
