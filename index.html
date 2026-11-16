@@ -524,8 +524,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.86" title="使い方マニュアルを開く">v1.50.86・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.86" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.87" title="使い方マニュアルを開く">v1.50.87・11/16更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.87" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -585,10 +585,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.86"></script>
+<script src="./share-management.js?v=1.50.87"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.86"></script>
-<script src="./calendar-view-scope.js?v=1.50.86"></script>
+<script src="./view-scope.js?v=1.50.87"></script>
+<script src="./calendar-view-scope.js?v=1.50.87"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2084,11 +2084,27 @@ async function gSyncAll(){
       if(Array.isArray(rows)){const push=rows.push;rows.push=function(...a){const t=now();for(const x of a)tm.steps.push({name:String(x&&x.name||""),ms:Math.round(t-last)});last=t;return push.apply(this,a)}}
       r=await p;
       for(const [n,fn] of [["共有の書き出し",bbAfterSync],["売上報告",salesAfterSync],["今月の受注",ordAfterSync],["担当の候補・会社の住所",namesAfterSync]]){const s=now();try{await fn()}catch(e){if(n!=="担当の候補・会社の住所")throw e}const ms=Math.round(now()-s);if(ms>=50)tm.after.push({name:n,ms})}
+      /* v1.50.87 ボタンはもう戻っている。裏の社員の記録が終わるまで、この同期の処理としては待つ（二重に始めない・記録の取り込みと重ならないように） */
+      if(corpBg)await corpBg.catch(()=>{});
     }finally{tm.total=Math.round(now()-t0);tm.at=new Date().toISOString();tm.ver=APP_VER;tm.ok=!!(ui.gsync&&ui.gsync.complete);syncTimingSave(tm);if(ui.gsync)ui.gsync.timing=tm;syncResumeAfter();render()}
     return r;
   };
   manualTodoSyncPending=Promise.resolve().then(()=>globalThis.navigator?.locks?.request?navigator.locks.request(KEY+":manual-todo-edit",run):run());
   try{return await manualTodoSyncPending;}finally{manualTodoSyncPending=null;}
+}
+/* v1.50.87 社員の記録の読み込みを裏に回す（トシさんの指示：同期のボタンが戻るまで長い。11/16 社長の端末で社員の記録 13.9秒）。
+   同期の結果には「読み込んでいます…」と出し、終わったらその行と会社の動きを新しくする。裏で読んでいる間にもう一度同期しても、二重には読まない */
+let corpBg=null;
+function corpBgStart(step){
+  if(corpBg){step("社員の記録","warn","前の同期の読み込みを続けています");return}
+  step("社員の記録","warn","読み込んでいます…（終わると、ここと会社の動きが新しくなります）");
+  const t0=Date.now();ui.corpBgBusy=true;
+  corpBg=corpRun().then(data=>{const ok=data.filter(x=>x.ok),bad=data.length-ok.length;
+      return {name:"社員の記録",ok:!bad,msg:ok.length+"人・案件"+ok.reduce((n,x)=>n+x.cases.filter(r=>r["受付番号"]).length,0)+"件"+(bad?"。読めなかった人が"+bad+"人います（会社の動きで確かめてください）":"")}},
+    err=>({name:"社員の記録",ok:false,msg:err&&err.message==="signin"?"ログインが切れたため読めませんでした。もう一度「Googleとまとめて同期」を押してください":corpErr(err)}))
+   .then(row=>{const g=ui.gsync;if(g&&Array.isArray(g.rows)){ui.gsync={...g,rows:g.rows.map(r=>r.name==="社員の記録"&&r.ok==="warn"?row:r)};
+      if(g.timing&&Array.isArray(g.timing.after)){g.timing.after.push({name:"社員の記録（裏で）",ms:Date.now()-t0});ui.gsync.timing=g.timing;try{syncTimingSave(g.timing)}catch(e){}}}})
+   .finally(()=>{corpBg=null;ui.corpBgBusy=false;render()});
 }
 async function gSyncAllRun(){
   const rows=[], step=(name,ok,msg)=>rows.push({name,ok,msg});
@@ -2105,11 +2121,7 @@ async function gSyncAllRun(){
     const moved=calendarDriftCases();
     if(moved.length)step("日付の変わった案件",false,moved.length+"件がGoogleカレンダーと違います（案件の画面で「カレンダーの予定を更新」を押してください）");
     if(D().sheetId)await dataSync(step);
-    if(D().admin||D().viewListId){
-      try{const data=await corpRun(), ok=data.filter(x=>x.ok), bad=data.length-ok.length;
-        step("社員の記録",!bad,ok.length+"人・案件"+ok.reduce((n,x)=>n+x.cases.filter(r=>r["受付番号"]).length,0)+"件"+(bad?"。読めなかった人が"+bad+"人います（会社の動きで確かめてください）":""))}
-      catch(err){if(err.message==="signin")throw err;step("社員の記録",false,corpErr(err))}
-    }
+    if(D().admin||D().viewListId)corpBgStart(step);/* v1.50.87 社員の記録は裏で読む（ボタンを早く戻す） */
     complete=true;
   }finally{ui.gsync={busy:false,at:Date.now(),rows,complete};render()}
 }
@@ -2522,7 +2534,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.86";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.87";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2691,7 +2703,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.86" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.86" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.87" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.87" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3693,14 +3705,19 @@ function ordParse(rows){
 /* 社長の端末：会社の数字のファイル（会社ごと）すべてに同じ「今月の受注」を書き、読み戻して確かめる */
 /* v1.50.66 社長が同期できないときのために、3社を入れられる人（専務）の端末も同期のたびに書き出す（トシさんの指示）。
    その人には会社の数字のファイルの「編集者」の共有が要る（「共有を合わせる」で付ける。前に「見るだけ」で付けたものは自動では変えないので、Googleで「編集者」に変える） */
+const ORD_DONE_KEY="workhub_ord_done_v1";
 async function ordWriteAll(sum,targets){
   const d=D();if(!sum)return {n:0,errs:[]};
   const map=targets||(d.admin&&d.numbers?COMPANIES.filter(co=>d.numbers[co]).map(co=>[co,d.numbers[co]]):[]);
   const rows=ordRows(sum),seen=new Set(),errs=[];let n=0;
+  /* v1.50.87 中身（時刻を除く）が前に書いたときと同じファイルは書かない（同期を短くする。社長の端末の売上報告 16.4秒） */
+  const same=JSON.stringify([sum.key,sum.date,sum.upd,sum.cos]);let done={};try{done=JSON.parse(localStorage.getItem(ORD_DONE_KEY)||"{}")||{}}catch(e){}
   for(const [co,id] of map){if(seen.has(id))continue;seen.add(id);
+    if(!targets&&done[id]===same){n++;continue}
     try{const tabs=await sheetTabNames(id);if(!tabs.includes(ORD_TAB))await addTab(id,ORD_TAB);
       const prev=(await sheetRead(id,[ORD_TAB]))[ORD_TAB]||[];await sheetWrite(id,ORD_TAB,rows,prev);
-      const back=ordParse((await sheetRead(id,[ORD_TAB]))[ORD_TAB]||[]);if(!back||back.at!==sum.at)throw Error("書き出したあとの確認ができません");n++}
+      const back=ordParse((await sheetRead(id,[ORD_TAB]))[ORD_TAB]||[]);if(!back||back.at!==sum.at)throw Error("書き出したあとの確認ができません");n++;
+      if(!targets){done[id]=same;try{localStorage.setItem(ORD_DONE_KEY,JSON.stringify(done))}catch(e){}}}
     catch(err){if(err.message==="signin")throw err;errs.push(co+"："+(err.message==="http"?(err.status===403?"書く共有がありません（見るだけ）":dMsg(err)):err.message))}}
   return {n,errs};
 }
@@ -4191,11 +4208,15 @@ async function numbersEnsure(){
 /* v1.50.67 3社を入れられる人（専務）が会社の数字を「見るだけ」なら「編集者」にする（今月の受注を書き出すため。トシさんの指示）。
    社長の端末の同期のたびに確かめる。HUBが作ったファイルだけ。上げるだけで、下げたり外したりはしない */
 async function ordWriterFix(){
-  const d=D();if(!d.admin)return 0;const nums=await numbersEnsure(),ws=(d.staff||[]).filter(ordWriter);if(!ws.length)return 0;let n=0;
+  const d=D();if(!d.admin)return 0;const ws0=(d.staff||[]).filter(ordWriter);if(!ws0.length)return 0;
+  /* v1.50.87 共有の確かめは、同じ顔ぶれなら1日1回だけ（同期を短くする） */
+  const fk=todayS()+"|"+ws0.map(w=>String(w.email||"").toLowerCase()).sort().join(",");try{if(localStorage.getItem("workhub_ordfix_v1")===fk)return 0}catch(e){}
+  const nums=await numbersEnsure(),ws=ws0;let n=0;
   for(const co of COMPANIES){const id=nums[co];if(!id)continue;
     const ps=await permList(id);
     for(const w of ws){const p=ps.find(x=>x.type==="user"&&eq(x.emailAddress,w.email));
       if(p&&p.role==="reader"&&!(p.permissionDetails||[]).some(x=>x.inherited)){await gReq(DRIVE+"/"+encodeURIComponent(id)+"/permissions/"+encodeURIComponent(p.id)+"?fields=id,role",{method:"PATCH",body:{role:"writer"}});n++}}}
+  try{localStorage.setItem("workhub_ordfix_v1",fk)}catch(e){}
   return n;
 }
 /* v1.50.62 入力できる人を保存：社員一覧の「HUBの設定」に残し、各社員の記録シートの「会社の数字の場所」を書き直す（変わらない人は書かない） */

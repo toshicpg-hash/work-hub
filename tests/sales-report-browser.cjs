@@ -273,6 +273,9 @@ async function main(){
    const want=co=>{const ds=days.filter(r=>r[0]===co),n=v=>Number(String(v??'').replace(/,/g,''))||0;return [ds.reduce((s,r)=>s+n(r[2]),0),ds.reduce((s,r)=>s+n(r[3]),0)]};
    await sync(A.p);await A.p.waitForFunction(()=>BB.ui.gsync.rows.some(x=>x.name==='売上報告'));await A.p.evaluate(()=>BB.go('home'));
    for(const id of ['numcp000000000000000001','numat000000000000000001']){const rows=tabOf(G.files[id],'今月の受注');assert.ok(rows&&rows.length===4,JSON.stringify(rows));assert.deepEqual(rows[1].slice(0,3),['CP',...want('CP').map(String)]);assert.equal(rows[1][6],'2026-11-09')}
+   /* v1.50.87 中身が同じなら、次の同期では今月の受注を書き直さない（時刻の列も前のまま） */
+   {const before=JSON.stringify(tabOf(G.files.numcp000000000000000001,'今月の受注'));await sync(A.p);await A.p.waitForFunction(()=>BB.ui.gsync.rows.some(x=>x.name==='売上報告'));
+    assert.equal(JSON.stringify(tabOf(G.files.numcp000000000000000001,'今月の受注')),before,'not rewritten when unchanged');await A.p.evaluate(()=>BB.go('home'))}
    const tile=await A.p.textContent('#home-orders');
    assert.match(tile,/今月の受注（11\/9まで）/);
    for(const co of ['CP','AT','CPY']){const [n,a]=want(co);assert.ok(tile.includes(co+n+'件 '+a.toLocaleString('ja-JP')+'円'),co+' '+tile)}
