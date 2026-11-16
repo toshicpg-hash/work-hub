@@ -36,9 +36,11 @@ async function main(){
    await d.p.click('[data-act=planopen]');
    /* v1.50.86 「＋ 予定を入れる」は上の固定欄にあり、下にスクロールしても見えたまま。会社・人の切り替えと重ならない */
    {await d.p.evaluate(()=>{window.scrollTo(0,document.body.scrollHeight)});await d.p.waitForTimeout(100);
-    const r=await d.p.evaluate(()=>{const b=document.querySelector('main>.scope-bar>.plan-fab').getBoundingClientRect(),sel=[...document.querySelectorAll('main>.scope-bar select,main>.scope-bar button:not(.plan-fab)')].map(e=>e.getBoundingClientRect()).filter(x=>x.width);
+    const r=await d.p.evaluate(()=>{const b=document.querySelector('main>.scope-bar .plan-fab').getBoundingClientRect(),sel=[...document.querySelectorAll('main>.scope-bar select,main>.scope-bar button:not(.plan-fab):not(.calnav button)')].map(e=>e.getBoundingClientRect()).filter(x=>x.width);
      return {y:scrollY,top:b.top,bottom:b.bottom,vh:innerHeight,overlap:sel.some(s=>!(s.bottom<=b.top||s.top>=b.bottom||s.right<=b.left||s.left>=b.right)),text:document.querySelector('.plan-fab').textContent}});
-    assert.ok(r.y>100&&r.top>=0&&r.bottom<=r.vh/2,JSON.stringify(r));assert.equal(r.overlap,false,JSON.stringify(r));assert.match(r.text,/閉じる/);
+    assert.ok(r.y>100&&r.top>=0&&r.bottom<=r.vh/2,JSON.stringify(r));
+    /* v1.50.91 前後・今週・月週日の切り替えも上に残る */
+    {const n=await d.p.evaluate(()=>{const c=document.querySelector('main>.scope-bar>.calnav');const b=c&&c.getBoundingClientRect();return c?{top:b.top,bottom:b.bottom,vh:innerHeight,cv:c.querySelectorAll('[data-cv]').length}:null});assert.ok(n&&n.top>=0&&n.bottom<=n.vh/2&&n.cv===3,JSON.stringify(n))}assert.equal(r.overlap,false,JSON.stringify(r));assert.match(r.text,/閉じる/);
     /* 下にスクロールしたあと押すと、閉じずに入力欄へ戻る */
     await d.p.click('.plan-fab');await d.p.waitForTimeout(700);assert.equal(await d.p.evaluate(()=>PA.ui.planOpen),true);assert.ok(await d.p.evaluate(()=>{const bar=document.querySelector('main>.scope-bar').getBoundingClientRect().bottom;return document.getElementById('plan-add').getBoundingClientRect().top>=bar-12}),'scrolled to the form');
     await d.p.evaluate(()=>window.scrollTo(0,0))}
