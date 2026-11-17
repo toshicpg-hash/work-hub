@@ -18,10 +18,13 @@ function project({g,rows,model,cases=[],resolvePerson,readable,from='',to='9999-
  const co=model.selection.company,person=model.selection.person,match=(company,id)=>(co==='all'||co===company)&&(person==='all'||person===id);
  const maps=new Map(approved.map(r=>[r.id,r])),events=[],unidentified=[],privacyUnconfirmed=[];
  for(const e of g.data?.events||[]){const r=maps.get(e.calendarId),[first,last]=span(e);if(!r||!model.usable||e.private===true||!first||last<from||first>to)continue;let company=r.company,id=r.person;
+  /* v1.50.106 bossOnly：社長の予定だけを読む行（ほかの人の予定を見ない端末の「CPG HUB」）。社長の予定でなければ何もしない（持ち主不明・同期し直しにも数えない） */
+  if(r.bossOnly){if(e.private!==false)continue;const b=typeof attribute==='function'?attribute(e):null;if(b&&b.boss)events.push({...e,boss:true});continue}
   if(e.private!==false){if(r.mode==='mixed'||match(company,id)||(company==='unknown'&&(person==='all'||person===id)))privacyUnconfirmed.push(e);continue}
   const a=typeof attribute==='function'?attribute(e):null;
-  /* v1.50.75 社長の予定（「担当：社長」・社長のGmailで作成）で、社長を人として持たない端末：全社・全員のときだけ出す。持ち主不明にはしない */
-  if(a&&a.boss){if(co==='all'&&person==='all')events.push({...e,boss:true});continue}
+  /* v1.50.75 社長の予定（「担当：社長」・社長のGmailで作成）で、社長を人として持たない端末：持ち主不明にはしない。
+     v1.50.106 トシさんの指示：社長が「CPG HUB」に入れた予定はみんなに見せる。会社・人の絞り込みに関係なく出す（前は全社・全員のときだけ） */
+  if(a&&a.boss){events.push({...e,boss:true});continue}
   if(a&&a.person){if(!allowed.has(a.person))continue;company=['CP','CPY','AT'].includes(a.company)?a.company:'unknown';id=a.person;}
   else if(r.mode==='mixed'){
    // A bare case number is not provenance. Require exact saved event+calendar identity.
@@ -36,13 +39,13 @@ function project({g,rows,model,cases=[],resolvePerson,readable,from='',to='9999-
  const coverage=(r,day)=>readyState&&sources.some(s=>s.id===r.id&&(s.from||g.from)<=day&&(s.to||g.to)>=day);
  /* v1.50.15 案件の予定は全員「CPG HUB」（複数の人が使う仕事用）に入れる決まり。本人のカレンダーをどの会社でも結び付けていない人は、
     複数の人が使う仕事用カレンダーがその日まで読めていれば「取得済み」とする（本人のカレンダーを結び付けた人は、今までどおりそれが読めたかで決める） */
- const sharedOK=day=>approved.some(r=>r.mode==='mixed')&&approved.filter(r=>r.mode==='mixed').every(r=>coverage(r,day));
+ const shared=approved.filter(r=>r.mode==='mixed'&&!r.bossOnly),sharedOK=day=>shared.length>0&&shared.every(r=>coverage(r,day));
  const status=day=>people.map(p=>{const assigned=approved.filter(r=>r.mode==='person'&&r.person===p.sheetId&&(co==='all'||r.company===co));
   if(!approved.some(r=>r.mode==='person'&&r.person===p.sheetId)){const ok=model.usable&&sharedOK(day);return {id:p.sheetId,name:p.name,ready:ok,viaShared:ok,reason:ok?'共有カレンダーで取得済み（本人のカレンダーは未設定）':'仕事用カレンダー未設定',missing:[]};}
   return {id:p.sheetId,name:p.name,ready:model.usable&&assigned.length>0&&assigned.every(r=>coverage(r,day)),reason:!assigned.length?'仕事用カレンダー未設定':assigned.every(r=>coverage(r,day))?'取得済み':'未取得・読取失敗または保存範囲外',missing:assigned.filter(r=>!coverage(r,day)).map(r=>r.id)};});
  const onDay=(list,day)=>list.some(e=>{const [first,last]=span(e);return first<=day&&last>=day});
  const unfetched=day=>!model.usable||!people.length||status(day).some(p=>!p.ready);
- const mixedMissing=day=>approved.filter(r=>r.mode==='mixed'&&!coverage(r,day));
+ const mixedMissing=day=>shared.filter(r=>!coverage(r,day));
  const dayState=day=>unfetched(day)?'unfetched':mixedMissing(day).length?'additional':onDay(privacyUnconfirmed,day)?'privacy':onDay(unidentified,day)?'unidentified':'ready';
  const unknown=day=>dayState(day)!=='ready';
  return {events,unidentified,privacyUnconfirmed,status,unknown,unfetched,dayState,mixedMissing,approved};

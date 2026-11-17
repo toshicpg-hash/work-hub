@@ -119,8 +119,27 @@ async function main(){
    const ev={private:false,calendarId:HUB,calendar:'CPG HUB',id:'boss1',hub:'',title:'会議　見本の会議',allDay:false,start:'2026-11-07T16:00:00+09:00',end:'2026-11-07T18:00:00+09:00',owner:'社長',creator:HO.ADMIN};
    localStorage.setItem('workhub_gcal_last_v1',JSON.stringify({policy:2,at:Date.now(),from:'2026-11-01',to:'2026-11-30',data:{events:[ev],sources:[{id:HUB}],missing:0}}));HO.go('cal',{calDay:'2026-11-07',calView:'day'})},{HUB});
   await pick(d.p,'all');
-  const c=await cards(d.p);const card=c.find(x=>x.text.includes('見本の会議'));assert.ok(card,JSON.stringify(c));assert.equal(card.tag,'社長');
+  const c=await cards(d.p);const card=c.find(x=>x.text.includes('見本の会議'));assert.ok(card,JSON.stringify(c));assert.equal(card.tag,'社長・会議','v1.50.106 会議 is marked');
   assert.ok(!(await d.p.textContent('main')).includes('持ち主不明'),'not unidentified');
+ });
+ /* v1.50.106 社長が「CPG HUB」に入れた予定は、だれの端末でも、会社・人の絞り込みに関係なく出す。来客・会議は目立たせる */
+ const BOSS_EVS=[E('b1','来社　見本銀行',{owner:'社長',creator:'boss@example.com',start:'2026-11-07T13:00:00+09:00',end:'2026-11-07T14:00:00+09:00'}),E('b2','見本の視察',{owner:'社長',creator:'boss@example.com',allDay:true,start:'2026-11-07',end:'2026-11-08'})];
+ const addBoss=async d=>d.p.evaluate(({B})=>{const k='workhub_gcal_last_v1',v=JSON.parse(localStorage.getItem(k));v.data.events=v.data.events.concat(B.map(e=>({...e,creator:HO.ADMIN})));localStorage.setItem(k,JSON.stringify(v));HO.render()},{B:BOSS_EVS});
+ await check('v1.50.106 GM（会社が固定）の端末：自分の会社・自分だけに絞っても、社長の予定が出る。来社は「社長・来客」の札で、その日のいちばん上',async()=>{
+  const d=await device({self:B,rows:[{id:HUB,work:true,mode:'mixed'}],admin:false});all.push(d);
+  await d.p.evaluate(()=>{HO.ui.viewList=HO.ui.viewList.map(x=>x.email==='b@example.com'?{...x,role:'GM',gmCo:'CPY'}:x);HO.render()});await addBoss(d);
+  await pick(d.p,B,'CPY');
+  const c=await cards(d.p);assert.equal(c[0].tag,'社長・来客',JSON.stringify(c));assert.ok(c[0].text.includes('見本銀行'));
+  assert.ok(c.some(x=>x.tag==='社長'&&x.text.includes('見本の視察')),'other boss events: plain 社長 tag');
+  assert.equal(await d.p.$eval('main .gccard .ev.bossmeet',e=>getComputedStyle(e).color),'rgb(255, 255, 255)');
+ });
+ await check('v1.50.106 一般社員の端末（見る人用一覧なし・対応設定なし）：「CPG HUB」の社長の予定だけ出す。ほかの人の予定は出さず、持ち主不明にも数えない',async()=>{
+  const d=await device({self:B,rows:[],admin:false});all.push(d);
+  await d.p.evaluate(()=>{HO.db.settings.data.viewListId='';HO.ui.viewList=[];HO.save();HO.render()});await addBoss(d);
+  const c=await cards(d.p),t=c.map(x=>x.text).join('|');
+  assert.ok(c.some(x=>x.tag==='社長・来客'),t);assert.ok(c.some(x=>x.text.includes('見本の視察')),t);
+  assert.ok(!t.includes('見本ハイツ')&&!t.includes('見本の打合せ'),'other people are not shown: '+t);
+  const m=await d.p.textContent('main');assert.ok(!m.includes('持ち主不明')&&!m.includes('誰の予定か分からない'),m.slice(0,300));
  });
  await check('400px・360pxで横にはみ出さない・スクリプトのエラーなし',async()=>{
   for(const width of [400,360]){const d=await device({rows:[{id:HUB,work:true,mode:'mixed'}],width});all.push(d);await pick(d.p,B);
