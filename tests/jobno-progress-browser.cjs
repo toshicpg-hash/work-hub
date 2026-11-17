@@ -33,7 +33,10 @@ const check=async(n,fn)=>{await fn();results.push(n);console.log('PASS',n)};
   await p.evaluate(()=>{JP.go('stats');const d=document.querySelector('details[data-fold="st_jobno"]');d.open=true});
   const sec=await p.locator('#stats-jobno').innerText();
   assert.match(sec,/施工中 1件・未請求 2件・入金待ち 2件/);
-  const li=async id=>p.evaluate(id=>{const b=document.querySelector('#stats-jobno [data-open="'+id+'"]');if(!b)return null;const li=b.closest('li'),n=li.querySelector('span.num:last-child');return {t:li.textContent,red:n.style.color.includes('red')}},id);
+  const li=async id=>p.evaluate(id=>{const b=document.querySelector('#stats-jobno [data-open="'+id+'"]');if(!b)return null;const li=b.closest('li'),n=li.querySelector('.jobrow-d');return {t:li.textContent,red:n.style.color.includes('red')}},id);
+  /* v1.50.105 1件は2行の枠（1行目：会社・物件・日数／2行目：担当・仕事番号・受付番号） */
+  assert.deepEqual(await p.evaluate(()=>{const b=document.querySelector('#stats-jobno [data-open="U-9101"]');return [b.querySelector('.jobrow-1').textContent.replace(/\s+/g,' ').trim(),b.querySelector('.jobrow-2').textContent.replace(/\s+/g,' ').trim()]}),['CP見本ハイツ 101引渡から 30日','見本仕事番号 J-TEST-01・U-9101']);
+  assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal overflow at 400px');
   let x=await li('U-9101');assert.match(x.t,/引渡から 30日/);assert.equal(x.red,false,'work in progress is never red');
   x=await li('U-9102');assert.match(x.t,/完工から 2日/);assert.equal(x.red,2>billAfter);
   x=await li('U-9103');assert.match(x.t,/完工から 47日/);assert.equal(x.red,47>billAfter);
