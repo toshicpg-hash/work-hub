@@ -37,6 +37,21 @@ async function main(){
  await fp.locator('#sent-author').selectOption('boss');assert.equal(await fp.locator('.request-compact').count(),9);await fp.locator('#sent-author').selectOption('second@example.com');assert.equal(await fp.locator('.request-compact').count(),1);assert.match(await fp.locator('main').innerText(),/出した人：合成依頼者/);
  for(const width of [390,820]){await fp.setViewportSize({width,height:width===390?844:900});await fp.screenshot({path:path.join(root,'docs/preview/sent-admin-filter-'+width+'.png')});}
  await fp.locator('#sent-author').selectOption('all');assert.equal(await fp.locator('.request-compact').count(),11);assert.equal(await fp.locator('[data-done],[data-bdone],[data-ocancel],[data-bcancel]').count(),0);await filter.ctx.close();results.push('President all/B authors, boss subtotal, same-name separate Gmail filters, readonly and switching');
+ /* v1.50.107 返事（完了の報告）：指示一覧の「返事」の欄に最近14日の完了を新しい順で、完了メモと「新」の印。ホームのタイルに最近7日の件数。開き直すと「新」は消える */
+ {const r=await setup('admin'),rp=r.p;await fixture(rp,'admin');
+  await rp.evaluate(()=>{const x=ST.ui.corp.data[0];x.orders.push({'指示ID':'I-D1','内容':'合成・完了した確認','期限':'2026-10-30','状態':'完了','完了日':'2026-10-30','完了メモ':'合成メモ：済ませました'},{'指示ID':'I-D2','内容':'合成・古い完了','期限':'2026-10-01','状態':'完了','完了日':'2026-10-10','完了メモ':''});
+   x.box.push({'指示ID':'B-D3','内容':'合成・GMからの依頼','期限':'2026-10-29','状態':'未完了','出した人Gmail':'gm@example.com','出した人の表示':'合成GM'});x.reports=[{'指示ID':'B-D3','状態':'完了','完了日':'2026-10-31','完了メモ':'','書いた日時':'2026-10-31T09:00:00Z'}];ST.save();ST.render()});
+  const tile=await rp.locator('#home-requests').innerText();assert.match(tile,/最近7日の完了報告 2件（新 2件）/,tile);
+  await rp.click('#home-requests');const sec=rp.locator('#sent-replies');assert.equal(await sec.evaluate(d=>d.open),true,'opens when there are new replies');
+  const rows=await sec.locator('.reply-row').evaluateAll(a=>a.map(e=>e.innerText.replace(/\s+/g,' ')));
+  assert.equal(rows.length,2,rows.join('|'));assert.match(rows[0],/10\/31 完了.*新.*合成・GMからの依頼.*メモなし.*出した人：合成GM/);assert.match(rows[1],/10\/30 完了.*合成・完了した確認.*メモ：合成メモ：済ませました.*出した人：社長/);
+  assert.ok(!rows.join('').includes('古い完了'),'older than 14 days is not listed');
+  await rp.locator('#sent-author').selectOption('gm@example.com');assert.equal(await rp.locator('#sent-replies .reply-row').count(),1,'author filter applies');await rp.locator('#sent-author').selectOption('all');
+  assert.ok(await rp.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal overflow');
+  await rp.locator('#sent-replies').screenshot({path:path.join(require('os').tmpdir(),'sent-replies-390.png')});
+  await rp.evaluate(()=>ST.go('home'));assert.doesNotMatch(await rp.locator('#home-requests').innerText(),/新 /,'seen after opening');
+  await rp.click('#home-requests');assert.equal(await rp.locator('#sent-replies .new-reply').count(),0);
+  assert.deepEqual(r.errors,[]);await r.ctx.close();results.push('v1.50.107 replies: last 14 days newest first with memo, 新 until opened, home tile count, author filter');}
  const b=await setup('admin');await fixture(b.p,'admin');await b.p.evaluate(()=>{ST.ui.corp.data[0].ok=false;ST.render()});assert.match(await b.p.locator('#home-requests').innerText(),/読込未確認/);await b.p.evaluate(()=>{ST.ui.corp.data[0].ok=true;ST.ui.corp.data[0].box=null;ST.render()});assert.match(await b.p.locator('#home-requests').innerText(),/読込未確認/);await b.p.evaluate(()=>{ST.ui.corp=null;ST.render()});assert.match(await b.p.locator('#home-requests').innerText(),/確認できた分/);await b.ctx.close();results.push('unread staff/box and unloaded state never presented as complete zero');
  console.log(results.map(x=>'PASS '+x).join('\n'));console.log('ALL PASS',results.length);
 }
