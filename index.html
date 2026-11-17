@@ -422,7 +422,7 @@ div.ordtile{cursor:default}
 .cal .n{font-weight:700;font-variant-numeric:tabular-nums}
 .cal .d.today .n{background:var(--accent);color:var(--accent-fg);border-radius:99px;padding:0 6px;align-self:flex-start}
 .ev{font-size:10px;border-radius:3px;padding:0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
-.ev.plan{background:var(--accent-soft);color:var(--accent)}.ev.bossmeet{background:var(--amber);color:#fff}
+.ev.plan{background:var(--accent-soft);color:var(--accent)}.ev.bossmeet{background:var(--amber);color:#fff}.chip.new-reply{background:var(--red);color:#fff}.new-reply-t{color:var(--red)}.reply-row{display:flex;flex-direction:column;gap:4px}.reply-title{font-weight:700;overflow-wrap:anywhere}.reply-memo{background:var(--green-soft);border-radius:8px;padding:6px 8px;overflow-wrap:anywhere}
 .ev.site{background:var(--green-soft);color:var(--green)}
 .ev.quote{background:var(--amber-soft);color:var(--amber)}
 .ev.won{background:var(--sunk);color:var(--fg)}
@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.106" title="使い方マニュアルを開く">v1.50.106・11/17更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.106" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.107" title="使い方マニュアルを開く">v1.50.107・11/17更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.107" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.106"></script>
+<script src="./share-management.js?v=1.50.107"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.106"></script>
-<script src="./calendar-view-scope.js?v=1.50.106"></script>
+<script src="./view-scope.js?v=1.50.107"></script>
+<script src="./calendar-view-scope.js?v=1.50.107"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -987,35 +987,50 @@ function sentRequests(){
   if(!scopeRecipientMatch(x.s.sheetId))continue;
   if(!x.ok){unread++;continue;}
   if(x.s.boxId&&!Array.isArray(x.box))unread++;
-  const add=(o,box)=>{
+  const add=(o,box)=>{let key='';
    const id=String(o['指示ID']||'');
    if(!id.startsWith(box?'B-':'I-')||!o['内容'])return;
    if(box&&!m.admin&&!eq(o['出した人Gmail'],m.email))return;
    const state=String(o['状態']||'');
    if(!['未完了','完了','取り消し'].includes(state)){unread++;return;}
-   const resolved=box&&state!=='完了'?boxState(o,x.reports).st:state;
+   const bs=box&&state!=='完了'?boxState(o,x.reports):null,resolved=bs?bs.st:state;
    const rank=resolved==='取り消し'?2:resolved==='完了'?1:0;
-   const key=JSON.stringify([box?x.s.boxId:x.s.sheetId,id]);
+   key=JSON.stringify([box?x.s.boxId:x.s.sheetId,id]);
    const old=groups.get(key);if(old&&old.rank>=rank)return;
    const boss=!box||eq(o['出した人Gmail'],ADMIN_ACCOUNT), sender= boss?'boss':String(o['出した人Gmail']||'').toLowerCase()||'unknown:'+key;
-   groups.set(key,{rank,t:{boss,sender,senderEmail:box?String(o['出した人Gmail']||''):'',id:'sent:'+key,ro:true,kind:'リクエスト',title:String(o['内容']),due:cellDate(o['期限']),tantou:x.s.name,from:boss?'社長':String(o['出した人の表示']||'出した人未確認')}});
+   groups.set(key,{rank,t:{boss,sender,senderEmail:box?String(o['出した人Gmail']||''):'',id:'sent:'+key,ro:true,kind:'リクエスト',title:String(o['内容']),due:cellDate(o['期限']),tantou:x.s.name,from:boss?'社長':String(o['出した人の表示']||'出した人未確認'),
+    /* v1.50.107 返事（完了の報告）：完了日と完了メモ。指示箱は「指示の報告」から */
+    doneDate:rank===1?(bs&&bs.date||cellDate(o['完了日'])||''):'',doneMemo:rank===1?String(bs&&bs.memo||o['完了メモ']||''):'',key}});
   };
   if(m.admin)(x.orders||[]).forEach(o=>add(o,false));
   (Array.isArray(x.box)?x.box:[]).forEach(o=>add(o,true));
  }
- return {list:[...groups.values()].filter(x=>x.rank===0).map(x=>x.t).sort((a,b)=>(a.due||'9').localeCompare(b.due||'9')),unread};
+ /* v1.50.107 返事：最近14日（REPLY_DAYS）に完了した分。新しい順 */
+ const since=addDays(requestTodayS(),-REPLY_DAYS),replies=[...groups.values()].filter(x=>x.rank===1&&x.t.doneDate&&x.t.doneDate>=since).map(x=>x.t).sort((a,b)=>b.doneDate.localeCompare(a.doneDate)||a.tantou.localeCompare(b.tantou,'ja'));
+ return {list:[...groups.values()].filter(x=>x.rank===0).map(x=>x.t).sort((a,b)=>(a.due||'9').localeCompare(b.due||'9')),unread,replies};
 }
-function sentRequestTile(){
- const {list,unread}=sentRequests(),boss=list.filter(x=>x.boss).length,t=requestTodayS(),late=list.filter(x=>x.due&&x.due<t).length,soon=list.filter(x=>x.due&&x.due>=t&&x.due<=addDays(t,5)).length;
- return '<button type="button" id="home-requests" class="tile wide'+(late?' alert':'')+'" data-nav="requests" data-sent="1" style="width:100%"><span class="k">タスクリクエスト（'+(D().admin?'全体':'自分が出した分')+'）</span><span class="v">未完了 '+list.length+'件</span>'+(D().admin?'<span class="s">うち社長 '+boss+'件・GMなど '+(list.length-boss)+'件</span>':'')+'<span class="s">期限切れ '+late+'件／5日以内 '+soon+'件</span>'+(unread?'<span class="s">読込未確認 '+unread+'件・確認できた分の件数</span>':'')+'</button>';
+/* v1.50.107 トシさんの指示：出したタスクリクエストの返事（完了の報告・完了メモ）を探しやすく。指示一覧に「返事」の欄、ホームのタイルに件数。
+   まだ見ていない返事には「新」。見たかどうかはこの端末だけに覚える（指示一覧を開いた時点のものを、次に開いたときから「見た」にする） */
+const REPLY_DAYS=14, REPLY_SEEN_KEY="workhub_reqreply_seen_v1";
+function replySeen(){try{const v=JSON.parse(localStorage.getItem(REPLY_SEEN_KEY)||"[]");return new Set(Array.isArray(v)?v:[])}catch(e){return new Set()}}
+function replySeenAdd(keys){const s=replySeen();keys.forEach(k=>s.add(k));try{localStorage.setItem(REPLY_SEEN_KEY,JSON.stringify([...s].slice(-500)))}catch(e){}}
+const replyRow=(t,isNew,admin)=>'<div class="card reply-row"><div class="row" style="gap:6px"><span class="num" style="color:var(--green)"><b>✓ '+md(t.doneDate)+' 完了</b></span>'+personBadge(t.tantou)+(isNew?'<span class="chip new-reply">新</span>':'')+'</div>'+
+  '<div class="reply-title">'+h(t.title)+'</div>'+(t.doneMemo?'<div class="reply-memo">メモ：'+h(t.doneMemo)+'</div>':'<div class="note">メモなし</div>')+(admin?'<div class="note">出した人：'+h(t.from)+'</div>':'')+'</div>';
+function sentRequestTile(){ui.replySnap=null;
+ const {list,unread,replies=[]}=sentRequests(),boss=list.filter(x=>x.boss).length,t=requestTodayS(),late=list.filter(x=>x.due&&x.due<t).length,soon=list.filter(x=>x.due&&x.due>=t&&x.due<=addDays(t,5)).length;
+ return '<button type="button" id="home-requests" class="tile wide'+(late?' alert':'')+'" data-nav="requests" data-sent="1" style="width:100%"><span class="k">タスクリクエスト（'+(D().admin?'全体':'自分が出した分')+'）</span><span class="v">未完了 '+list.length+'件</span>'+(D().admin?'<span class="s">うち社長 '+boss+'件・GMなど '+(list.length-boss)+'件</span>':'')+'<span class="s">期限切れ '+late+'件／5日以内 '+soon+'件</span>'+(()=>{const r=replies,w=addDays(t,-7),n7=r.filter(x=>x.doneDate>=w).length,seen=replySeen(),nw=r.filter(x=>!seen.has(x.key)).length;return n7||nw?'<span class="s reply-sum">最近7日の完了報告 '+n7+'件'+(nw?'<b class="new-reply-t">（新 '+nw+'件）</b>':'')+'</span>':''})()+(unread?'<span class="s">読込未確認 '+unread+'件・確認できた分の件数</span>':'')+'</button>';
 }
 function sentRequestView(){
- const {list,unread}=sentRequests(),admin=D().admin,authors=[...new Map(list.filter(t=>!t.boss).map(t=>[t.sender,t])).values()];
- const selected=admin?ui.sentAuthor||'all':'all', shown=list.filter(t=>selected==='all'||t.sender===selected);
+ const {list,unread,replies=[]}=sentRequests(),admin=D().admin,authors=[...new Map(list.concat(replies).filter(t=>!t.boss).map(t=>[t.sender,t])).values()];
+ const selected=admin?ui.sentAuthor||'all':'all', shown=list.filter(t=>selected==='all'||t.sender===selected), rshown=replies.filter(t=>selected==='all'||t.sender===selected);
+ /* 開いた時点の「見た」を控え、今の返事を「見た」にする（この画面にいる間は「新」を出したまま） */
+ if(!ui.replySnap){ui.replySnap=replySeen();replySeenAdd(replies.map(t=>t.key))}
+ const rNew=rshown.filter(t=>!ui.replySnap.has(t.key)).length;
+ const replySec='<details class="sales-open reply-sec" id="sent-replies"'+(rNew||ui.replyOpen?' open':'')+'><summary>返事（最近'+REPLY_DAYS+'日の完了報告）<span class="sales-open-sub">'+rshown.length+'件'+(rNew?'・新 '+rNew+'件':'')+'</span></summary><div class="list">'+(rshown.map(t=>replyRow(t,!ui.replySnap.has(t.key),admin)).join('')||'<p class="empty">最近'+REPLY_DAYS+'日の完了報告はありません</p>')+'</div></details>';
  const options=authors.map(t=>{const same=authors.filter(a=>a.from===t.from).length>1,label=t.from+(same?'（'+(t.senderEmail||'Gmail未確認')+'）':'');return '<option value="'+h(t.sender)+'"'+(selected===t.sender?' selected':'')+'>'+h(label)+'</option>'}).join('');
  return '<section class="sec"><div class="sec-h"><h2>指示一覧（'+(admin?'全体':'自分が出した分')+'）</h2><span class="note">未完了 '+shown.length+'件</span></div><button class="btn sm" data-nav="home">ホームへ戻る</button><p class="note">6日以上先・期限なしも含む未完了の指示です。見るだけの一覧です。</p>'+
  (admin?'<label class="f">出した人<select id="sent-author"><option value="all"'+(selected==='all'?' selected':'')+'>全部</option><option value="boss"'+(selected==='boss'?' selected':'')+'>社長</option>'+options+'</select></label>':'')+
- (unread?'<p class="ro" role="alert">読込未確認 '+unread+'件。確認できた分だけ表示しています。</p>':'')+'<div class="list">'+(shown.map(t=>(admin?'<p class="note">出した人：'+h(t.from)+'</p>':'')+todoRow(t)).join('')||'<p class="empty">確認できた未完了の指示はありません</p>')+'</div></section>';
+ (unread?'<p class="ro" role="alert">読込未確認 '+unread+'件。確認できた分だけ表示しています。</p>':'')+replySec+'<h3 style="margin:10px 0 0">未完了</h3><div class="list">'+(shown.map(t=>(admin?'<p class="note">出した人：'+h(t.from)+'</p>':'')+todoRow(t)).join('')||'<p class="empty">確認できた未完了の指示はありません</p>')+'</div></section>';
 }
 function vRequests(){if(!scopeState().usable)return scopeUnconfirmed();if(ui.sentRequests&&(D().admin||D().viewListId))return sentRequestView();const list=scopeTodos().filter(isReqTodo).sort((a,b)=>(a.due||'9').localeCompare(b.due||'9'));
  return '<section class="sec"><div class="sec-h"><h2>指示一覧</h2><span class="note">未完了 '+list.length+'件</span>'+infoBtn('requests','指示一覧の説明')+'<span class="sp"></span><button class="btn xs" type="button" data-nav="todo">ToDoに戻る</button></div>'+infoBox('requests','<p>期限が6日以上先のもの・期限なしも含めた、未完了の指示です。タップすると全文が開きます。</p>'+roNoteText())+roNoteWarn()+requestBoxNotice()+'<div class="list">'+(list.map(todoRow).join('')||'<p class="empty">未完了の指示はありません</p>')+'</div></section>';
@@ -2669,7 +2684,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.106";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.107";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2860,7 +2875,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.106" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.106" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.107" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.107" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -4929,7 +4944,7 @@ async function reqSend(){
 }
 /* 会社の動き：社員ごとに「タスクリクエスト」と「社員のToDo」。ToDoは期限切れ→今日→今後7日を一覧、それより先と期限なしは件数だけ */
 const corpOpen=k=>!!(ui.corpOpen||{})[k];
-document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("corp-p"))ui.corpOpen={...(ui.corpOpen||{}),[d.dataset.cp]:d.open}},true);
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.id==="sent-replies")ui.replyOpen=d.open;if(d&&d.classList&&d.classList.contains("corp-p"))ui.corpOpen={...(ui.corpOpen||{}),[d.dataset.cp]:d.open}},true);
 function corpTodos(x,k){
   const t=todayS(), dd=v=>cellDate(v), n=d=>diffDays(d,t);
   const ords=(x.orders||[]), open=ords.filter(o=>o["状態"]==="未完了").sort((a,b)=>(dd(a["期限"])||"9").localeCompare(dd(b["期限"])||"9"));
