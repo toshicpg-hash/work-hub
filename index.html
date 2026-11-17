@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.103" title="使い方マニュアルを開く">v1.50.103・11/17更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.103" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.104" title="使い方マニュアルを開く">v1.50.104・11/17更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.104" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.103"></script>
+<script src="./share-management.js?v=1.50.104"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.103"></script>
-<script src="./calendar-view-scope.js?v=1.50.103"></script>
+<script src="./view-scope.js?v=1.50.104"></script>
+<script src="./calendar-view-scope.js?v=1.50.104"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1188,6 +1188,15 @@ function obCheck(){
 const jobNorm=v=>String(v??"").normalize("NFKC").replace(/\s+/g,"").toUpperCase();
 function jobNoDups(no,selfId){const k=jobNorm(no);if(!k)return [];const seen=new Set(),out=[];for(const x of DB.cases.concat(scopeSourceCases().filter(c=>c.ro))){if(!x||x.id===selfId||seen.has(x.id)||jobNorm(x.jobNo)!==k)continue;seen.add(x.id);out.push(x)}return out}
 const accessWaiting=c=>c.stage==="won"&&!c.cancelledAt&&!String(c.jobNo??"").trim();
+/* v1.50.104 「現場管理表がまだです」（トシさんの指示：現場が先に動いて、あとから現場管理表（Access）が立つので管理ミスが起きている）。
+   受注済みで仕事番号がない案件（営繕は Access に渡さないので除く）に予定を入れようとしたら知らせる。止めはしない（現場が先になることもある） */
+const jobPending=c=>!!c&&accessWaiting(c)&&!isEizen(c);
+const JOB_PENDING_NOTE="現場管理表がまだです（仕事番号が入っていません）。現場が先になるときは、業務管理に現場管理表を頼んでください";
+const jobPendingNote=c=>jobPending(c)?'<p class="note job-pending" role="status" style="margin:0;color:var(--amber);font-weight:700">'+h(JOB_PENDING_NOTE)+'</p>':'';
+/* 予定があるか：予定日・Googleカレンダーへの登録、または「予定を入れる」の作業でその受付番号を入れた予定（読み込み済みの予定だけ。ここでは読みに行かない） */
+function planHubIds(){const out=new Set(),add=d=>{for(const e of (d&&d.events)||[])if(e&&e.hub)out.add(String(e.hub))};
+  try{for(const k in gcalCache)add(gcalCache[k]&&gcalCache[k].data)}catch(e){}try{const k=gKeepLoad();if(k)add(k.data)}catch(e){}return out}
+const hasPlan=(c,ids)=>!!(c.planDate||c.gcal&&c.gcal.id)||ids.has(String(c.id))||!!c.srcId&&ids.has(String(c.srcId));
 /* v1.50.21 端末の記録が読めない・見つからないときの知らせ（ホームの一番上）。記録は消していないことと、次にすることを出す */
 function loadProblemBanner(){
   const p=loadProblem;if(!p)return "";
@@ -1224,7 +1233,8 @@ function vHome(){
     '<button type="button" class="tile" data-nav="todo"><span class="k">今日までのToDo</span><span class="v">'+todayT.length+'</span></button>'+
     '<button type="button" class="tile'+(urgent.length?" alert":"")+'" data-nav="cases" data-type="kinkyu"><span class="k">対応中の緊急</span><span class="v">'+urgent.length+'</span></button>'+
     '<button type="button" class="tile" data-nav="cases"><span class="k">動いている案件</span><span class="v">'+active.length+'</span></button>'+
-    '<button type="button" id="home-access" class="tile'+(waiting.length?' alert':'')+'" data-nav="cases" data-handoff="1"><span class="k">Access引渡待ち</span><span class="v">'+waiting.length+'件</span><span class="s">受注済み・仕事番号待ち</span></button>'+
+    (()=>{const ids=planHubIds(),ahead=waiting.filter(c=>jobPending(c)&&hasPlan(c,ids)).length;
+      return '<button type="button" id="home-access" class="tile'+(waiting.length?' alert':'')+'" data-nav="cases" data-handoff="1"><span class="k">Access引渡待ち</span><span class="v">'+waiting.length+'件</span><span class="s">受注済み・仕事番号待ち</span>'+(ahead?'<span class="s" style="color:var(--red);font-weight:700">うち予定あり '+ahead+'件（現場管理表がまだ）</span>':'')+'</button>'})()+
     /* v1.50.65 今月の完工（押すと今月完工した案件だけ） */
     (()=>{const b=all.filter(builtThisMonth),amt=b.reduce((t,c)=>t+(Number(estOf(c))||0),0),bl=b.filter(billedOf).length;
       return '<button type="button" id="home-built" class="tile" data-nav="cases" data-built="1"><span class="k">今月の完工</span><span class="v">'+b.length+'件</span><span class="s num">見積額 '+yen(amt)+'</span><span class="s num">うち請求済み '+bl+'件</span></button>'})()+
@@ -1666,6 +1676,8 @@ function vDetail(){
     act='<div class="panel"><h3>次にやること：施工</h3><button class="btn pri" type="button" data-act="eizenwork">施工へ進む</button></div>';
   }else if(c.stage==="won"){
     act='<div class="panel"><h3>次にやること：Accessへ引渡</h3>'+
+      /* v1.50.104 予定がもう入っているのに仕事番号がない：現場が先に動いている。強く知らせる（止めない） */
+      (jobPending(c)&&hasPlan(c,planHubIds())?'<p class="note job-pending" role="status" style="margin:0;color:var(--red);font-weight:700">この案件は予定がもう入っています。'+h(JOB_PENDING_NOTE)+'</p>':'')+
       '<p class="note" style="margin:0">Accessで現場管理表を作成し、振られた仕事番号を入力してください。引渡後も、施工完了・請求・入金済みになるまで「動いている案件」に残ります。</p>'+
       '<label class="f">仕事番号（Accessで振られた番号）<input type="text" id="d_job" placeholder="Accessの仕事番号" value="'+h(ui.jobDup&&ui.jobDup.id===c.id?ui.jobDup.no:"")+'"></label>'+
       (ui.jobDup&&ui.jobDup.id===c.id?'<p class="note" role="alert" style="margin:0;color:var(--amber)"><b>同じ仕事番号の案件があります：</b>'+h(ui.jobDup.text)+'。別の工事なら、Accessで振られた番号を確かめてください。同じ工事の続きで間違いなければ、もう一度「引渡済にする」を押してください。</p>':'')+
@@ -2492,7 +2504,7 @@ function planAddSec(){
     '<div style="display:flex;flex-direction:column;gap:8px">'+
     '<div class="sales-lab">種類を選ぶ</div><div class="picks plan-kinds" role="group" aria-label="予定の種類">'+PLAN_KINDS.map(([n])=>'<button class="pick'+(planRest(n)?' rest':'')+'" type="button" data-plan-kind="'+h(n)+'" aria-pressed="'+(n===k)+'">'+h(n)+'</button>').join("")+'</div>'+
     '<label class="f">内容'+(planRest(k)?'（書かなくてよい）':'')+'<input type="text" id="pl_text" maxlength="60" autocomplete="off" placeholder="'+h(planEx(k)[0])+'" value="'+h(f.text||"")+'"></label>'+
-    (k==="作業"?'<label class="f">案件（選ぶと内容と場所が入ります）<select id="pl_case" data-plan-case="1"><option value="">案件なし</option>'+planCases().map(c=>'<option value="'+h(c.id)+'"'+(c.id===f.caseId?' selected':'')+'>'+h(c.id+"　"+(planCaseName(c)||c.client||""))+'</option>').join("")+'</select></label>':'')+
+    (k==="作業"?'<label class="f">案件（選ぶと内容と場所が入ります）<select id="pl_case" data-plan-case="1"><option value="">案件なし</option>'+planCases().map(c=>'<option value="'+h(c.id)+'"'+(c.id===f.caseId?' selected':'')+'>'+h(c.id+"　"+(planCaseName(c)||c.client||""))+'</option>').join("")+'</select></label>'+(f.caseId?jobPendingNote(planCases().find(c=>c.id===f.caseId)):''):'')+
     (planRest(k)?'':'<label class="f">場所（できるだけ住所つきで）<input type="text" id="pl_place" maxlength="100" autocomplete="off" list="pl_place_list" placeholder="'+h(planEx(k)[1])+'" value="'+h(f.place||"")+'"></label>'+
       (placesKey()?'<div id="pl_gsug" class="pl-gsug" role="listbox" aria-label="Googleの場所の候補" hidden></div>':'')+
       '<datalist id="pl_place_list">'+planPlaceOptions().map(o=>'<option value="'+h(o.v)+'"'+(o.l?' label="'+h(o.l)+'"':'')+'></option>').join("")+'</datalist>'+
@@ -2650,7 +2662,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.103";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.104";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2841,7 +2853,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.103" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.103" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.104" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.104" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
