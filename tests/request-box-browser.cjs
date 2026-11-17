@@ -391,7 +391,7 @@ async function main(){
   assert.equal(shares(sa)[GM2],'reader','lead reads the other GM');
   assert.ok(!(SA in shares(lead)),'the other GM never reads the lead');
   assert.ok(tab(sa,'予定の共有先').some(r=>r[1]===GM2),'lead is a calendar target of the other GM');
-  assert.ok(!tab(lead,'予定の共有先').some(r=>r[1]===SA),'not the reverse');
+  assert.ok(tab(lead,'予定の共有先').some(r=>r[1]===SA),'v1.50.105: the lead shares the calendar with the other GM of the company (records stay one-way)');
   const list=tab(vl,'一覧'),li=list[0].indexOf('GM統括');assert.ok(li>=0,'viewer list has the mark column');
   assert.equal(list.find(r=>r[1]===GM2)[li],'統括');assert.equal(list.find(r=>r[1]===SA)[li]||'','');
   const sl=tab(byName('CPG HUB_社員一覧'),'社員'),si=sl[0].indexOf('GM統括');assert.equal(sl.find(r=>r[1]===GM2&&r[4]==='共有中')[si],'統括');

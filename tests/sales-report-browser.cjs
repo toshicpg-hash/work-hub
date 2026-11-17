@@ -280,7 +280,10 @@ async function main(){
    assert.match(tile,/今月の受注（11\/9まで）/);
    for(const co of ['CP','AT','CPY']){const [n,a]=want(co);assert.ok(tile.includes(co+n+'件 '+a.toLocaleString('ja-JP')+'円'),co+' '+tile)}
    const [tn,ta]=['CP','AT','CPY'].map(want).reduce((s,x)=>[s[0]+x[0],s[1]+x[1]],[0,0]);assert.ok(tile.includes('合計'+tn+'件 '+ta.toLocaleString('ja-JP')+'円'),tile);
-   assert.match(tile,/今日 /);assert.doesNotMatch(tile,/粗利/);
+   assert.doesNotMatch(tile,/今日 /);assert.doesNotMatch(tile,/粗利/);
+   /* v1.50.105 2行目は「前日」（11/9 の時点なので 8日の分。入っていなければ「まだ」） */
+   for(const co of ['CP','AT','CPY']){const r=days.find(x=>x[0]===co&&Number(x[1])===8),n=v=>Number(String(v??'').replace(/,/g,''));
+    const exp=r&&String(r[2]??'')!==''?'前日 '+n(r[2])+'件 '+n(r[3]).toLocaleString('ja-JP')+'円':'前日 まだ';assert.ok(tile.includes(exp),co+' '+exp+' / '+tile)}
    /* 1件単価（客単価）：金額÷件数（四捨五入） */
    for(const co of ['CP','AT','CPY']){const [n,a]=want(co);if(n)assert.ok(tile.includes('1件単価 '+Math.round(a/n).toLocaleString('ja-JP')+'円'),co+' unit '+tile)}
    assert.ok(tile.includes('1件単価 '+Math.round(ta/tn).toLocaleString('ja-JP')+'円'),'total unit');

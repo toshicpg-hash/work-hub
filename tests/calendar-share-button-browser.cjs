@@ -60,6 +60,15 @@ async function main(){
   assert.equal(T.calShareTargets({...ichi,removed:true},staff).length,0);
   assert.deepEqual([...T.calShareTargets(ichi,staff).map(x=>x.role)],['社長','全社・CP GM','GM（CPY）','経理：CPY','業務管理：3社すべて']);
  });
+ await check('v1.50.105 統括GMの共有先：社長・全社・同じ会社のGMだけ（経理・業務管理・よその会社のGMは入らない）。統括でないGMは今までどおり',async()=>{
+  const lead={name:'見本 統括',email:'lead-cpy@example.com',sheetId:'s-lead',company:'CPY',role:'GM',gmCo:'CPY',gmLead:true};
+  const atGm={name:'見本 ATGM',email:'gm-at@example.com',sheetId:'s-atgm',company:'AT',role:'GM',gmCo:'AT'};
+  const st=[...staff,lead,atGm],mails=s=>[...T.calShareTargets(s,st).map(x=>x.email)];
+  assert.deepEqual(mails(lead),['boss@example.com','zensha@example.com','gm-cpy@example.com']);
+  assert.ok(!T.canSee(st[1],lead),'the other CPY GM still cannot see the lead GM records');
+  assert.deepEqual(mails(st[1]),['boss@example.com','zensha@example.com','keiri@example.com','gyomu@example.com','lead-cpy@example.com'],'a plain GM: as before, plus the lead GM who can see them');
+  assert.deepEqual(mails({...lead,gmLead:false}),['boss@example.com','zensha@example.com','keiri@example.com','gyomu@example.com'],'without the mark: as before');
+ });
  await check('領収書：業務管理は、ほかの人の立替・領収書を見ない。経理は担当の会社の人の分だけ',async()=>{
   const R=require(path.join(root,'shared-receipts.js'));
   const data=staff.filter(s=>!s.removed).map(s=>({s,ok:true,rc:[],receiptRead:{state:'ready'}}));
