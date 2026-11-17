@@ -99,9 +99,9 @@ async function main(){
    const t2=await A.p.textContent('#stats-sales');
    for(const k of ['前月の金額','最終粗利予想','目標粗利率','確認日　社長','見本 一郎','第1事業部','第2事業部','完了物件','施工中','合計','1件単価','営業外売上','毎日の受注受注Total','更新日'])assert.ok(t2.includes(k),k);
    assert.equal(await A.p.$$eval('#stats-sales .sales-col[data-sales-day^="CP|"]',a=>a.length),30);
-   /* v1.50.100 並びは 担当者別 → 売上 → 確認日 → 毎日の受注（トシさんの指示で入れ替え）。開け閉めの見出しは色の帯 */
+   /* v1.50.105 並びは 売上 → 確認日 → 担当者別 → 毎日の受注（トシさんの指示）。開け閉めの見出しは色の帯 */
    const cpText=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).textContent();
-   assert.ok(cpText.indexOf('担当者別')<cpText.indexOf('売上（実績）')&&cpText.indexOf('売上（実績）')<cpText.indexOf('確認日')&&cpText.indexOf('確認日')<cpText.indexOf('毎日の受注'),'order: 担当者別 first, 毎日の受注 last');
+   assert.ok(cpText.indexOf('売上（実績）')<cpText.indexOf('確認日')&&cpText.indexOf('確認日')<cpText.indexOf('担当者別')&&cpText.indexOf('担当者別')<cpText.indexOf('毎日の受注'),'v1.50.105 order: 売上 → 確認日 → 担当者別 → 毎日の受注');
    assert.ok(await A.p.$$eval('#stats-sales details.sales-open>summary',a=>a.length>0&&a.every(x=>getComputedStyle(x).backgroundColor!=='rgba(0, 0, 0, 0)')),'summaries are colored bands');
    /* v1.50.51 毎日の受注は表が先：曜日・件数・金額・その日までの累計。最後の累計 ＝ 合計 ＝ 受注Total */
    const dt=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-days').evaluate(t=>[...t.querySelectorAll('tbody tr')].map(r=>[...r.cells].map(c=>c.innerText.replace(/\n/g,' '))));
@@ -332,6 +332,8 @@ async function main(){
    await A.p.evaluate(STAFF=>{const d=BB.db.settings.data;d.staff=[{sheetId:'rec00000000000000000001',email:STAFF,name:'見本 専務',role:'全社',company:'CP'}];BB.save()},STAFF);
    await open(A.p);await A.p.evaluate(()=>{document.getElementById('sales-eds').open=true});
    assert.match(await A.p.textContent('#sales-eds>summary'),/社長だけ/);
+   /* v1.50.105 「入力できる人」は会社のカードより下（いちばん下の近く） */
+   assert.ok(await A.p.evaluate(()=>{const e=document.getElementById('sales-eds'),cards=[...document.querySelectorAll('#stats-sales .panel')];return cards.length>0&&cards.every(c=>c.compareDocumentPosition(e)&Node.DOCUMENT_POSITION_FOLLOWING)}),'editors panel below the company cards');
    await A.p.check('[data-sales-ed="rec00000000000000000001"]');await A.p.click('[data-act=saleseds]');await A.p.waitForFunction(()=>!BB.ui.salesBusy&&BB.ui.salesMsg);
    assert.equal(await A.p.evaluate(()=>BB.ui.salesMsg.ok),true,await A.p.evaluate(()=>BB.ui.salesMsg.text));
    assert.deepEqual(tabOf(rec,'会社の数字の場所').find(r=>r[0]==='売上報告'),['売上報告',f.id,'CP,AT,CPY','45'],'全社の人は3社');

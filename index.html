@@ -524,7 +524,7 @@ input,select,textarea{min-width:0;max-width:100%}
 .request-compact summary{min-width:0}.request-short,.request-person,.request-date{min-width:0;overflow-wrap:anywhere;white-space:normal}
 main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 .nav-in{height:auto;min-height:var(--nav-h)}.nav-in button{padding:6px 1px}
-.joblist{list-style:none;margin:6px 0;padding:0;display:grid;gap:6px}.joblist li{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;overflow-wrap:anywhere}.jobst>summary{cursor:pointer;font-weight:700}.linkbtn{background:none;border:0;padding:0;color:var(--accent);text-align:left;font:inherit;cursor:pointer;text-decoration:underline}
+.joblist{list-style:none;margin:6px 0;padding:0;display:grid;gap:6px}.joblist li{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;overflow-wrap:anywhere}.jobst>summary{cursor:pointer;font-weight:700}/* v1.50.105 1件を2行の枠に（1行目：会社・物件・日数、2行目：担当・仕事番号・受付番号。記録シートのIDは出さない） */.joblist li{display:block}.jobrow{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;background:var(--card,#fff);border:1px solid var(--line,#d8dee0);border-radius:10px;padding:8px 10px;font:inherit;color:inherit;cursor:pointer}.jobrow-1{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.jobrow-1 b{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}.jobrow-d{margin-left:auto;white-space:nowrap}.jobrow-2{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.linkbtn{background:none;border:0;padding:0;color:var(--accent);text-align:left;font:inherit;cursor:pointer;text-decoration:underline}
 .billfix{border-top:1px solid var(--line);padding-top:8px;display:grid;gap:8px}.billfix>summary{cursor:pointer;font-weight:700;color:var(--muted)}
 </style>
 
@@ -2811,7 +2811,7 @@ function vStats(){
   const jobTbl=jobKeys.length?'<div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>会社・担当</th>'+jobSt.map(x=>'<th>'+x.label+'</th>').join("")+'</tr></thead><tbody>'+
     jobKeys.map(k=>{const [co,n]=k.split("\t"),mine=jobAll.filter(c=>jobKey(c)===k);return '<tr><td>'+coChip(co)+' '+personBadge(n)+'</td>'+jobSt.map(st=>jobCell(st,mine.filter(st.f))).join("")+'</tr>'}).join("")+'</tbody></table></div>':'';
   const jobList=st=>{const l=jobAll.filter(st.f).map(c=>[c,st.d(c)]).sort((a,b)=>(b[1]??-1)-(a[1]??-1));if(!l.length)return "";
-    return '<details class="jobst"'+(st.k!=="paid"&&l.some(([c,d])=>st.red(d))?' open':'')+'><summary>'+st.label+'（'+l.length+'件）</summary><ul class="joblist">'+l.map(([c,d])=>'<li><button type="button" class="linkbtn" data-open="'+h(c.id)+'"><span class="num">'+h(c.id)+'</span> '+coChip(c.company)+' '+h([c.property,c.room].filter(Boolean).join(" "))+'</button> <span class="note">'+personBadge(tl(c))+' 仕事番号 '+h(c.jobNo)+'</span> <span class="num"'+(st.red(d)?' style="color:var(--red);font-weight:700"':'')+'>'+(d==null?"日付なし":st.from+" "+d+"日")+'</span></li>').join("")+'</ul></details>'};
+    return '<details class="jobst"'+(st.k!=="paid"&&l.some(([c,d])=>st.red(d))?' open':'')+'><summary>'+st.label+'（'+l.length+'件）</summary><ul class="joblist">'+l.map(([c,d])=>'<li><button type="button" class="jobrow" data-open="'+h(c.id)+'"><span class="jobrow-1">'+coChip(c.company)+'<b>'+h([c.property,c.room].filter(Boolean).join(" ")||"（物件名なし）")+'</b><span class="jobrow-d num"'+(st.red(d)?' style="color:var(--red);font-weight:700"':'')+'>'+(d==null?"日付なし":st.from+" "+d+"日")+'</span></span><span class="jobrow-2 note">'+personBadge(tl(c))+'<span class="num">仕事番号 '+h(c.jobNo)+'・'+h(c.ro?c.srcId:c.id)+'</span></span></button></li>').join("")+'</ul></details>'};
   const jobCnt=jobSt.slice(0,3).map(st=>jobAll.filter(st.f).length), jobRed=jobSt.slice(1,3).reduce((n,st)=>n+jobAll.filter(c=>st.f(c)&&st.red(st.d(c))).length,0);
   const jobSec=coMode?"":statFold("st_jobno",'<h2>現場管理表の進み具合</h2>','施工中 '+jobCnt[0]+'件・未請求 '+jobCnt[1]+'件・入金待ち '+jobCnt[2]+'件'+(jobRed?'<span style="color:var(--red);font-weight:700">・赤 '+jobRed+'件</span>':''),
     '<div class="panel">'+(jobTbl||'<div class="empty">仕事番号が付いて、施工完了・請求・入金の途中にある案件はありません</div>')+jobSt.map(jobList).join("")+
@@ -4105,8 +4105,6 @@ function salesSec(){
     const opened=!!(ui.salesCoOpen||{})[c.co];
     return '<details class="panel sales-card" data-sales-co="'+h(c.co)+'"'+(opened?' open':'')+'><summary class="sales-co"><h3>'+h(c.co)+'<span>'+h(CO_LABEL[c.co]||"")+'</span></h3><span class="sales-upd">更新日 <b>'+h(c["更新日"]||"—")+'</b></span>'+
       '<span class="sales-co-sum num">売上 <b>'+y(c["実績売上"])+'</b>・粗利 <b>'+y(c["実績粗利"])+'</b>（'+pt(pc(c["実績粗利"],c["実績売上"]))+'）</span></summary><div class="sales-card-body">'+
-    /* v1.50.100 トシさんの指示で、会社を開いたら先頭は「担当者別」（売上の上）、「毎日の受注」はいちばん下（前は逆。v1.50.56） */
-    (st.length?'<details class="sales-open sales-staff"><summary>担当者別<span class="sales-open-sub">'+new Set(st.map(x=>x.name)).size+'人</span></summary>'+stTable(st)+'</details>':'')+
     '<div class="sales-main">'+
     /* v1.50.50 並びは見慣れた 売上 → 粗利。粗利は枠で目立たせ、粗利率を太字に */
     '<div><div class="sales-lab">売上（実績）</div><div class="num sales-big">'+y(c["実績売上"])+'</div><div class="note num">目標 '+y(c["目標売上"])+'・達成 '+pt(ra)+'</div>'+bar(ra,'var(--blue)')+'</div>'+
@@ -4114,6 +4112,8 @@ function salesSec(){
     '<div class="sales-grid sales-kv">'+kv("前月の金額",y(c["前月売上"]))+kv("前月の粗利",c["前月粗利"]==null?"—":y(c["前月粗利"])+'（'+pt(pc(c["前月粗利"],c["前月売上"]))+'）')+kv("最終粗利予想",y(c["最終粗利予想"]))+'</div>'+/* v1.50.47 人件費・Notes未入力は画面に出さない（シートの列は読むだけ残す） */
     /* v1.50.51 並び：確認日・毎日の確認 → （v1.50.100 から）毎日の受注。開け閉めする見出しは色の帯（.sales-open） */
     '<div class="note"><span class="sales-lab">確認日</span>　社長 '+h(lastChk("boss")||c["社長確認日"]||"—")+'・本部長 '+h(lastChk("hq")||c["本部長確認日"]||"—")+'・'+h(c["GMの名前"]||"GM")+' '+h(lastChk("gm")||c["GM確認日"]||"—")+'</div>'+chkBox+
+    /* v1.50.105 トシさんの指示：「担当者別」は「毎日の受注」のすぐ上（v1.50.100 では先頭だった） */
+    (st.length?'<details class="sales-open sales-staff"><summary>担当者別<span class="sales-open-sub">'+new Set(st.map(x=>x.name)).size+'人</span></summary>'+stTable(st)+'</details>':'')+
     '<details class="sales-open sales-day"'+(ds.length?'':' hidden')+'><summary>毎日の受注<span class="sales-open-sub">受注Total '+cnt(dn)+'・'+y(da)+'・1件単価 '+(dn?y(da/dn):"—")+'</span></summary>'+dayChart(c.co,ds)+'</details>'+'</div></details>'};
   /* v1.50.45 会社の順は CP・AT・CPY（シートの行の順によらない） */
   const cos=M.cos.slice().sort((a,b)=>SALES_ORDER.indexOf(a.co)-SALES_ORDER.indexOf(b.co));
@@ -4133,7 +4133,8 @@ function salesSec(){
     '<div class="sales-in-wrap">'+eform+'</div><div class="row"><button class="btn pri" type="button" data-act="salessave"'+busy+'>シートに保存</button></div>'+
     '<p class="note" style="margin:0">変えたマスだけを書きます。会社の「更新日」は今日になります。シートで誰かが先に変えていたら、書かずに止めます。</p></div></details>';
   const pre=salesPrelim(M.key)?'<p class="sales-prebar" role="status"><b>速報</b>　'+Number(M.key.slice(5))+'月の売上は '+md(salesFixDate(M.key))+' に確定します（月末から'+salesFixDays()+'日）。それまで実績売上・粗利・担当者別は増えていきます（直しでまれに減ります）。受注は変わりません</p>':'<p class="note" style="margin:0">'+Number(M.key.slice(5))+'月の売上は確定しています（'+md(salesFixDate(M.key))+'）</p>';
-  return wrap(tabs+pre+fresh+bad+editor+(admin?salesEdPanel()+salesFixPanel():'')+total+cos.map(card).join("")+'<p class="note" style="margin:0">「'+h(M.key)+'」の月のタブを読んでいます（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）。共有はしていません。</p>'+ctl);
+  /* v1.50.105 トシさんの指示：「入力できる人」はふだん触らないので、会社のカードの下（いちばん下）へ */
+  return wrap(tabs+pre+fresh+bad+editor+(admin?salesFixPanel():'')+total+cos.map(card).join("")+(admin?salesEdPanel():'')+'<p class="note" style="margin:0">「'+h(M.key)+'」の月のタブを読んでいます（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）。共有はしていません。</p>'+ctl);
 }
 /* 古い見る人用一覧に「移転先」を書く。見る人の端末は、次の同期でそれを見て新しい一覧に移る */
 async function viewListMarkOld(){const d=D();if(!d.viewListId)return 0;let n=0;
