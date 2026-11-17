@@ -422,7 +422,7 @@ div.ordtile{cursor:default}
 .cal .n{font-weight:700;font-variant-numeric:tabular-nums}
 .cal .d.today .n{background:var(--accent);color:var(--accent-fg);border-radius:99px;padding:0 6px;align-self:flex-start}
 .ev{font-size:10px;border-radius:3px;padding:0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
-.ev.plan{background:var(--accent-soft);color:var(--accent)}
+.ev.plan{background:var(--accent-soft);color:var(--accent)}.ev.bossmeet{background:var(--amber);color:#fff}
 .ev.site{background:var(--green-soft);color:var(--green)}
 .ev.quote{background:var(--amber-soft);color:var(--amber)}
 .ev.won{background:var(--sunk);color:var(--fg)}
@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.105" title="使い方マニュアルを開く">v1.50.105・11/17更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.105" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.106" title="使い方マニュアルを開く">v1.50.106・11/17更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.106" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.105"></script>
+<script src="./share-management.js?v=1.50.106"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.105"></script>
-<script src="./calendar-view-scope.js?v=1.50.105"></script>
+<script src="./view-scope.js?v=1.50.106"></script>
+<script src="./calendar-view-scope.js?v=1.50.106"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2373,7 +2373,9 @@ function calHubOwner(e,ctx,model,cases){
  /* v1.50.83 社長がGoogleカレンダーのアプリで「CPG HUB」に直接入れた予定（担当の行なし）も、社長の予定にする（前は持ち主不明。トシさんの指摘） */
  if((raw===BOSS_LABEL||raw===BOSS_TANTOU||!raw)&&eq(e.creator,ADMIN_ACCOUNT)){
   /* v1.50.75 社長の端末に社長の記録シートがない（社員一覧にも社長がいない）ときは、人に結び付けず「社長」の予定として出す（全社・全員のときだけ）。前は持ち主不明になった */
-  const boss=people.find(p=>eq(p.email,ADMIN_ACCOUNT))||(D().admin&&ctx.selfId?people.find(p=>p.sheetId===ctx.selfId):null);if(!boss)return {boss:true};
+  /* v1.50.106 社長の端末でないときは、いつも「社長」の予定として出す（会社・人の絞り込みに関係なくみんなに見せる。トシさんの指示） */
+  if(!D().admin)return {boss:true};
+  const boss=people.find(p=>eq(p.email,ADMIN_ACCOUNT))||(ctx.selfId?people.find(p=>p.sheetId===ctx.selfId):null);if(!boss)return {boss:true};
   const cos=(model.people||[]).find(x=>x.sheetId===boss.sheetId)?.companies||[];return {person:boss.sheetId,company:cos.length===1?cos[0]:"unknown"};
  }
  if(raw){hit=CPGNames.matches(people,raw,STAFF);if(!hit.length)hit=people.filter(p=>CPGNames.flat(p.displayName)&&CPGNames.flat(p.displayName)===CPGNames.flat(raw));}
@@ -2391,6 +2393,8 @@ function calHubOwner(e,ctx,model,cases){
    予定画面に表示するカレンダーに「CPG HUB」が入っているときだけ */
 function calHubRow(rows){
  const hub=gHubId();
+ /* v1.50.106 ほかの人の予定を見ない端末（一般社員）も、「CPG HUB」の社長の予定だけは出す（bossOnly：社長の予定のほかは読まない） */
+ if(hub&&!gHubAuto()&&!(rows||[]).some(r=>gIdKey(r.id)===gIdKey(hub))&&gShowIds().some(id=>gIdKey(id)===gIdKey(hub)))return (rows||[]).concat({id:hub,work:true,mode:"mixed",auto:true,bossOnly:true});
  if(!hub||!gHubAuto()||(rows||[]).some(r=>gIdKey(r.id)===gIdKey(hub))||!gShowIds().some(id=>gIdKey(id)===gIdKey(hub)))return rows||[];
  return (rows||[]).concat({id:hub,work:true,mode:"mixed",auto:true});
 }
@@ -2441,7 +2445,7 @@ function viewListNotice(){return viewListUnread()?'<p class="banner viewlist-unr
 function calendarScopeSettings(){
  const ctx=scopeContext(),cat=CPGViewScope.catalog(ctx),stored=CPGCalendarScope.load(localStorage,scopeIdentity());
  const opt=(v,t)=>'<option value="'+h(v)+'">'+h(t)+'</option>';
- return '<details class="panel" data-keep-open="calmap"><summary>仕事用カレンダーの対応設定（この端末）</summary>'+viewListNotice()+(!D().admin&&!D().viewListId?'<p class="note" style="margin:0">全社・GMの人は、「数字」→「会社の動きを見る（管理者用）」をつないで同期すると、ほかの社員も選べます。</p>':'')+'<p class="note">Googleのカレンダーのうち、仕事だけに使うカレンダーを、会社・人と結び付けます。私用の予定が入るカレンダーは選ばないでください。Googleの予定や共有の設定は変えません。結び付けたカレンダーは、上の「Googleカレンダー連携」の「予定画面に表示するカレンダー」でも選び、その人が同期してください。</p>'+(calsLoadingNow()?'<p role="status">カレンダーの一覧を読み込み中です。終わってから選べます（入力した内容は残ります）。</p>':!G.cals?'<p>一覧未取得です。Googleとまとめて同期後に選べます。</p>':'<form id="calendarScopeForm"><label class="f">カレンダー<select id="cs_cal" required><option value="">選択してください</option>'+(()=>{const es=calMapEntries(G.cals),grp=(g,t)=>{const xs=es.filter(e=>e.group===g);return xs.length?'<optgroup label="'+t+'">'+xs.map(e=>opt(e.id,e.label)).join('')+'</optgroup>':''};return grp(0,'会社の共有')+grp(1,'社員のカレンダー')+grp(2,'そのほか（私用の予定が入るものは選ばない）')})()+'</select></label><label class="f">用途<select id="cs_mode"><option value="person">人物を確認した仕事専用</option><option value="mixed">複数の人が使う仕事用（HUBの案件と結び付いた予定だけ）</option></select></label><label class="f">会社（人物を確認した場合）<select id="cs_company"><option value="">選択してください</option>'+calMapCompanies(cat).map(c=>opt(c,c)).join('')+opt('unknown','会社未特定（複数社等・推測しない）')+'</select></label><label class="f">人物（人物を確認した場合）<select id="cs_person"><option value="">選択してください</option>'+cat.people.map(p=>opt(p.sheetId,p.name)).join('')+'</select></label><label class="f"><span><input type="checkbox" id="cs_work" required>私的予定を含まない仕事用で、会社・人物の対応を確認しました</span></label><button class="btn" type="submit">対応を確認して保存</button></form>')+'<p class="note">複数の人が使うカレンダーの予定は、HUBに登録した案件と結び付いたものだけ、誰の予定か分かります。設定していない人や、誰の予定か分からない予定は、0件という意味ではありません。</p>'+(()=>{const auto=calHubRow(stored.rows).find(r=>r.auto);return auto?'<p class="note">'+h(calMapLabelOf(auto.id))+' → 複数の人が使う仕事用（自動。HUBの案件は担当の人の予定として出ます）</p>':''})()+
+ return '<details class="panel" data-keep-open="calmap"><summary>仕事用カレンダーの対応設定（この端末）</summary>'+viewListNotice()+(!D().admin&&!D().viewListId?'<p class="note" style="margin:0">全社・GMの人は、「数字」→「会社の動きを見る（管理者用）」をつないで同期すると、ほかの社員も選べます。</p>':'')+'<p class="note">Googleのカレンダーのうち、仕事だけに使うカレンダーを、会社・人と結び付けます。私用の予定が入るカレンダーは選ばないでください。Googleの予定や共有の設定は変えません。結び付けたカレンダーは、上の「Googleカレンダー連携」の「予定画面に表示するカレンダー」でも選び、その人が同期してください。</p>'+(calsLoadingNow()?'<p role="status">カレンダーの一覧を読み込み中です。終わってから選べます（入力した内容は残ります）。</p>':!G.cals?'<p>一覧未取得です。Googleとまとめて同期後に選べます。</p>':'<form id="calendarScopeForm"><label class="f">カレンダー<select id="cs_cal" required><option value="">選択してください</option>'+(()=>{const es=calMapEntries(G.cals),grp=(g,t)=>{const xs=es.filter(e=>e.group===g);return xs.length?'<optgroup label="'+t+'">'+xs.map(e=>opt(e.id,e.label)).join('')+'</optgroup>':''};return grp(0,'会社の共有')+grp(1,'社員のカレンダー')+grp(2,'そのほか（私用の予定が入るものは選ばない）')})()+'</select></label><label class="f">用途<select id="cs_mode"><option value="person">人物を確認した仕事専用</option><option value="mixed">複数の人が使う仕事用（HUBの案件と結び付いた予定だけ）</option></select></label><label class="f">会社（人物を確認した場合）<select id="cs_company"><option value="">選択してください</option>'+calMapCompanies(cat).map(c=>opt(c,c)).join('')+opt('unknown','会社未特定（複数社等・推測しない）')+'</select></label><label class="f">人物（人物を確認した場合）<select id="cs_person"><option value="">選択してください</option>'+cat.people.map(p=>opt(p.sheetId,p.name)).join('')+'</select></label><label class="f"><span><input type="checkbox" id="cs_work" required>私的予定を含まない仕事用で、会社・人物の対応を確認しました</span></label><button class="btn" type="submit">対応を確認して保存</button></form>')+'<p class="note">複数の人が使うカレンダーの予定は、HUBに登録した案件と結び付いたものだけ、誰の予定か分かります。設定していない人や、誰の予定か分からない予定は、0件という意味ではありません。</p>'+(()=>{const auto=calHubRow(stored.rows).find(r=>r.auto&&!r.bossOnly);return auto?'<p class="note">'+h(calMapLabelOf(auto.id))+' → 複数の人が使う仕事用（自動。HUBの案件は担当の人の予定として出ます）</p>':''})()+
   /* v1.50.25 自動の人のカレンダー（保存した対応がないもの） */
   calPersonAutoList().filter(a=>!stored.rows.some(r=>gIdKey(r.id)===gIdKey(a.id))).map(a=>{const p=cat.people.find(x=>x.sheetId===a.person);return '<p class="note">'+h(calMapLabelOf(a.id))+' → '+h(p?p.name:'人物')+'（自動。社員一覧のGmailと同じカレンダー。この端末で対応を保存すると、そちらが優先されます）</p>'}).join('')+stored.rows.map((r,i)=>'<p class="note">'+h(calMapLabelOf(r.id))+' → '+h(r.mode==='mixed'?'複数の人が使う仕事用':r.company+' / '+(cat.people.find(p=>p.sheetId===r.person)?.name||'人物未確認'))+' <button class="btn sm" type="button" data-calendar-map-remove="'+i+'">対応を外す</button></p>').join('')+(ui.calendarMapError?'<p role="alert">'+h(ui.calendarMapError)+'</p>':'')+'</details>';
 }
@@ -2532,6 +2536,8 @@ async function planAdd(){
   try{await gApi("calendars/"+encodeURIComponent(cal.id)+"/events",{method:"POST",body})}catch(err){if(err.status!==409)throw err}
   return body.summary;
 }
+/* v1.50.106 社長の予定で、件名が「来客」「来社」「会議」で始まるもの（「予定を入れる」の種類と同じ言葉） */
+const bossKind=x=>{if(!x||!x.boss)return "";const t=String(x.title||"").normalize("NFKC").trim();return /^(来客|来社)/.test(t)?"来客":/^会議/.test(t)?"会議":""};
 function vCal(){return planAddSec()+vCalBody()}
 function vCalBody(){
   const t=todayS();
@@ -2543,9 +2549,10 @@ function vCalBody(){
   const projected=CPGCalendarScope.project({g:{...raw,data:gSafeData(raw.data)},rows:ui.calendarMapError?[]:calPersonAutoRows(calSelfRows(calHubRow(mapping.rows),model),model,((raw.data&&raw.data.sources)||[]).map(x=>x.id)),model,cases:scopeSourceCases(),resolvePerson:scopePerson,readable:gConcreteReadable,from:rFrom,to:rTo,attribute:e=>calHubOwner(e,context,model,scopeSourceCases())});
   const g={...raw,data:raw.data?{...raw.data,events:projected.events,sources:(raw.data.sources||[]).filter(s=>projected.approved.some(r=>r.id===s.id)),calendars:[]}:null};
   const calOwner=new Map(projected.approved.filter(r=>r.mode==="person"&&r.person).map(r=>[gIdKey(r.id),r.person]));
-  const gby=g.data?gcalByDay(g.data,x=>calOwner.get(gIdKey(x.calId))||""):{},gday=s=>gcalCovered(g,s)?gby[s]||[]:[];
+  /* v1.50.106 社長の来客・会議を目立たせる：その日のいちばん上に（月の表示は2件までなので） */
+  const gby=g.data?gcalByDay(g.data,x=>calOwner.get(gIdKey(x.calId))||""):{},gday=s=>gcalCovered(g,s)?(gby[s]||[]).slice().sort((a,b)=>(bossKind(b)?1:0)-(bossKind(a)?1:0)):[];
   const tags=calPersonTags(projected.approved.concat([...new Set(projected.events.map(e=>e.person).filter(Boolean))].map(sid=>({id:"person:"+sid,mode:"person",person:sid})))),
-    tagOf=x=>(x.boss&&{label:BOSS_LABEL,cls:""})||(x.person&&tags.get("person:"+x.person))||tags.get(x.calId)||{},evLab=x=>tagOf(x).label||gcalLabel(x.cal),evCls=x=>tagOf(x).cls||gcalColor(x.cal);
+    tagOf=x=>(x.boss&&{label:bossKind(x)?BOSS_LABEL+"・"+bossKind(x):BOSS_LABEL,cls:bossKind(x)?"bossmeet":""})||(x.person&&tags.get("person:"+x.person))||tags.get(x.calId)||{},evLab=x=>tagOf(x).label||gcalLabel(x.cal),evCls=x=>tagOf(x).cls||gcalColor(x.cal);
   const isUnknown=s=>projected.unknown(s),dayNotice=s=>({unfetched:'未取得（予定があるか分かりません）',additional:'未取得あり（共有カレンダーを読めていません）',privacy:'同期し直してください（中身を出していない予定あり）',unidentified:'誰の予定か分からない予定あり'})[projected.dayState(s)]||'';
   const unknown=s=>dayNotice(s)?'<span class="note '+(projected.dayState(s)==='unfetched'?'cal-unfetched':'cal-unidentified')+'" role="status">'+dayNotice(s)+'</span>':'';
   const statuses=projected.status(rFrom), pending=statuses.map(p=>!p.ready?p:projected.status(rTo).find(q=>q.id===p.id)||p).filter(p=>!p.ready);
@@ -2662,7 +2669,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.105";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.106";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2853,7 +2860,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.105" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.105" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.106" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.106" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
