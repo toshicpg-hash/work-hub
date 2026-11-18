@@ -278,26 +278,22 @@ async function main(){
     assert.equal(JSON.stringify(tabOf(G.files.numcp000000000000000001,'今月の受注')),before,'not rewritten when unchanged');await A.p.evaluate(()=>BB.go('home'))}
    const tile=await A.p.textContent('#home-orders');
    assert.match(tile,/今月の受注（11\/9まで）/);
-   for(const co of ['CP','AT','CPY']){const [n,a]=want(co);assert.ok(tile.includes(co+n+'件 '+a.toLocaleString('ja-JP')+'円'),co+' '+tile)}
-   const [tn,ta]=['CP','AT','CPY'].map(want).reduce((s,x)=>[s[0]+x[0],s[1]+x[1]],[0,0]);assert.ok(tile.includes('合計'+tn+'件 '+ta.toLocaleString('ja-JP')+'円'),tile);
+   for(const co of ['CP','AT','CPY']){const [n,a]=want(co);assert.ok(tile.includes(co+n+'件'+a.toLocaleString('ja-JP')+'円'),co+' '+tile)}
+   const [tn,ta]=['CP','AT','CPY'].map(want).reduce((s,x)=>[s[0]+x[0],s[1]+x[1]],[0,0]);assert.ok(tile.includes('合計'+tn+'件'+ta.toLocaleString('ja-JP')+'円'),tile);
    assert.doesNotMatch(tile,/今日 /);assert.doesNotMatch(tile,/粗利/);
-   /* v1.50.105 2行目は「前日」（11/9 の時点なので 8日の分。入っていなければ「まだ」） */
-   for(const co of ['CP','AT','CPY']){const r=days.find(x=>x[0]===co&&Number(x[1])===8),n=v=>Number(String(v??'').replace(/,/g,''));
-    const exp=r&&String(r[2]??'')!==''?'前日 '+n(r[2])+'件 '+n(r[3]).toLocaleString('ja-JP')+'円':'前日 まだ';assert.ok(tile.includes(exp),co+' '+exp+' / '+tile)}
-   /* 1件単価（客単価）：金額÷件数（四捨五入） */
-   for(const co of ['CP','AT','CPY']){const [n,a]=want(co);if(n)assert.ok(tile.includes('1件単価 '+Math.round(a/n).toLocaleString('ja-JP')+'円'),co+' unit '+tile)}
-   assert.ok(tile.includes('1件単価 '+Math.round(ta/tn).toLocaleString('ja-JP')+'円'),'total unit');
+   /* v1.50.109 小さいタイル：1件単価・前日・ボタンは出さない */
+   assert.doesNotMatch(tile,/1件単価|前日|タップして|毎日の受注を見る/);assert.equal(await A.p.$$eval('#home-orders button',a=>a.length),0,'no inner buttons');
    assert.equal(await A.p.$eval('#home-summary .tiles',t=>t.firstElementChild.id),'home-orders','first tile');
    assert.ok(await overflow(A.p)<=0);assert.deepEqual(A.errors,[]);
    if(width===400)await A.p.locator('#home-orders').screenshot({path:path.join(require('node:os').tmpdir(),'ord-tile-400.png')});
    /* v1.50.61 薄い青の背景。社長の端末は「タップして数字を入れる ›」があり、押すと売上報告の「数字を入れる」（今月）が開く */
    assert.equal(await A.p.$eval('#home-orders',e=>getComputedStyle(e).backgroundColor),await A.p.evaluate(()=>{const d=document.createElement('div');d.style.background='var(--blue-soft)';document.body.appendChild(d);const c=getComputedStyle(d).backgroundColor;d.remove();return c}));
-   assert.match(await A.p.textContent('#home-orders [data-ordgo]'),/タップして数字を入れる/);assert.match(await A.p.textContent('#home-orders .ord-days'),/毎日の受注を見る/);
-   await A.p.evaluate(()=>{BB.ui.salesMonth='2026-10';BB.ui.salesEdOpen=false;BB.render()});
-   await A.p.click('#home-orders [data-ordgo]');assert.equal(await A.p.evaluate(()=>BB.ui.view),'stats');
-   assert.equal(await A.p.$eval('#sales-edit',d=>d.open),true);assert.match(await A.p.textContent('#sales-edit>summary'),/数字を入れる（11月）/);
-   assert.ok(await A.p.$eval('details[data-fold="sales"]',d=>d.open));
-   const top=await A.p.$eval('#sales-edit',e=>e.getBoundingClientRect().top);assert.ok(top>=-2&&top<900,'scrolled to the input '+top);
+   /* v1.50.109 押すと数字タブの「グループ各社売上進捗報告」（今月）へ */
+   assert.equal(await A.p.$eval('#home-orders',e=>e.tagName),'BUTTON');
+   await A.p.evaluate(()=>{BB.ui.salesMonth='2026-10';BB.ui.salesEdOpen=false;BB.render()});await A.p.evaluate(()=>{document.querySelector('details[data-fold="sales"]')&&(document.querySelector('details[data-fold="sales"]').open=false)});
+   await A.p.click('#home-orders');assert.equal(await A.p.evaluate(()=>BB.ui.view),'stats');
+   assert.ok(await A.p.$eval('details[data-fold="sales"]',d=>d.open));assert.equal(await A.p.evaluate(()=>BB.ui.salesMonth),'2026-11');
+   const top=await A.p.$eval('#stats-sales',e=>e.getBoundingClientRect().top);assert.ok(top>=-2&&top<900,'scrolled to the report '+top);
    await A.p.evaluate(()=>{BB.ui.salesEdOpen=false;BB.go('home')});
    /* 社員の端末：自分の記録シートの「会社の数字の場所」から読む */
    G.files.rec00000000000000000001={id:'rec00000000000000000001',name:'記録',owner:ADMIN,readers:[STAFF],created:'2026-10-01T00:00:00Z',perms:[],tabs:[{title:'会社の数字の場所',sheetId:0,rows:[['会社','ファイルID'],['CP','numcp000000000000000001']]}]};
@@ -305,17 +301,15 @@ async function main(){
    await S.p.evaluate(()=>{const d=BB.db.settings.data;d.ob={legacy:true};d.sheetId='rec00000000000000000001';BB.save();BB.go('home')});
    assert.equal(await S.p.$$eval('#home-orders',a=>a.length),0,'nothing before it arrives');
    await S.p.evaluate(()=>BB.gAuthorize(true));await S.p.evaluate(()=>BB.ordLoad());await S.p.evaluate(()=>BB.render());
-   assert.equal(await S.p.textContent('#home-orders'),tile.replace(/毎日の受注を見る ›タップして数字を入れる ›$/,''),'same tile on the staff device (without the input link)');
+   assert.equal(await S.p.textContent('#home-orders'),tile,'same tile on the staff device');
    assert.equal(await S.p.$$eval('#home-orders .ord-go',a=>a.length),0);assert.equal(await S.p.$eval('#home-orders',e=>e.tagName),'DIV');
    if(width===400)await S.p.locator('#home-orders').screenshot({path:path.join(require('node:os').tmpdir(),'ord-tile-staff-400.png')});
    /* v1.50.108 売上報告を全社員に（見るだけ）：社長の同期で会社の数字のファイルに「売上報告（見るだけ）」を書き出し、社員の端末はそれを読んで数字タブに出す。
       入力・シートを開く・確認のボタンは出さない。受注のタイルの会社の行を押すと、その会社の「毎日の受注」が開く */
    assert.ok(tabOf(G.files.numcp000000000000000001,'売上報告（見るだけ）'),'exported by the boss sync');
    await S.p.evaluate(()=>BB.salesViewLoad());await S.p.evaluate(()=>BB.go('home'));
-   assert.match(await S.p.textContent('#home-orders .ord-days'),/毎日の受注を見る/);assert.equal(await S.p.$$eval('#home-orders [data-ordgo]',a=>a.length),0,'no input link for staff');
-   await S.p.click('#home-orders [data-orddays="AT"]');assert.equal(await S.p.evaluate(()=>BB.ui.view),'stats');
-   assert.equal(await S.p.$eval('#sales-day-AT',d=>d.open),true,'AT daily orders open');assert.equal(await S.p.$eval('.sales-card[data-sales-co="AT"]',d=>d.open),true);
-   assert.equal(await S.p.$eval('#sales-day-CP',d=>d.open),false,'other companies stay closed');
+   assert.equal(await S.p.$eval('#home-orders',e=>e.tagName),'BUTTON','v1.50.109 staff tile links to the report too');assert.equal(await S.p.textContent('#home-orders'),tile,'same small tile');
+   await S.p.click('#home-orders');assert.equal(await S.p.evaluate(()=>BB.ui.view),'stats');assert.ok(await S.p.$eval('details[data-fold="sales"]',d=>d.open));
    const vt=await S.p.textContent('#stats-sales');assert.match(vt,/見るだけ/);assert.match(vt,/3社の合計/);assert.match(vt,/担当者別/);assert.match(vt,/粗利/);
    assert.equal(await S.p.$$eval('#sales-edit,#sales-eds,#sales-fix,[data-act=salescheck],[data-act=salesload]',a=>a.length),0,'view only');
    assert.ok(['CP','AT','CPY'].every(co=>vt.includes(co)),'all three companies');
@@ -405,8 +399,8 @@ async function main(){
    {await E2.p.evaluate(()=>{const d=BB.db.settings.data;d.nameCands={sheetId:d.sheetId,list:[{name:'黒木 見本一',company:'CP',sheetId:'recA'},{name:'黒木 見本二',company:'CPY',sheetId:'recB'},{name:'見本 専務',company:'CP',sheetId:'rec00000000000000000001'}]};BB.save();BB.go('new')});
     const o=await E2.p.$$eval('#n_tantou option',a=>a.map(x=>x.value));assert.ok(o.includes('黒木 見本一')&&o.includes('黒木 見本二')&&!o.includes('黒木')&&!o.includes('トシ'),o.join());/* 社員の端末に「社長」は出さない */
     assert.equal(await E2.p.$eval('#n_tantou',x=>x.value),'見本 専務','own name selected first');}
-   await E2.p.evaluate(()=>BB.go('home'));assert.match(await E2.p.textContent('#home-orders [data-ordgo]'),/タップして数字を入れる/);
-   await E2.p.click('#home-orders [data-ordgo]');assert.equal(await E2.p.$eval('#sales-edit',d=>d.open),true);
+   await E2.p.evaluate(()=>BB.go('home'));await E2.p.click('#home-orders');assert.equal(await E2.p.evaluate(()=>BB.ui.view),'stats');
+   await E2.p.evaluate(()=>{document.getElementById('sales-edit').open=true});
    await E2.p.click('[data-sales-edco="AT"]');await E2.p.click('[data-sales-edkind="day"]');await E2.p.selectOption('#se_day','12');
    await E2.p.fill('#se_day_n','3');await E2.p.fill('#se_day_amt','333,000');G.calls=[];
    await E2.p.click('[data-act=salessave]');await E2.p.waitForFunction(()=>!BB.ui.salesBusy&&BB.ui.salesMsg);
@@ -418,7 +412,7 @@ async function main(){
    await A.p.evaluate(()=>{document.getElementById('sales-eds').open=true});await A.p.uncheck('[data-sales-ed="rec00000000000000000001"]');await A.p.click('[data-act=saleseds]');await A.p.waitForFunction(()=>!BB.ui.salesBusy&&BB.ui.salesMsg);
    assert.ok(!tabOf(rec,'会社の数字の場所').some(r=>r[0]==='売上報告'));
    await E2.p.evaluate(()=>BB.ordAfterSync());await E2.p.evaluate(()=>BB.go('stats'));assert.equal(await E2.p.$$eval('#sales-edit,[data-act=salesload]',a=>a.length),0,'v1.50.108 no input after removal (the view-only report may still show)');
-   await E2.p.evaluate(()=>BB.go('home'));assert.equal(await E2.p.$$eval('#home-orders [data-ordgo]',a=>a.length),0);
+   await E2.p.evaluate(()=>BB.go('home'));assert.equal(await E2.p.$$eval('#home-orders button',a=>a.length),0);
    assert.deepEqual(E2.errors,[]);await E2.c.close();
    /* v1.50.64 GMは自分の会社（GMの会社）だけ入れられる */
    G.files.rec00000000000000000002={id:'rec00000000000000000002',name:'記録2',owner:ADMIN,readers:[STAFF2],tabs:[{title:'会社の数字の場所',sheetId:0,rows:[['会社','ファイルID']]}]};f.writers=[STAFF2];
