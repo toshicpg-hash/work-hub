@@ -386,7 +386,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 /* v1.50.60 今月の受注のタイル */
 .ordtile{display:flex;flex-direction:column;gap:4px;align-items:stretch;text-align:left;background:var(--blue-soft);border-color:var(--blue)}/* v1.50.61 薄い青の背景 */
 div.ordtile{cursor:default}
-.ordtile .ord-go{align-self:flex-end;margin-top:2px;font-size:14px;font-weight:800;color:var(--blue);border:1.5px solid var(--blue);border-radius:99px;padding:3px 12px;background:var(--surface)}
+.ordtile .ord-btns{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}.ordtile button.ord-r{background:none;border:0;padding:2px 0;font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%;border-radius:8px}.ordtile button.ord-r:active{background:var(--surface)}.ordtile .ord-go{font-family:inherit;cursor:pointer;align-self:flex-end;margin-top:2px;font-size:14px;font-weight:800;color:var(--blue);border:1.5px solid var(--blue);border-radius:99px;padding:3px 12px;background:var(--surface)}
 .ordtile .ord-r{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 10px;font-size:18px}.ordtile .ord-r>b{min-width:3.2em}.ordtile .ord-r .num{font-weight:800}
 .ordtile .ord-t{font-size:14.5px;color:var(--muted);flex-basis:100%;padding-left:calc(3.2em + 10px)}.ordtile .ord-r .ord-t{font-weight:600}.ordtile .ord-sum{border-top:1px solid var(--line);padding-top:4px;font-size:19px}
 /* v1.50.69 字が小さいと言われたので大きく（見出し・会社ごとの行・1件単価） */
@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.107" title="使い方マニュアルを開く">v1.50.107・11/17更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.107" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.108" title="使い方マニュアルを開く">v1.50.108・11/17更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.108" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.107"></script>
+<script src="./share-management.js?v=1.50.108"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.107"></script>
-<script src="./calendar-view-scope.js?v=1.50.107"></script>
+<script src="./view-scope.js?v=1.50.108"></script>
+<script src="./calendar-view-scope.js?v=1.50.108"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1103,6 +1103,7 @@ async function salesAfterSync(){
     const S=ui.sales,mt=S&&S.modified;row={name:"売上報告",ok:S&&S.today?true:"warn",msg:S&&S.today?"今日の更新を読みました（"+salesLast(S)+"）":"シートが今日はまだ更新されていません（最終更新 "+salesLast(S)+"）"};
     /* v1.50.60 今月の受注を、社員に共有済みの会社の数字のファイルに書き出す（失敗しても売上報告の行は変えず、理由を足す） */
     try{await numbersEnsure();const w=await ordWriteAll(ordSummary(S));if(w.errs.length)row.msg+="（社員への今月の受注：書けなかった会社 "+w.errs.join("・")+"）"}catch(err){row.msg+="（社員への今月の受注：書けませんでした）"}
+    try{const w=await salesViewWriteAll();if(w.errs.length)row.msg+="（社員への売上報告：書けなかった会社 "+w.errs.join("・")+"）"}catch(err){if(err.message==="signin")throw err;row.msg+="（社員への売上報告：書けませんでした。"+(err.message==="http"?dMsg(err):err.message)+"）"}
     try{const n=await sheetGuard(S&&S.id);if(n)row.msg+="（シートの"+n+"タブに保護をかけました）"}catch(err){if(err.message==="signin")throw err}
     try{const n=await ordWriterFix();if(n)row.msg+="（3社を入れられる人を、会社の数字の編集者にしました："+n+"件）"}catch(err){if(err.message==="signin")throw err;row.msg+="（会社の数字の編集者にできませんでした："+(err.message==="http"?dMsg(err):err.message)+"）"}}
   catch(err){row={name:"売上報告",ok:false,msg:"読めませんでした（"+(err.message==="http"?dMsg(err):err.message==="signin"?"ログインが切れました":err.message)+"）"}}
@@ -2684,7 +2685,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.107";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.108";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2844,7 +2845,7 @@ function vStats(){
       :'<div class="empty">未入金の案件はありません</div>'),"stats-unpaid");
   return (hasExamples()?'<div class="banner"><b>集計について：</b>（架空）の例と、入力した案件をあわせた数字です。</div>':'')+
   /* v1.50.54 グループ各社売上報告は数字タブのいちばん上（社長の端末だけ）。v1.50.63 名前を「グループ各社売上進捗報告」に（トシさんの指示） */
-  (salesCan()?foldSec("sales","グループ各社|売上進捗報告",salesSec(),!!ui.salesBusy,SALES_OLD_NAME):'')+
+  (salesViewOn()?foldSec("sales","グループ各社|売上進捗報告",salesSec(),!!ui.salesBusy,SALES_OLD_NAME):'')+
   statsWhoSeg()+(coMode&&!coMode.cases?statsCompanyEmpty(coMode):
   (coMode||scopeState().usable)?(coMode?'<section class="sec">'+statsCompanyNote(coMode)+'</section>'+unpaidSec:statsNote()?'<section class="sec">'+statsNote()+'</section>':'')+
   '<section class="sec" id="stats-won">'+statsPeriodControls()+(undatedLost.length?'<p class="banner stats-undated">失注日が未入力の案件 '+undatedLost.length+'件（案件を開いて日付を入れてください）</p>':'')+'<div class="sec-h stats-modebar">'+statsModeSeg()+'</div>'+
@@ -2875,7 +2876,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.107" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.107" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.108" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.108" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3834,26 +3835,78 @@ const salesPrelim=key=>todayS()<=salesFixDate(key);
 const salesMyCos=()=>D().admin?SALES_ORDER.slice():(D().salesEditCos||[]).filter(c=>SALES_ORDER.includes(c));
 async function salesLoad(){
   const id=salesSrc();if(!id)return;await gAuthorize(true);
-  const all=(await sheetTabNames(id)).filter(t=>SALES_TAB.test(t)),tabs=[...new Set(all.map(t=>t.slice(0,7)))].sort();
+  const all=(await sheetTabNames(id)).filter(t=>SALES_TAB.test(t));
   const v=all.length?await sheetRead(id,all):{};
-  /* 同じ月のタブを1つずつ読んでまとめる。表を分けたタブは、その表だけを探す。読めなかったところにはタブの名前を付ける */
-  const month=key=>{const out={cos:[],staff:[],days:[],chk:[],bad:[]},mine=all.filter(t=>t.slice(0,7)===key),split=mine.length>1||mine[0]!==key;
-    const need=["co","st","day"].filter(k=>!mine.some(t=>t===key||SALES_PARTS[t.slice(8)]===k));
-    for(const t of mine){const part=SALES_PARTS[t.slice(8)],r=salesParse(v[t]||[],part?[part]:null),tg=x=>({...x,tab:t});out.cos.push(...r.cos.map(tg));out.staff.push(...r.staff.map(tg));out.days.push(...r.days.map(tg));out.chk.push(...r.chk.map(x=>({...x,tab:t})));out.bad.push(...r.bad.map(b=>split?"「"+t+"」"+b:b))}
-    for(const k of need)out.bad.push("「"+key+" "+Object.keys(SALES_PARTS).find(n=>SALES_PARTS[n]===k)+"」のタブがありません");
-    return {key,...out}};
+  /* 同じ月のタブを1つずつ読んでまとめる（salesFrom）。表を分けたタブは、その表だけを探す。読めなかったところにはタブの名前を付ける */
   /* 最終更新（Googleドライブの更新日時）。今日（日本時間）に更新されたかを見る。読めなくても内容は出す */
   /* v1.50.52 HUBのログインはドライブを「HUBが作ったファイルだけ」見られる（drive.file）。HUB以外で作ったシートは、ドライブから名前も更新日時も取れない。
      名前はスプレッドシートの題名（表計算の権限で読める）から取り、今日の更新は、ドライブの更新日時か、今月の会社の「更新日」が今日かで見る */
   let modified="",name="";
   try{name=String((((await gReq(SHEETS+"/"+encodeURIComponent(id)+"?fields=properties.title"))||{}).properties||{}).title||"")}catch(err){if(err.message==="signin")throw err}
   try{const f=(await gReq(DRIVE+"/"+encodeURIComponent(id)+"?fields=modifiedTime,name"))||{};modified=String(f.modifiedTime||"");name=name||String(f.name||"")}catch(err){if(err.message==="signin")throw err}
+  salesSet(salesFrom({id,all,v,modified,name}));
+  ui.salesRaw={all,v,modified,name};
+}
+/* v1.50.108 読んだタブ（all）と中身（v）から売上報告の形を作る。社長・入力できる人はシートから、社員は書き出された控えから（同じ作り） */
+function salesFrom({id,all,v,modified,name,at}){
+  const tabs=[...new Set(all.map(t=>t.slice(0,7)))].sort();
+  const month=key=>{const out={cos:[],staff:[],days:[],chk:[],bad:[]},mine=all.filter(t=>t.slice(0,7)===key),split=mine.length>1||mine[0]!==key;
+    const need=["co","st","day"].filter(k=>!mine.some(t=>t===key||SALES_PARTS[t.slice(8)]===k));
+    for(const t of mine){const part=SALES_PARTS[t.slice(8)],r=salesParse(v[t]||[],part?[part]:null),tg=x=>({...x,tab:t});out.cos.push(...r.cos.map(tg));out.staff.push(...r.staff.map(tg));out.days.push(...r.days.map(tg));out.chk.push(...r.chk.map(x=>({...x,tab:t})));out.bad.push(...r.bad.map(b=>split?"「"+t+"」"+b:b))}
+    for(const k of need)out.bad.push("「"+key+" "+Object.keys(SALES_PARTS).find(n=>SALES_PARTS[n]===k)+"」のタブがありません");
+    return {key,...out}};
   const months=tabs.map(month),t=todayS(),md=v=>{const m=String(v||"").trim().match(/^(\d{1,2})\/(\d{1,2})$/);return m?m[1].padStart(2,"0")+"/"+m[2].padStart(2,"0"):""};
   const cur=months.find(m=>m.key===t.slice(0,7)),upd=cur?cur.cos.map(c=>md(c["更新日"])).filter(Boolean).sort().at(-1)||"":"";
-  ui.sales={at:Date.now(),id,modified,name,upd,tabs:all,today:(!!modified&&jstDay(modified)===jstDay(new Date().toISOString()))||upd===t.slice(5,7)+"/"+t.slice(8),months};
-  if(!ui.salesMonth||!tabs.includes(ui.salesMonth))ui.salesMonth=tabs.at(-1)||"";
-  {const sum=ordSummary(ui.sales);if(sum)ordKeepSave(sum)}
+  return {at:at||Date.now(),id,modified,name,upd,tabs:all,today:(!!modified&&jstDay(modified)===jstDay(new Date().toISOString()))||upd===t.slice(5,7)+"/"+t.slice(8),months,keys:tabs};
 }
+function salesSet(S){
+  ui.sales=S;if(!ui.salesMonth||!S.keys.includes(ui.salesMonth))ui.salesMonth=S.keys.at(-1)||"";
+  if(!S.view){const sum=ordSummary(S);if(sum)ordKeepSave(sum)}
+}
+/* v1.50.108 トシさんの指示：売上報告を全社員に見せる（見るだけ。旧3社報告と同じ範囲：3社とも、会社・担当者別・毎日の受注・確認）。
+   売上報告のシートは社員に共有しない。社長の端末が同期で読んだあと、社員に共有済みの「会社の数字」のファイルに「売上報告（見るだけ）」タブとして、
+   最近の月（SALESV_MONTHS）のタブの中身をそのまま書き出す（1行＝1タブ、中身は JSON）。社員の端末は同期のあとにそれを読み、同じ画面で見るだけで出す */
+const SALESV_TAB="売上報告（見るだけ）",SALESV_HEAD="CPG HUB 売上報告（見るだけ）",SALESV_MONTHS=3,SALESV_KEY="workhub_salesview_v1",SALESV_DONE_KEY="workhub_salesview_done_v1";
+function salesViewRows(raw,at){
+  const keys=[...new Set(raw.all.map(t=>t.slice(0,7)))].sort().slice(-SALESV_MONTHS),tabs=raw.all.filter(t=>keys.includes(t.slice(0,7)));
+  const rows=[[SALESV_HEAD,"1"],["書き出し日時",at],["シートの最終更新",raw.modified||""],["シートの名前",raw.name||""]];
+  for(const t of tabs){const j=JSON.stringify((raw.v[t]||[]).map(r=>(r||[]).map(x=>x==null?"":String(x))));if(j.length>45000)throw Error("「"+t+"」が大きすぎて書き出せません");rows.push(["タブ",t,j])}
+  return rows;
+}
+function salesViewParse(rows){
+  if(!rows||String((rows[0]||[])[0]||"")!==SALESV_HEAD)return null;
+  const get=k=>String(((rows.find(r=>r&&String(r[0])===k))||[])[1]||""),all=[],v={};
+  for(const r of rows){if(!r||String(r[0])!=="タブ"||!SALES_TAB.test(String(r[1]||"")))continue;let x;try{x=JSON.parse(String(r[2]||"[]"))}catch(e){continue}
+    if(!Array.isArray(x)||!x.every(a=>Array.isArray(a)))continue;all.push(String(r[1]));v[String(r[1])]=x.map(a=>a.map(c=>String(c??"")))}
+  const at=get("書き出し日時");if(!at||!all.length)return null;
+  return {at,all,v,modified:get("シートの最終更新"),name:get("シートの名前")};
+}
+/* 社長の端末：会社の数字のファイルそれぞれに書き、読み戻して確かめる（中身が前と同じファイルは書かない） */
+async function salesViewWriteAll(){
+  const d=D(),raw=ui.salesRaw;if(!d.admin||!raw||!d.numbers)return {n:0,errs:[]};
+  const at=new Date().toISOString(),rows=salesViewRows(raw,at),same=JSON.stringify(rows.slice(2)),errs=[],seen=new Set();let n=0,done={};
+  try{done=JSON.parse(localStorage.getItem(SALESV_DONE_KEY)||"{}")||{}}catch(e){}
+  for(const co of COMPANIES){const id=d.numbers[co];if(!id||seen.has(id))continue;seen.add(id);
+    if(done[id]===same){n++;continue}
+    try{const tabs=await sheetTabNames(id);if(!tabs.includes(SALESV_TAB))await addTab(id,SALESV_TAB);
+      const prev=(await sheetRead(id,[SALESV_TAB]))[SALESV_TAB]||[];await sheetWrite(id,SALESV_TAB,rows,prev);
+      const back=salesViewParse((await sheetRead(id,[SALESV_TAB]))[SALESV_TAB]||[]);if(!back||back.at!==at)throw Error("書き出したあとの確認ができません");n++;
+      done[id]=same;try{localStorage.setItem(SALESV_DONE_KEY,JSON.stringify(done))}catch(e){}}
+    catch(err){if(err.message==="signin")throw err;errs.push(co+"："+(err.message==="http"?(err.status===403?"書く共有がありません（見るだけ）":dMsg(err)):err.message))}}
+  return {n,errs};
+}
+/* 社員の端末：会社の数字のファイルから読む（どれか1つ。いちばん新しいもの）。この端末にも控えて、次に開いたときにすぐ出す */
+function salesViewUse(raw){const S=salesFrom({id:"view",...raw,at:Date.parse(raw.at)||Date.now()});S.view=true;S.exportAt=raw.at;salesSet(S)}
+async function salesViewLoad(){
+  if(salesCan()||!D().sheetId||!gSignedIn())return null;
+  const ids=[...new Set((await numPtrTargets()).map(x=>x[1]))];if(!ids.length)return null;
+  let best=null;
+  for(const id of ids){try{const v=salesViewParse((await sheetRead(id,[SALESV_TAB]))[SALESV_TAB]||[]);if(v&&(!best||v.at>best.at))best=v}catch(err){if(err.message==="signin")throw err}}
+  if(best){salesViewUse(best);try{localStorage.setItem(SALESV_KEY,JSON.stringify(best))}catch(e){}}
+  return best;
+}
+function salesViewRestore(){if(salesCan()||ui.sales)return;try{const v=JSON.parse(localStorage.getItem(SALESV_KEY)||"null");if(v&&Array.isArray(v.all)&&v.v)salesViewUse(v)}catch(e){}}
+const salesViewOn=()=>salesCan()||!!(ui.sales&&ui.sales.view);
 /* v1.50.60 今月の受注（今日まで）をホームのタイルに出す（トシさんの指示。全員が見る。今までの3社報告書も社員全体に公開していた）。
    数字は売上報告の「毎日の受注」（会社ごとの件数・金額、今日の分）。粗利・担当者別は出さない。
    売上報告のシートはHUBの外で作ったものなので、HUBから共有できない。そこで社長の端末が同期で売上報告を読んだあと、
@@ -3916,7 +3969,8 @@ async function ordAfterSync(){if(D().admin||!D().sheetId||!gSignedIn())return;
   if(D().salesEditId){try{await salesLoad();ui.salesErr="";
       /* v1.50.66 3社を入れられる人は、今月の受注を社員に書き出す（失敗は売上報告の上に出す。社長の書き出しが続いていれば困らない） */
       ui.ordWriteMsg="";if(salesMyCos().length===SALES_ORDER.length){const sum=ordSummary(ui.sales),t=await numPtrTargets();if(sum&&t.length){const w=await ordWriteAll(sum,t);if(w.errs.length)ui.ordWriteMsg="社員への今月の受注を書けなかった会社："+w.errs.join("・")}}}catch(err){ui.salesErr=err.message==="http"?(err.status===403||err.status===404?"売上報告のシートを開けません。社長にシートの共有（編集者）を頼んでください":dMsg(err)):err.message}}
-  try{await ordLoad()}catch(e){}render()}
+  try{await ordLoad()}catch(e){}
+  try{await salesViewLoad()}catch(e){}render()}
 /* v1.50.62 入力できる人の端末：自分の記録シートの「会社の数字の場所」の「売上報告」の行を読む（社長が書く）。なければ入力できない */
 async function salesEdPtr(){
   const d=D();if(d.admin||!d.sheetId)return;
@@ -3933,7 +3987,11 @@ function ordTile(){
   const t=todayS(),admin=salesCan(),v=(admin&&ui.sales&&ordSummary(ui.sales))||ordKeep();
   if(!v&&!(admin&&salesSrc()))return "";
   /* v1.50.61 社長の端末は押すと「数字を入れる」（売上報告の入力欄）へ。分かるように下に「タップして数字を入れる ›」 */
-  const tag=admin?'button type="button" data-nav="stats" data-ordgo="1" data-jump="sales-edit"':'div',end=admin?'button':'div',go=admin?'<span class="ord-go">タップして数字を入れる ›</span>':'';
+  /* v1.50.108 タイルは枠（div）にして、中に押す所を置く：会社の行 → その会社の「毎日の受注」、「毎日の受注を見る ›」→ 3社の毎日の受注、
+     社長・入力できる人は「タップして数字を入れる ›」（前はタイル全体が「数字を入れる」へのボタン）。売上報告を見られない端末では、行は押せない */
+  const sv=salesViewOn(),tag='div',end='div',
+    go=(sv||admin?'<span class="ord-btns">'+(sv?'<button type="button" class="ord-go ord-days" data-orddays="all">毎日の受注を見る ›</button>':'')+(admin?'<button type="button" class="ord-go" data-nav="stats" data-ordgo="1" data-jump="sales-edit">タップして数字を入れる ›</button>':'')+'</span>':''),
+    rowTag=(co,cls,inner)=>sv&&co?'<button type="button" class="ord-r ord-link'+cls+'" data-orddays="'+h(co)+'" aria-label="'+h(co)+'の毎日の受注を見る">'+inner+'</button>':'<span class="ord-r'+cls+'">'+inner+'</span>';
   if(!v||v.key!==t.slice(0,7))return '<'+tag+' class="tile wide ordtile" id="home-orders"><span class="k">今月の受注</span><span class="s">今月の分はまだ届いていません（'+(admin?'同期すると売上報告から出ます':'社長の端末の同期のあと、同期すると出ます')+'）</span>'+go+'</'+end+'>';
   const isToday=v.date===t,sumN=v.cos.reduce((s,c)=>s+c.n,0),sumA=v.cos.reduce((s,c)=>s+c.amt,0);
   /* v1.50.60 トシさんの指示：1件単価（客単価）も出す。2行目に「1件単価・今日の分」 */
@@ -3943,7 +4001,7 @@ function ordTile(){
   const tdy=c=>'<span class="ord-t num">1件単価 '+unit(c.n,c.amt)+(showPd?'・前日 '+(pn(c)==null?'まだ':pn(c)+'件 '+yen(c.tamt||0)):'')+'</span>';
   const tn=v.cos.filter(c=>pn(c)!=null),tdyAll='<span class="ord-t num">1件単価 '+unit(sumN,sumA)+(showPd?'・前日 '+(tn.length?tn.reduce((s,c)=>s+c.tn,0)+'件 '+yen(tn.reduce((s,c)=>s+(c.tamt||0),0)):'まだ'):'')+'</span>';
   return '<'+tag+' class="tile wide ordtile" id="home-orders"><span class="k">今月の受注（'+md(v.date)+'まで）</span>'+
-    v.cos.map(c=>'<span class="ord-r"><b>'+h(c.co)+'</b><span class="num">'+c.n+'件 '+yen(c.amt)+'</span>'+tdy(c)+'</span>').join("")+
+    v.cos.map(c=>rowTag(c.co,'','<b>'+h(c.co)+'</b><span class="num">'+c.n+'件 '+yen(c.amt)+'</span>'+tdy(c))).join("")+
     '<span class="ord-r ord-sum"><b>合計</b><span class="num">'+sumN+'件 '+yen(sumA)+'</span>'+tdyAll+'</span>'+
     '<span class="s">売上報告の毎日の受注'+(v.upd?'・シートの更新日 '+h(v.upd):'')+(isToday?'':'（'+md(v.date)+'の時点）')+'</span>'+go+'</'+end+'>';
 }
@@ -4067,16 +4125,19 @@ async function salesFixSave(v){
   return w;
 }
 function salesSec(){
-  const d=D(),src=salesSrc(),admin=!!d.admin,S=ui.sales,busy=ui.salesBusy?' disabled':'',msg=ui.salesMsg?'<p role="status" style="margin:0;color:'+(ui.salesMsg.ok?'var(--green)':'var(--red)')+'">'+h(ui.salesMsg.text)+'</p>':'';
+  /* v1.50.108 社員の端末（社長・入力できる人でない）：書き出された控えを見るだけ（入力・シートを開く・確認のボタンは出さない） */
+  const viewer=!salesCan();
+  const d=D(),src=viewer?"view":salesSrc(),admin=!!d.admin,S=ui.sales,busy=ui.salesBusy?' disabled':'',msg=ui.salesMsg?'<p role="status" style="margin:0;color:'+(ui.salesMsg.ok?'var(--green)':'var(--red)')+'">'+h(ui.salesMsg.text)+'</p>':'';
   /* v1.50.46 本物のシート（名前に「試作」がない）を読んでいるときは「社長だけ」、作り直すボタンも出さない（押すと架空のシートに戻るため） */
   /* v1.50.52 名前が分からないときは試作と見なさない（作り直すボタンを出さない） */
   const demo=admin&&!!S&&S.id===d.salesId&&!!S.name&&S.name.includes("試作");
-  const head=(!admin&&ui.ordWriteMsg?'<p class="note" role="status" style="margin:0;color:var(--amber)">'+h(ui.ordWriteMsg)+'（社長に、会社の数字の共有を「編集者」にしてもらってください）</p>':'')+'<div class="row" style="gap:6px"><span class="chip">'+(!admin?'入力できる人':demo||!d.salesId?'試作・社長だけ':(d.salesEditors||[]).length?'社長と入力できる人':'社長だけ')+'</span></div>'+(!admin&&ui.salesErr?'<p class="banner" role="status" style="margin:0">'+h(ui.salesErr)+'</p>':'');
+  const head=(!admin&&ui.ordWriteMsg?'<p class="note" role="status" style="margin:0;color:var(--amber)">'+h(ui.ordWriteMsg)+'（社長に、会社の数字の共有を「編集者」にしてもらってください）</p>':'')+'<div class="row" style="gap:6px"><span class="chip">'+(viewer?'見るだけ':!admin?'入力できる人':demo||!d.salesId?'試作・社長だけ':(d.salesEditors||[]).length?'社長と入力できる人':'社長だけ')+'</span></div>'+(!admin&&ui.salesErr?'<p class="banner" role="status" style="margin:0">'+h(ui.salesErr)+'</p>':'');
   const wrap=b=>'<section class="sec" id="stats-sales" style="display:flex;flex-direction:column;gap:10px">'+head+b+msg+'</section>';
   if(!src)return wrap('<p class="note" style="margin:0">Googleスプレッドシートの売上報告を読んで、今の3社報告と同じ項目を出します。今は試作で、社長の端末にだけ出ます（社員には見えません）。</p><div class="row"><button class="btn pri" type="button" data-act="salesdemo"'+busy+'>試作用のシートを作る（架空のデータ）</button></div>');
   /* v1.50.99 「シートを開く」は社長の端末だけ（トシさんの指示：シートに直接入力されると見出し・行・式が崩れ、全員の売上報告が正しく出なくなる。社員はHUBの「数字を入れる」から入れる） */
   const link=admin?'<a class="btn sm" href="https://docs.google.com/spreadsheets/d/'+h(src)+'/edit" target="_blank" rel="noopener" style="text-decoration:none">シートを開く</a>':'';
-  const ctl='<div class="row"><button class="btn sm" type="button" data-act="salesload"'+busy+'>'+(ui.salesBusy?'読んでいます…':S?'読み直す':'読み込む')+'</button>'+link+(demo?'<button class="btn sm" type="button" data-act="salesdemo"'+busy+'>試作用のシートを作り直す（架空）</button>':'')+'</div>';
+  const ctl=viewer?'<div class="row"><button class="btn sm" type="button" data-act="salesviewload"'+busy+'>'+(ui.salesBusy?'読んでいます…':'読み直す')+'</button></div>':'<div class="row"><button class="btn sm" type="button" data-act="salesload"'+busy+'>'+(ui.salesBusy?'読んでいます…':S?'読み直す':'読み込む')+'</button>'+link+(demo?'<button class="btn sm" type="button" data-act="salesdemo"'+busy+'>試作用のシートを作り直す（架空）</button>':'')+'</div>';
+  if(viewer&&(!S||S.id!==src))return wrap('<p class="note" style="margin:0">社長の端末が同期すると、売上報告がここに出ます（見るだけ）。</p>'+ctl);
   if(!S||S.id!==src)return wrap(ctl+(admin?salesEdPanel():''));
   const M=S.months.find(x=>x.key===ui.salesMonth);
   const tabs='<div class="picks" role="group" aria-label="月">'+S.months.map(x=>'<button class="pick" aria-pressed="'+(x.key===ui.salesMonth)+'" type="button" data-sales-month="'+h(x.key)+'">'+Number(x.key.slice(0,4))+'年'+Number(x.key.slice(5))+'月'+(salesPrelim(x.key)?'<span class="sales-pre">速報</span>':'')+'</button>').join("")+'</div>';
@@ -4136,7 +4197,7 @@ function salesSec(){
     '<div class="note"><span class="sales-lab">確認日</span>　社長 '+h(lastChk("boss")||c["社長確認日"]||"—")+'・本部長 '+h(lastChk("hq")||c["本部長確認日"]||"—")+'・'+h(c["GMの名前"]||"GM")+' '+h(lastChk("gm")||c["GM確認日"]||"—")+'</div>'+chkBox+
     /* v1.50.105 トシさんの指示：「担当者別」は「毎日の受注」のすぐ上（v1.50.100 では先頭だった） */
     (st.length?'<details class="sales-open sales-staff"><summary>担当者別<span class="sales-open-sub">'+new Set(st.map(x=>x.name)).size+'人</span></summary>'+stTable(st)+'</details>':'')+
-    '<details class="sales-open sales-day"'+(ds.length?'':' hidden')+'><summary>毎日の受注<span class="sales-open-sub">受注Total '+cnt(dn)+'・'+y(da)+'・1件単価 '+(dn?y(da/dn):"—")+'</span></summary>'+dayChart(c.co,ds)+'</details>'+'</div></details>'};
+    '<details class="sales-open sales-day" id="sales-day-'+h(c.co)+'" data-sales-day-co="'+h(c.co)+'"'+(ds.length?'':' hidden')+((ui.salesDayOpen||{})[c.co]?' open':'')+'><summary>毎日の受注<span class="sales-open-sub">受注Total '+cnt(dn)+'・'+y(da)+'・1件単価 '+(dn?y(da/dn):"—")+'</span></summary>'+dayChart(c.co,ds)+'</details>'+'</div></details>'};
   /* v1.50.45 会社の順は CP・AT・CPY（シートの行の順によらない） */
   const cos=M.cos.slice().sort((a,b)=>SALES_ORDER.indexOf(a.co)-SALES_ORDER.indexOf(b.co));
   const bad=M.bad.length?'<p class="banner" role="status" style="margin:0">読めなかったところがあります：'+h(M.bad.slice(0,5).join("・"))+(M.bad.length>5?" ほか":"")+'</p>':'';
@@ -4156,7 +4217,7 @@ function salesSec(){
     '<p class="note" style="margin:0">変えたマスだけを書きます。会社の「更新日」は今日になります。シートで誰かが先に変えていたら、書かずに止めます。</p></div></details>';
   const pre=salesPrelim(M.key)?'<p class="sales-prebar" role="status"><b>速報</b>　'+Number(M.key.slice(5))+'月の売上は '+md(salesFixDate(M.key))+' に確定します（月末から'+salesFixDays()+'日）。それまで実績売上・粗利・担当者別は増えていきます（直しでまれに減ります）。受注は変わりません</p>':'<p class="note" style="margin:0">'+Number(M.key.slice(5))+'月の売上は確定しています（'+md(salesFixDate(M.key))+'）</p>';
   /* v1.50.105 トシさんの指示：「入力できる人」はふだん触らないので、会社のカードの下（いちばん下）へ */
-  return wrap(tabs+pre+fresh+bad+editor+(admin?salesFixPanel():'')+total+cos.map(card).join("")+(admin?salesEdPanel():'')+'<p class="note" style="margin:0">「'+h(M.key)+'」の月のタブを読んでいます（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）。共有はしていません。</p>'+ctl);
+  return wrap(tabs+pre+fresh+bad+(viewer?'':editor)+(admin?salesFixPanel():'')+total+cos.map(card).join("")+(admin?salesEdPanel():'')+(viewer?'<p class="note" style="margin:0">社長の端末が同期したとき（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）の売上報告です。見るだけです。数字を直すときは社長か入力できる人に伝えてください。</p>':'<p class="note" style="margin:0">「'+h(M.key)+'」の月のタブを読んでいます（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）。共有はしていません。</p>')+ctl);
 }
 /* 古い見る人用一覧に「移転先」を書く。見る人の端末は、次の同期でそれを見て新しい一覧に移る */
 async function viewListMarkOld(){const d=D();if(!d.viewListId)return 0;let n=0;
@@ -5269,6 +5330,11 @@ document.addEventListener("click",e=>{
   if(el.dataset.drift){const c=DB.cases.find(c=>c.id===el.dataset.drift);if(c&&calendarDriftCases().includes(c)){go("detail",{caseId:c.id});const panel=document.getElementById("case-google-calendar");if(panel){panel.style.scrollMarginTop=(document.querySelector("header.top").getBoundingClientRect().height+12)+"px";panel.scrollIntoView({block:"start"});}}return}
   if(el.dataset.open){go("detail",{caseId:el.dataset.open});return}
   if(el.dataset.planKind){planRead();ui.plan.kind=el.dataset.planKind;ui.planOpen=true;ui.planMsg=null;render();return}
+  /* v1.50.108 今月の受注のタイル → 数字タブの売上報告で、その会社（all は3社）の「毎日の受注」を開いて、そこまで動く */
+  if(el.dataset.orddays){const co=el.dataset.orddays,cos=co==="all"?SALES_ORDER.slice():[co],k=todayS().slice(0,7);foldSet("sales",true);
+    if(ui.sales&&ui.sales.months.some(m=>m.key===k))ui.salesMonth=k;
+    for(const c of cos){ui.salesCoOpen={...(ui.salesCoOpen||{}),[c]:true};ui.salesDayOpen={...(ui.salesDayOpen||{}),[c]:true}}
+    go("stats");document.getElementById("sales-day-"+cos[0])?.scrollIntoView({block:"start"});return}
   if(el.dataset.ordgo){foldSet("sales",true);ui.salesEdOpen=true;const k=todayS().slice(0,7);if(ui.sales&&ui.sales.months.some(m=>m.key===k))ui.salesMonth=k}/* v1.50.61 今月の受注のタイル → 売上報告の「数字を入れる」を開く */
   if(el.dataset.nav){const ex={csv:false};if(el.dataset.nav==="requests"){ex.sentRequests=!!el.dataset.sent;ex.sentAuthor="all";}if(el.closest("#home-summary")&&el.dataset.nav==="cases"){ex.q="";ex.cCo="all";ex.showEnded=false;}if(el.dataset.sharedReceipts)ex.rScope="shared";if(el.dataset.type)ex.type=el.dataset.type;else if(el.dataset.nav==="cases"&&el.closest(".tile"))ex.type="all";if(el.dataset.nav==="cases"){ex.filtersOpen=false;ex.payOnly=!!el.dataset.pay;ex.handoffOnly=!!el.dataset.handoff;ex.builtOnly=!!el.dataset.built;}if(el.dataset.nav==="rcpt"&&el.closest(".tile")){ex.rTab=el.dataset.rtab2||"list";ex.rScope="own";}go(el.dataset.nav,ex);if(el.dataset.jump&&ui.view===el.dataset.nav)document.getElementById(el.dataset.jump)?.scrollIntoView();return}
   if(el.dataset.rscope){ui.rScope=el.dataset.rscope;rClearDl();render();return;}
@@ -5408,6 +5474,8 @@ document.addEventListener("click",e=>{
     salesEdSave(ids).then(w=>{ui.salesMsg={ok:true,text:"入力できる人を保存しました（記録シートを書き直した人 "+w+"人）。選んだ人を、シートの共有で編集者に加えてください"}},err=>{ui.salesMsg={ok:false,text:"保存できませんでした："+(err.message==="http"?dMsg(err):err.message)}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="salescheck"){if(ui.salesBusy)return;const co=el.dataset.co;ui.salesBusy=true;ui.salesMsg=null;render();
     salesCheck(co).then(()=>{ui.salesMsg={ok:true,text:co+"：今日の社長の確認を付けました"}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.salesBusy=false;render()});return}
+  if(a==="salesviewload"){if(ui.salesBusy)return;ui.salesBusy=true;ui.salesMsg=null;render();
+    gAuthorize(true).then(salesViewLoad).then(v=>{ui.salesMsg=v?{ok:true,text:"読み込みました"}:{ok:false,text:"まだ届いていません（社長の端末の同期のあと、もう一度読んでください）"}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="salesdemo"||a==="salesload"){if(ui.salesBusy)return;ui.salesBusy=true;ui.salesMsg=null;render();
     (a==="salesdemo"?salesCreateDemo():salesLoad()).then(()=>{ui.salesMsg={ok:true,text:a==="salesdemo"?"試作用のシートを作りました（架空のデータ）。シートの数字を変えて「読み直す」で試せます":"読み込みました"}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="bbcreate"){ui.bbName=val("bb_name");ui.bbBusy=true;ui.bbMsg=null;render();
@@ -5680,7 +5748,7 @@ document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.id==="plan-add")
 document.addEventListener("change",e=>{const t=e.target;if(!t||t.id!=="pl_case")return;planRead();const c=planCases().find(x=>x.id===t.value);
   if(c){const n=planCaseName(c);if(n)ui.plan.text=n;ui.plan.place=(n?n+(c.addr?"　":""):"")+(c.addr||"")}render()});
 /* v1.50.54 会社のカードの開け閉めを覚える（描き直しても閉じない） */
-document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("sales-card")){ui.salesCoOpen={...(ui.salesCoOpen||{}),[d.dataset.salesCo]:d.open}}},true);
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("sales-card")){ui.salesCoOpen={...(ui.salesCoOpen||{}),[d.dataset.salesCo]:d.open}}if(d&&d.dataset&&d.dataset.salesDayCo){ui.salesDayOpen={...(ui.salesDayOpen||{}),[d.dataset.salesDayCo]:d.open}}},true);
 document.addEventListener("change",e=>{
   if(e.target.id==="se_day"){ui.salesEd={...(ui.salesEd||{}),day:Number(e.target.value)};ui.salesEdOpen=true;render();return}
   /* v1.50.30 タスクリクエストの宛先のチェック：描き直さずに、選んだ人と見出しだけ変える（開いたままにする） */
@@ -5797,6 +5865,7 @@ try{const hd=document.querySelector("header.top"),setH=()=>{if(hd&&document.docu
 gCleanReadPrefs(false);gKeepLoad(); /* sanitize Google-only state before the first render */
 /* v1.50.82 前に開いていたとき同期が途中で止まった（アプリが閉じられた）ままなら、上に「もう一度同期」を出す（12時間以内・同じ記録シート） */
 try{const m=JSON.parse(localStorage.getItem(SYNC_RESUME_KEY)||"null");if(m&&Date.now()-m.at<12*3600e3&&(m.sheet||"")===(D().sheetId||""))ui.syncResume={text:SYNC_RESUME_MSG};else if(m)localStorage.removeItem(SYNC_RESUME_KEY)}catch(e){}
+salesViewRestore();
 corpKeepLoad();
 render();
 })();
