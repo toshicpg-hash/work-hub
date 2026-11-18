@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..'),ADMIN='toshi.cpg@gmail.com',STAFF='staff.sample@example.com',STAFF2='gm.sample@example.com',KEY='workhub_proto_v1';
-const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,ordLoad,gAuthorize,ordAfterSync,numSpecs,'+
+const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,ordLoad,salesViewLoad,gAuthorize,ordAfterSync,numSpecs,'+
  'mock(){gLoadCalendarsRun=async()=>{G.cals=[];return G.cals};gReadRange=async()=>({events:[],calendars:[],missing:0});gKeepSave=()=>{};corpRun=async()=>[]}};';
 const GIS="window.google={accounts:{oauth2:{initTokenClient(cfg){return {requestAccessToken(){setTimeout(()=>cfg.callback({access_token:'tok:'+window.__acct,expires_in:3600,scope:cfg.scope}),5)}}}}}};";
 const G={files:{},n:0,calls:[]};
@@ -60,7 +60,7 @@ async function main(){
  await new Promise(r=>server.once('listening',r));origin='http://127.0.0.1:'+server.address().port;
  browser=await playwright.chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
  /* v1.50.54 会社のカードは最初は畳んである。試験では開いて中を見る */
- const open=async p=>{await p.evaluate(()=>{BB.ui.salesCoOpen={CP:true,AT:true,CPY:true};BB.go('stats');document.querySelectorAll('details[data-fold="sales"]').forEach(d=>d.open=true)});await p.waitForSelector('#stats-sales')};
+ const open=async p=>{await p.evaluate(()=>{BB.ui.salesCoOpen={CP:true,AT:true,CPY:true};BB.ui.salesDayOpen={};BB.go('stats');document.querySelectorAll('details[data-fold="sales"]').forEach(d=>d.open=true)});await p.waitForSelector('#stats-sales')};
  for(const width of [400,360]){
   G.files={};G.n=0;G.mod='2026-11-09T01:30:00Z';
   /* 社員一覧（HUBの設定を書く先）とフォルダ */
@@ -292,9 +292,9 @@ async function main(){
    if(width===400)await A.p.locator('#home-orders').screenshot({path:path.join(require('node:os').tmpdir(),'ord-tile-400.png')});
    /* v1.50.61 薄い青の背景。社長の端末は「タップして数字を入れる ›」があり、押すと売上報告の「数字を入れる」（今月）が開く */
    assert.equal(await A.p.$eval('#home-orders',e=>getComputedStyle(e).backgroundColor),await A.p.evaluate(()=>{const d=document.createElement('div');d.style.background='var(--blue-soft)';document.body.appendChild(d);const c=getComputedStyle(d).backgroundColor;d.remove();return c}));
-   assert.match(await A.p.textContent('#home-orders .ord-go'),/タップして数字を入れる/);
+   assert.match(await A.p.textContent('#home-orders [data-ordgo]'),/タップして数字を入れる/);assert.match(await A.p.textContent('#home-orders .ord-days'),/毎日の受注を見る/);
    await A.p.evaluate(()=>{BB.ui.salesMonth='2026-10';BB.ui.salesEdOpen=false;BB.render()});
-   await A.p.click('#home-orders');assert.equal(await A.p.evaluate(()=>BB.ui.view),'stats');
+   await A.p.click('#home-orders [data-ordgo]');assert.equal(await A.p.evaluate(()=>BB.ui.view),'stats');
    assert.equal(await A.p.$eval('#sales-edit',d=>d.open),true);assert.match(await A.p.textContent('#sales-edit>summary'),/数字を入れる（11月）/);
    assert.ok(await A.p.$eval('details[data-fold="sales"]',d=>d.open));
    const top=await A.p.$eval('#sales-edit',e=>e.getBoundingClientRect().top);assert.ok(top>=-2&&top<900,'scrolled to the input '+top);
@@ -305,9 +305,23 @@ async function main(){
    await S.p.evaluate(()=>{const d=BB.db.settings.data;d.ob={legacy:true};d.sheetId='rec00000000000000000001';BB.save();BB.go('home')});
    assert.equal(await S.p.$$eval('#home-orders',a=>a.length),0,'nothing before it arrives');
    await S.p.evaluate(()=>BB.gAuthorize(true));await S.p.evaluate(()=>BB.ordLoad());await S.p.evaluate(()=>BB.render());
-   assert.equal(await S.p.textContent('#home-orders'),tile.replace(/タップして数字を入れる ›$/,''),'same tile on the staff device (without the input link)');
+   assert.equal(await S.p.textContent('#home-orders'),tile.replace(/毎日の受注を見る ›タップして数字を入れる ›$/,''),'same tile on the staff device (without the input link)');
    assert.equal(await S.p.$$eval('#home-orders .ord-go',a=>a.length),0);assert.equal(await S.p.$eval('#home-orders',e=>e.tagName),'DIV');
    if(width===400)await S.p.locator('#home-orders').screenshot({path:path.join(require('node:os').tmpdir(),'ord-tile-staff-400.png')});
+   /* v1.50.108 売上報告を全社員に（見るだけ）：社長の同期で会社の数字のファイルに「売上報告（見るだけ）」を書き出し、社員の端末はそれを読んで数字タブに出す。
+      入力・シートを開く・確認のボタンは出さない。受注のタイルの会社の行を押すと、その会社の「毎日の受注」が開く */
+   assert.ok(tabOf(G.files.numcp000000000000000001,'売上報告（見るだけ）'),'exported by the boss sync');
+   await S.p.evaluate(()=>BB.salesViewLoad());await S.p.evaluate(()=>BB.go('home'));
+   assert.match(await S.p.textContent('#home-orders .ord-days'),/毎日の受注を見る/);assert.equal(await S.p.$$eval('#home-orders [data-ordgo]',a=>a.length),0,'no input link for staff');
+   await S.p.click('#home-orders [data-orddays="AT"]');assert.equal(await S.p.evaluate(()=>BB.ui.view),'stats');
+   assert.equal(await S.p.$eval('#sales-day-AT',d=>d.open),true,'AT daily orders open');assert.equal(await S.p.$eval('.sales-card[data-sales-co="AT"]',d=>d.open),true);
+   assert.equal(await S.p.$eval('#sales-day-CP',d=>d.open),false,'other companies stay closed');
+   const vt=await S.p.textContent('#stats-sales');assert.match(vt,/見るだけ/);assert.match(vt,/3社の合計/);assert.match(vt,/担当者別/);assert.match(vt,/粗利/);
+   assert.equal(await S.p.$$eval('#sales-edit,#sales-eds,#sales-fix,[data-act=salescheck],[data-act=salesload]',a=>a.length),0,'view only');
+   assert.ok(['CP','AT','CPY'].every(co=>vt.includes(co)),'all three companies');
+   if(width===400)await S.p.locator('#stats-sales').screenshot({path:path.join(require('node:os').tmpdir(),'sales-view-staff-400.png')});
+   /* 開き直しても、この端末の控えからすぐ出る */
+   await S.p.reload();await S.p.waitForFunction(()=>!!window.BB);await S.p.evaluate(()=>BB.go('stats'));assert.match(await S.p.textContent('#stats-sales'),/見るだけ/);
    assert.ok(await overflow(S.p)<=0);assert.deepEqual(S.errors,[]);await S.c.close();
   });
   /* v1.50.68 売上の確定：月末から N 日（45日）。確定前の月は「速報」。社長は日数を変えられる */
@@ -391,8 +405,8 @@ async function main(){
    {await E2.p.evaluate(()=>{const d=BB.db.settings.data;d.nameCands={sheetId:d.sheetId,list:[{name:'黒木 見本一',company:'CP',sheetId:'recA'},{name:'黒木 見本二',company:'CPY',sheetId:'recB'},{name:'見本 専務',company:'CP',sheetId:'rec00000000000000000001'}]};BB.save();BB.go('new')});
     const o=await E2.p.$$eval('#n_tantou option',a=>a.map(x=>x.value));assert.ok(o.includes('黒木 見本一')&&o.includes('黒木 見本二')&&!o.includes('黒木')&&!o.includes('トシ'),o.join());/* 社員の端末に「社長」は出さない */
     assert.equal(await E2.p.$eval('#n_tantou',x=>x.value),'見本 専務','own name selected first');}
-   await E2.p.evaluate(()=>BB.go('home'));assert.match(await E2.p.textContent('#home-orders .ord-go'),/タップして数字を入れる/);
-   await E2.p.click('#home-orders');assert.equal(await E2.p.$eval('#sales-edit',d=>d.open),true);
+   await E2.p.evaluate(()=>BB.go('home'));assert.match(await E2.p.textContent('#home-orders [data-ordgo]'),/タップして数字を入れる/);
+   await E2.p.click('#home-orders [data-ordgo]');assert.equal(await E2.p.$eval('#sales-edit',d=>d.open),true);
    await E2.p.click('[data-sales-edco="AT"]');await E2.p.click('[data-sales-edkind="day"]');await E2.p.selectOption('#se_day','12');
    await E2.p.fill('#se_day_n','3');await E2.p.fill('#se_day_amt','333,000');G.calls=[];
    await E2.p.click('[data-act=salessave]');await E2.p.waitForFunction(()=>!BB.ui.salesBusy&&BB.ui.salesMsg);
@@ -403,8 +417,8 @@ async function main(){
    /* 社長が外すと、次の同期で出なくなる */
    await A.p.evaluate(()=>{document.getElementById('sales-eds').open=true});await A.p.uncheck('[data-sales-ed="rec00000000000000000001"]');await A.p.click('[data-act=saleseds]');await A.p.waitForFunction(()=>!BB.ui.salesBusy&&BB.ui.salesMsg);
    assert.ok(!tabOf(rec,'会社の数字の場所').some(r=>r[0]==='売上報告'));
-   await E2.p.evaluate(()=>BB.ordAfterSync());await E2.p.evaluate(()=>BB.go('stats'));assert.equal(await E2.p.$$eval('#stats-sales',a=>a.length),0);
-   await E2.p.evaluate(()=>BB.go('home'));assert.equal(await E2.p.$$eval('#home-orders .ord-go',a=>a.length),0);
+   await E2.p.evaluate(()=>BB.ordAfterSync());await E2.p.evaluate(()=>BB.go('stats'));assert.equal(await E2.p.$$eval('#sales-edit,[data-act=salesload]',a=>a.length),0,'v1.50.108 no input after removal (the view-only report may still show)');
+   await E2.p.evaluate(()=>BB.go('home'));assert.equal(await E2.p.$$eval('#home-orders [data-ordgo]',a=>a.length),0);
    assert.deepEqual(E2.errors,[]);await E2.c.close();
    /* v1.50.64 GMは自分の会社（GMの会社）だけ入れられる */
    G.files.rec00000000000000000002={id:'rec00000000000000000002',name:'記録2',owner:ADMIN,readers:[STAFF2],tabs:[{title:'会社の数字の場所',sheetId:0,rows:[['会社','ファイルID']]}]};f.writers=[STAFF2];
