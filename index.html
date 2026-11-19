@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.110" title="使い方マニュアルを開く">v1.50.110・11/17更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.110" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.111" title="使い方マニュアルを開く">v1.50.111・11/17更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.111" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.110"></script>
+<script src="./share-management.js?v=1.50.111"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.110"></script>
-<script src="./calendar-view-scope.js?v=1.50.110"></script>
+<script src="./view-scope.js?v=1.50.111"></script>
+<script src="./calendar-view-scope.js?v=1.50.111"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1103,6 +1103,7 @@ async function salesAfterSync(){
     const S=ui.sales,mt=S&&S.modified;row={name:"売上報告",ok:S&&S.today?true:"warn",msg:S&&S.today?"今日の更新を読みました（"+salesLast(S)+"）":"シートが今日はまだ更新されていません（最終更新 "+salesLast(S)+"）"};
     /* v1.50.60 今月の受注を、社員に共有済みの会社の数字のファイルに書き出す（失敗しても売上報告の行は変えず、理由を足す） */
     try{await numbersEnsure();const w=await ordWriteAll(ordSummary(S));if(w.errs.length)row.msg+="（社員への今月の受注：書けなかった会社 "+w.errs.join("・")+"）"}catch(err){row.msg+="（社員への今月の受注：書けませんでした）"}
+    try{const n=await salesChkReflect();if(n)row.msg+="（本部長・GMの確認を"+n+"件シートに入れました）"}catch(err){if(err.message==="signin")throw err;row.msg+="（本部長・GMの確認を入れられませんでした："+(err.message==="http"?dMsg(err):err.message)+"）"}
     try{const w=await salesViewWriteAll();if(w.errs.length)row.msg+="（社員への売上報告：書けなかった会社 "+w.errs.join("・")+"）"}catch(err){if(err.message==="signin")throw err;row.msg+="（社員への売上報告：書けませんでした。"+(err.message==="http"?dMsg(err):err.message)+"）"}
     try{const n=await sheetGuard(S&&S.id);if(n)row.msg+="（シートの"+n+"タブに保護をかけました）"}catch(err){if(err.message==="signin")throw err}
     try{const n=await ordWriterFix();if(n)row.msg+="（3社を入れられる人を、会社の数字の編集者にしました："+n+"件）"}catch(err){if(err.message==="signin")throw err;row.msg+="（会社の数字の編集者にできませんでした："+(err.message==="http"?dMsg(err):err.message)+"）"}}
@@ -2685,7 +2686,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.110";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.111";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2876,7 +2877,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.110" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.110" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.111" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.111" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -4089,6 +4090,46 @@ async function salesCheck(co){
   await gReq(SHEETS+"/"+encodeURIComponent(S.id)+"/values/"+encodeURIComponent("'"+x.tab+"'!C"+x.row)+"?valueInputOption=USER_ENTERED",{method:"PUT",body:{values:[[true]]}});
   await salesLoad();
 }
+/* v1.50.111 トシさんの指示：本部長・GMも HUB から「毎日の確認」を付ける（シートは直接触らせない）。本部長＝全社の人（専務）は3社とも、
+   GM＝その会社のGM（役割がGMで統括の印がない人、または全社でGMの会社がある人。CP は専務・AT は杉山・CPY は進藤）は自分の会社だけ。今日の分だけ。
+   売上報告のシートを開ける端末（入力できる人）は HUB がそのマスに書く。開けない端末は、自分の記録シートの「売上の確認」タブに1行書き、
+   社長の端末の同期（社員の記録を読んだあと）で HUB がシートのマスに入れる（入れる前に、押した人がその確認をしてよい人か、押した日がその日かを確かめる） */
+const SCHK_TAB="売上の確認",SCHK_COLS=["月","会社","日","役割","押した日時","名前"],SCHK_COL={hq:"D",gm:"E"},SCHK_LABEL={hq:"本部長",gm:"GM"},SCHK_KEY="workhub_saleschk_pending_v1";
+const salesChkCan=(p,co,k)=>!!p&&!p.removed&&COMPANIES.includes(co)&&(k==="hq"?p.role==="全社":k==="gm"?p.gmCo===co&&(p.role==="全社"||p.role==="GM"&&!gmLeadOn(p)):false);
+const salesChkAny=p=>COMPANIES.some(co=>salesChkCan(p,co,"hq")||salesChkCan(p,co,"gm"));
+/* この端末の人（社長でない）：見る人用一覧の自分の行 */
+const salesChkMe=()=>D().admin?null:((ui.viewList||[]).find(x=>eq(x.email,D().viewEmail)&&!x.removed)||null);
+function salesChkPending(){try{return JSON.parse(localStorage.getItem(SCHK_KEY)||"{}")||{}}catch(e){return {}}}
+async function salesChkPress(co,k){
+  const me=salesChkMe(),t=todayS(),key=t.slice(0,7),td=Number(t.slice(8));
+  if(!salesChkCan(me,co,k))throw Error("この確認はできません（"+SCHK_LABEL[k]+"・"+co+"）");
+  await gAuthorize(true);
+  const S=ui.sales;
+  if(salesCan()&&S&&!S.view){/* シートを開ける端末：そのマスだけ書く */
+    const M=S.months.find(m=>m.key===key),x=M&&M.chk.find(r=>r.co===co&&r.day===td);if(!x)throw Error("シートの確認のタブに、今日（"+td+"日）の"+co+"の行がありません");
+    await gReq(SHEETS+"/"+encodeURIComponent(S.id)+"/values/"+encodeURIComponent("'"+x.tab+"'!"+SCHK_COL[k]+x.row)+"?valueInputOption=USER_ENTERED",{method:"PUT",body:{values:[[true]]}});
+    await salesLoad();return "sheet"}
+  const id=D().sheetId;if(!id)throw Error("自分の記録シートにつないでから押してください");
+  if(!(await sheetTabNames(id)).includes(SCHK_TAB)){await addTab(id,SCHK_TAB);await sheetWrite(id,SCHK_TAB,[SCHK_COLS])}
+  await gReq(SHEETS+"/"+encodeURIComponent(id)+"/values/"+encodeURIComponent(A1(SCHK_TAB)+"!A:F")+":append?valueInputOption=RAW&insertDataOption=INSERT_ROWS",{method:"POST",body:{values:[[key,co,String(td),k,new Date().toISOString(),String(me.name||"")]]}});
+  const pd=salesChkPending();pd[[key,co,td,k].join("|")]=Date.now();try{localStorage.setItem(SCHK_KEY,JSON.stringify(pd))}catch(e){}
+  return "record";
+}
+/* 社長の端末：社員の記録シートの「売上の確認」を、売上報告のシートの確認のタブに入れる。戻り値は入れたマスの数 */
+async function salesChkReflect(){
+  const d=D(),S=ui.sales;if(!d.admin||!S||!S.id||S.view)return 0;
+  const data=(ui.corp&&ui.corp.data)||[],cells=[],seen=new Set();
+  for(const x of data){if(!x||!x.ok||!x.s||!Array.isArray(x.salesChk))continue;
+    const p=(d.staff||[]).find(q=>q.sheetId===x.s.sheetId&&!q.removed);if(!p)continue;
+    for(const r of x.salesChk){const key=String(r["月"]||""),co=String(r["会社"]||""),day=Number(r["日"]),k=String(r["役割"]||""),at=String(r["押した日時"]||"");
+      if(!SCHK_COL[k]||!salesChkCan(p,co,k)||!Number.isInteger(day))continue;
+      const pd=jstDay(at);if(!pd||pd!==key+"-"+String(day).padStart(2,"0"))continue;/* 押した日と同じ日の分だけ */
+      const M=S.months.find(m=>m.key===key),c=M&&M.chk.find(q=>q.co===co&&q.day===day);if(!c||c[k])continue;
+      const a="'"+c.tab+"'!"+SCHK_COL[k]+c.row;if(seen.has(a))continue;seen.add(a);cells.push(a)}}
+  if(!cells.length)return 0;
+  await gReq(SHEETS+"/"+encodeURIComponent(S.id)+"/values:batchUpdate",{method:"POST",body:{valueInputOption:"USER_ENTERED",data:cells.map(range=>({range,values:[[true]]}))}});
+  await salesLoad();return cells.length;
+}
 /* 最後に更新された日：ドライブの更新日時（取れるとき）か、今月の会社の「更新日」のいちばん新しい日 */
 const salesLast=S=>S&&S.modified?salesWhen(S.modified):S&&S.upd?S.upd.replace(/^0/,"").replace("/0","/")+"（会社の更新日）":"不明";
 const salesWhen=iso=>iso?new Date(iso).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo",month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"不明";
@@ -4168,12 +4209,16 @@ function salesSec(){
       '<details class="sales-open sub"><summary>グラフで見る</summary><div class="sales-chart" role="img" aria-label="'+h(co)+'の毎日の受注金額">'+cols+'</div><div class="sales-axis note"><span>1日</span><span>'+last+'日</span></div>'+
       '<p class="note num" style="margin:0" role="status" id="sales-day-'+h(co)+'">'+(pick?pick+"日："+(px?cnt(px.n)+"・"+y(px.amt):"入力なし"):"棒を押すと、その日の件数と金額が出ます")+'</p></details>'};
   const curM=M.key===todayS().slice(0,7),tdN=Number(todayS().slice(8)),lastD=new Date(Number(M.key.slice(0,4)),Number(M.key.slice(5)),0).getDate();
+  const chkMe=salesChkMe(),pend=salesChkPending();
   const card=c=>{const ck=M.chk.filter(x=>x.co===c.co),upto=curM?tdN:lastD,tdc=curM?ck.find(x=>x.day===tdN):null;
     const lastChk=k=>{const d=ck.filter(x=>x[k]&&x.day<=upto).map(x=>x.day).sort((a,b)=>b-a)[0];return d?M.key.slice(5)+"/"+String(d).padStart(2,"0"):""};
     const chkBox=ck.length?'<div class="sales-chk"><div class="sales-lab">毎日の確認'+(curM?'（今日 '+tdN+'日）':'')+'</div>'+
       (curM?'<div class="row" style="gap:6px">'+SALES_ROLES.map(([k,l])=>{const on=!!(tdc&&tdc[k]);return '<span class="sales-chip '+(on?'on':'off')+'">'+l+' '+(on?'✓ 済':'未')+'</span>'}).join("")+'</div>':'')+
       '<div class="note num">'+(curM?'今月':'この月')+'（'+upto+'日まで）：'+SALES_ROLES.map(([k,l])=>l+' '+ck.filter(x=>x[k]&&x.day<=upto).length+'日').join("・")+'</div>'+
       (admin&&curM&&tdc&&!tdc.boss?'<div class="row"><button class="btn sm pri" type="button" data-act="salescheck" data-co="'+h(c.co)+'"'+busy+'>社長の確認をした（今日）</button></div>':'')+
+      /* v1.50.111 本部長・GMのボタン（その人の端末で、自分の会社の今日の分だけ）。社長の同期待ちの分は「反映待ち」 */
+      (curM&&tdc?['hq','gm'].filter(k=>salesChkCan(chkMe,c.co,k)&&!tdc[k]).map(k=>pend[[M.key,c.co,tdN,k].join("|")]?'<p class="note" style="margin:0">'+SCHK_LABEL[k]+'の確認：押しました（社長の端末の同期で、シートに入ります）</p>':'<div class="row"><button class="btn sm pri" type="button" data-act="saleschk" data-co="'+h(c.co)+'" data-k="'+k+'"'+busy+'>'+SCHK_LABEL[k]+'の確認をした（今日）</button></div>').join(""):'')+
+      (curM&&(admin||salesChkAny(chkMe))?'<p class="note sales-chk-hint" style="margin:0">前日の受注の件数・金額が入っていて、おかしな数字がないか見てから押してください。</p>':'')+
       (curM&&!tdc?'<p class="note" style="margin:0">シートの確認のタブに今日の行がありません</p>':'')+'</div>':'';
     const st=M.staff.filter(x=>x.co===c.co),ds=M.days.filter(x=>x.co===c.co),ra=pc(c["実績売上"],c["目標売上"]),rp=pc(c["実績粗利"],c["目標粗利"]),dn=sumBy(ds,"n"),da=sumBy(ds,"amt");
     /* v1.50.54 会社のカードは最初は畳む（会社名と売上・粗利だけ）。押すと中身が開く。開けたかどうかは覚える */
@@ -4907,21 +4952,21 @@ async function corpLoad(){
     try{/* a sheet synced from before v1.29 has no 「ToDo」 tab, and reading a missing tab fails the whole read */
       /* v1.50.18 タブの一覧は、あとから増えるタブ（ToDo・指示・指示の報告・予定の共有の記録）が全部そろっていれば、前に読んだものを使う（増えようがないので問い合わせない）。
          そろっていない人は毎回問い合わせる。前の一覧で読めなかったとき（タブを消した・名前を変えた）は、問い合わせ直して読み直す */
-      const opt=["ToDo","指示",REPORT_TAB].concat(viewer?[]:[CALREC_TAB]),known=fresh?null:corpTabsGet(s.sheetId),useKnown=!!known&&opt.every(t=>known.includes(t));
+      const opt=["ToDo","指示",REPORT_TAB].concat(viewer?[]:[CALREC_TAB],!viewer&&salesChkAny(s)?[SCHK_TAB]:[]),known=fresh?null:corpTabsGet(s.sheetId),useKnown=!!known&&opt.every(t=>known.includes(t));
       const tabs=useKnown?known:await sheetTabNames(s.sheetId);if(!useKnown)corpTabsSet(s.sheetId,tabs);
-      const hasTodo=tabs.includes("ToDo"), hasOrd=tabs.includes("指示"), hasRep=tabs.includes(REPORT_TAB), hasCal=!viewer&&tabs.includes(CALREC_TAB);
+      const hasTodo=tabs.includes("ToDo"), hasOrd=tabs.includes("指示"), hasRep=tabs.includes(REPORT_TAB), hasCal=!viewer&&tabs.includes(CALREC_TAB), hasChk=!viewer&&tabs.includes(SCHK_TAB);
       /* v1.50.0 業務管理の端末は、ほかの人の立替・領収書を読まない */
       const noRc=viewer&&noReceipts(me)&&s.sheetId!==me.sheetId;
       /* v1.50.31 指示箱は記録シートと同時に読む（前は記録シートのあと） */
       const boxP=boxOn?sheetRead(s.boxId,[BOX_TAB]).then(r=>objRows(r[BOX_TAB]).filter(o=>o["指示ID"]),err=>{if(err.message==="signin")throw err;return null}):Promise.resolve(null);
       boxP.catch(()=>{});
-      let v;try{v=await sheetRead(s.sheetId,["案件","入金"].concat(noRc?[]:["立替"],["情報"],hasTodo?["ToDo"]:[],hasOrd?["指示"]:[],hasRep?[REPORT_TAB]:[],hasCal?[CALREC_TAB]:[]))}
+      let v;try{v=await sheetRead(s.sheetId,["案件","入金"].concat(noRc?[]:["立替"],["情報"],hasTodo?["ToDo"]:[],hasOrd?["指示"]:[],hasRep?[REPORT_TAB]:[],hasCal?[CALREC_TAB]:[],hasChk?[SCHK_TAB]:[]))}
       catch(err){await boxP.catch(()=>{});if(useKnown&&err.status===400){corpTabsSet(s.sheetId,null);fresh=true;tries--;continue}throw err}
       /* 指示箱：読めるのは社長（持ち主）と、その社員に出せる人（編集者）。読めなければ null */
       const box=await boxP;
       const info=Object.fromEntries((v["情報"]||[]).slice(1).map(r=>[r[0],r[1]]));
       s.lastSync=String(info["最終同期"]||"");
-      x={s,ok:true,calRec:hasCal?objRows(v[CALREC_TAB]).map(r=>String(r["Gmail"]||"").trim()).filter(mailOK):null,receiptRead:noRc?{state:"hidden",at:Date.now(),version:String(info["版"]||"")}:{...(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.parseSheet(v["立替"]):{state:"invalid",message:"領収書の表示機能を読み込めません。"}),at:Date.now(),version:String(info["版"]||"")},cases:objRows(v["案件"]),rc:noRc?[]:rcFor(me,s,objRows(v["立替"])),todo:hasTodo?objRows(v["ToDo"]):null,orders:hasOrd?objRows(v["指示"]).filter(o=>o["指示ID"]):[],box,reports:hasRep?objRows(v[REPORT_TAB]).filter(r=>r["指示ID"]):[],mt,bmt:box===null?"":bmt,rk:key,readAt:started}}
+      x={s,ok:true,salesChk:hasChk?objRows(v[SCHK_TAB]):null,calRec:hasCal?objRows(v[CALREC_TAB]).map(r=>String(r["Gmail"]||"").trim()).filter(mailOK):null,receiptRead:noRc?{state:"hidden",at:Date.now(),version:String(info["版"]||"")}:{...(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.parseSheet(v["立替"]):{state:"invalid",message:"領収書の表示機能を読み込めません。"}),at:Date.now(),version:String(info["版"]||"")},cases:objRows(v["案件"]),rc:noRc?[]:rcFor(me,s,objRows(v["立替"])),todo:hasTodo?objRows(v["ToDo"]):null,orders:hasOrd?objRows(v["指示"]).filter(o=>o["指示ID"]):[],box,reports:hasRep?objRows(v[REPORT_TAB]).filter(r=>r["指示ID"]):[],mt,bmt:box===null?"":bmt,rk:key,readAt:started}}
     catch(err){if(err.message==="signin")throw err;
       const wait=corpRetryWait(err,tries);if(wait!==null){if(corpErrKind(err)==="rate")cool=Math.max(cool,Date.now()+wait);await corpWait(wait);continue}
       x={s,ok:false,accessDenied:err.status===403||err.status===404,msg:corpReadMsg(err)+(tries>1?"・"+tries+"回試しました":""),status:err.status||(err.name==="AbortError"?"timeout":err.network?"network":"")}}
@@ -5463,6 +5508,8 @@ document.addEventListener("click",e=>{
     salesEdSave(ids).then(w=>{ui.salesMsg={ok:true,text:"入力できる人を保存しました（記録シートを書き直した人 "+w+"人）。選んだ人を、シートの共有で編集者に加えてください"}},err=>{ui.salesMsg={ok:false,text:"保存できませんでした："+(err.message==="http"?dMsg(err):err.message)}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="salescheck"){if(ui.salesBusy)return;const co=el.dataset.co;ui.salesBusy=true;ui.salesMsg=null;render();
     salesCheck(co).then(()=>{ui.salesMsg={ok:true,text:co+"：今日の社長の確認を付けました"}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.salesBusy=false;render()});return}
+  if(a==="saleschk"){if(ui.salesBusy)return;const co=el.dataset.co,k=el.dataset.k;ui.salesBusy=true;ui.salesMsg=null;render();
+    salesChkPress(co,k).then(w=>{ui.salesMsg={ok:true,text:co+"：今日の"+SCHK_LABEL[k]+"の確認を"+(w==="sheet"?"付けました":"送りました（社長の端末の同期でシートに入ります）")}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="salesviewload"){if(ui.salesBusy)return;ui.salesBusy=true;ui.salesMsg=null;render();
     gAuthorize(true).then(salesViewLoad).then(v=>{ui.salesMsg=v?{ok:true,text:"読み込みました"}:{ok:false,text:"まだ届いていません（社長の端末の同期のあと、もう一度読んでください）"}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="salesdemo"||a==="salesload"){if(ui.salesBusy)return;ui.salesBusy=true;ui.salesMsg=null;render();

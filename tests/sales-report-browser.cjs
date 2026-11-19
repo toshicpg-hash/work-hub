@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..'),ADMIN='toshi.cpg@gmail.com',STAFF='staff.sample@example.com',STAFF2='gm.sample@example.com',KEY='workhub_proto_v1';
-const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,ordLoad,salesViewLoad,gAuthorize,ordAfterSync,numSpecs,'+
+const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,ordLoad,salesViewLoad,salesChkReflect,salesChkCan,gAuthorize,ordAfterSync,numSpecs,'+
  'mock(){gLoadCalendarsRun=async()=>{G.cals=[];return G.cals};gReadRange=async()=>({events:[],calendars:[],missing:0});gKeepSave=()=>{};corpRun=async()=>[]}};';
 const GIS="window.google={accounts:{oauth2:{initTokenClient(cfg){return {requestAccessToken(){setTimeout(()=>cfg.callback({access_token:'tok:'+window.__acct,expires_in:3600,scope:cfg.scope}),5)}}}}}};";
 const G={files:{},n:0,calls:[]};
@@ -161,6 +161,40 @@ async function main(){
    assert.deepEqual(G.cellPuts,["'2026-11 確認'!C10"],'only the one cell (CP, day 9) is written');
    t=await box().textContent();assert.match(t,/社長 ✓ 済/);assert.match(t,/今月（9日まで）：社長 9日/);assert.equal(await box().locator('[data-act=salescheck]').count(),0);
    assert.match(await A.p.textContent('#stats-sales'),/CP：今日の社長の確認を付けました/);
+   /* v1.50.111 本部長・GMの確認：だれができるか（本部長＝全社の人は3社、GM＝その会社のGM。統括の印のGMはしない） */
+   assert.deepEqual(await A.p.evaluate(()=>{const z={role:'全社',gmCo:'CP'},g={role:'GM',gmCo:'AT'},l={role:'GM',gmCo:'CPY',gmLead:true},e={role:'社員'};
+     return [BB.salesChkCan(z,'AT','hq'),BB.salesChkCan(z,'CP','gm'),BB.salesChkCan(z,'AT','gm'),BB.salesChkCan(g,'AT','gm'),BB.salesChkCan(g,'CP','gm'),BB.salesChkCan(g,'AT','hq'),BB.salesChkCan(l,'CPY','gm'),BB.salesChkCan(e,'CP','gm')]}),[true,true,false,true,false,false,false,false]);
+   /* シートを開ける端末（入力できる人のGM）：自分の会社の今日のGMのボタンだけ出て、押すとそのマスだけ書く */
+   {const sid=await A.p.evaluate(()=>BB.db.settings.data.salesId),f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）');
+    await A.p.evaluate(sid=>{const d=BB.db.settings.data;d.admin=false;d.salesEditId=sid;d.viewEmail='gm-cpy@example.com';BB.ui.viewList=[{name:'見本 四郎',email:'gm-cpy@example.com',role:'GM',gmCo:'CPY',sheetId:'recGM'}];BB.render()},sid);
+    const btns=await A.p.$$eval('#stats-sales [data-act=saleschk]',a=>a.map(b=>b.dataset.co+':'+b.dataset.k));assert.deepEqual(btns,['CPY:gm'],'only own company, GM');
+    assert.match(await A.p.locator('#stats-sales .panel').filter({hasText:'CPY横浜'}).locator('.sales-chk').textContent(),/前日の受注の件数・金額が入っていて、おかしな数字がないか見てから押してください/);
+    assert.equal(await A.p.$$eval('#stats-sales [data-act=salescheck]',a=>a.length),0,'no boss button');
+    const t9=tabOf(f,'2026-11 確認'),ri=t9.findIndex(r=>r[0]==='CPY'&&String(r[1])==='9')+1;
+    G.cellPuts=[];await A.p.click('#stats-sales [data-act=saleschk]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);
+    assert.deepEqual(G.cellPuts,["'2026-11 確認'!E"+ri],'GM cell of CPY day 9');assert.match(await A.p.textContent('#stats-sales'),/CPY：今日のGMの確認を付けました/);
+    assert.equal(await A.p.$$eval('#stats-sales [data-act=saleschk]',a=>a.length),0,'gone after pressing');
+    await A.p.evaluate(()=>{const d=BB.db.settings.data;d.admin=true;d.salesEditId='';d.viewEmail='';BB.ui.viewList=[];BB.render()});
+    /* シートを開けない人の分：社長の同期で、記録シートの「売上の確認」からシートに入れる（してよい人・押した日がその日の分だけ） */
+    const ra=t9.findIndex(r=>r[0]==='AT'&&String(r[1])==='9')+1;
+    await A.p.evaluate(()=>{BB.db.settings.data.staff=[{name:'見本 六郎',email:'gm-at@example.com',role:'GM',gmCo:'AT',sheetId:'recAT'}];
+      BB.ui.corp={at:Date.now(),data:[{ok:true,s:{sheetId:'recAT'},salesChk:[{'月':'2026-11','会社':'AT','日':'9','役割':'gm','押した日時':'2026-11-09T01:00:00.000Z'},{'月':'2026-11','会社':'CP','日':'9','役割':'gm','押した日時':'2026-11-09T01:00:00.000Z'},{'月':'2026-11','会社':'AT','日':'9','役割':'hq','押した日時':'2026-11-09T01:00:00.000Z'},{'月':'2026-11','会社':'AT','日':'8','役割':'gm','押した日時':'2026-11-09T01:00:00.000Z'}]}]}});
+    G.batch=[];const n=await A.p.evaluate(()=>BB.salesChkReflect());assert.equal(n,1);
+    assert.deepEqual(G.batch.flatMap(b=>b.data.map(d=>d.range)),["'2026-11 確認'!E"+ra],'only the allowed one, for the day it was pressed');
+    assert.equal(await A.p.evaluate(()=>BB.salesChkReflect()),0,'not written twice');
+    await A.p.evaluate(()=>{BB.ui.corp=null;BB.db.settings.data.staff=[]});
+    /* シートを開けない社員の端末（見るだけ）のGM：押すと自分の記録シートの「売上の確認」に1行書き、「社長の端末の同期で入ります」と出す */
+    G.files.recAT000000000000000001={id:'recAT000000000000000001',name:'記録AT',owner:ADMIN,readers:[STAFF],created:'2026-10-01T00:00:00Z',perms:[],tabs:[{title:'案件',sheetId:0,rows:[]}]};
+    const back=await A.p.evaluate(()=>{const d=BB.db.settings.data,o={sheetId:d.sheetId,salesId:d.salesId,id:BB.ui.sales.id};d.admin=false;d.salesEditId='';d.salesId='';d.sheetId='recAT000000000000000001';d.viewEmail='gm-at@example.com';
+      BB.ui.viewList=[{name:'見本 六郎',email:'gm-at@example.com',role:'GM',gmCo:'CP',sheetId:'recAT000000000000000001'}];BB.ui.sales.id='view';BB.ui.sales.view=true;BB.render();return o});
+    assert.deepEqual(await A.p.$$eval('#stats-sales [data-act=saleschk]',a=>a.map(b=>b.dataset.co+':'+b.dataset.k)),['CP:gm'],'AT GM is already done today, so the CP GM is used here');
+    await A.p.click('#stats-sales [data-act=saleschk]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);
+    const rt=G.files.recAT000000000000000001.tabs.find(x=>x.title==='売上の確認');assert.ok(rt,'tab made in own record sheet');
+    assert.deepEqual(rt.rows[0],['月','会社','日','役割','押した日時','名前']);assert.deepEqual(rt.rows[1].slice(0,4),['2026-11','CP','9','gm']);assert.equal(rt.rows[1][5],'見本 六郎');
+    assert.match(await A.p.textContent('#stats-sales'),/CP：今日のGMの確認を送りました（社長の端末の同期でシートに入ります）/);
+    assert.match(await A.p.textContent('#stats-sales'),/GMの確認：押しました（社長の端末の同期で、シートに入ります）/);assert.equal(await A.p.$$eval('#stats-sales [data-act=saleschk]',a=>a.length),0);
+    assert.ok(await overflow(A.p)<=0);
+    await A.p.evaluate(o=>{const d=BB.db.settings.data;d.admin=true;d.sheetId=o.sheetId;d.salesId=o.salesId;d.viewEmail='';BB.ui.viewList=[];BB.ui.sales.id=o.id;BB.ui.sales.view=false;localStorage.removeItem('workhub_saleschk_pending_v1');BB.render()},back)}
    assert.match(await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).textContent(),/確認日\s*社長 11\/09/);
    for(const sm of await A.p.$$('#stats-sales details:not([data-fold]):not([hidden]):not(.sales-card) > summary'))await sm.click();
    /* v1.50.53 完了の行の数字は少し太く、施工中の行はふつう */
