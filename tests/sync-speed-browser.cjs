@@ -64,6 +64,8 @@ async function main(){
   const s2=await device(store,150);
   const own=ids[5];store[own]['案件']=[CASE];store[own]['ToDo']=[];
   await s2.p.evaluate(own=>{SP.setup();const x=SP.db.settings.data;x.ob={legacy:true};x.sheetId=own;SP.db.settings.rcpt.name='見本 6郎';SP.save()},own);
+  /* v1.50.116 前回の同期の内訳も「情報」に書く */
+  await s2.p.evaluate(()=>localStorage.setItem('workhub_sync_timing_v1',JSON.stringify({total:5000,button:2000,steps:[],after:[{name:'今月の受注',ms:3000}],ver:'1.50.116',at:'2026-11-20T00:00:00.000Z',detail:{ord:{ptr:400,sales:2500},salesTabs:16}})));
   s2.reset();const steps=await s2.p.evaluate(async()=>{const st=[];await SP.dataSync((name,ok,msg)=>st.push([name,ok]));return st});
   const mine=s2.log.filter(x=>x.id===own);
   assert.equal(mine.filter(x=>x.rest===''&&x.method==='GET').length,2,'tab list once (+1 for the 案件 grid size)');
@@ -71,6 +73,7 @@ async function main(){
   assert.deepEqual(steps.filter(x=>/^記録シート「/.test(x[0])),[['記録シート「案件」',true],['記録シート「入金」',true],['記録シート「立替」',true],['記録シート「ToDo」',true],['記録シート「情報」',true]]);
   assert.ok(s2.max>=3,'the four tabs are written at the same time: '+s2.max);
   assert.equal(store[own]['情報'][2][0],'最終同期');
+  {const r=store[own]['情報'].find(x=>x[0]==='前回の同期の内訳');assert.ok(r,JSON.stringify(store[own]['情報']));assert.equal(r[1],'今月の受注：場所 0.4秒・売上報告の読み込み 2.5秒（売上報告のタブ 16）')}
   assert.deepEqual(s2.errors,[]);await s2.c.close();
  });
  assert.deepEqual(d.errors,[]);await d.c.close();

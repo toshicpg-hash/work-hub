@@ -4,10 +4,10 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
 /* gSyncAllRun を差し替える：plan の順に、complete（true/false）で終わる。hideDuring なら途中で裏に回る */
-const hook=`window.SR={get ui(){return ui},get db(){return DB},G,save,go,render,sync:gSyncAll,calls:0,plan:[],
+const hook=`window.SR={get ui(){return ui},detailText:t=>syncDetailText(t),get db(){return DB},G,save,go,render,sync:gSyncAll,calls:0,plan:[],
  signIn(){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000},
  stub(){gSyncAllRun=async()=>{SR.calls++;const p=SR.plan.shift()||{complete:true};
-   if(p.timed){const rows=[];ui.gsync={busy:true,rows};render();await new Promise(r=>setTimeout(r,120));rows.push({name:"Googleにログイン",ok:true,msg:""});await new Promise(r=>setTimeout(r,300));rows.push({name:"記録シート「案件」",ok:true,msg:"1行"});ui.gsync={busy:false,at:Date.now(),rows,complete:true};render();return}
+   if(p.timed){const rows=[];ui.gsync={busy:true,rows};render();syncDiagSet('salesTabs',16);await syncDiagTime('sales',()=>new Promise(r=>setTimeout(r,60)));await new Promise(r=>setTimeout(r,120));rows.push({name:"Googleにログイン",ok:true,msg:""});await new Promise(r=>setTimeout(r,300));rows.push({name:"記録シート「案件」",ok:true,msg:"1行"});ui.gsync={busy:false,at:Date.now(),rows,complete:true};render();return}
    ui.gsync={busy:true,rows:[]};render();
    if(p.hideDuring){SR.setVis('hidden')}await new Promise(r=>setTimeout(r,50));
    ui.gsync={busy:false,at:Date.now(),complete:p.complete,rows:[{name:"Googleにログイン",ok:true,msg:""},{name:"記録シート「案件」",ok:p.complete,msg:p.complete?"1行":"通信できませんでした"}]};render()}},
@@ -66,6 +66,12 @@ const mark=p=>p.evaluate(()=>localStorage.getItem('workhub_sync_resume_v1'));
   assert.equal(await d.p.evaluate(()=>!!localStorage.getItem('workhub_sync_timing_v1')&&!SR.db.settings.data.syncTiming),true,'kept on the device, not in the records');
   await d.p.evaluate(()=>{SR.go('home')});await d.p.evaluate(()=>{const x=document.querySelector('details.sync-result');if(x)x.open=true});const note=await d.p.textContent('.sync-time');
   assert.match(note,/かかった時間：合計 0\.\d秒・ボタンが戻るまで 0\.\d秒（長かったもの：記録シート「案件」/);
+  /* v1.50.116 同期の内訳（記録シート「情報」の「前回の同期の内訳」に書く。画面の表示は変えない） */
+  assert.equal(t.detail.salesTabs,16);assert.ok(t.detail.ord.sales>=50,JSON.stringify(t.detail));
+  assert.match(await d.p.evaluate(t=>SR.detailText(t),t),/^今月の受注：売上報告の読み込み 0\.\d秒（売上報告のタブ 16）$/);
+  assert.equal(await d.p.evaluate(t=>SR.detailText({...t,detail:{corp:{n:18,prevN:18,reused:12,probed:10,full:6,slow:8200,shared:null,keep:{ok:false,kb:5200}}}}),t),
+    '社員の記録：18人・前回の控え 18人・読み直さず 12人（うち「情報」で確認 10人）・全部読んだ 6人・いちばん遅い人 8.2秒・社長の更新日時 なし/古い・控えの保存 できなかった 5200KB');
+  assert.doesNotMatch(note,/内訳|売上報告のタブ/,'screen text unchanged');
   assert.deepEqual(d.errors,[]);await d.c.close();
  });
  await check('アプリを閉じて開き直したとき、止まったままなら上に出す（印が残っている）',async()=>{
