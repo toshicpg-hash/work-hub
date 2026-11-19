@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.117" title="使い方マニュアルを開く">v1.50.117・11/20更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.117" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.118" title="使い方マニュアルを開く">v1.50.118・11/20更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.118" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.117"></script>
+<script src="./share-management.js?v=1.50.118"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.117"></script>
-<script src="./calendar-view-scope.js?v=1.50.117"></script>
+<script src="./view-scope.js?v=1.50.118"></script>
+<script src="./calendar-view-scope.js?v=1.50.118"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1110,17 +1110,40 @@ async function salesAfterSync(){
   catch(err){row={name:"売上報告",ok:false,msg:"読めませんでした（"+(err.message==="http"?dMsg(err):err.message==="signin"?"ログインが切れました":err.message)+"）"}}
   ui.gsync={...ui.gsync,rows:ui.gsync.rows.concat([row])};render();
 }
+/* v1.50.118 トシさんの指示（社長の端末で「この端末の控え：Googleの回数制限（429）・3回試しました」）：控えは同期のたびに書いていた（読む・書く・読み戻す・書くで5回）。
+   ・中身が前に控えたときと同じなら書かない（何も問い合わせない）。
+   ・中身が変わっていても、前に控えてから3時間たつまでは書かない（次の同期で控える）。
+   ・回数制限に当たったら、その場では待たず、約1分後に裏で1回だけやり直す（回数制限は1分ごとに戻るため） */
+const BB_SAME_KEY="workhub_bb_same_v1",BB_EVERY_MS=3*3600e3,BB_RATE_RETRY_MS=65e3;
+const bbHash=raw=>{let h=0;for(let i=0;i<raw.length;i++)h=(h*31+raw.charCodeAt(i))|0;return raw.length+":"+h};
+function bbSameGet(){try{return JSON.parse(localStorage.getItem(BB_SAME_KEY)||"null")}catch(e){return null}}
+function bbSameSet(id,raw){try{localStorage.setItem(BB_SAME_KEY,JSON.stringify({id,h:bbHash(raw),at:Date.now()}))}catch(e){}}
+function bbSkipWhy(){const b=D().bossBackup,k=bbSameGet();if(!b||!b.id||!k||k.id!==b.id)return null;
+  const {raw}=bbPack(DB),age=Date.now()-(k.at||0);if(!(age>=0))return null;
+  if(k.h===bbHash(raw))return {same:true,at:k.at};
+  if(age<BB_EVERY_MS)return {same:false,at:k.at,next:k.at+BB_EVERY_MS};
+  return null}
+let bbRetryTimer=null;
+function bbRowSet(row){const g=ui.gsync;if(!g||!Array.isArray(g.rows))return;const i=g.rows.findIndex(r=>r.name==="この端末の控え");ui.gsync={...g,rows:i<0?g.rows.concat([row]):g.rows.map((r,j)=>j===i?row:r)};render()}
 async function bbAfterSync(){
   const b=D().bossBackup,g=ui.gsync;if(!D().admin||!g||!Array.isArray(g.rows)||!gSignedIn())return;
+  {const w=b&&b.id?bbSkipWhy():null,t=x=>md(ymd(new Date(x)))+" "+hm(new Date(x));
+   if(w){bbRowSet({name:"この端末の控え",ok:true,msg:w.same?"前に控えたとき（"+t(w.at)+"）から変わっていないので、控えはそのままです":"前に控えたのは "+t(w.at)+"。控えは3時間に1回なので、"+t(w.next)+" より後の同期で控えます"});return}}
   let row;if(!b||!b.id)row={name:"この端末の控え",ok:false,msg:"まだ作っていません。スマホのデータが消えると、この端末で入れた案件などが戻せません。数字 → 管理（社長用）の「この端末の控え」で作ってください"};
   /* v1.50.56 時間切れ・通信の失敗・Google側の一時的な不具合・回数制限のときは、少し待って1回だけやり直す（控えは上書きなので二重にならない）。
      理由は日本語で出す（前は「signal is aborted without reason」のように英語のまま出ていた） */
   else{let tries=0;for(;;){tries++;
     try{const c=await bbWrite();row={name:"この端末の控え",ok:true,msg:"「"+BB_PREFIX+D().bossBackup.name+"」に控えました（"+bbCountText(c)+"）"+(tries>1?"（"+tries+"回目で控えました）":"")};break}
-    catch(err){if(err.message!=="signin"&&corpErrKind(err)&&tries<3){await corpWait(corpRetryWait(err,tries)||3000);continue}
+    catch(err){if(corpErrKind(err)==="rate"){row={name:"この端末の控え",ok:"warn",msg:"Googleの回数制限（429）に当たりました。約1分後に、裏でもう一度控えます"};bbRetryLater();break}
+      if(err.message!=="signin"&&corpErrKind(err)&&tries<3){await corpWait(corpRetryWait(err,tries)||3000);continue}
       row={name:"この端末の控え",ok:false,msg:err.message==="signin"?"ログインが切れたため控えられませんでした":corpErrKind(err)?corpReadMsg(err)+(tries>1?"・"+tries+"回試しました":""):err.message==="http"?dMsg(err):err.message};break}}}
-  ui.gsync={...ui.gsync,rows:ui.gsync.rows.concat([row])};render();
+  bbRowSet(row);
 }
+function bbRetryLater(){if(bbRetryTimer)clearTimeout(bbRetryTimer);
+  bbRetryTimer=setTimeout(async()=>{bbRetryTimer=null;if(!gSignedIn())return;let row;
+    try{const c=await bbWrite();row={name:"この端末の控え",ok:true,msg:"「"+BB_PREFIX+D().bossBackup.name+"」に控えました（"+bbCountText(c)+"）（回数制限のあと、1分待って控えました）"}}
+    catch(err){row={name:"この端末の控え",ok:false,msg:err.message==="signin"?"ログインが切れたため控えられませんでした":corpErrKind(err)?corpReadMsg(err)+"・1分待ってもう一度試しました（次の同期で控えます）":err.message==="http"?dMsg(err):err.message}}
+    bbRowSet(row)},BB_RATE_RETRY_MS)}
 /* v1.50.35 社長の端末の控え（数字 → 管理） */
 /* v1.50.93 社員の領収書の写真を、社長のドライブの「CPG HUB 領収書（会社）」に集める（トシさんの指示：辞めた・壊れた・消したときの心配）。
    社員の写真は本人のドライブにあり、HUBの普段の権限（HUBが作ったファイルだけ）では読めない。社長の端末だけ「ドライブを見るだけ」の権限を足し、
@@ -2217,7 +2240,7 @@ async function gSyncAll(){
       ui.syncAfterBusy=true;const {now,tm}=st;
       if(corpBg)await corpBg.catch(()=>{});
       for(const [n,fn] of [["共有の書き出し",bbAfterSync],["売上報告",salesAfterSync],["今月の受注",ordAfterSync],["担当の候補・会社の住所",namesAfterSync],["領収書の写真（会社）",photoAfterSync]]){const s=now();try{await fn()}catch(e){if(n!=="担当の候補・会社の住所")throw e}const ms=Math.round(now()-s);if(ms>=50)tm.after.push({name:n,ms})}
-    }finally{ui.syncAfterBusy=false;if(st){const {now,t0,tm}=st;tm.total=Math.round(now()-t0);delete tm.partial;tm.at=new Date().toISOString();tm.ver=APP_VER;tm.ok=!!(ui.gsync&&ui.gsync.complete);syncTimingSave(tm);if(ui.gsync)ui.gsync.timing=tm;syncResumeAfter();render()}}
+    }finally{ui.syncAfterBusy=false;if(st){const {now,t0,tm}=st;tm.total=Math.round(now()-t0);delete tm.partial;tm.at=new Date().toISOString();tm.ver=APP_VER;tm.ok=!!(ui.gsync&&ui.gsync.complete);syncTimingSave(tm);syncDiag=null;if(ui.gsync)ui.gsync.timing=tm;syncResumeAfter();render()}}
     return r;
   };
   manualTodoSyncPending=Promise.resolve().then(whole);
@@ -2278,14 +2301,18 @@ function syncTimingText(t){if(!t)return "";
    社員の記録：見る人数・前回の控えがあった人数・読み直さなかった人数（うち「情報」タブで確かめた人数）・全部読んだ人数・いちばん時間がかかった人の秒数・社長の更新日時が何分前か・端末への控えの保存（できたか・大きさ）。
    今月の受注：中の処理ごとの秒数と、売上報告のタブの数。画面の表示は変えない */
 let syncDiag=null;
+/* v1.50.118 1回の同期でGoogleに何回問い合わせたか（表計算の読む・書く、ドライブ、カレンダー、回数制限に当たった回数）。回数制限（429）の原因を見るため */
+function syncReqCount(url,method){if(!syncDiag)return;const u=String(url),q=syncDiag.req=syncDiag.req||{};
+  const k=u.startsWith(SHEETS)?(!method||method==="GET"?"sr":"sw"):u.startsWith(DRIVE)||u.includes("/drive/")?"dr":u.includes("/calendar/")?"cal":"etc";q[k]=(q[k]||0)+1}
 const syncDiagSet=(k,v)=>{if(syncDiag)syncDiag[k]=v};
 async function syncDiagTime(k,fn){const t=Date.now();try{return await fn()}finally{if(syncDiag){syncDiag.ord=syncDiag.ord||{};syncDiag.ord[k]=(syncDiag.ord[k]||0)+Date.now()-t}}}
 function syncDetailText(t){const d=t&&t.detail;if(!d)return "";const out=[];
-  if(d.corp){const c=d.corp;out.push("社員の記録："+c.n+"人・前回の控え "+(c.prevN??"?")+"人・読み直さず "+(c.reused||0)+"人（うち「情報」で確認 "+(c.probed||0)+"人）・全部読んだ "+(c.full??"?")+"人・いちばん遅い人 "+syncSec(c.slow||0)+(c.shared==null?"・社長の更新日時 なし/古い":"・社長の更新日時 "+c.shared+"分前")+"・控えの保存 "+(c.keep?(c.keep.ok?"できた ":"できなかった ")+c.keep.kb+"KB":"?"))}
+  if(d.corp){const c=d.corp;out.push("社員の記録："+c.n+"人・前回の控え "+(c.prevN??"?")+"人・読み直さず "+(c.reused||0)+"人（うち「情報」で確認 "+(c.probed||0)+"人）・全部読んだ "+(c.full??"?")+"人・いちばん遅い人 "+syncSec(c.slow||0)+(c.prep!=null?"・読む前の準備 "+syncSec(c.prep):"")+(c.ms!=null?"・読み込み全体 "+syncSec(c.ms):"")+(c.shared==null?"・社長の更新日時 なし/古い":"・社長の更新日時 "+c.shared+"分前")+"・控えの保存 "+(c.keep?(c.keep.ok?"できた ":"できなかった ")+c.keep.kb+"KB":"?"))}
+  if(d.req){const q=d.req;out.push("Googleへの問い合わせ："+((q.sr||0)+(q.sw||0)+(q.dr||0)+(q.cal||0)+(q.etc||0))+"回（表計算の読み "+(q.sr||0)+"・書き "+(q.sw||0)+"・ドライブ "+(q.dr||0)+"・カレンダー "+(q.cal||0)+(q.etc?"・ほか "+q.etc:"")+"）"+(q.r429?"・回数制限（429） "+q.r429+"回":""))}
   if(d.ord){const o=d.ord,names={ptr:"場所",sales:"売上報告の読み込み",write:"書き出し",ordLoad:"受注の読み直し",view:"見るだけの読み込み"};
     out.push("今月の受注："+Object.keys(names).filter(k=>o[k]!=null).map(k=>names[k]+" "+syncSec(o[k])).join("・")+(d.salesTabs!=null?"（売上報告のタブ "+d.salesTabs+"）":""))}
   return out.join("／")}
-const syncTimingNote=t=>t&&(Number.isFinite(t.total)||(t.partial&&Number.isFinite(t.button)))?'<p class="note sync-time" style="margin:4px 0 0">かかった時間：'+h(syncTimingText(t))+'</p>':'';
+const syncTimingNote=t=>t&&(Number.isFinite(t.total)||(t.partial&&Number.isFinite(t.button)))?'<p class="note sync-time" style="margin:4px 0 0">かかった時間：'+h(syncTimingText(t))+'</p>'+(D().admin&&!t.partial&&syncDetailText(t)?'<p class="note sync-detail" style="margin:2px 0 0;overflow-wrap:anywhere">内訳：'+h(syncDetailText(t))+'</p>':''):'';
 function gSyncPanel(home=false){
   const r=ui.gsync,attention=home?homeSyncAttention():{blocked:false,html:''};
   /* 社員の記録・売上報告は、読めなくても（売上報告は今日まだ更新がなくても）同期そのものは済み。外に出して目立たせる */
@@ -2697,7 +2724,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.117";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.118";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2888,7 +2915,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.117" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.117" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.118" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.118" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3305,13 +3332,14 @@ async function gReq(url,o){
   o=o||{};
   if(caseSaveUncertain&&o.method&&o.method!=="GET")throw Error(CASE_SAVE_NOTICE);
   if(!gSignedIn())throw new Error("signin");
+  syncReqCount(url,o.method);
   if(o.method&&o.method!=="GET"&&String(url).startsWith(SHEETS+"/"))corpDirtyMark(decodeURIComponent(String(url).slice(SHEETS.length+1).split(/[/:?]/)[0]));
   const ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(),gReqTimeout);
   try{
     const r=await fetch(url,{method:o.method||"GET",signal:ctl.signal,cache:"no-store",credentials:"omit",
       headers:Object.assign({Authorization:"Bearer "+G.token},o.body?{"Content-Type":"application/json"}:{},o.headers||{}),body:o.raw||(o.body?JSON.stringify(o.body):undefined)});
     if(r.status===401){G.token="";G.exp=0;throw new Error("signin")}
-    if(!r.ok){const e=new Error("http");e.status=r.status;const ra=Number(r.headers&&r.headers.get&&r.headers.get("Retry-After"));if(r.headers&&r.headers.get&&r.headers.get("Retry-After")!==null&&Number.isFinite(ra)&&ra>=0)e.retryAfter=ra;throw e}
+    if(!r.ok){const e=new Error("http");e.status=r.status;if(r.status===429&&syncDiag){syncDiag.req=syncDiag.req||{};syncDiag.req.r429=(syncDiag.req.r429||0)+1}const ra=Number(r.headers&&r.headers.get&&r.headers.get("Retry-After"));if(r.headers&&r.headers.get&&r.headers.get("Retry-After")!==null&&Number.isFinite(ra)&&ra>=0)e.retryAfter=ra;throw e}
     return r.status===204?null:await r.json();
   }catch(err){if(err&&err.name==="TypeError"&&!err.status)err.network=true;throw err}
   finally{clearTimeout(tm)}
@@ -3348,7 +3376,7 @@ async function bbWrite(){
   await sheetWrite(b.id,BB_TAB,rows,v[BB_TAB]||[]);
   const back=bbUnpack(((await sheetRead(b.id,[BB_TAB]))[BB_TAB])||[]);if(JSON.stringify(back)!==raw)throw Error("控えの読み戻しが合いません");
   await sheetWrite(b.id,BB_INFO,[["項目","値"],["端末",b.name],["保存日時",at],["版",(document.querySelector(".ver")||{}).textContent||""],["案件",String(now.cases)],["立替",String(now.receipts)],["ToDo",String(now.todos)]],v[BB_INFO]||[]);
-  b.at=at;save();return now;
+  b.at=at;save();bbSameSet(b.id,raw);return now;
 }
 async function bbList(){
   await gAuthorize(true);if(!eq(await myEmail(),ADMIN_ACCOUNT))throw Error("社長の管理アカウントでログインしてください");
@@ -4961,7 +4989,7 @@ async function corpLoad(){
   const me=viewer&&ui.viewList.find(s=>eq(s.email,D().viewEmail));
   if(viewer&&(!me||!isViewer(me)))throw new Error("notviewer");
   const list=viewer?ui.viewList.filter(s=>me&&(canSee(me,s)||s.sheetId===me.sheetId)):D().staff.filter(s=>!s.removed), out=[];
-  const t0=Date.now();
+  const t0=Date.now(),tPrep=Date.now();
   const prev=Object.fromEntries(((ui.corp&&ui.corp.data)||[]).filter(x=>x&&x.ok&&x.s&&(x.mt||x.infoJ)).map(x=>[x.s.sheetId,x]));
   /* 更新日時は毎回取る（次の読み込みで比べるため。初めての読み込みでも取っておく） */
   const mtAt=Date.now(), shared=viewer&&list.length?await corpMtShared():null;
@@ -5014,9 +5042,10 @@ async function corpLoad(){
       x={s,ok:false,accessDenied:err.status===403||err.status===404,msg:corpReadMsg(err)+(tries>1?"・"+tries+"回試しました":""),status:err.status||(err.name==="AbortError"?"timeout":err.network?"network":"")}}
     x.ms=Date.now()-started;x.tries=tries;return x}
   };
+  const prepMs=Date.now()-tPrep;
   {let next=0,stop=null;const work=async()=>{while(!stop&&next<list.length){const i=next++;try{out[i]=await one(list[i])}catch(e){stop=stop||e}}};
    await Promise.all(Array.from({length:Math.min(CORP_POOL,list.length)},work));if(stop)throw stop;}
-  out.timing={ms:Date.now()-t0,n:list.length,reused:out.filter(x=>x&&x.reused).length,probed:out.filter(x=>x&&x.probed).length,prevN:Object.keys(prev).length,full:out.filter(x=>x&&x.ok&&!x.reused).length,slow:Math.max(0,...out.map(x=>x&&x.ms||0))};
+  out.timing={ms:Date.now()-t0,n:list.length,reused:out.filter(x=>x&&x.reused).length,probed:out.filter(x=>x&&x.probed).length,prevN:Object.keys(prev).length,prep:prepMs,full:out.filter(x=>x&&x.ok&&!x.reused).length,slow:Math.max(0,...out.map(x=>x&&x.ms||0))};
   if(viewer)out.timing.shared=shared?Math.round(shared.age/60e3):null;
   if(pub){const e=await pub;if(e&&e.message==="signin")throw e}
   save();return out;
