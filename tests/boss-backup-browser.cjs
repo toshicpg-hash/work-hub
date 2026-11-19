@@ -14,6 +14,7 @@ const tabName=r=>{const m=r.match(/^'((?:[^']|'')+)'/);return m?m[1].replace(/''
 async function google(r){
  const req=r.request(),u=new URL(req.url()),acct=(req.headers()['authorization']||'').replace('Bearer tok:',''),m=req.method(),p=decodeURIComponent(u.pathname);
  const J=(o,st=200)=>r.fulfill({status:st,contentType:'application/json',body:JSON.stringify(o)});G.calls.push([acct,m,p]);
+ if(G.rate&&G.rate.n>0&&p.includes(G.rate.id)){G.rate.n--;return J({error:{code:429}},429)}
  if(p==='/drive/v3/about')return J({user:{emailAddress:acct}});
  if(p==='/drive/v3/files'&&m==='GET'){const q=u.searchParams.get('q')||'',eqn=(q.match(/name='([^']*)'/)||[])[1],cn=(q.match(/name contains '([^']*)'/)||[])[1];
   return J({files:Object.values(G.files).filter(f=>f.owner===acct&&(!eqn||f.name===eqn)&&(!cn||f.name.includes(cn))).map(f=>({id:f.id,name:f.name,createdTime:f.created}))})}
@@ -74,12 +75,27 @@ async function main(){
   });
   await check('同期のたびに控える：案件を足して同期すると控えも増える。大きな記録は分けて入れても元どおり '+width+'px',async()=>{
    await A.p.evaluate(()=>{BB.db.cases.push({...BB.CASE_DEFAULTS(),id:'SYN-6',type:'reno',stage:'new',property:'見本ハイツ6',room:'106',tantou:'見本',client:'見本管理（架空）',clientKind:'管理会社',note:'メモ'.repeat(30000)});BB.save()});
+   /* v1.50.118 控えは3時間に1回：前に控えてから3時間たつまでは、中身が変わっても書かない */
+   {const before=JSON.stringify(G.files[fileId].tabs);const rows=await sync(A.p);const s=rows.find(x=>x.name==='この端末の控え');assert.ok(s&&s.ok===true,JSON.stringify(rows));assert.match(s.msg,/控えは3時間に1回なので、.*より後の同期で控えます/);
+    assert.equal(JSON.stringify(G.files[fileId].tabs),before,'not written within 3 hours')}
+   await A.p.evaluate(()=>{const k=JSON.parse(localStorage.getItem('workhub_bb_same_v1'));k.at-=3*3600e3+1000;localStorage.setItem('workhub_bb_same_v1',JSON.stringify(k))});
    const rows=await sync(A.p);const s=rows.find(x=>x.name==='この端末の控え');assert.ok(s&&s.ok,JSON.stringify(rows));assert.match(s.msg,/案件6件/);
+   /* 中身が前に控えたときと同じなら、何も問い合わせない（時間がたっていても） */
+   await A.p.evaluate(()=>{const k=JSON.parse(localStorage.getItem('workhub_bb_same_v1'));k.at-=5*3600e3;localStorage.setItem('workhub_bb_same_v1',JSON.stringify(k))});
+   {G.calls=[];const rows=await sync(A.p);const s=rows.find(x=>x.name==='この端末の控え');assert.match(s.msg,/から変わっていないので、控えはそのままです/);assert.ok(!G.calls.some(c=>c[2].includes(fileId)),'no call to the backup file')}
+   /* 回数制限（429）に当たったら、その場では待たず、約1分後に裏で1回やり直す */
+   await A.p.evaluate(()=>{BB.db.cases[0].note='変えた（テスト）';BB.save();localStorage.removeItem('workhub_bb_same_v1');const st=window.setTimeout;window.setTimeout=(f,ms,...a)=>st(f,ms===65000?80:ms,...a)});
+   G.rate={id:fileId,n:1};
+   {const rows=await sync(A.p);const s=rows.find(x=>x.name==='この端末の控え');assert.equal(s.ok,'warn');assert.match(s.msg,/回数制限（429）に当たりました。約1分後に、裏でもう一度控えます/);
+    await A.p.waitForFunction(()=>/1分待って控えました/.test((BB.ui.gsync.rows.find(x=>x.name==='この端末の控え')||{}).msg||''));
+    assert.equal(await A.p.evaluate(()=>BB.ui.gsync.rows.filter(x=>x.name==='この端末の控え').length),1,'the same row is replaced');
+    const t=G.files[fileId].tabs.find(x=>x.title==='控え');assert.equal(await A.p.evaluate(rows=>BB.bbUnpack(rows).cases[0].note,t.rows),'変えた（テスト）')}
+   G.rate=null;
    const f=G.files[fileId],t=f.tabs.find(x=>x.title==='控え');assert.ok(t.rows.length>=3,'split into chunks: '+t.rows.length);
    assert.equal(await A.p.evaluate(rows=>BB.bbUnpack(rows).cases.length,t.rows),6);
   });
   await check('控えのファイルがだれかと共有されていたら、控えを書かずに止める '+width+'px',async()=>{
-   G.files[fileId].perms.push({id:'p9',emailAddress:'someone@example.com',role:'reader',type:'user'});
+   G.files[fileId].perms.push({id:'p9',emailAddress:'someone@example.com',role:'reader',type:'user'});await A.p.evaluate(()=>localStorage.removeItem('workhub_bb_same_v1'));
    const rows=await sync(A.p);const s=rows.find(x=>x.name==='この端末の控え');assert.ok(s&&!s.ok);assert.match(s.msg,/共有されています（someone@example\.com）/);
    G.files[fileId].perms=[];
   });
