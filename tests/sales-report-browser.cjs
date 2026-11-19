@@ -13,7 +13,7 @@ const check=async(name,fn)=>{await fn();results.push(name);console.log('PASS',na
 const tabName=r=>{const m=r.match(/^'((?:[^']|'')+)'/);return m?m[1].replace(/''/g,"'"):r.split('!')[0]};
 async function google(r){
  const req=r.request(),u=new URL(req.url()),acct=(req.headers()['authorization']||'').replace('Bearer tok:',''),m=req.method(),p=decodeURIComponent(u.pathname);
- const J=(o,st=200)=>r.fulfill({status:st,contentType:'application/json',body:JSON.stringify(o)});G.calls.push([acct,m,p]);
+ const J=(o,st=200)=>r.fulfill({status:st,contentType:'application/json',body:JSON.stringify(o)});G.calls.push([acct,m,p,decodeURIComponent(u.search)]);
  if(p==='/drive/v3/about')return J({user:{emailAddress:acct}});
  if(p==='/drive/v3/files'&&m==='GET'){const q=u.searchParams.get('q')||'',eqn=(q.match(/name='([^']*)'/)||[])[1],cn=(q.match(/name contains '([^']*)'/)||[])[1];
   return J({files:Object.values(G.files).filter(f=>f.owner===acct&&(!eqn||f.name===eqn)&&(!cn||f.name.includes(cn))).map(f=>({id:f.id,name:f.name,createdTime:f.created}))})}
@@ -425,8 +425,8 @@ async function main(){
    await E2.p.evaluate(()=>{const d=BB.db.settings.data;d.ob={legacy:true};d.sheetId='rec00000000000000000001';BB.save()});
    await E2.p.evaluate(()=>BB.gAuthorize(true));await E2.p.evaluate(()=>BB.ordAfterSync());await E2.p.evaluate(()=>{BB.go('stats');document.querySelectorAll('details[data-fold="sales"]').forEach(d=>d.open=true)});
    assert.match(await E2.p.textContent('#stats-sales'),/共有（編集者）を頼んでください/);
-   /* 社長がGoogleで編集者に加えたあと */
-   f.writers=[STAFF];
+   /* 社長がGoogleで編集者に加えたあと（v1.50.114 同じ中身がもうあれば書かないので、ここでは会社の数字の今月の受注を古くしておく） */
+   f.writers=[STAFF];for(const id of ['numcp000000000000000001','numat000000000000000001']){const t=G.files[id].tabs.find(x=>x.title==='今月の受注');if(t)t.rows=[]}
    await E2.p.evaluate(()=>BB.ordAfterSync());await E2.p.evaluate(()=>{BB.go('stats');document.querySelectorAll('details[data-fold="sales"]').forEach(d=>d.open=true)});
    const t=await E2.p.textContent('#stats-sales');assert.match(t,/入力できる人/);assert.doesNotMatch(t,/共有（編集者）を頼んで/);
    /* v1.50.66 3社を入れられる人（全社）は今月の受注も書き出す。会社の数字が「見るだけ」なら書けない理由を出す */
@@ -438,6 +438,15 @@ async function main(){
    /* v1.50.90 中身が同じなら、3社を入れられる人も次は書き直さない */
    G.calls=[];await E2.p.evaluate(()=>BB.ordAfterSync());
    assert.ok(!G.calls.some(c=>c[0]===STAFF&&c[1]!=='GET'&&c[2].includes('numcp000000000000000001')),'not rewritten when unchanged');
+   /* v1.50.114 同期を短くする（専務の端末の「今月の受注」20.7秒）：「会社の数字の場所」は1回だけ読む。自分で売上報告を読めたら、書き出された今月の受注は読み直さない */
+   {const mine=G.calls.filter(c=>c[0]===STAFF),ptr=mine.filter(c=>c[1]==='GET'&&/values:batchGet/.test(c[2])&&c[3].includes('会社の数字の場所')).length,
+      ordReads=mine.filter(c=>c[1]==='GET'&&/values:batchGet/.test(c[2])&&c[3].includes('今月の受注')).length;
+    console.log('CALLS',mine.length,'ptr',ptr,'ordReads',ordReads);
+    assert.equal(ptr,1,'pointer read once');assert.equal(ordReads,0,'no re-read of the exported orders when unchanged');}
+   /* 社長の端末が先に同じ中身を書いていれば（この端末の控えがなくても）、書き直さない */
+   await E2.p.evaluate(()=>localStorage.removeItem('workhub_ord_done_v1'));G.calls=[];await E2.p.evaluate(()=>BB.ordAfterSync());
+   assert.ok(!G.calls.some(c=>c[0]===STAFF&&c[1]!=='GET'&&c[2].includes('numcp000000000000000001')),'not rewritten when the file already has the same content');
+   assert.ok(await E2.p.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem('workhub_ord_done_v1')||'{}')).length>0),'remembered');
    {const rows=tabOf(G.files.numcp000000000000000001,'今月の受注');assert.equal(rows.length,4);assert.equal(rows[1][6],'2026-11-09')}
    delete G.files.numcp000000000000000001.writers;
    assert.equal(await E2.p.$$eval('[data-act=salescheck]',a=>a.length),0,'boss check is only for the boss');assert.equal(await E2.p.$$eval('#sales-eds,[data-act=salesdemo]',a=>a.length),0,'no admin controls');
