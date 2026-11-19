@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..'),ADMIN='toshi.cpg@gmail.com',STAFF='staff.sample@example.com',STAFF2='gm.sample@example.com',KEY='workhub_proto_v1';
-const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,ordLoad,salesViewLoad,salesChkReflect,salesChkCan,gAuthorize,ordAfterSync,numSpecs,'+
+const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,ordLoad,salesViewLoad,salesChkReflect,salesChkCan,salesSet,salesViewRows,gAuthorize,ordAfterSync,numSpecs,'+
  'mock(){gLoadCalendarsRun=async()=>{G.cals=[];return G.cals};gReadRange=async()=>({events:[],calendars:[],missing:0});gKeepSave=()=>{};corpRun=async()=>[]}};';
 const GIS="window.google={accounts:{oauth2:{initTokenClient(cfg){return {requestAccessToken(){setTimeout(()=>cfg.callback({access_token:'tok:'+window.__acct,expires_in:3600,scope:cfg.scope}),5)}}}}}};";
 const G={files:{},n:0,calls:[]};
@@ -161,6 +161,16 @@ async function main(){
    assert.deepEqual(G.cellPuts,["'2026-11 確認'!C10"],'only the one cell (CP, day 9) is written');
    t=await box().textContent();assert.match(t,/社長 ✓ 済/);assert.match(t,/今月（9日まで）：社長 9日/);assert.equal(await box().locator('[data-act=salescheck]').count(),0);
    assert.match(await A.p.textContent('#stats-sales'),/CP：今日の社長の確認を付けました/);
+   /* v1.50.113 はじめに開く月は今月（翌月のタブを先に作っても、空の翌月を開かない）。人が選んだ月はそのまま。社員に書き出すのは4か月 */
+   {const r=await A.p.evaluate(()=>{const S=BB.ui.sales,mk=keys=>({...S,keys});const out=[];
+      BB.ui.salesMonthPicked=false;BB.ui.salesMonth='';BB.salesSet(mk(['2026-09','2026-10','2026-11','2026-12']));out.push(BB.ui.salesMonth);
+      BB.ui.salesMonth='2026-12';BB.salesSet(mk(['2026-09','2026-10','2026-11','2026-12']));out.push(BB.ui.salesMonth);
+      BB.ui.salesMonthPicked=true;BB.ui.salesMonth='2026-09';BB.salesSet(mk(['2026-09','2026-10','2026-11','2026-12']));out.push(BB.ui.salesMonth);
+      BB.ui.salesMonthPicked=false;BB.ui.salesMonth='';BB.salesSet(mk(['2026-08','2026-09','2026-10']));out.push(BB.ui.salesMonth);
+      BB.ui.salesMonthPicked=false;BB.salesSet(S);
+      const raw={all:['2026-08 受注','2026-09 受注','2026-10 受注','2026-11 受注','2026-12 受注'],v:{},modified:'',name:''};raw.all.forEach(t=>raw.v[t]=[['会社','日','受注件数','受注金額']]);
+      out.push(BB.salesViewRows(raw,'2026-11-09T00:00:00.000Z').filter(x=>x[0]==='タブ').map(x=>x[1]).join(','));return out});
+    assert.deepEqual(r,['2026-11','2026-11','2026-09','2026-10','2026-09 受注,2026-10 受注,2026-11 受注,2026-12 受注']);}
    /* v1.50.111 本部長・GMの確認：だれができるか（本部長＝全社の人は3社、GM＝その会社のGM。統括の印のGMはしない） */
    assert.deepEqual(await A.p.evaluate(()=>{const z={role:'全社',gmCo:'CP'},g={role:'GM',gmCo:'AT'},l={role:'GM',gmCo:'CPY',gmLead:true},e={role:'社員'};
      return [BB.salesChkCan(z,'AT','hq'),BB.salesChkCan(z,'CP','gm'),BB.salesChkCan(z,'AT','gm'),BB.salesChkCan(g,'AT','gm'),BB.salesChkCan(g,'CP','gm'),BB.salesChkCan(g,'AT','hq'),BB.salesChkCan(l,'CPY','gm'),BB.salesChkCan(e,'CP','gm')]}),[true,true,false,true,false,false,false,false]);
