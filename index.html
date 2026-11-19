@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.113" title="使い方マニュアルを開く">v1.50.113・11/17更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.113" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.114" title="使い方マニュアルを開く">v1.50.114・11/17更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.114" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.113"></script>
+<script src="./share-management.js?v=1.50.114"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.113"></script>
-<script src="./calendar-view-scope.js?v=1.50.113"></script>
+<script src="./view-scope.js?v=1.50.114"></script>
+<script src="./calendar-view-scope.js?v=1.50.114"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2686,7 +2686,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.113";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.114";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2877,7 +2877,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.113" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.113" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.114" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.114" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3948,17 +3948,28 @@ async function ordWriteAll(sum,targets){
   for(const [co,id] of map){if(seen.has(id))continue;seen.add(id);
     if(done[id]===same){n++;continue}/* v1.50.90 3社を入れられる人（専務）の書き出しも同じ */
     try{const tabs=await sheetTabNames(id);if(!tabs.includes(ORD_TAB))await addTab(id,ORD_TAB);
-      const prev=(await sheetRead(id,[ORD_TAB]))[ORD_TAB]||[];await sheetWrite(id,ORD_TAB,rows,prev);
+      const prev=(await sheetRead(id,[ORD_TAB]))[ORD_TAB]||[];
+      /* v1.50.114 社長の端末と専務の端末が同じ中身を書いている。ファイルにもう同じ中身（時刻を除く）があれば、書き直さない */
+      {const o=ordParse(prev);if(o&&JSON.stringify([o.key,o.date,o.upd,o.cos])===same){n++;done[id]=same;try{localStorage.setItem(ORD_DONE_KEY,JSON.stringify(done))}catch(e){}continue}}
+      await sheetWrite(id,ORD_TAB,rows,prev);
       const back=ordParse((await sheetRead(id,[ORD_TAB]))[ORD_TAB]||[]);if(!back||back.at!==sum.at)throw Error("書き出したあとの確認ができません");n++;
       done[id]=same;try{localStorage.setItem(ORD_DONE_KEY,JSON.stringify(done))}catch(e){}}
     catch(err){if(err.message==="signin")throw err;errs.push(co+"："+(err.message==="http"?(err.status===403?"書く共有がありません（見るだけ）":dMsg(err)):err.message))}}
   return {n,errs};
 }
 /* 自分の記録シートの「会社の数字の場所」の会社の行 → [[会社, ファイルID], …] */
+/* v1.50.114 トシさんの指示（専務の同期で「今月の受注」20.7秒）：同期のあとの処理の間は、「会社の数字の場所」を1回だけ読む（前は同じタブを3回読んでいた） */
+let numPtrMemo=null;
+async function numPtrRows(){
+  const d=D();if(!d.sheetId)return [];
+  if(numPtrMemo&&numPtrMemo.id===d.sheetId)return numPtrMemo.p;
+  const p=(async()=>{const tabs=await sheetTabNames(d.sheetId);if(!tabs.includes(NUMPTR_TAB))return [];return ((await sheetRead(d.sheetId,[NUMPTR_TAB]))[NUMPTR_TAB]||[]).slice(1)})();
+  if(numPtrMemo)numPtrMemo={id:d.sheetId,p};
+  try{return await p}catch(err){if(numPtrMemo&&numPtrMemo.p===p)numPtrMemo={};throw err}
+}
 async function numPtrTargets(){
   const d=D();if(!d.sheetId)return [];
-  const tabs=await sheetTabNames(d.sheetId);if(!tabs.includes(NUMPTR_TAB))return [];
-  return ((await sheetRead(d.sheetId,[NUMPTR_TAB]))[NUMPTR_TAB]||[]).slice(1).map(r=>[String(r[0]||"").trim(),sheetIdOf(String(r[1]||""))]).filter(([co,id])=>COMPANIES.includes(co)&&id);
+  return (await numPtrRows()).map(r=>[String(r[0]||"").trim(),sheetIdOf(String(r[1]||""))]).filter(([co,id])=>COMPANIES.includes(co)&&id);
 }
 /* 社員・見る人の端末：自分の記録シートの「会社の数字の場所」から、会社の数字のファイルの「今月の受注」を読む（どれか1つ読めればよい） */
 async function ordLoad(){
@@ -3970,17 +3981,21 @@ async function ordLoad(){
   return best;
 }
 async function ordAfterSync(){if(D().admin||!D().sheetId||!gSignedIn())return;
+  numPtrMemo={};let own=false;
+  try{
   try{await salesEdPtr()}catch(e){}
-  if(D().salesEditId){try{await salesLoad();ui.salesErr="";
+  if(D().salesEditId){try{await salesLoad();ui.salesErr="";own=!!ordSummary(ui.sales);
       /* v1.50.66 3社を入れられる人は、今月の受注を社員に書き出す（失敗は売上報告の上に出す。社長の書き出しが続いていれば困らない） */
       ui.ordWriteMsg="";if(salesMyCos().length===SALES_ORDER.length){const sum=ordSummary(ui.sales),t=await numPtrTargets();if(sum&&t.length){const w=await ordWriteAll(sum,t);if(w.errs.length)ui.ordWriteMsg="社員への今月の受注を書けなかった会社："+w.errs.join("・")}}}catch(err){ui.salesErr=err.message==="http"?(err.status===403||err.status===404?"売上報告のシートを開けません。社長にシートの共有（編集者）を頼んでください":dMsg(err)):err.message}}
-  try{await ordLoad()}catch(e){}
-  try{await salesViewLoad()}catch(e){}render()}
+  /* v1.50.114 売上報告を自分で読めた端末は、ホームのタイルも自分で読んだ数字から出る（salesSet で控える）。書き出された「今月の受注」を読み直さない */
+  if(!own)try{await ordLoad()}catch(e){}
+  try{await salesViewLoad()}catch(e){}
+  }finally{numPtrMemo=null}
+  render()}
 /* v1.50.62 入力できる人の端末：自分の記録シートの「会社の数字の場所」の「売上報告」の行を読む（社長が書く）。なければ入力できない */
 async function salesEdPtr(){
   const d=D();if(d.admin||!d.sheetId)return;
-  const tabs=await sheetTabNames(d.sheetId);
-  const ptr=tabs.includes(NUMPTR_TAB)?((await sheetRead(d.sheetId,[NUMPTR_TAB]))[NUMPTR_TAB]||[]).slice(1):[];
+  const ptr=await numPtrRows();
   const r=ptr.find(x=>String(x[0]||"").trim()===SALES_PTR),id=r?sheetIdOf(String(r[1]||"")):"";
   /* v1.50.64 入れられる会社（3列目）。書いていない古い行は、念のため入れられる会社なし（社長がもう一度保存すると入る） */
   const cos=r?String(r[2]||"").split(",").map(x=>x.trim()).filter(x=>SALES_ORDER.includes(x)):[];
