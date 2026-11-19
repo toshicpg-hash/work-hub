@@ -60,7 +60,7 @@ async function main(){
  await new Promise(r=>server.once('listening',r));origin='http://127.0.0.1:'+server.address().port;
  browser=await playwright.chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
  /* v1.50.54 会社のカードは最初は畳んである。試験では開いて中を見る */
- const open=async p=>{await p.evaluate(()=>{BB.ui.salesCoOpen={CP:true,AT:true,CPY:true};BB.ui.salesDayOpen={};BB.go('stats');document.querySelectorAll('details[data-fold="sales"]').forEach(d=>d.open=true)});await p.waitForSelector('#stats-sales')};
+ const open=async p=>{await p.evaluate(()=>{BB.ui.salesCoOpen={CP:true,AT:true,CPY:true};BB.ui.salesDayOpen={};BB.ui.salesEdOpen=false;BB.go('stats');document.querySelectorAll('details[data-fold="sales"]').forEach(d=>d.open=true)});await p.waitForSelector('#stats-sales')};
  for(const width of [400,360]){
   G.files={};G.n=0;G.mod='2026-11-09T01:30:00Z';
   /* 社員一覧（HUBの設定を書く先）とフォルダ */
@@ -358,7 +358,8 @@ async function main(){
    await open(A.p);await A.p.click('[data-sales-month="2026-09"]');
    assert.match(await A.p.textContent('[data-sales-month="2026-09"]'),/速報/);
    assert.match(await A.p.textContent('#stats-sales .sales-prebar'),/9月の売上は 11\/14 に確定します（月末から45日）/);
-   await A.p.evaluate(()=>{document.getElementById('sales-fix').open=true});await A.p.fill('#se_fixdays','35');
+   assert.ok(await A.p.evaluate(()=>!!document.querySelector('#sales-edit #sales-fix')),'v1.50.112 the fix-day panel is inside 数字を入れる');
+   await A.p.evaluate(()=>{document.getElementById('sales-edit').open=true;document.getElementById('sales-fix').open=true});await A.p.fill('#se_fixdays','35');
    await A.p.click('[data-act=salesfix]');await A.p.waitForFunction(()=>!BB.ui.salesBusy&&BB.ui.salesMsg);
    assert.equal(await A.p.evaluate(()=>BB.ui.salesMsg.ok),true,await A.p.evaluate(()=>BB.ui.salesMsg.text));
    assert.ok(tabOf(G.files.list00000000000000000001,'HUBの設定').some(r=>r[0]==='売上確定までの日数'&&r[1]==='35'));
