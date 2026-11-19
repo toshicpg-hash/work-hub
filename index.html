@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.111" title="使い方マニュアルを開く">v1.50.111・11/17更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.111" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.112" title="使い方マニュアルを開く">v1.50.112・11/17更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.112" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.111"></script>
+<script src="./share-management.js?v=1.50.112"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.111"></script>
-<script src="./calendar-view-scope.js?v=1.50.111"></script>
+<script src="./view-scope.js?v=1.50.112"></script>
+<script src="./calendar-view-scope.js?v=1.50.112"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2686,7 +2686,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.111";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.112";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2877,7 +2877,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.111" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.111" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.112" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.112" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -4144,6 +4144,7 @@ function salesEdPanel(){
     '<div class="row"><button class="btn sm pri" type="button" data-act="saleseds"'+(ui.salesBusy?' disabled':'')+'>入力できる人を保存</button></div>'+
     '<p class="note" style="margin:0">入れられる会社は役割で決まります（全社＝3社、GM＝GMの会社だけ、業務管理・経理＝担当の会社、ほかはその人の会社）。役割を変えたときは、ここでもう一度保存してください。選んだ人の端末では、同期すると「数字」に売上報告と「数字を入れる」が出ます（社長の確認の印は社長だけ）。<b>あわせて、Googleスプレッドシートの「共有」で、その人を売上報告のシートの「編集者」に加えてください</b>（このシートはHUBの外で作ったので、HUBからは共有できません）。</p></div></details>';
 }
+/* v1.50.112 トシさんの指示：めったに変えないので「数字を入れる」の中のいちばん下に置く（前は売上報告の欄の上のほう） */
 /* v1.50.68 社長：売上の確定（月末から何日）を変える。社員一覧の「HUBの設定」に残し、入力できる人の記録シートにも書く */
 function salesFixPanel(){
   return '<details class="sales-open sub" id="sales-fix"'+(ui.salesFixOpen?' open':'')+'><summary>売上の確定日<span class="sales-open-sub">月末から'+salesFixDays()+'日</span></summary><div style="display:flex;flex-direction:column;gap:6px">'+
@@ -4251,10 +4252,10 @@ function salesSec(){
     '<div class="sales-lab">会社を選ぶ'+(admin?'':'（あなたが入れられる会社）')+'</div><div class="picks" role="group" aria-label="会社">'+myCos.map(k=>'<button class="pick" type="button" data-sales-edco="'+k+'" aria-pressed="'+(k===eco)+'">'+k+'</button>').join("")+'</div>'+
     '<div class="sales-lab">入れるものを選ぶ</div><div class="picks" role="group" aria-label="入れるもの">'+[["day","毎日の受注"],["co","会社の数字"],["st","担当者別"]].map(([k,l])=>'<button class="pick" type="button" data-sales-edkind="'+k+'" aria-pressed="'+(k===ekind)+'">'+l+'</button>').join("")+'</div>'+
     '<div class="sales-in-wrap">'+eform+'</div><div class="row"><button class="btn pri" type="button" data-act="salessave"'+busy+'>シートに保存</button></div>'+
-    '<p class="note" style="margin:0">変えたマスだけを書きます。会社の「更新日」は今日になります。シートで誰かが先に変えていたら、書かずに止めます。</p></div></details>';
+    '<p class="note" style="margin:0">変えたマスだけを書きます。会社の「更新日」は今日になります。シートで誰かが先に変えていたら、書かずに止めます。</p>'+(admin?'<div class="sales-fix-in">'+salesFixPanel()+'</div>':'')+'</div></details>';
   const pre=salesPrelim(M.key)?'<p class="sales-prebar" role="status"><b>速報</b>　'+Number(M.key.slice(5))+'月の売上は '+md(salesFixDate(M.key))+' に確定します（月末から'+salesFixDays()+'日）。それまで実績売上・粗利・担当者別は増えていきます（直しでまれに減ります）。受注は変わりません</p>':'<p class="note" style="margin:0">'+Number(M.key.slice(5))+'月の売上は確定しています（'+md(salesFixDate(M.key))+'）</p>';
   /* v1.50.105 トシさんの指示：「入力できる人」はふだん触らないので、会社のカードの下（いちばん下）へ */
-  return wrap(tabs+pre+fresh+bad+(viewer?'':editor)+(admin?salesFixPanel():'')+total+cos.map(card).join("")+(admin?salesEdPanel():'')+(viewer?'<p class="note" style="margin:0">社長の端末が同期したとき（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）の売上報告です。見るだけです。数字を直すときは社長か入力できる人に伝えてください。</p>':'<p class="note" style="margin:0">「'+h(M.key)+'」の月のタブを読んでいます（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）。共有はしていません。</p>')+ctl);
+  return wrap(tabs+pre+fresh+bad+(viewer?'':editor)+total+cos.map(card).join("")+(admin?salesEdPanel():'')+(viewer?'<p class="note" style="margin:0">社長の端末が同期したとき（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）の売上報告です。見るだけです。数字を直すときは社長か入力できる人に伝えてください。</p>':'<p class="note" style="margin:0">「'+h(M.key)+'」の月のタブを読んでいます（'+h(new Date(S.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}))+'）。共有はしていません。</p>')+ctl);
 }
 /* 古い見る人用一覧に「移転先」を書く。見る人の端末は、次の同期でそれを見て新しい一覧に移る */
 async function viewListMarkOld(){const d=D();if(!d.viewListId)return 0;let n=0;
