@@ -23,7 +23,7 @@ async function google(route){
  const J=(o,st=200)=>route.fulfill({status:st,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify(o)});
  const no=st=>J({error:{code:st}},st);
  if(m==='OPTIONS')return route.fulfill({status:204,headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'*'}});
- G.calls.push([acct,m,p]);
+ G.calls.push([acct,m,p,decodeURIComponent(u.search)]);
  if(p.startsWith('/calendar/v3/users/me/calendarList'))return J({items:[{id:acct,primary:true,accessRole:'owner',summary:acct}]});
  if(p.startsWith('/calendar/v3/'))return J({items:[]});
  if(p==='/drive/v3/about')return J({user:{emailAddress:acct}});
@@ -498,12 +498,33 @@ async function main(){
   assert.ok(await z.p.evaluate(id=>RB.ui.corp.data.find(x=>x.s.sheetId===id).box.some(o=>o['指示ID']==='B-TEST-0094'),b.id));
   mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
   assert.ok(!new Set(sheetReads(mark,ids)).has(b.box),'after that read, it is reused again');
-  /* 社長の端末が取ってから30分を過ぎた：全員読む */
+  /* 社長の端末が取ってから30分を過ぎた：v1.50.115 全員を全部は読まず、各人の「情報」タブと指示箱だけ読んで、同じなら前の内容を使う */
+  const tabReads=(from,id)=>G.calls.slice(from).filter(c=>c[0]===ZEN&&c[1]==='GET'&&c[2].startsWith('/v4/spreadsheets/'+id+'/values')).map(c=>c[3]||'');
   await z.p.clock.setSystemTime(new Date(tA+31*60e3));
   mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
-  assert.equal(new Set(sheetReads(mark,ids)).size,ids.length,'all read when the list is older than 30 minutes');
-  t=await z.p.evaluate(()=>RB.ui.corp.timing);assert.equal(t.reused,0);assert.equal(t.shared,null);
-  await z.p.evaluate(()=>RB.render());assert.match(await z.p.textContent('main'),/社長の端末の新しい更新日時がないので、全員を読みました/);
+  assert.equal(new Set(sheetReads(mark,ids)).size,ids.length,'every file is still checked when the list is older than 30 minutes');
+  for(const x of others){const r=tabReads(mark,x.id);assert.ok(r.length>=1&&r.every(q=>/情報/.test(q)&&!/案件/.test(q)),'only the info tab: '+x.name+' '+r.join('|'))}
+  if(own)assert.ok(tabReads(mark,own.id).some(q=>/案件/.test(q)),'own sheet is read in full');
+  t=await z.p.evaluate(()=>RB.ui.corp.timing);assert.equal(t.reused,others.length);assert.equal(t.probed,others.length);assert.equal(t.shared,null);
+  await z.p.evaluate(()=>RB.render());assert.match(await z.p.textContent('main'),/社長の端末の新しい更新日時がないので、各人の「情報」タブで確かめました。前から変わっていない \d+人は読み直していません/);
+  /* その人が同期した（「情報」が変わった）：その人だけ全部読み直し、新しい内容が出る */
+  {const c=others.find(x=>x.name==='社員 一郎'),sc=G.files[c.id],it=sc.tabs.find(x=>x.title==='情報');
+   it.rows=[...(it.rows||[]).filter(r=>r[0]!=='最終同期'),['最終同期','2026-11-19 23:59']];
+   const ct=sc.tabs.find(x=>x.title==='案件');const before=JSON.stringify(ct.rows);
+   mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
+   assert.ok(tabReads(mark,c.id).some(q=>/案件/.test(q)),'changed person is read in full');
+   for(const x of others.filter(x=>x!==c))assert.ok(tabReads(mark,x.id).every(q=>!/案件/.test(q)),'others are not: '+x.name);
+   t=await z.p.evaluate(()=>RB.ui.corp.timing);assert.equal(t.reused,others.length-1);assert.equal(JSON.stringify(ct.rows),before)}
+  /* 指示箱が変わった（ほかの人が書いた）：その人を全部読み直す */
+  {const bx=G.files[b.box].tabs.find(x=>x.title==='指示');bx.rows.push(['B-TEST-0115','ほかの人が書いた（テスト）']);
+   mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
+   assert.ok(tabReads(mark,b.id).some(q=>/案件/.test(q)),'box changed: read in full');
+   assert.ok(await z.p.evaluate(id=>RB.ui.corp.data.find(x=>x.s.sheetId===id).box.some(o=>o['指示ID']==='B-TEST-0115'),b.id))}
+  /* 前に全部読んでから12時間たった：全員を全部読む */
+  await z.p.clock.setSystemTime(new Date(tA+13*3600e3));
+  mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
+  for(const x of others)assert.ok(tabReads(mark,x.id).some(q=>/案件/.test(q)),'read in full after 12 hours: '+x.name);
+  t=await z.p.evaluate(()=>RB.ui.corp.timing);assert.equal(t.reused,0);
   /* 一覧のタブが読めない（形が違う）：全員読む */
   await A.p.clock.setSystemTime(new Date(tA+31*60e3));await A.p.evaluate(()=>RB.corpRun());
   const vt=byName('CPG HUB_見る人用一覧').tabs.find(x=>x.title==='更新日時');vt.rows[1][0]='壊れた';
