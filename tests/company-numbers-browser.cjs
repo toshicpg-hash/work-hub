@@ -70,6 +70,13 @@ async function main(){
   assert.ok(!Object.keys(store).some(k=>/num-at/.test(k)),'no AT file without one being shared');
   assert.match(JSON.stringify(store['synthetic-num-cp-000000001']['情報']),/"会社","CP".*"書き出し日時"/);
   assert.match(await d.p.evaluate(()=>CN.ui.numWrite.map(x=>x.text).join('/')),/CP：会社の数字を書き出しました（4件）\/CPY：会社の数字を書き出しました（2件）/);
+  /* v1.50.122 中身が同じなら書かない（3時間たてば書き直す） */
+  const infoAt=()=>JSON.stringify(store['synthetic-num-cp-000000001']['情報']);const was=infoAt();
+  await d.p.evaluate(async()=>{await CN.corpRun()});assert.equal(infoAt(),was,'not rewritten when unchanged');
+  assert.match(await d.p.evaluate(()=>CN.ui.numWrite.map(x=>x.text).join('/')),/CP：会社の数字は前に書いたときから変わっていません（4件）\/CPY：会社の数字は前に書いたときから変わっていません（2件）/);
+  await d.p.evaluate(()=>{const k=JSON.parse(localStorage.getItem('workhub_num_done_v1'));for(const v of Object.values(k))v.at-=3*3600e3+1000;localStorage.setItem('workhub_num_done_v1',JSON.stringify(k))});
+  store['synthetic-num-cp-000000001']['情報']=[['項目','値'],['会社','CP'],['書き出し日時','古い']];
+  await d.p.evaluate(async()=>{await CN.corpRun()});assert.equal(infoAt(),was,'rewritten after 3 hours');
  });
  await check('社長：その会社の社員を1人でも読めなかったら、その会社の数字は前のまま（一部だけで上書きしない）。ほかの会社は書く',async()=>{
   const before=JSON.stringify(store['synthetic-num-cp-000000001']);
