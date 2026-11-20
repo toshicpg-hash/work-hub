@@ -82,6 +82,20 @@ const mark=p=>p.evaluate(()=>localStorage.getItem('workhub_sync_resume_v1'));
   await d.p.evaluate(()=>{SR.db.settings.data.admin=false;SR.render()});
   assert.deepEqual(d.errors,[]);await d.c.close();
  });
+ await check('v1.50.123 ボタンが戻ったあと、裏の同期が続いている間は赤い字で「閉じないで」、終わったら「すべて終わりました」',async()=>{
+  const d=await device(400);
+  await d.p.evaluate(()=>{SR.ui.gsync={busy:false,at:Date.now(),complete:true,rows:[{name:'Googleにログイン',ok:true,msg:''}]};SR.ui.syncAfterBusy=true;SR.go('home')});
+  assert.match(await d.p.textContent('.sync-after'),/裏で同期を続けています。終わるまでアプリを閉じないでください/);
+  assert.equal(await d.p.$eval('[data-act=gsync]',b=>b.disabled),true);assert.match(await d.p.textContent('[data-act=gsync]'),/裏で同期を続けています/);
+  assert.equal(await d.p.$eval('.sync-after',e=>getComputedStyle(e).color),await d.p.evaluate(()=>{const x=document.createElement('span');x.style.color='var(--red)';document.body.append(x);const c=getComputedStyle(x).color;x.remove();return c}),'red');
+  await d.p.evaluate(()=>{SR.ui.syncAfterBusy=false;SR.ui.syncAfterDoneAt=Date.now();SR.render()});
+  assert.match(await d.p.textContent('.sync-after'),/同期がすべて終わりました。アプリを閉じても大丈夫です/);assert.equal(await d.p.$eval('[data-act=gsync]',b=>b.disabled),false);
+  assert.ok(await d.p.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)<=0,'overflow');
+  /* 実際の同期の流れでも、終わると「すべて終わりました」になる */
+  await d.p.evaluate(()=>{SR.ui.syncAfterDoneAt=0;SR.signIn();SR.plan=[{complete:true}]});await d.p.evaluate(()=>SR.sync());
+  await d.p.waitForFunction(()=>!SR.ui.syncAfterBusy&&SR.ui.syncAfterDoneAt>0);await d.p.evaluate(()=>{SR.go('home')});assert.match(await d.p.textContent('.sync-after'),/すべて終わりました/);
+  assert.deepEqual(d.errors,[]);await d.c.close();
+ });
  await check('アプリを閉じて開き直したとき、止まったままなら上に出す（印が残っている）',async()=>{
   const d=await device(400,`try{localStorage.setItem('workhub_sync_resume_v1',JSON.stringify({at:Date.now(),sheet:''}))}catch(e){}`);
   await d.p.evaluate(()=>SR.render());assert.equal(await banner(d.p),1);assert.deepEqual(d.errors,[]);await d.c.close();

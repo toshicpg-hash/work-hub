@@ -263,7 +263,7 @@ details.statfold[open]>summary{margin-bottom:8px}
 /* v1.50.54 会社のカード（畳める） */
 #stats-sales details.sales-card>summary{list-style:none;cursor:pointer;flex-wrap:wrap}#stats-sales details.sales-card>summary::-webkit-details-marker{display:none}
 #stats-sales details.sales-card>summary::after{content:"タップして開く ▼";font-size:12px;font-weight:700;color:var(--accent);margin-left:auto;white-space:nowrap}#stats-sales details.sales-card[open]>summary::after{content:"閉じる ▲"}
-.sales-co-sum{flex-basis:100%;font-size:13.5px;color:var(--fg)}.sales-quick{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px}.sales-quick .btn{white-space:normal;text-align:left}.sales-co-sum b{font-weight:800}
+.sales-co-sum{flex-basis:100%;font-size:13.5px;color:var(--fg)}.sync-after{margin:6px 0 0;font-weight:700;color:var(--red);font-size:15px}.sync-after.done{color:var(--green);font-weight:600}.sales-quick{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px}.sales-quick .btn{white-space:normal;text-align:left}.sales-co-sum b{font-weight:800}
 #stats-sales details.sales-card{padding:8px}
 .sales-card-body{display:flex;flex-direction:column;gap:10px;margin-top:10px;padding:0 6px 6px}
 /* v1.50.51 開け閉めする見出し（毎日の受注・担当者別・グラフで見る）を、押せると分かる色の帯に */
@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.122" title="使い方マニュアルを開く">v1.50.122・11/20更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.122" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.123" title="使い方マニュアルを開く">v1.50.123・11/21更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.123" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.122"></script>
+<script src="./share-management.js?v=1.50.123"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.122"></script>
-<script src="./calendar-view-scope.js?v=1.50.122"></script>
+<script src="./view-scope.js?v=1.50.123"></script>
+<script src="./calendar-view-scope.js?v=1.50.123"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2251,10 +2251,10 @@ async function gSyncAll(){
     let r;try{r=await (globalThis.navigator?.locks?.request?navigator.locks.request(KEY+":manual-todo-edit",run):run());
       if(!st)return r;
       /* v1.50.87 ボタンはもう戻っている。裏の社員の記録が終わってから、控え・売上報告などを順に（同時に読むとGoogleの回数制限（429）に当たりやすい。11/16 社長の端末で控えが429・売上報告が読めなかった） */
-      ui.syncAfterBusy=true;const {now,tm}=st;
+      ui.syncAfterBusy=true;ui.syncAfterDoneAt=0;render();const {now,tm}=st;
       if(corpBg)await corpBg.catch(()=>{});
       for(const [n,fn] of [["共有の書き出し",bbAfterSync],["売上報告",salesAfterSync],["今月の受注",ordAfterSync],["担当の候補・会社の住所",namesAfterSync],["領収書の写真（会社）",photoAfterSync]]){const s=now();try{await fn()}catch(e){if(n!=="担当の候補・会社の住所")throw e}const ms=Math.round(now()-s);if(ms>=50)tm.after.push({name:n,ms})}
-    }finally{ui.syncAfterBusy=false;if(st){const {now,t0,tm}=st;tm.total=Math.round(now()-t0);delete tm.partial;tm.at=new Date().toISOString();tm.ver=APP_VER;tm.ok=!!(ui.gsync&&ui.gsync.complete);syncTimingSave(tm);syncDiag=null;if(ui.gsync)ui.gsync.timing=tm;syncResumeAfter();render()}}
+    }finally{if(ui.syncAfterBusy)ui.syncAfterDoneAt=Date.now();ui.syncAfterBusy=false;if(st){const {now,t0,tm}=st;tm.total=Math.round(now()-t0);delete tm.partial;tm.at=new Date().toISOString();tm.ver=APP_VER;tm.ok=!!(ui.gsync&&ui.gsync.complete);syncTimingSave(tm);syncDiag=null;if(ui.gsync)ui.gsync.timing=tm;syncResumeAfter();render()}}
     return r;
   };
   manualTodoSyncPending=Promise.resolve().then(whole);
@@ -2339,7 +2339,9 @@ function gSyncPanel(home=false){
   const companyErrors=success?r.rows.filter(x=>companyRow(x)&&x.ok!==true):[];
   const list=resultList(success?r.rows.filter(x=>!companyErrors.includes(x)):r?.rows);
   const stamp=success?new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(r.at)):'';
-  return '<div class="gsync"><button type="button" class="gsyncbtn" data-act="gsync"'+(r&&r.busy?' disabled':'')+'>'+(r&&r.busy?'同期しています…':'Googleとまとめて同期')+'</button>'+(home?sheetGuardPanel():'')+
+  /* v1.50.123 トシさんの指示：ボタンが戻ったあとも裏の同期（社員の記録・売上報告など）が続いている間は、赤い字で「閉じないで」と出す（会議で、ボタンが戻ったら終わったと思ってアプリを閉じる人がいた）。終わったら「すべて終わりました」と出す */
+  const after=ui.syncAfterBusy?'<p class="sync-after" role="status">⏳ 裏で同期を続けています。終わるまでアプリを閉じないでください</p>':home&&r&&!r.busy&&ui.syncAfterDoneAt&&Date.now()-ui.syncAfterDoneAt<10*60e3?'<p class="sync-after done" role="status">✓ 同期がすべて終わりました。アプリを閉じても大丈夫です</p>':'';
+  return '<div class="gsync"><button type="button" class="gsyncbtn" data-act="gsync"'+(r&&r.busy||ui.syncAfterBusy?' disabled':'')+'>'+(r&&r.busy?'同期しています…':ui.syncAfterBusy?'裏で同期を続けています…':'Googleとまとめて同期')+'</button>'+after+(home?sheetGuardPanel():'')+
     (home&&r?.busy===false&&r.complete!==true&&r.rows?.length&&r.rows.every(x=>x.ok===true)?'<p class="banner" role="alert">同期の完了を確認できません。結果を確認して、もう一度同期してください。</p>':'')+
     (ui.wrongAccount&&ui.wrongAccount.id===D().sheetId?'<div class="row" style="margin-top:6px">'+gReloginBtn()+'</div>':'')+
     (success?'<details class="sync-result"><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer">✅ 同期済み '+h(stamp)+'</summary>'+list+'</details>':list)+resultList(companyErrors)+syncTimingNote(r&&!r.busy?r.timing:null)+attention.html+'</div>';
@@ -2740,7 +2742,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.122";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.123";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2936,7 +2938,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.122" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.122" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.123" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.123" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
