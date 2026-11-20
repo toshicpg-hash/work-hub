@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..'),ADMIN='toshi.cpg@gmail.com',STAFF='staff.sample@example.com',STAFF2='gm.sample@example.com',KEY='workhub_proto_v1';
-const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,ordLoad,salesViewLoad,salesChkReflect,salesChkCan,salesSet,salesViewRows,gAuthorize,ordAfterSync,numSpecs,'+
+const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,ordLoad,salesViewLoad,salesChkReflect,salesChkCan,salesSet,salesViewRows,gAuthorize,ordAfterSync,numSpecs,salesMonthEnsure,salesLoad,'+
  'mock(){gLoadCalendarsRun=async()=>{G.cals=[];return G.cals};gReadRange=async()=>({events:[],calendars:[],missing:0});gKeepSave=()=>{};corpRun=async()=>[]}};';
 const GIS="window.google={accounts:{oauth2:{initTokenClient(cfg){return {requestAccessToken(){setTimeout(()=>cfg.callback({access_token:'tok:'+window.__acct,expires_in:3600,scope:cfg.scope}),5)}}}}}};";
 const G={files:{},n:0,calls:[]};
@@ -31,7 +31,7 @@ async function google(r){
   if(rest==='/values:batchUpdate'&&m==='POST'){const b=req.postDataJSON();G.batch=(G.batch||[]).concat([b]);f.modified=G.mod;
    for(const d of b.data){const mm2=d.range.match(/^'(.+)'!([A-Z])(\d+)$/),t=f.tabs.find(x=>x.title===mm2[1].replace(/''/g,"'"));const r=Number(mm2[3])-1,c=mm2[2].charCodeAt(0)-65;while(t.rows.length<=r)t.rows.push([]);t.rows[r][c]=d.values[0][0]}return J({})}
   {const ap=rest.match(/^\/values\/(.+):append$/);if(ap&&m==='POST'){const t=f.tabs.find(x=>x.title===tabName(ap[1]));if(!t)return J({},400);G.appends=(G.appends||[]).concat([[t.title,req.postDataJSON().values[0]]]);t.rows.push(...structuredClone(req.postDataJSON().values));f.modified=G.mod;return J({})}}
-  if(rest===':batchUpdate'){for(const q of req.postDataJSON().requests){if(q.addSheet)f.tabs.push({title:q.addSheet.properties.title,sheetId:f.tabs.length+1,rows:[]});if(q.updateSheetProperties){const t=f.tabs.find(x=>x.sheetId===q.updateSheetProperties.properties.sheetId);if(q.updateSheetProperties.properties.title)t.title=q.updateSheetProperties.properties.title;if(q.updateSheetProperties.properties.gridProperties)t.grid=q.updateSheetProperties.properties.gridProperties}if(q.repeatCell||q.updateDimensionProperties||q.setDataValidation){const r=(q.repeatCell||q.updateDimensionProperties||q.setDataValidation).range,t=f.tabs.find(x=>x.sheetId===r.sheetId);(t.fmt=t.fmt||[]).push(q)}}return J({})}
+  if(rest===':batchUpdate'){const replies=[];for(const q of req.postDataJSON().requests){const sid0=Math.max(0,...f.tabs.map(x=>x.sheetId||0))+1;replies.push(q.addSheet?{addSheet:{properties:{sheetId:sid0,title:q.addSheet.properties.title}}}:{});if(q.addSheet)f.tabs.push({title:q.addSheet.properties.title,sheetId:sid0,rows:[]});if(q.updateSheetProperties){const t=f.tabs.find(x=>x.sheetId===q.updateSheetProperties.properties.sheetId);if(q.updateSheetProperties.properties.title)t.title=q.updateSheetProperties.properties.title;if(q.updateSheetProperties.properties.gridProperties)t.grid=q.updateSheetProperties.properties.gridProperties}if(q.repeatCell||q.updateDimensionProperties||q.setDataValidation){const r=(q.repeatCell||q.updateDimensionProperties||q.setDataValidation).range,t=f.tabs.find(x=>x.sheetId===r.sheetId);(t.fmt=t.fmt||[]).push(q)}}return J({replies})}
   const vm=rest.match(/^\/values\/(.+?)(:clear)?$/);
   if(vm){const t=f.tabs.find(x=>x.title===tabName(vm[1]));if(!t)return J({},400);if(vm[2]){t.rows=[];return J({})}const one=vm[1].match(/!([A-Z])(\d+)$/);if(m==='PUT'&&one&&req.postDataJSON().values.length===1&&req.postDataJSON().values[0].length===1&&typeof req.postDataJSON().values[0][0]==='boolean'){f.modified=G.mod;const r=Number(one[2])-1,c=one[1].charCodeAt(0)-65;while(t.rows.length<=r)t.rows.push([]);t.rows[r][c]=req.postDataJSON().values[0][0]===true?'TRUE':String(req.postDataJSON().values[0][0]);G.cellPuts=(G.cellPuts||[]).concat([vm[1]]);return J({})}
    if(m==='PUT'){f.modified=G.mod;t.rows=structuredClone(req.postDataJSON().values).map(r=>{while(r.length&&r[r.length-1]==='')r.pop();return r}).filter((r,i,a)=>r.length||a.slice(i).some(x=>x.length));while(t.rows.length&&!t.rows[t.rows.length-1].length)t.rows.pop();return J({})}}
@@ -97,7 +97,7 @@ async function main(){
    await A.p.click('[data-sales-month="2026-09"]');assert.match(await A.p.textContent('#stats-sales'),/51,300,000円/);
    for(const sm of await A.p.$$('#stats-sales details:not([data-fold]):not([hidden]):not(.sales-card) > summary'))await sm.click();
    const t2=await A.p.textContent('#stats-sales');
-   for(const k of ['前月の金額','最終粗利予想','目標粗利率','確認日　社長','見本 一郎','第1事業部','第2事業部','完了物件','施工中','合計','1件単価','営業外売上','毎日の受注受注Total','更新日'])assert.ok(t2.includes(k),k);
+   for(const k of ['前月の金額','最終粗利予想','目標粗利率','この月の確認（月に1回）','見本 一郎','第1事業部','第2事業部','完了物件','施工中','合計','1件単価','営業外売上','毎日の受注受注Total','更新日'])assert.ok(t2.includes(k),k);
    assert.equal(await A.p.$$eval('#stats-sales .sales-col[data-sales-day^="CP|"]',a=>a.length),30);
    /* v1.50.105 並びは 売上 → 確認日 → 担当者別 → 毎日の受注（トシさんの指示）。開け閉めの見出しは色の帯 */
    const cpText=await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).textContent();
@@ -226,6 +226,44 @@ async function main(){
    assert.match(await A.p.textContent('#stats-sales'),/合計に「その他」の営業外売上は入れていません/);
    assert.ok(await overflow(A.p)<=0,'overflow');
    if(width===400)await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).screenshot({path:path.join(require('node:os').tmpdir(),'sales-check-400.png')});
+  });
+  await check('v1.50.119 終わった月の「この月の確認」（月に1回・押した日が会社の行の確認日に入る）と、月のタブを自動で作る '+width+'px',async()=>{
+   await open(A.p);const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）');
+   /* 今月は月の確認ボタンを出さない */
+   assert.equal(await A.p.$$eval('#stats-sales [data-act=salesmon]',a=>a.length),0,'not for the current month');
+   await A.p.click('[data-sales-month="2026-10"]');await A.p.evaluate(()=>document.querySelectorAll('#stats-sales details.sales-card').forEach(d=>d.open=true));
+   assert.deepEqual(await A.p.$$eval('#stats-sales [data-act=salesmon]',a=>a.map(b=>b.dataset.co+':'+b.dataset.k)),['CP:boss','AT:boss','CPY:boss'],'the boss can confirm each company');
+   assert.match(await A.p.textContent('#stats-sales'),/この月の確認（月に1回）/);assert.match(await A.p.textContent('#stats-sales'),/社長の確認をした（10月分・今日）/);
+   const co10=tabOf(f,'2026-10 会社'),hi=co10.findIndex(r=>r[0]==='会社'),ri=co10.findIndex(r=>r[0]==='CP')+1,kc=co10[hi].indexOf('社長確認日');
+   G.batch=[];await A.p.click('#stats-sales [data-act=salesmon][data-co=CP][data-k=boss]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);
+   assert.deepEqual(G.batch.flatMap(b=>b.data.map(d=>d.range)),["'2026-10 会社'!"+String.fromCharCode(65+kc)+ri]);assert.equal(tabOf(f,'2026-10 会社')[ri-1][kc],'11/09','date as text MM/DD');
+   assert.match(await A.p.textContent('#stats-sales'),/CP：10月分の社長の確認を付けました/);assert.match(await A.p.textContent('#stats-sales'),/社長 ✓ 11\/09/);
+   assert.ok(await overflow(A.p)<=0,'overflow');
+   /* シートを開けない人（GM）の分：記録シートの「売上の確認」（日＝月・役割＝gm_m）を、社長の同期で会社の行に入れる。終わった月を、その月のあとに押したものだけ */
+   await A.p.evaluate(()=>{BB.db.settings.data.staff=[{name:'見本 六郎',email:'gm-at@example.com',role:'GM',gmCo:'AT',sheetId:'recAT'}];
+     BB.ui.corp={at:Date.now(),data:[{ok:true,s:{sheetId:'recAT'},salesChk:[
+       {'月':'2026-10','会社':'AT','日':'月','役割':'gm_m','押した日時':'2026-11-08T01:00:00.000Z'},
+       {'月':'2026-10','会社':'CP','日':'月','役割':'gm_m','押した日時':'2026-11-08T01:00:00.000Z'},
+       {'月':'2026-10','会社':'AT','日':'月','役割':'gm_m','押した日時':'2026-10-30T01:00:00.000Z'},
+       {'月':'2026-10','会社':'AT','日':'月','役割':'hq_m','押した日時':'2026-11-08T01:00:00.000Z'}]}]}});
+   const ra=co10.findIndex(r=>r[0]==='AT')+1,gc=co10[hi].indexOf('GM確認日');
+   G.batch=[];assert.equal(await A.p.evaluate(()=>BB.salesChkReflect()),1);
+   assert.deepEqual(G.batch.flatMap(b=>b.data.map(d=>d.range)),["'2026-10 会社'!"+String.fromCharCode(65+gc)+ra],'only the AT GM, pressed after the month');assert.equal(tabOf(f,'2026-10 会社')[ra-1][gc],'11/08');
+   assert.equal(await A.p.evaluate(()=>BB.salesChkReflect()),0,'not written twice');
+   await A.p.evaluate(()=>{BB.ui.corp=null;BB.db.settings.data.staff=[]});
+   /* 月のタブを自動で作る：今月（11月）のタブがないシートでは、前の月（10月）の形を写して作る（数字は入れない） */
+   G.files.salesauto0000000000001={id:'salesauto0000000000001',name:'CPG HUB_売上報告（試作・架空）2',owner:ADMIN,created:'2026-11-01T00:00:00Z',perms:[],tabs:f.tabs.filter(t=>t.title.startsWith('2026-10 ')).map((t,i)=>({...structuredClone(t),sheetId:i+1}))};
+   const made=await A.p.evaluate(async()=>{const d=BB.db.settings.data,o=d.salesId;d.salesId='salesauto0000000000001';await BB.salesLoad();const m=await BB.salesMonthEnsure();d.salesId=o;await BB.salesLoad();return m});
+   assert.deepEqual(made,['11月']);const g=G.files.salesauto0000000000001;
+   assert.deepEqual(g.tabs.map(t=>t.title).filter(t=>t.startsWith('2026-11')),['2026-11 会社','2026-11 担当','2026-11 受注','2026-11 確認']);
+   const nc=tabOf(g,'2026-11 会社');assert.deepEqual(nc[0],co10[hi]);const cp=nc.find(r=>r[0]==='CP');
+   assert.equal(cp[co10[hi].indexOf('実績売上')],0);assert.equal(cp[co10[hi].indexOf('目標売上')]??'','');assert.equal(cp[co10[hi].indexOf('社長確認日')]??'','');
+   const st=tabOf(g,'2026-11 担当'),st10=tabOf(f,'2026-10 担当');assert.equal(st.length,st10.filter((r,i)=>i===0||['CP','AT','CPY'].includes(String(r[0]))).length,'same staff rows');assert.ok(st.slice(1).every(r=>r[6]===0),'amounts are 0');
+   assert.deepEqual(tabOf(g,'2026-11 受注'),[['会社','日','受注件数','受注金額']]);
+   const ck=tabOf(g,'2026-11 確認');assert.equal(ck.length,1+3*30);assert.deepEqual(ck[1],['CP',1,false,false,false]);assert.deepEqual(ck[90],['CPY',30,false,false,false]);
+   assert.ok((g.tabs.find(t=>t.title==='2026-11 確認').fmt||[]).some(q=>q.setDataValidation&&q.setDataValidation.rule.condition.type==='BOOLEAN'),'checkboxes');
+   assert.deepEqual(await A.p.evaluate(async()=>{const d=BB.db.settings.data,o=d.salesId;d.salesId='salesauto0000000000001';await BB.salesLoad();const m=await BB.salesMonthEnsure();d.salesId=o;await BB.salesLoad();return m}),[],'not made twice');
+   delete G.files.salesauto0000000000001;
   });
   await check('本物のシート（名前に「試作」がない）を読んでいるときは「試作用のシートを作り直す」を出さず、札は「社長だけ」 '+width+'px',async()=>{
    const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）');f.name='CPG HUB_売上報告';
