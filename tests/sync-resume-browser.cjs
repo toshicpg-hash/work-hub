@@ -72,6 +72,9 @@ const mark=p=>p.evaluate(()=>localStorage.getItem('workhub_sync_resume_v1'));
   assert.equal(await d.p.evaluate(t=>SR.detailText({...t,detail:{corp:{n:18,prevN:18,reused:12,probed:10,full:6,slow:8200,prep:21000,ms:30000,shared:null,keep:{ok:false,kb:5200}},req:{sr:40,sw:5,dr:2,cal:20,r429:3}}}),t),
     '社員の記録：18人・前回の控え 18人・読み直さず 12人（うち「情報」で確認 10人）・全部読んだ 6人・いちばん遅い人 8.2秒・読む前の準備 21.0秒・読み込み全体 30.0秒・社長の更新日時 なし/古い・控えの保存 できなかった 5200KB／Googleへの問い合わせ：67回（表計算の読み 40・書き 5・ドライブ 2・カレンダー 20）・回数制限（429） 3回');
   assert.doesNotMatch(note,/内訳|売上報告のタブ/,'screen text unchanged (not the boss device)');
+  /* v1.50.121 社員の記録の前後の秒数。社長の端末（shared がない）は「社長の更新日時」を出さない */
+  assert.equal(await d.p.evaluate(t=>SR.detailText({...t,detail:{corp:{n:18,prevN:18,reused:11,probed:0,full:7,slow:4100,prep:700,ms:7000,keep:{ok:true,kb:151}},corpList:1200,corpSave:300,corpNum:14800}}),t),
+    '社員の記録：18人・前回の控え 18人・読み直さず 11人（うち「情報」で確認 0人）・全部読んだ 7人・いちばん遅い人 4.1秒・読む前の準備 0.7秒・読み込み全体 7.0秒・控えの保存 できた 151KB／社員の記録の前後：一覧の読み込み 1.2秒・画面の作り直しと保存 0.3秒・会社の数字の書き出し 14.8秒');
   /* v1.50.118 社長の端末（記録シートがない）は、画面に内訳を出す */
   await d.p.evaluate(()=>{SR.db.settings.data.admin=true;SR.render()});await d.p.evaluate(()=>{const x=document.querySelector('details.sync-result');if(x)x.open=true});
   assert.match(await d.p.textContent('.sync-detail'),/^内訳：Googleへの問い合わせ：4回/);
