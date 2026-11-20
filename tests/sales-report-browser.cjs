@@ -81,7 +81,7 @@ async function main(){
    await A.p.evaluate(()=>{BB.ui.salesCoOpen={};BB.render()});
    assert.deepEqual(await A.p.$$eval('#stats-sales details.sales-card',a=>a.map(d=>[d.dataset.salesCo,d.open])),[['CP',false],['AT',false],['CPY',false]]);
    assert.match(await A.p.textContent('#stats-sales details.sales-card[data-sales-co="CP"]>summary'),/CP本社.*売上 [\d,]+円・粗利 [\d,]+円（\d+%）/);
-   await A.p.click('#stats-sales details.sales-card[data-sales-co="AT"]>summary');await A.p.waitForFunction(()=>BB.ui.salesCoOpen&&BB.ui.salesCoOpen.AT===true);await A.p.evaluate(()=>BB.render());
+   await A.p.click('#stats-sales details.sales-card[data-sales-co="AT"]>summary h3');await A.p.waitForFunction(()=>BB.ui.salesCoOpen&&BB.ui.salesCoOpen.AT===true);await A.p.evaluate(()=>BB.render());
    assert.deepEqual(await A.p.$$eval('#stats-sales details.sales-card',a=>a.map(d=>d.open)),[false,true,false],'remembers the opened card');
    await open(A.p);
    const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）');assert.ok(f);assert.deepEqual(f.perms,[],'not shared');
@@ -153,13 +153,17 @@ async function main(){
   });
   await check('毎日の確認（社長・本部長・GM）：今日の済み・未と今月の日数を出し、社長はHUBから今日の確認を付けられる（その1マスだけ書く）。完了の行は薄い色、粗利に粗利率 '+width+'px',async()=>{
    await open(A.p);await A.p.click('[data-sales-month="2026-11"]');
-   const box=()=>A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-chk');
+   const box=()=>A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-chk:not(.sales-mon)'),qk=()=>A.p.locator('#stats-sales details.sales-card[data-sales-co="CP"]>summary .sales-quick');
+   /* v1.50.120 確認のボタンは会社名の行のすぐ下（たたんだままでも押せる。押しても欄は開け閉めしない） */
+   await A.p.evaluate(()=>{BB.ui.salesCoOpen={};BB.render()});assert.equal(await qk().locator('[data-act=salescheck]').count(),1);assert.ok(await qk().locator('[data-act=salescheck]').isVisible(),'visible while the card is closed');
+   await A.p.evaluate(()=>{BB.ui.salesCoOpen={CP:true,AT:true,CPY:true};BB.render()});
    let t=await box().textContent();
    assert.match(t,/社長 未/);assert.match(t,/本部長 未/);assert.match(t,/GM 未/);assert.match(t,/今月（9日まで）：社長 8日・本部長 6日・GM 5日/);
    if(width===400){await box().scrollIntoViewIfNeeded();await A.p.evaluate(()=>window.scrollBy(0,-200));await box().screenshot({path:path.join(require('node:os').tmpdir(),'sales-chk-before-400.png')})}
-   G.cellPuts=[];await box().locator('[data-act=salescheck]').click();await A.p.waitForFunction(()=>!BB.ui.salesBusy);
+   G.cellPuts=[];await qk().locator('[data-act=salescheck]').click();await A.p.waitForFunction(()=>!BB.ui.salesBusy);
+   assert.equal(await A.p.$eval('#stats-sales details.sales-card[data-sales-co="CP"]',d=>d.open),true,'pressing does not close the card');
    assert.deepEqual(G.cellPuts,["'2026-11 確認'!C10"],'only the one cell (CP, day 9) is written');
-   t=await box().textContent();assert.match(t,/社長 ✓ 済/);assert.match(t,/今月（9日まで）：社長 9日/);assert.equal(await box().locator('[data-act=salescheck]').count(),0);
+   t=await box().textContent();assert.match(t,/社長 ✓ 済/);assert.match(t,/今月（9日まで）：社長 9日/);assert.equal(await qk().locator('[data-act=salescheck]').count(),0);
    assert.match(await A.p.textContent('#stats-sales'),/CP：今日の社長の確認を付けました/);
    /* v1.50.113 はじめに開く月は今月（翌月のタブを先に作っても、空の翌月を開かない）。人が選んだ月はそのまま。社員に書き出すのは4か月 */
    {const r=await A.p.evaluate(()=>{const S=BB.ui.sales,mk=keys=>({...S,keys});const out=[];
@@ -178,7 +182,7 @@ async function main(){
    {const sid=await A.p.evaluate(()=>BB.db.settings.data.salesId),f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）');
     await A.p.evaluate(sid=>{const d=BB.db.settings.data;d.admin=false;d.salesEditId=sid;d.viewEmail='gm-cpy@example.com';BB.ui.viewList=[{name:'見本 四郎',email:'gm-cpy@example.com',role:'GM',gmCo:'CPY',sheetId:'recGM'}];BB.render()},sid);
     const btns=await A.p.$$eval('#stats-sales [data-act=saleschk]',a=>a.map(b=>b.dataset.co+':'+b.dataset.k));assert.deepEqual(btns,['CPY:gm'],'only own company, GM');
-    assert.match(await A.p.locator('#stats-sales .panel').filter({hasText:'CPY横浜'}).locator('.sales-chk').textContent(),/前日の受注の件数・金額が入っていて、おかしな数字がないか見てから押してください/);
+    assert.match(await A.p.locator('#stats-sales .panel').filter({hasText:'CPY横浜'}).locator('.sales-chk:not(.sales-mon)').textContent(),/前日の受注の件数・金額が入っていて、おかしな数字がないか見てから押してください/);
     assert.equal(await A.p.$$eval('#stats-sales [data-act=salescheck]',a=>a.length),0,'no boss button');
     const t9=tabOf(f,'2026-11 確認'),ri=t9.findIndex(r=>r[0]==='CPY'&&String(r[1])==='9')+1;
     G.cellPuts=[];await A.p.click('#stats-sales [data-act=saleschk]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);
@@ -229,8 +233,11 @@ async function main(){
   });
   await check('v1.50.119 終わった月の「この月の確認」（月に1回・押した日が会社の行の確認日に入る）と、月のタブを自動で作る '+width+'px',async()=>{
    await open(A.p);const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）');
-   /* 今月は月の確認ボタンを出さない */
-   assert.equal(await A.p.$$eval('#stats-sales [data-act=salesmon]',a=>a.length),0,'not for the current month');
+   /* v1.50.120 今月も（どの月でも）月の確認ボタンを出す。会社名の行のすぐ下（たたんだままでも押せる） */
+   await A.p.evaluate(()=>{BB.ui.salesCoOpen={};BB.render()});
+   assert.deepEqual(await A.p.$$eval('#stats-sales details.sales-card>summary .sales-quick [data-act=salesmon]',a=>a.map(b=>b.dataset.co+':'+b.dataset.key)),['CP:2026-11','AT:2026-11','CPY:2026-11'],'the current month too');
+   assert.ok(await A.p.locator('#stats-sales details.sales-card[data-sales-co="AT"]>summary [data-act=salesmon]').isVisible(),'visible while closed');
+   await A.p.evaluate(()=>{BB.ui.salesCoOpen={CP:true,AT:true,CPY:true};BB.render()});
    await A.p.click('[data-sales-month="2026-10"]');await A.p.evaluate(()=>document.querySelectorAll('#stats-sales details.sales-card').forEach(d=>d.open=true));
    assert.deepEqual(await A.p.$$eval('#stats-sales [data-act=salesmon]',a=>a.map(b=>b.dataset.co+':'+b.dataset.k)),['CP:boss','AT:boss','CPY:boss'],'the boss can confirm each company');
    assert.match(await A.p.textContent('#stats-sales'),/この月の確認（月に1回）/);assert.match(await A.p.textContent('#stats-sales'),/社長の確認をした（10月分・今日）/);
@@ -248,7 +255,7 @@ async function main(){
        {'月':'2026-10','会社':'AT','日':'月','役割':'hq_m','押した日時':'2026-11-08T01:00:00.000Z'}]}]}});
    const ra=co10.findIndex(r=>r[0]==='AT')+1,gc=co10[hi].indexOf('GM確認日');
    G.batch=[];assert.equal(await A.p.evaluate(()=>BB.salesChkReflect()),1);
-   assert.deepEqual(G.batch.flatMap(b=>b.data.map(d=>d.range)),["'2026-10 会社'!"+String.fromCharCode(65+gc)+ra],'only the AT GM, pressed after the month');assert.equal(tabOf(f,'2026-10 会社')[ra-1][gc],'11/08');
+   assert.deepEqual(G.batch.flatMap(b=>b.data.map(d=>d.range)),["'2026-10 会社'!"+String.fromCharCode(65+gc)+ra],'only the AT GM, the latest press');assert.equal(tabOf(f,'2026-10 会社')[ra-1][gc],'11/08');
    assert.equal(await A.p.evaluate(()=>BB.salesChkReflect()),0,'not written twice');
    await A.p.evaluate(()=>{BB.ui.corp=null;BB.db.settings.data.staff=[]});
    /* 月のタブを自動で作る：今月（11月）のタブがないシートでは、前の月（10月）の形を写して作る（数字は入れない） */
