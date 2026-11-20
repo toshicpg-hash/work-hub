@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.120" title="使い方マニュアルを開く">v1.50.120・11/20更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.120" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.121" title="使い方マニュアルを開く">v1.50.121・11/20更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.121" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.120"></script>
+<script src="./share-management.js?v=1.50.121"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.120"></script>
-<script src="./calendar-view-scope.js?v=1.50.120"></script>
+<script src="./view-scope.js?v=1.50.121"></script>
+<script src="./calendar-view-scope.js?v=1.50.121"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -815,11 +815,11 @@ const keptNote=()=>'前回の読み込み（'+corpAtText()+'）の内容です�
 async function corpRun(){
   try{const before=ui.corp?.data||[],data=await corpLoad();
     for(const x of data)if((!x.ok||x.receiptRead?.state==="invalid")&&!x.accessDenied){const old=before.find(y=>y.s.sheetId===x.s.sheetId);if(old){const prior=["ready","cached"].includes(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.state(old):"unknown")?{rc:old.rc,lastSync:old.s.lastSync,readAt:old.receiptRead?.at||ui.corp?.at,receiptRead:old.receiptRead}:old.receiptPrevious;if(prior)x.receiptPrevious=prior;}}
-    ui.corp={data,at:Date.now(),timing:data.timing||null};roBuild(data);D().corpAt=new Date(ui.corp.at).toISOString();save();corpKeepSave();
+    {const t=Date.now();ui.corp={data,at:Date.now(),timing:data.timing||null};roBuild(data);D().corpAt=new Date(ui.corp.at).toISOString();save();corpKeepSave();syncDiagSet("corpSave",Date.now()-t)}
     /* v1.50.26 社長の済みの印で、社員一覧にまだ保存できていないものがあれば保存する */
-    if(D().admin&&bossDoneList().some(x=>!x.synced)){try{await bossDoneWrite()}catch(err){if(err.message==="signin")throw err}}
+    if(D().admin&&bossDoneList().some(x=>!x.synced)){const t=Date.now();try{await bossDoneWrite()}catch(err){if(err.message==="signin")throw err}syncDiagSet("corpBoss",Date.now()-t)}
     /* v1.50.10 社長の端末：会社ごとの数字を書き出す（失敗しても読み込みは成功のまま。結果は数字の画面に出す） */
-    if(D().admin&&D().numbers){try{ui.numWrite=await numWriteAll(data)}catch(err){ui.numWrite=[{ok:false,text:"会社の数字を書き出せませんでした（"+(err.message==="http"?dMsg(err):err.message)+"）"}]}}
+    if(D().admin&&D().numbers){const t=Date.now();try{ui.numWrite=await numWriteAll(data);syncDiagSet("corpNum",Date.now()-t)}catch(err){syncDiagSet("corpNum",Date.now()-t);ui.numWrite=[{ok:false,text:"会社の数字を書き出せませんでした（"+(err.message==="http"?dMsg(err):err.message)+"）"}]}}
     return data}
   catch(err){
     /* 見る人で、一覧の共有が外れた・役割が外れたときは、残した内容を使わず消す */
@@ -1163,21 +1163,33 @@ async function photoDone(folder){
     for(const f of (r&&r.files)||[]){const s=f.appProperties&&f.appProperties.cpgSrc;if(s)out.add(s)}pt=(r&&r.nextPageToken)||""}while(pt);
   return out;
 }
-async function photoCollect(limit=200){
+/* v1.50.121 トシさんの指示（社長の端末の同期で「領収書の写真（会社）」24.0秒・ドライブへの問い合わせ23回）：
+   集め済みの写真（元のID）をこの端末に覚えておき、社員の記録の写真がぜんぶ集め済みなら、ドライブに何も問い合わせない。
+   新しい写真がある人だけフォルダを確かめて集める。1日1回と「今すぐ集める」を押したときは、今までどおり全員を確かめる（社長のフォルダで消したものを集め直すため） */
+const PHOTO_SEEN_KEY="workhub_photo_seen_v1",PHOTO_FULL_MS=24*3600e3;
+function photoSeen(){try{const v=JSON.parse(localStorage.getItem(PHOTO_SEEN_KEY)||"null");return v&&Array.isArray(v.ids)?v:{ids:[],full:0}}catch(e){return {ids:[],full:0}}}
+function photoSeenSave(set,full){try{localStorage.setItem(PHOTO_SEEN_KEY,JSON.stringify({ids:[...set],full}))}catch(e){}}
+async function photoCollect(limit=200,force=false){
   const d=D();if(!d.admin)throw Error("社長の端末でしてください");if(!gHas(PHOTO_SCOPE))throw Error("signin");
   const data=(ui.corp&&ui.corp.data)||[];if(!data.length)throw Error("先に「Googleとまとめて同期」で社員の記録を読み込んでください");
+  const seen=photoSeen(),seenSet=new Set(seen.ids),full=force||!(Date.now()-(seen.full||0)<PHOTO_FULL_MS);
+  const idsOf=x=>(x.rc||[]).flatMap(r=>photoIdsOf(r["写真リンク"]));
+  if(!full){const all=data.filter(x=>x&&x.ok&&x.s).flatMap(idsOf);if(all.every(id=>seenSet.has(id))){const res={add:0,had:all.length,miss:0,bad:0,more:false,quick:true};d.photoLast={at:new Date().toISOString(),...res};save();return res}}
   const root=d.photoRoot||(d.photoRoot=await photoFolderEnsure(PHOTO_ROOT,""));save();
   const res={add:0,had:0,miss:0,bad:0,more:false};let n=0;
   for(const x of data){if(!x||!x.ok||!x.s)continue;const rows=(x.rc||[]).filter(r=>photoIdsOf(r["写真リンク"]).length);if(!rows.length)continue;
+    if(!full&&idsOf(x).every(id=>seenSet.has(id))){res.had+=idsOf(x).length;continue}
     const sub=await photoFolderEnsure(String(x.s.name||x.s.sheetId).trim(),root),done=await photoDone(sub);
     for(const r of rows){const ids=photoIdsOf(r["写真リンク"]);
       for(let i=0;i<ids.length;i++){const id=ids[i];if(done.has(id)){res.had++;continue}if(n>=limit){res.more=true;continue}n++;
         const name=fileSafe([r["日付"],r["会社"],r["支払先"],r["金額"],r["受付ID"]].map(v=>String(v??"")).join("_")).slice(0,90)+(ids.length>1?"_"+(i+1):"");
         for(let tries=1;;tries++){try{await gReq(DRIVE+"/"+encodeURIComponent(id)+"/copy?fields=id",{method:"POST",body:{name,parents:[sub],appProperties:{cpgSrc:id,cpgRc:String(r["受付ID"]||"")}}});res.add++;done.add(id);break}
-          catch(err){if(err.message==="signin")throw err;if(err.status===404||err.status===403){res.miss++;break}const w=corpErrKind(err)?corpRetryWait(err,tries):null;if(w==null||tries>=3){res.bad++;break}await corpWait(w)}}}}}
+          catch(err){if(err.message==="signin")throw err;if(err.status===404||err.status===403){res.miss++;break}const w=corpErrKind(err)?corpRetryWait(err,tries):null;if(w==null||tries>=3){res.bad++;break}await corpWait(w)}}}}
+    for(const id of done)seenSet.add(id)}
+  if(!res.more)photoSeenSave(seenSet,full?Date.now():seen.full||0);
   d.photoLast={at:new Date().toISOString(),...res};save();return res;
 }
-const photoText=r=>"新しく集めた "+r.add+"件・集め済み "+r.had+"件"+(r.miss?"・元が見つからない "+r.miss+"件（消された・共有が外れた）":"")+(r.bad?"・できなかった "+r.bad+"件（次の同期でもう一度）":"")+(r.more?"・残りは次の同期で集めます":"");
+const photoText=r=>r.quick?"新しい写真はありません（集め済み "+r.had+"件）":"新しく集めた "+r.add+"件・集め済み "+r.had+"件"+(r.miss?"・元が見つからない "+r.miss+"件（消された・共有が外れた）":"")+(r.bad?"・できなかった "+r.bad+"件（次の同期でもう一度）":"")+(r.more?"・残りは次の同期で集めます":"");
 /* 社長の同期のあと：権限が足してあれば、自動で集める */
 async function photoAfterSync(){const d=D();if(!d.admin||!d.photoOn||!gSignedIn()||!gHas(PHOTO_SCOPE))return;
   let row;try{const r=await photoCollect();row={name:"領収書の写真（会社）",ok:!r.bad,msg:photoText(r)}}catch(err){if(err.message==="signin")return;row={name:"領収書の写真（会社）",ok:false,msg:err.message==="http"?dMsg(err):err.message}}
@@ -2309,7 +2321,9 @@ function syncReqCount(url,method){if(!syncDiag)return;const u=String(url),q=sync
 const syncDiagSet=(k,v)=>{if(syncDiag)syncDiag[k]=v};
 async function syncDiagTime(k,fn){const t=Date.now();try{return await fn()}finally{if(syncDiag){syncDiag.ord=syncDiag.ord||{};syncDiag.ord[k]=(syncDiag.ord[k]||0)+Date.now()-t}}}
 function syncDetailText(t){const d=t&&t.detail;if(!d)return "";const out=[];
-  if(d.corp){const c=d.corp;out.push("社員の記録："+c.n+"人・前回の控え "+(c.prevN??"?")+"人・読み直さず "+(c.reused||0)+"人（うち「情報」で確認 "+(c.probed||0)+"人）・全部読んだ "+(c.full??"?")+"人・いちばん遅い人 "+syncSec(c.slow||0)+(c.prep!=null?"・読む前の準備 "+syncSec(c.prep):"")+(c.ms!=null?"・読み込み全体 "+syncSec(c.ms):"")+(c.shared==null?"・社長の更新日時 なし/古い":"・社長の更新日時 "+c.shared+"分前")+"・控えの保存 "+(c.keep?(c.keep.ok?"できた ":"できなかった ")+c.keep.kb+"KB":"?"))}
+  if(d.corp){const c=d.corp;out.push("社員の記録："+c.n+"人・前回の控え "+(c.prevN??"?")+"人・読み直さず "+(c.reused||0)+"人（うち「情報」で確認 "+(c.probed||0)+"人）・全部読んだ "+(c.full??"?")+"人・いちばん遅い人 "+syncSec(c.slow||0)+(c.prep!=null?"・読む前の準備 "+syncSec(c.prep):"")+(c.ms!=null?"・読み込み全体 "+syncSec(c.ms):"")+(!("shared" in c)?"":c.shared==null?"・社長の更新日時 なし/古い":"・社長の更新日時 "+c.shared+"分前")+"・控えの保存 "+(c.keep?(c.keep.ok?"できた ":"できなかった ")+c.keep.kb+"KB":"?"))}
+  {const post=[["corpList","一覧の読み込み"],["corpSave","画面の作り直しと保存"],["corpBoss","済みの印の保存"],["corpNum","会社の数字の書き出し"]].filter(([k])=>d[k]!=null);
+   if(post.length)out.push("社員の記録の前後："+post.map(([k,l])=>l+" "+syncSec(d[k])).join("・"))}
   if(d.req){const q=d.req;out.push("Googleへの問い合わせ："+((q.sr||0)+(q.sw||0)+(q.dr||0)+(q.cal||0)+(q.etc||0))+"回（表計算の読み "+(q.sr||0)+"・書き "+(q.sw||0)+"・ドライブ "+(q.dr||0)+"・カレンダー "+(q.cal||0)+(q.etc?"・ほか "+q.etc:"")+"）"+(q.r429?"・回数制限（429） "+q.r429+"回":""))}
   if(d.ord){const o=d.ord,names={ptr:"場所",sales:"売上報告の読み込み",write:"書き出し",ordLoad:"受注の読み直し",view:"見るだけの読み込み"};
     out.push("今月の受注："+Object.keys(names).filter(k=>o[k]!=null).map(k=>names[k]+" "+syncSec(o[k])).join("・")+(d.salesTabs!=null?"（売上報告のタブ "+d.salesTabs+"）":""))}
@@ -2726,7 +2740,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.120";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.121";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2917,7 +2931,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.120" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.120" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.121" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.121" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -5062,7 +5076,7 @@ const corpReadKey=(viewer,me,s,noRc,boxOn)=>JSON.stringify([viewer?1:0,viewer&&m
 async function corpLoad(){
   await gAuthorize(true);
   const viewer=!D().admin;
-  if(viewer)ui.viewList=await viewerList();else await adminSync(()=>{});
+  {const t=Date.now();if(viewer)ui.viewList=await viewerList();else await adminSync(()=>{});syncDiagSet("corpList",Date.now()-t)}
   const me=viewer&&ui.viewList.find(s=>eq(s.email,D().viewEmail));
   if(viewer&&(!me||!isViewer(me)))throw new Error("notviewer");
   const list=viewer?ui.viewList.filter(s=>me&&(canSee(me,s)||s.sheetId===me.sheetId)):D().staff.filter(s=>!s.removed), out=[];
@@ -5647,7 +5661,7 @@ document.addEventListener("click",e=>{
     if(document.getElementById("pl_text"))planRead();ui.planOpen=!ui.planOpen;render();if(ui.planOpen)go();return}
   if(a==="photocollect"){if(ui.photoBusy)return;ui.photoBusy=true;ui.photoMsg=null;render();
     /* 許可の画面は押したその場で開く（ポップアップを止められないように） */
-    gAuthorize(true,PHOTO_SCOPE).then(()=>{D().photoOn=true;save();return photoCollect()}).then(r=>{ui.photoMsg={ok:!r.bad,text:photoText(r)}},err=>{ui.photoMsg={ok:false,text:err.message==="signin"?"Googleの許可が取れませんでした。もう一度押してください":err.message==="http"?dMsg(err):gMsg(err)||err.message}}).finally(()=>{ui.photoBusy=false;render()});return}
+    gAuthorize(true,PHOTO_SCOPE).then(()=>{D().photoOn=true;save();return photoCollect(200,true)}).then(r=>{ui.photoMsg={ok:!r.bad,text:photoText(r)}},err=>{ui.photoMsg={ok:false,text:err.message==="signin"?"Googleの許可が取れませんでした。もう一度押してください":err.message==="http"?dMsg(err):gMsg(err)||err.message}}).finally(()=>{ui.photoBusy=false;render()});return}
   if(a==="planmap"){const p=val("pl_place").trim();if(!p){toast("場所を入れてください");return}if(noMapPlace(p)){toast("「"+p+"」は住所ではないので地図を出しません（Googleマップでは、地図を開いた人の登録した場所が出てしまいます）",6000);return}window.open("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p),"_blank","noopener");return}
   if(a==="planadd"){if(ui.planBusy)return;try{planRead()}catch(e){}ui.planBusy=true;ui.planMsg=null;render();
     planAdd().then(t=>{ui.planMsg={ok:true,text:"「"+t+"」を「CPG HUB」に登録しました"};if(!planRest(ui.plan.kind))planPlaceRemember(ui.plan.place);const d=ui.plan.date;ui.plan={kind:"",date:d};/* 場所も空にする */gResetReads();toast("予定を登録しました")},err=>{ui.planMsg={ok:false,text:err.message==="signin"?"Googleにログインしてから登録してください":err.message==="http"?"登録できませんでした（"+dMsg(err)+"）":err.message}}).finally(()=>{ui.planBusy=false;render()});return}
