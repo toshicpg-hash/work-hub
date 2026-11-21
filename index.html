@@ -263,7 +263,7 @@ details.statfold[open]>summary{margin-bottom:8px}
 /* v1.50.54 会社のカード（畳める） */
 #stats-sales details.sales-card>summary{list-style:none;cursor:pointer;flex-wrap:wrap}#stats-sales details.sales-card>summary::-webkit-details-marker{display:none}
 #stats-sales details.sales-card>summary::after{content:"タップして開く ▼";font-size:12px;font-weight:700;color:var(--accent);margin-left:auto;white-space:nowrap}#stats-sales details.sales-card[open]>summary::after{content:"閉じる ▲"}
-.sales-co-sum{flex-basis:100%;font-size:13.5px;color:var(--fg)}.sales-diff{margin:0 0 6px;color:var(--red);font-size:14px;background:var(--red-soft);border-radius:8px;padding:6px 10px}.sales-diff.old{color:var(--muted,#666);background:transparent;border:1px dashed var(--line)}.sales-diff-tag{flex-basis:100%;font-size:13px;font-weight:700;color:var(--red)}.sales-diff-tag.old{color:var(--muted,#666);font-weight:600}.sync-after{margin:6px 0 0;font-weight:700;color:var(--red);font-size:15px}.sync-after.done{color:var(--green);font-weight:600}.sales-quick{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px}.sales-quick .btn{white-space:normal;text-align:left}.sales-co-sum b{font-weight:800}
+.sales-co-sum{flex-basis:100%;font-size:13.5px;color:var(--fg)}.sales-diff{margin:0 0 6px;color:var(--red);font-size:14px;background:var(--red-soft);border-radius:8px;padding:6px 10px}.sales-diff.old{color:var(--muted,#666);background:transparent;border:1px dashed var(--line)}.sales-diff-tag{flex-basis:100%;font-size:13px;font-weight:700;color:var(--red)}.sales-diff-tag.old{color:var(--muted,#666);font-weight:600}.client-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px;min-width:0}.client-chips .chip{font-size:14px;padding:6px 10px;min-height:36px;border-radius:999px;font-weight:600;white-space:normal;border:1px solid var(--line);background:var(--surface);color:var(--fg);max-width:100%;overflow-wrap:anywhere;text-align:left}.client-chips .chip[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:700}.sync-after{margin:6px 0 0;font-weight:700;color:var(--red);font-size:15px}.sync-after.done{color:var(--green);font-weight:600}.sales-quick{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px}.sales-quick .btn{white-space:normal;text-align:left}.sales-co-sum b{font-weight:800}
 #stats-sales details.sales-card{padding:8px}
 .sales-card-body{display:flex;flex-direction:column;gap:10px;margin-top:10px;padding:0 6px 6px}
 /* v1.50.51 開け閉めする見出し（毎日の受注・担当者別・グラフで見る）を、押せると分かる色の帯に */
@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.124" title="使い方マニュアルを開く">v1.50.124・11/21更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.124" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.125" title="使い方マニュアルを開く">v1.50.125・11/21更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.125" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.124"></script>
+<script src="./share-management.js?v=1.50.125"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.124"></script>
-<script src="./calendar-view-scope.js?v=1.50.124"></script>
+<script src="./view-scope.js?v=1.50.125"></script>
+<script src="./calendar-view-scope.js?v=1.50.125"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -614,6 +614,23 @@ const STAGES={new:"受付",site:"現地確認済",quoted:"見積提出済",hold:
 const SYMPTOMS=["水漏れ","給湯器凍結","その他"];
 const LOSS=["価格","他社に決定","時期が合わない","連絡なし","その他"];
 const CLIENT_NAMES=["アレップス","オリバー","ハウスコムコミュニケーションズ立川","ハウスコムコミュニケーションズ大和","ミニミニ城西","ミニミニ神奈川","ミニテック立川","その他"];
+/* v1.50.125 トシさんの指示：iPhoneでは入力欄の候補の一覧（datalist）が出ないため、受付の「依頼元の名前」の候補を、入力欄の下のボタンにする（どの端末も同じ）。
+   候補は会社ごとに変えられる。社長が社員一覧の「依頼元の候補」タブ（会社・依頼元の名前）に入れる（会社が「全社」か空欄なら3社とも）。
+   社長の同期で読み、全員の記録シートの「依頼元の候補」タブに書く（変わったときだけ）。社員の端末は、同期でいつも読んでいる自分の記録シートと一緒に読む（問い合わせは増えない）。
+   タブがまだないときは、今までの候補（CLIENT_NAMES）を3社とも同じに出す。取引先の名前はコードに足さない（シートに置く） */
+const CLIENT_TAB="依頼元の候補",CLIENT_COLS=["会社","依頼元の名前"],CLIENT_ALL="全社",CLIENT_MAX=200;
+const clientParse=rows=>{const [hd,...rs]=rows||[];if(!hd||String(hd[0]||"").trim()!==CLIENT_COLS[0]||String(hd[1]||"").trim()!==CLIENT_COLS[1])return null;
+  const seen=new Set(),out=[];for(const r of rs){const name=String((r||[])[1]??"").trim(),c=String((r||[])[0]??"").trim().toUpperCase(),co=COMPANIES.includes(c)?c:CLIENT_ALL;
+    if(!name||seen.has(co+"|"+name))continue;seen.add(co+"|"+name);out.push({co,name});if(out.length>=CLIENT_MAX)break}return out};
+const clientDefault=()=>CLIENT_NAMES.map(name=>({co:CLIENT_ALL,name}));
+const clientList=()=>Array.isArray(D().clientNames)&&D().clientNames.length?D().clientNames:clientDefault();
+const clientIsDefault=list=>JSON.stringify(list||[])===JSON.stringify(clientDefault());
+const clientRows=list=>[CLIENT_COLS,...(list||[]).map(x=>[x.co,x.name])];
+function clientCands(co){const seen=new Set();return clientList().filter(x=>!co||x.co===CLIENT_ALL||x.co===co).map(x=>x.name).filter(n=>!seen.has(n)&&seen.add(n))}
+const clientNorm=v=>String(v||"").normalize("NFKC").toLowerCase().replace(/\s+/g,"");
+function clientChipsHtml(co,typed){const q=clientNorm(typed),all=clientCands(co),hit=q?all.filter(n=>clientNorm(n).includes(q)):all;
+  return hit.map(n=>'<button type="button" class="chip" data-ncl="'+h(n)+'" aria-pressed="'+(String(typed||"").trim()===n)+'">'+h(n)+'</button>').join("")+(q&&!hit.length?'<span class="note">候補にありません。このまま入力できます</span>':'')}
+function clientChipsRefresh(){const box=document.getElementById("n_clientChips");if(!box)return;const co=(document.getElementById("n_co")||{}).value||"",t=(document.getElementById("n_client")||{}).value||"";box.innerHTML=clientChipsHtml(co,t)}
 const CLIENT_KINDS=["管理会社","大家さん","その他"];
 /* 担当の保存値（記録には今までどおりこの文字で残す）。「トシ」は社長（管理者）の担当で、画面には「社長」と出す（v1.50.2） */
 const BOSS_TANTOU="トシ", BOSS_LABEL="社長";
@@ -1483,7 +1500,8 @@ function vNew(){
     '<label class="f full">依頼の種類<select id="n_type" required>'+Object.entries(TYPES).map(([k,v])=>'<option value="'+k+'">'+v.label+'</option>').join("")+'</select></label>'+
     '<label class="f full" id="n_symWrap">症状<select id="n_sym">'+SYMPTOMS.map(s=>'<option>'+s+'</option>').join("")+'</select></label>'+
     '<label class="f">依頼元の区分<select id="n_kind">'+CLIENT_KINDS.map(s=>'<option>'+s+'</option>').join("")+'</select></label>'+
-    '<label class="f">依頼元の名前<input type="text" id="n_client" list="client_names" required placeholder="候補から選択・自由入力"><datalist id="client_names">'+CLIENT_NAMES.map(x=>'<option value="'+h(x)+'"></option>').join("")+'</datalist><span class="note">候補以外の名前も入力できます</span></label>'+
+    '<label class="f">依頼元の名前<input type="text" id="n_client" required autocomplete="off" placeholder="下の候補から選ぶか、入力"><span class="note">候補以外の名前も入力できます</span></label>'+
+    '<div class="full client-chips" id="n_clientChips" role="group" aria-label="依頼元の候補">'+clientChipsHtml(DB.settings.lastCo||"","")+'</div>'+
     '<label class="f">物件<input type="text" id="n_prop" required placeholder="物件名"></label>'+
     '<label class="f">部屋<input type="text" id="n_room" placeholder="例：203"></label>'+
     '<label class="f full">住所（Googleカレンダーの「場所」に入ります）<input type="text" id="n_addr" placeholder="例：神奈川県相模原市中央区…"></label>'+
@@ -2742,7 +2760,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.124";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.125";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2938,7 +2956,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.124" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.124" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.125" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.125" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3559,7 +3577,9 @@ const sheetObjs=rows=>{const [hd,...rs]=rows||[];return rs.map(r=>Object.fromEnt
 const sheetCount=(rows,key)=>sheetObjs(rows).filter(r=>String(r[key]??"").trim()).length;
 async function sharedCheck(id){
   /* v1.50.18 同期で使う「情報」（前の中身）と「受付番号の記号」も、ここで一緒に読む（前は別々に読んでいた） */
-  const have=await sheetTabNames(id),rows=await sheetRead(id,["案件","入金","立替","ToDo","情報",CODE_TAB,NAMES_TAB,OFFICE_TAB,STAFFSET_TAB].filter(t=>have.includes(t)));
+  const have=await sheetTabNames(id),rows=await sheetRead(id,["案件","入金","立替","ToDo","情報",CODE_TAB,NAMES_TAB,OFFICE_TAB,STAFFSET_TAB,CLIENT_TAB].filter(t=>have.includes(t)));
+  /* v1.50.125 依頼元の候補（社長が書いた分）を受け取る。読めなければ前の候補のまま */
+  if(!D().admin&&Array.isArray(rows[CLIENT_TAB])){const cl=clientParse(rows[CLIENT_TAB]);if(cl&&cl.length&&JSON.stringify(cl)!==JSON.stringify(D().clientNames||null)){D().clientNames=cl;save()}}
   /* v1.50.84 社長が書いた設定（地図の候補キー）を受け取る */
   if(!D().admin&&Array.isArray(rows[STAFFSET_TAB])&&JSON.stringify((rows[STAFFSET_TAB][0]||[]).map(String))===JSON.stringify(STAFFSET_COLS)){
     const k=hubSetGet(rows[STAFFSET_TAB],PLACES_KEY);if(k!==placesKey()){D().placesKey=k;save()}}
@@ -3811,7 +3831,10 @@ async function adminSync(log){
     d.listId=ls[0].id;save();
   }
   /* v1.50.26 「社長の済み」タブも一緒に読む（まだタブがなければ「社員」だけ）。v1.50.36 「HUBの設定」（社長の端末で共通の設定）も */
-  let listV;try{listV=await sheetRead(d.listId,["社員",BOSSDONE_TAB,HUBSET_TAB])}catch(err){if(err.status!==400)throw err;const have=await sheetTabNames(d.listId);listV=await sheetRead(d.listId,["社員"].concat([BOSSDONE_TAB,HUBSET_TAB].filter(t=>have.includes(t))))}
+  let listV;try{listV=await sheetRead(d.listId,["社員",BOSSDONE_TAB,HUBSET_TAB,CLIENT_TAB])}catch(err){if(err.status!==400)throw err;const have=await sheetTabNames(d.listId);listV=await sheetRead(d.listId,["社員"].concat([BOSSDONE_TAB,HUBSET_TAB,CLIENT_TAB].filter(t=>have.includes(t))))}
+  /* v1.50.125 依頼元の候補（会社ごと）。タブがなければ、裏の処理で今までの候補を入れたタブを作る（次の同期からは一緒に読む） */
+  {const cl=Array.isArray(listV[CLIENT_TAB])?clientParse(listV[CLIENT_TAB]):null;ui.clientTabMissing=!Array.isArray(listV[CLIENT_TAB])||!listV[CLIENT_TAB].length;
+   if(cl&&cl.length&&JSON.stringify(cl)!==JSON.stringify(d.clientNames||null)){d.clientNames=cl;save()}}
   if(Array.isArray(listV[BOSSDONE_TAB]))bossDoneMerge(listV[BOSSDONE_TAB]);
   const rows=objRows(listV["社員"]).filter(r=>r["シートID"]);
   const local=d.staff.filter(s=>!rows.some(r=>String(r["シートID"])===s.sheetId)); /* added here, but the list sheet was not written yet */
@@ -4696,10 +4719,15 @@ async function namesTabWrite(s,rows,tab=NAMES_TAB){
 }
 /* 社長の同期のあと：社員一覧が前に書いたときから変わっていれば、全員の記録シートに書き直す（同じなら何もしない） */
 async function namesAfterSync(){
- const d=D();if(!d.admin||!gSignedIn())return;const rows=namesRows(d.staff),offs=officeRows(),sets=staffSetRows(),key=JSON.stringify(offs.length>1||sets.length>1?[rows,offs,...(sets.length>1?[sets]:[])]:rows);if(d.namesWritten===key)return;
+ const d=D();if(!d.admin||!gSignedIn())return;
+ /* v1.50.125 社員一覧に「依頼元の候補」タブがなければ、今までの候補（3社共通）を入れて作る（社長がシートで会社ごとに直せるように） */
+ if(ui.clientTabMissing&&d.listId){try{const tabs=await sheetTabNames(d.listId);if(!tabs.includes(CLIENT_TAB)){await addTab(d.listId,CLIENT_TAB);await sheetWrite(d.listId,CLIENT_TAB,clientRows(clientList()),[])}ui.clientTabMissing=false}catch(err){if(err.message==="signin")throw err}}
+ /* 候補が今までのまま（3社共通）で、前に書いたこともなければ、社員の記録シートには書かない（社員の端末も今までの候補を出すため） */
+ const cls=clientIsDefault(clientList())&&!d.clientWritten?null:clientRows(clientList());
+ const rows=namesRows(d.staff),offs=officeRows(),sets=staffSetRows(),key=JSON.stringify(offs.length>1||sets.length>1||cls?[rows,offs,...(sets.length>1?[sets]:[]),...(cls?[cls]:[])]:rows);if(d.namesWritten===key)return;
  const list=(d.staff||[]).filter(s=>!s.removed&&s.sheetId&&s.sheetId!==d.sheetId);let bad=0;
- await sharePool(list,async s=>{try{await namesTabWrite(s,rows);if(offs.length>1)await namesTabWrite(s,offs,OFFICE_TAB);if(sets.length>1||d.placesKeyWritten)await namesTabWrite(s,sets,STAFFSET_TAB)}catch(err){if(err.message==="signin")throw err;bad++}});
- if(!bad){d.namesWritten=key;d.placesKeyWritten=sets.length>1;save()}
+ await sharePool(list,async s=>{try{await namesTabWrite(s,rows);if(offs.length>1)await namesTabWrite(s,offs,OFFICE_TAB);if(sets.length>1||d.placesKeyWritten)await namesTabWrite(s,sets,STAFFSET_TAB);if(cls)await namesTabWrite(s,cls,CLIENT_TAB)}catch(err){if(err.message==="signin")throw err;bad++}});
+ if(!bad){d.namesWritten=key;d.placesKeyWritten=sets.length>1;if(cls)d.clientWritten=true;save()}
 }
 async function numPtrWrite(s,numbers){
  const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(NUMPTR_TAB))await addTab(s.sheetId,NUMPTR_TAB);
@@ -5584,7 +5612,8 @@ document.addEventListener("click",e=>{
   if(el.dataset.tp){ui.tPeriod=el.dataset.tp;render();return}
   if(el.dataset.tt){ui.tTantou=el.dataset.tt;render();return}
   if(el.dataset.gt){ui.gTantou=el.dataset.gt;render();return}
-  if(el.dataset.nco){const i=document.getElementById("n_co");if(i)i.value=el.dataset.nco;el.parentNode.querySelectorAll("[data-nco]").forEach(b=>b.setAttribute("aria-pressed",String(b===el)));return}
+  if(el.dataset.nco){const i=document.getElementById("n_co");if(i)i.value=el.dataset.nco;el.parentNode.querySelectorAll("[data-nco]").forEach(b=>b.setAttribute("aria-pressed",String(b===el)));clientChipsRefresh();return}
+  if(el.dataset.ncl!=null){const i=document.getElementById("n_client");if(i){i.value=el.dataset.ncl;i.dispatchEvent(new Event("input",{bubbles:true}))}return}
   if(el.dataset.ccf){ui.cCo=el.dataset.ccf;render();return}
   if(el.dataset.gco){ui.gCo=el.dataset.gco;render();return}
   if(el.dataset.statsMode){if(['month','all'].includes(el.dataset.statsMode)){ui.statsPeriod=el.dataset.statsMode;render();}return}
@@ -5948,6 +5977,7 @@ async function gpPick(id,name){
   gp.token="";gp.n=0;
 }
 document.addEventListener("input",e=>{if(e.target&&e.target.id==="pl_place")gpSuggest(e.target.value)});
+document.addEventListener("input",e=>{if(e.target&&e.target.id==="n_client")clientChipsRefresh()});
 document.addEventListener("click",e=>{const b=e.target&&e.target.closest&&e.target.closest("[data-gp-id]");if(b){e.preventDefault();gpPick(b.dataset.gpId,b.dataset.gpName)}});
 document.addEventListener("input",e=>{
   {const fm=e.target.closest&&e.target.closest("form");if(fm&&KEEP_FORMS.includes(fm.id))ui.keepDirty.add(fm.id)}
