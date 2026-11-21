@@ -272,6 +272,24 @@ async function main(){
    assert.deepEqual(await A.p.evaluate(async()=>{const d=BB.db.settings.data,o=d.salesId;d.salesId='salesauto0000000000001';await BB.salesLoad();const m=await BB.salesMonthEnsure();d.salesId=o;await BB.salesLoad();return m}),[],'not made twice');
    delete G.files.salesauto0000000000001;
   });
+  await check('v1.50.124 会社の行と担当者別の合計が違えば赤で知らせる（会社の行は直さない。確定済みの月は灰色） '+width+'px',async()=>{
+   await open(A.p);const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）');
+   const t=tabOf(f,'2026-10 会社'),hi=t.findIndex(r=>r[0]==='会社'),ri=t.findIndex(r=>r[0]==='CP'),ks=t[hi].indexOf('実績売上'),kp=t[hi].indexOf('実績粗利'),keep=[t[ri][ks],t[ri][kp]];
+   /* 担当の合計に合わせてから、会社の行だけ1,000円ずらす */
+   const sum=await A.p.evaluate(()=>{const M=BB.ui.sales.months.find(m=>m.key==='2026-10'),st=M.staff.filter(x=>x.co==='CP'&&x.state!=='その他');return [st.reduce((a,x)=>a+(x.amt||0),0),st.filter(x=>x.state==='完了').reduce((a,x)=>a+(x.prof||0),0)]});
+   t[ri][ks]=String(sum[0]);t[ri][kp]=String(sum[1]);await A.p.evaluate(()=>BB.salesLoad());await A.p.click('[data-sales-month="2026-10"]');
+   assert.equal(await A.p.$$eval('#stats-sales details.sales-card[data-sales-co="CP"] .sales-diff',a=>a.length),0,'no warning when they match');
+   t[ri][ks]=String(sum[0]+1000);const snap=JSON.stringify(t);await A.p.evaluate(()=>BB.salesLoad());await A.p.click('[data-sales-month="2026-10"]');
+   assert.match(await A.p.textContent('#stats-sales details.sales-card[data-sales-co="CP"] .sales-diff'),/会社の行と担当の合計が違います：売上 \+1,000円（担当の合計 [\d,]+円）。会社の行と担当のどちらが正しいか確かめてください/);
+   await A.p.evaluate(()=>{BB.ui.salesCoOpen={};BB.render()});assert.ok(await A.p.locator('#stats-sales details.sales-card[data-sales-co="CP"]>summary .sales-diff-tag').isVisible(),'tag visible while closed');
+   assert.equal((await A.p.$$('#stats-sales details.sales-card[data-sales-co="CP"] .sales-diff:not(.old)')).length,1,'red while preliminary');
+   assert.equal(JSON.stringify(tabOf(f,'2026-10 会社')),snap,'the sheet is not rewritten by HUB');
+   /* 確定済みの月（確定までの日数を短くする）は灰色 */
+   await A.p.evaluate(()=>{BB.db.settings.data.salesFixDays=1;BB.ui.salesCoOpen={CP:true,AT:true,CPY:true};BB.render()});
+   assert.equal((await A.p.$$('#stats-sales details.sales-card[data-sales-co="CP"] .sales-diff.old')).length,1,'grey for a finalized month');assert.match(await A.p.textContent('#stats-sales details.sales-card[data-sales-co="CP"] .sales-diff'),/（確定済みの月）/);
+   assert.ok(await overflow(A.p)<=0,'overflow');
+   await A.p.evaluate(()=>{BB.db.settings.data.salesFixDays=45;BB.render()});t[ri][ks]=keep[0];t[ri][kp]=keep[1];await A.p.evaluate(()=>BB.salesLoad());
+  });
   await check('本物のシート（名前に「試作」がない）を読んでいるときは「試作用のシートを作り直す」を出さず、札は「社長だけ」 '+width+'px',async()=>{
    const f=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）');f.name='CPG HUB_売上報告';
    await A.p.click('[data-act=salesload]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);

@@ -263,7 +263,7 @@ details.statfold[open]>summary{margin-bottom:8px}
 /* v1.50.54 会社のカード（畳める） */
 #stats-sales details.sales-card>summary{list-style:none;cursor:pointer;flex-wrap:wrap}#stats-sales details.sales-card>summary::-webkit-details-marker{display:none}
 #stats-sales details.sales-card>summary::after{content:"タップして開く ▼";font-size:12px;font-weight:700;color:var(--accent);margin-left:auto;white-space:nowrap}#stats-sales details.sales-card[open]>summary::after{content:"閉じる ▲"}
-.sales-co-sum{flex-basis:100%;font-size:13.5px;color:var(--fg)}.sync-after{margin:6px 0 0;font-weight:700;color:var(--red);font-size:15px}.sync-after.done{color:var(--green);font-weight:600}.sales-quick{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px}.sales-quick .btn{white-space:normal;text-align:left}.sales-co-sum b{font-weight:800}
+.sales-co-sum{flex-basis:100%;font-size:13.5px;color:var(--fg)}.sales-diff{margin:0 0 6px;color:var(--red);font-size:14px;background:var(--red-soft);border-radius:8px;padding:6px 10px}.sales-diff.old{color:var(--muted,#666);background:transparent;border:1px dashed var(--line)}.sales-diff-tag{flex-basis:100%;font-size:13px;font-weight:700;color:var(--red)}.sales-diff-tag.old{color:var(--muted,#666);font-weight:600}.sync-after{margin:6px 0 0;font-weight:700;color:var(--red);font-size:15px}.sync-after.done{color:var(--green);font-weight:600}.sales-quick{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px}.sales-quick .btn{white-space:normal;text-align:left}.sales-co-sum b{font-weight:800}
 #stats-sales details.sales-card{padding:8px}
 .sales-card-body{display:flex;flex-direction:column;gap:10px;margin-top:10px;padding:0 6px 6px}
 /* v1.50.51 開け閉めする見出し（毎日の受注・担当者別・グラフで見る）を、押せると分かる色の帯に */
@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.123" title="使い方マニュアルを開く">v1.50.123・11/21更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.123" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.124" title="使い方マニュアルを開く">v1.50.124・11/21更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.124" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.123"></script>
+<script src="./share-management.js?v=1.50.124"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.123"></script>
-<script src="./calendar-view-scope.js?v=1.50.123"></script>
+<script src="./view-scope.js?v=1.50.124"></script>
+<script src="./calendar-view-scope.js?v=1.50.124"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2742,7 +2742,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.123";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.124";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2938,7 +2938,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.123" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.123" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.124" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.124" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -4123,6 +4123,15 @@ async function salesCreateDemo(){
 /* v1.50.50 HUBから入力：書くのは変えたマスだけ。書く前にそのタブを読み直し、
    ①数式のマスは書かない ②読んだときから値が変わっていたら（ほかの人が変えた）書かずに止める。
    新しい日の受注は、表を分けた「YYYY-MM 受注」のタブにだけ行を足す（1つのタブにまとめた形では足さない） */
+/* v1.50.124 トシさんの指示（案A）：会社の行と担当者別の合計が違うときは、赤で知らせる（会社の行は人が入れたまま。自動では直さない。二重チェックとして残す）。
+   合計の出し方は今の決まり：売上＝担当者別の「完了」と「施工中」の金額、粗利＝「完了」の粗利。営業外（状態「その他」）は入れない */
+function salesCoDiff(M,co){
+  const c=M&&M.cos.find(x=>x.co===co),st=M?M.staff.filter(x=>x.co===co&&x.state!=="その他"):[];if(!c||!st.length)return null;
+  const sale=st.reduce((a,x)=>a+(x.amt||0),0),prof=st.filter(x=>x.state==="完了").reduce((a,x)=>a+(x.prof||0),0);
+  const ds=(c["実績売上"]||0)-sale,dp=(c["実績粗利"]||0)-prof;
+  return ds||dp?{sale,prof,ds,dp}:null;
+}
+function salesDiffText(d){const yn=v=>(v>0?"+":"−")+Math.abs(v).toLocaleString("ja-JP")+"円";return [d.ds?"売上 "+yn(d.ds)+"（担当の合計 "+d.sale.toLocaleString("ja-JP")+"円）":"",d.dp?"粗利 "+yn(d.dp)+"（担当の合計 "+d.prof.toLocaleString("ja-JP")+"円）":""].filter(Boolean).join("・")}
 const SALES_COLS={co:{"目標売上":1,"目標粗利":2,"実績売上":3,"実績粗利":4,"前月売上":5,"前月粗利":6,"最終粗利予想":7,"社長確認日":10,"本部長確認日":11,"GM確認日":12,"更新日":14},st:{n:4,amt:6,prof:7},day:{n:2,amt:3}};
 const salesColL=i=>String.fromCharCode(65+i);
 const salesSame=(cur,base)=>{const e=v=>v===undefined||v===null||v==="";if(e(cur)&&e(base))return true;if(e(cur)||e(base))return false;
@@ -4306,7 +4315,7 @@ async function salesFixSave(v){
 function salesSec(){
   /* v1.50.108 社員の端末（社長・入力できる人でない）：書き出された控えを見るだけ（入力・シートを開く・確認のボタンは出さない） */
   const viewer=!salesCan();
-  const d=D(),src=viewer?"view":salesSrc(),admin=!!d.admin,S=ui.sales,busy=ui.salesBusy?' disabled':'',msg=ui.salesMsg?'<p role="status" style="margin:0;color:'+(ui.salesMsg.ok?'var(--green)':'var(--red)')+'">'+h(ui.salesMsg.text)+'</p>':'';
+  const d=D(),src=viewer?"view":salesSrc(),admin=!!d.admin,S=ui.sales,busy=ui.salesBusy?' disabled':'',msg=(ui.salesMsg?'<p role="status" style="margin:0;color:'+(ui.salesMsg.ok?'var(--green)':'var(--red)')+'">'+h(ui.salesMsg.text)+'</p>':'')+(ui.salesDiffWarn?'<p class="sales-diff" role="alert">'+h(ui.salesDiffWarn)+'</p>':'');
   /* v1.50.46 本物のシート（名前に「試作」がない）を読んでいるときは「社長だけ」、作り直すボタンも出さない（押すと架空のシートに戻るため） */
   /* v1.50.52 名前が分からないときは試作と見なさない（作り直すボタンを出さない） */
   const demo=admin&&!!S&&S.id===d.salesId&&!!S.name&&S.name.includes("試作");
@@ -4377,12 +4386,15 @@ function salesSec(){
     if(curM&&tdc)['hq','gm'].filter(k=>salesChkCan(chkMe,c.co,k)&&!tdc[k]&&!pend[[M.key,c.co,tdN,k].join("|")]).forEach(k=>qb.push('<button class="btn sm pri" type="button" data-act="saleschk" data-co="'+h(c.co)+'" data-k="'+k+'"'+busy+'>'+SCHK_LABEL[k]+'の確認をした（今日）</button>'));
     monWho.filter(k=>!pend[[M.key,c.co,"月",k].join("|")]).forEach(k=>qb.push('<button class="btn sm" type="button" data-act="salesmon" data-key="'+h(M.key)+'" data-co="'+h(c.co)+'" data-k="'+k+'"'+busy+'>'+(k==="gm"?"GM":SMON_LABEL[k])+'の確認をした（'+Number(M.key.slice(5))+'月分・今日）</button>'));
     const quick=qb.length?'<span class="sales-quick">'+qb.join("")+'</span>':'';
+    const dif=salesCoDiff(M,c.co),difOld=!salesPrelim(M.key);
+    const difTag=dif?'<span class="sales-diff-tag'+(difOld?' old':'')+'">担当の合計と違います</span>':'';
+    const difLine=dif?'<p class="sales-diff'+(difOld?' old':'')+'" role="status"><b>会社の行と担当の合計が違います：</b>'+h(salesDiffText(dif))+'。会社の行と担当のどちらが正しいか確かめてください'+(difOld?'（確定済みの月）':'')+'。</p>':'';
     const st=M.staff.filter(x=>x.co===c.co),ds=M.days.filter(x=>x.co===c.co),ra=pc(c["実績売上"],c["目標売上"]),rp=pc(c["実績粗利"],c["目標粗利"]),dn=sumBy(ds,"n"),da=sumBy(ds,"amt");
     /* v1.50.54 会社のカードは最初は畳む（会社名と売上・粗利だけ）。押すと中身が開く。開けたかどうかは覚える */
     const opened=!!(ui.salesCoOpen||{})[c.co];
     return '<details class="panel sales-card" data-sales-co="'+h(c.co)+'"'+(opened?' open':'')+'><summary class="sales-co"><h3>'+h(c.co)+'<span>'+h(CO_LABEL[c.co]||"")+'</span></h3><span class="sales-upd">更新日 <b>'+h(c["更新日"]||"—")+'</b></span>'+
-      '<span class="sales-co-sum num">売上 <b>'+y(c["実績売上"])+'</b>・粗利 <b>'+y(c["実績粗利"])+'</b>（'+pt(pc(c["実績粗利"],c["実績売上"]))+'）</span>'+quick+'</summary><div class="sales-card-body">'+
-    '<div class="sales-main">'+
+      '<span class="sales-co-sum num">売上 <b>'+y(c["実績売上"])+'</b>・粗利 <b>'+y(c["実績粗利"])+'</b>（'+pt(pc(c["実績粗利"],c["実績売上"]))+'）</span>'+difTag+quick+'</summary><div class="sales-card-body">'+
+    difLine+'<div class="sales-main">'+
     /* v1.50.50 並びは見慣れた 売上 → 粗利。粗利は枠で目立たせ、粗利率を太字に */
     '<div><div class="sales-lab">売上（実績）</div><div class="num sales-big">'+y(c["実績売上"])+'</div><div class="note num">目標 '+y(c["目標売上"])+'・達成 '+pt(ra)+'</div>'+bar(ra,'var(--blue)')+'</div>'+
     '<div class="sales-profbox"><div class="sales-lab">粗利（実績）</div><div class="num sales-big">'+y(c["実績粗利"])+'</div><div class="sales-rate num">粗利率 <b>'+pt(pc(c["実績粗利"],c["実績売上"]))+'</b><span class="note">（目標粗利率 '+pt(pc(c["目標粗利"],c["目標売上"]))+'）</span></div><div class="note num">目標 '+y(c["目標粗利"])+'・達成 '+pt(rp)+'</div>'+bar(rp,'var(--green)')+'</div></div>'+
@@ -5660,8 +5672,11 @@ document.addEventListener("click",e=>{
     if(!r.changes.length){ui.dmsg=[{ok:true,text:"変わった記号はありません"}];render();return}
     const log=[];ui.dbusy=true;ui.dview="";ui.dmsg=log;render();
     adminCodesSave(r.changes,(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()}).then(()=>{ui.dCodes=false;ui.dCodesDraft=null},err=>{log.push({ok:false,text:"途中で止まりました："+(err.message==="http"?dMsg(err):err.message||dMsg(err))})}).finally(()=>{ui.dbusy=false;render()});return}
-  if(a==="salessave"){if(ui.salesBusy)return;ui.salesBusy=true;ui.salesMsg=null;ui.salesEdOpen=true;
-    salesSave().then(n=>{ui.salesMsg={ok:true,text:n?"シートに保存しました（"+n+"か所）":"変わったところはありません"}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?(err.status===403?"このシートに書く権限がありません":dMsg(err)):err.message}}).finally(()=>{ui.salesBusy=false;render()});render();return}
+  if(a==="salessave"){if(ui.salesBusy)return;ui.salesBusy=true;ui.salesMsg=null;ui.salesDiffWarn="";ui.salesEdOpen=true;
+    salesSave().then(n=>{ui.salesMsg={ok:true,text:n?"シートに保存しました（"+n+"か所）":"変わったところはありません"};
+      /* v1.50.124 保存したあと、その月・その会社の会社の行と担当者別の合計が違えば、赤で知らせる */
+      const S=ui.sales,M=S&&S.months.find(m=>m.key===ui.salesMonth),co=(ui.salesEd&&ui.salesEd.co)||salesMyCos()[0],d=M&&co?salesCoDiff(M,co):null;
+      ui.salesDiffWarn=d?co+" の会社の行と担当の合計が違います："+salesDiffText(d)+"。どちらが正しいか確かめてください":""},err=>{ui.salesMsg={ok:false,text:err.message==="http"?(err.status===403?"このシートに書く権限がありません":dMsg(err)):err.message}}).finally(()=>{ui.salesBusy=false;render()});render();return}
   if(a==="planopen"){const go=()=>{const d=document.getElementById("plan-add"),bar=document.querySelector("main>.scope-bar");if(d){const y=d.getBoundingClientRect().top+scrollY-((bar&&bar.getBoundingClientRect().bottom)||0)-8;scrollTo({top:Math.max(0,y),behavior:"smooth"})}};
     /* 開いていても入力欄が画面の外（下にスクロールしたあと）なら、閉じずに入力欄へ動く */
     if(ui.planOpen){const d=document.getElementById("plan-add"),bar=document.querySelector("main>.scope-bar"),r=d&&d.getBoundingClientRect(),lim=(bar&&bar.getBoundingClientRect().bottom)||0;if(r&&(r.top<lim-4||r.top>innerHeight-40)){go();return}}
