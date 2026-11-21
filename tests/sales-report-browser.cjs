@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..'),ADMIN='toshi.cpg@gmail.com',STAFF='staff.sample@example.com',STAFF2='gm.sample@example.com',KEY='workhub_proto_v1';
-const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,ordLoad,salesViewLoad,salesChkReflect,salesChkCan,salesSet,salesViewRows,gAuthorize,ordAfterSync,numSpecs,salesMonthEnsure,salesLoad,'+
+const hook='window.BB={get db(){return DB},get ui(){return ui},go,render,save,salesParse,homeSyncLabels,ordLoad,salesViewLoad,salesChkReflect,salesChkCan,salesSet,salesViewRows,gAuthorize,ordAfterSync,numSpecs,salesMonthEnsure,salesLoad,clientDefault,adminSync,sharedCheck,'+
  'mock(){gLoadCalendarsRun=async()=>{G.cals=[];return G.cals};gReadRange=async()=>({events:[],calendars:[],missing:0});gKeepSave=()=>{};corpRun=async()=>[]}};';
 const GIS="window.google={accounts:{oauth2:{initTokenClient(cfg){return {requestAccessToken(){setTimeout(()=>cfg.callback({access_token:'tok:'+window.__acct,expires_in:3600,scope:cfg.scope}),5)}}}}}};";
 const G={files:{},n:0,calls:[]};
@@ -477,6 +477,29 @@ async function main(){
    await A.p.evaluate(()=>{BB.db.settings.data.officeAddrs=[{name:'本社',addr:'○○県○○市○○町1-2-3'}];BB.save()});
    await sync(A.p);await A.p.waitForFunction(()=>String(BB.db.settings.data.namesWritten||'').includes('○○町1-2-3'));
    assert.deepEqual(tabOf(rec,'会社の住所'),[['名前','住所'],['本社','○○県○○市○○町1-2-3']]);
+   /* v1.50.125 依頼元の候補：社員一覧にタブがなければ、今までの候補（3社共通）で作る。今までのままなら社員の記録シートには書かない */
+   {const L=G.files.list00000000000000000001;/* 本番の同期では、裏の社員の記録（社員一覧の読み込み）が終わってから担当の候補などを書く。ここでは社員一覧の読み込みを先にする */
+    await A.p.evaluate(()=>BB.adminSync(()=>{}));assert.equal(await A.p.evaluate(()=>BB.ui.clientTabMissing),true);await sync(A.p);await A.p.waitForFunction(()=>BB.ui.clientTabMissing===false);
+    const def=await A.p.evaluate(()=>BB.clientDefault().map(x=>[x.co,x.name]));assert.equal(def.length,8);
+    assert.deepEqual(tabOf(L,'依頼元の候補'),[['会社','依頼元の名前'],...def],'seed tab in the staff list');
+    assert.equal(tabOf(rec,'依頼元の候補'),null,'not written to staff sheets while default');
+    /* 社長がシートで会社ごとに直す → 次の同期で読み、社員の記録シートに書く */
+    L.tabs.find(x=>x.title==='依頼元の候補').rows=[['会社','依頼元の名前'],['CP','見本不動産A'],['AT','見本管理B'],['全社','その他'],['','見本共通C']];
+    await A.p.evaluate(()=>BB.adminSync(()=>{}));await sync(A.p);await A.p.waitForFunction(()=>String(BB.db.settings.data.namesWritten||'').includes('見本不動産A'));
+    assert.deepEqual(tabOf(rec,'依頼元の候補'),[['会社','依頼元の名前'],['CP','見本不動産A'],['AT','見本管理B'],['全社','その他'],['全社','見本共通C']]);
+    /* 社員の端末：同期でいつも読む自分の記録シートと一緒に受け取る（ここでは社長の端末を一時的に社員の端末として確かめる） */
+    {const got=await A.p.evaluate(async()=>{const d=BB.db.settings.data,keep=d.clientNames;d.admin=false;d.clientNames=null;try{await BB.sharedCheck('rec00000000000000000001');return d.clientNames}finally{d.admin=true;d.clientNames=keep;BB.save()}});
+     assert.deepEqual(got,[{co:'CP',name:'見本不動産A'},{co:'AT',name:'見本管理B'},{co:'全社',name:'その他'},{co:'全社',name:'見本共通C'}],'staff device receives')}
+    /* 受付画面：会社で候補が変わる・打つと絞られる・押すと入る */
+    await A.p.evaluate(()=>BB.go('new'));await A.p.click('[data-nco="CP"]');
+    const chips=()=>A.p.$$eval('#n_clientChips [data-ncl]',a=>a.map(x=>x.dataset.ncl));
+    assert.deepEqual(await chips(),['見本不動産A','その他','見本共通C']);
+    await A.p.click('[data-nco="AT"]');assert.deepEqual(await chips(),['見本管理B','その他','見本共通C']);
+    await A.p.fill('#n_client','共通');assert.deepEqual(await chips(),['見本共通C']);
+    await A.p.fill('#n_client','ないもの');assert.deepEqual(await chips(),[]);assert.match(await A.p.textContent('#n_clientChips'),/候補にありません/);
+    await A.p.fill('#n_client','');await A.p.click('[data-ncl="見本管理B"]');assert.equal(await A.p.inputValue('#n_client'),'見本管理B');
+    assert.equal(await A.p.getAttribute('[data-ncl="見本管理B"]','aria-pressed'),'true');
+    assert.ok(await overflow(A.p)<=0,'overflow');await A.p.evaluate(()=>BB.go('home'));}
    /* v1.50.84 地図の候補キーも社員の記録シートの「HUBの設定」に書く */
    await A.p.evaluate(()=>{BB.db.settings.data.placesKey='FAKE-KEY';BB.save()});
    await sync(A.p);await A.p.waitForFunction(()=>String(BB.db.settings.data.namesWritten||'').includes('FAKE-KEY'));
