@@ -239,8 +239,10 @@ async function main(){
    assert.ok(await A.p.locator('#stats-sales details.sales-card[data-sales-co="AT"]>summary [data-act=salesmon]').isVisible(),'visible while closed');
    await A.p.evaluate(()=>{BB.ui.salesCoOpen={CP:true,AT:true,CPY:true};BB.render()});
    await A.p.click('[data-sales-month="2026-10"]');await A.p.evaluate(()=>document.querySelectorAll('#stats-sales details.sales-card').forEach(d=>d.open=true));
-   assert.deepEqual(await A.p.$$eval('#stats-sales [data-act=salesmon]',a=>a.map(b=>b.dataset.co+':'+b.dataset.k)),['CP:boss','AT:boss','CPY:boss'],'the boss can confirm each company');
-   assert.match(await A.p.textContent('#stats-sales'),/この月の確認（月に1回）/);assert.match(await A.p.textContent('#stats-sales'),/社長の確認をした（10月分・今日）/);
+   assert.deepEqual(await A.p.$$eval('#stats-sales .sales-quick [data-act=salesmon]',a=>a.map(b=>b.dataset.co+':'+b.dataset.k)),['CP:boss','AT:boss','CPY:boss'],'the boss can confirm each company');
+   /* v1.50.128 欄の中（この月の確認）にも同じボタン。言葉は「10月分を確認済みにする（社長）」 */
+   assert.deepEqual(await A.p.$$eval('#stats-sales .sales-mon .in-box [data-act=salesmon]',a=>a.map(b=>b.dataset.co+':'+b.dataset.k)),['CP:boss','AT:boss','CPY:boss'],'also inside the box');
+   assert.match(await A.p.textContent('#stats-sales'),/この月の確認（月に1回）/);assert.match(await A.p.textContent('#stats-sales'),/10月分を確認済みにする（社長）/);assert.doesNotMatch(await A.p.textContent('#stats-sales'),/の確認をした/);
    const co10=tabOf(f,'2026-10 会社'),hi=co10.findIndex(r=>r[0]==='会社'),ri=co10.findIndex(r=>r[0]==='CP')+1,kc=co10[hi].indexOf('社長確認日');
    G.batch=[];await A.p.click('#stats-sales [data-act=salesmon][data-co=CP][data-k=boss]');await A.p.waitForFunction(()=>!BB.ui.salesBusy);
    assert.deepEqual(G.batch.flatMap(b=>b.data.map(d=>d.range)),["'2026-10 会社'!"+String.fromCharCode(65+kc)+ri]);assert.equal(tabOf(f,'2026-10 会社')[ri-1][kc],'11/09','date as text MM/DD');

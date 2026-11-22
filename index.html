@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.127" title="使い方マニュアルを開く">v1.50.127・11/22更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.127" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.128" title="使い方マニュアルを開く">v1.50.128・11/22更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.128" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.127"></script>
+<script src="./share-management.js?v=1.50.128"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.127"></script>
-<script src="./calendar-view-scope.js?v=1.50.127"></script>
+<script src="./view-scope.js?v=1.50.128"></script>
+<script src="./calendar-view-scope.js?v=1.50.128"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2795,7 +2795,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.127";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.128";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2994,7 +2994,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.127" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.127" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.128" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.128" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -4302,6 +4302,7 @@ async function salesChkPress(co,k){
    もう日付が入っていても押せる（確定までは数字が変わるので、見直したらその日に書き換える）。だれができるかは毎日の確認と同じ（社長・本部長＝全社・その会社のGM）。
    シートを開けない端末は、自分の記録シートの「売上の確認」に1行書き（日＝「月」、役割＝hq_m・gm_m）、社長の端末の同期で会社の行に入れる */
 const SMON_COL={boss:"社長確認日",hq:"本部長確認日",gm:"GM確認日"},SMON_LABEL={boss:"社長",hq:"本部長",gm:"GM"};
+const salesMonBtn=(key,co,k,busy)=>'<button class="btn sm" type="button" data-act="salesmon" data-key="'+h(key)+'" data-co="'+h(co)+'" data-k="'+k+'"'+(busy||"")+'>'+Number(key.slice(5))+'月分を確認済みにする（'+SMON_LABEL[k]+'）</button>';
 /* v1.50.120 トシさんの指示（A）：どの月を開いても（今月・先の月も）「この月の確認」を出す。押した日がその月の確認日に入る */
 const salesMonDone=key=>/^\d{4}-\d{2}$/.test(String(key||""));
 const salesMonMd=iso=>{const j=jstDay(iso);return j?j.slice(5,7)+"/"+j.slice(8,10):""};
@@ -4440,12 +4441,15 @@ function salesSec(){
     const monBox=salesMonDone(M.key)?'<div class="sales-chk sales-mon"><div class="sales-lab">この月の確認（月に1回）</div>'+
       '<div class="row" style="gap:6px">'+['boss','hq','gm'].map(k=>{const v=String(c[SMON_COL[k]]??"").trim();return '<span class="sales-chip '+(v?'on':'off')+'">'+(k==="gm"?h(c["GMの名前"]||"GM"):SMON_LABEL[k])+' '+(v?'✓ '+h(v):'未')+'</span>'}).join("")+'</div>'+
       monWho.filter(k=>pend[[M.key,c.co,"月",k].join("|")]).map(k=>'<p class="note" style="margin:0">'+SMON_LABEL[k]+'の確認：押しました（社長の端末の同期で、シートに入ります）</p>').join("")+
-      (monWho.length?'<p class="note sales-chk-hint" style="margin:0">この月の会社の数字と、担当ごとの数字を見てから押してください。押した日が確認日に入ります（もう入っていても、見直したら押し直せます）。</p>':'')+'</div>':'';
-    /* v1.50.120 トシさんの指示（C）：確認のボタンは、たたんだ欄の外（会社名の行のすぐ下）に出す。押しても欄は開け閉めしない */
+      (monWho.length?'<p class="note sales-chk-hint" style="margin:0">この月の会社の数字と、担当ごとの数字を見てから押してください。押した日が確認日に入ります（もう入っていても、見直したら押し直せます）。</p>':'')+
+      /* v1.50.128 トシさんの指示：欄の中にもボタンを出す（会社名の行のボタンだけだと、ここを見ていて見逃す） */
+      (()=>{const b=monWho.filter(k=>!pend[[M.key,c.co,"月",k].join("|")]).map(k=>salesMonBtn(M.key,c.co,k,busy)).join("");return b?'<div class="row in-box" style="gap:6px">'+b+'</div>':''})()+'</div>':'';
+    /* v1.50.120 トシさんの指示（C）：確認のボタンは、たたんだ欄の外（会社名の行のすぐ下）に出す。押しても欄は開け閉めしない
+       v1.50.128 トシさんの指示：「社長の確認をした」では分かりにくい → 「10月分を確認済みにする（社長）」「今日の分を確認済みにする（社長）」 */
     const qb=[];
-    if(admin&&curM&&tdc&&!tdc.boss)qb.push('<button class="btn sm pri" type="button" data-act="salescheck" data-co="'+h(c.co)+'"'+busy+'>社長の確認をした（今日）</button>');
-    if(curM&&tdc)['hq','gm'].filter(k=>salesChkCan(chkMe,c.co,k)&&!tdc[k]&&!pend[[M.key,c.co,tdN,k].join("|")]).forEach(k=>qb.push('<button class="btn sm pri" type="button" data-act="saleschk" data-co="'+h(c.co)+'" data-k="'+k+'"'+busy+'>'+SCHK_LABEL[k]+'の確認をした（今日）</button>'));
-    monWho.filter(k=>!pend[[M.key,c.co,"月",k].join("|")]).forEach(k=>qb.push('<button class="btn sm" type="button" data-act="salesmon" data-key="'+h(M.key)+'" data-co="'+h(c.co)+'" data-k="'+k+'"'+busy+'>'+(k==="gm"?"GM":SMON_LABEL[k])+'の確認をした（'+Number(M.key.slice(5))+'月分・今日）</button>'));
+    if(admin&&curM&&tdc&&!tdc.boss)qb.push('<button class="btn sm pri" type="button" data-act="salescheck" data-co="'+h(c.co)+'"'+busy+'>今日の分を確認済みにする（社長）</button>');
+    if(curM&&tdc)['hq','gm'].filter(k=>salesChkCan(chkMe,c.co,k)&&!tdc[k]&&!pend[[M.key,c.co,tdN,k].join("|")]).forEach(k=>qb.push('<button class="btn sm pri" type="button" data-act="saleschk" data-co="'+h(c.co)+'" data-k="'+k+'"'+busy+'>今日の分を確認済みにする（'+SCHK_LABEL[k]+'）</button>'));
+    monWho.filter(k=>!pend[[M.key,c.co,"月",k].join("|")]).forEach(k=>qb.push(salesMonBtn(M.key,c.co,k,busy)));
     const quick=qb.length?'<span class="sales-quick">'+qb.join("")+'</span>':'';
     const dif=salesCoDiff(M,c.co),difOld=!salesPrelim(M.key);
     const difTag=dif?'<span class="sales-diff-tag'+(difOld?' old':'')+'">担当の合計と違います</span>':'';
