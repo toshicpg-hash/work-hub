@@ -2505,7 +2505,8 @@ function calHubOwner(e,ctx,model,cases){
  if(raw){hit=CPGNames.matches(people,raw,STAFF);if(!hit.length)hit=people.filter(p=>CPGNames.flat(p.displayName)&&CPGNames.flat(p.displayName)===CPGNames.flat(raw));}
  /* v1.50.13 担当の行があって1人に決まらないときは、担当の名前に当てはまる人の中に作成者がいればその人。いなければ割り当てない（担当とずれないように）。
     担当の行がない予定（HUB外から直接入れた予定も）は、作成者のGmailが社員一覧の人と一致すればその人。社長が作った予定（来社・会議など）は割り当てない */
- const byCreator=list=>e.creator&&!eq(e.creator,ADMIN_ACCOUNT)?list.filter(p=>eq(p.email,e.creator)):[];
+ /* v1.50.127 社員の端末（Gmailが届かない）では、照合キーで作った人を見分ける */
+ const byCreator=list=>e.creator&&!eq(e.creator,ADMIN_ACCOUNT)?list.filter(p=>eq(p.email,e.creator)||(!!p.mailKey&&p.mailKey===mailKey(e.creator))):[];
  if(raw){if(new Set(hit.map(p=>p.sheetId)).size>1)hit=byCreator(hit);}
  else hit=byCreator(people);
  const sids=[...new Set(hit.map(p=>p.sheetId))];if(sids.length!==1)return null;
@@ -3626,7 +3627,7 @@ async function sharedCheck(id){
     if(JSON.stringify(a)!==JSON.stringify(officeAddrs())){D().officeAddrs=a;save()}}
   /* v1.50.72 担当の候補を受け取る（社長が書いた社員の一覧） */
   if(!D().admin&&Array.isArray(rows[NAMES_TAB])&&JSON.stringify((rows[NAMES_TAB][0]||[]).slice(0,3).map(String))===JSON.stringify(NAMES_COLS.slice(0,3))){
-    const list=rows[NAMES_TAB].slice(1).filter(r=>r&&String(r[0]||"").trim()&&String(r[2]||"").trim()).map(r=>({name:String(r[0]).trim(),company:String(r[1]||""),sheetId:String(r[2]).trim(),...(String(r[3]||"").trim()?{role:String(r[3]).trim()}:{})}));
+    const list=rows[NAMES_TAB].slice(1).filter(r=>r&&String(r[0]||"").trim()&&String(r[2]||"").trim()).map(r=>({name:String(r[0]).trim(),company:String(r[1]||""),sheetId:String(r[2]).trim(),...(String(r[3]||"").trim()?{role:String(r[3]).trim()}:{}),...(/^k[0-9a-z]+$/.test(String(r[4]||"").trim())?{mailKey:String(r[4]).trim()}:{})}));
     const cur=nameCands();if(list.length&&JSON.stringify(cur)!==JSON.stringify(list)){D().nameCands={sheetId:id,list};save()}}
   const d=dataRows(),local={"案件":d.cases.length-1,"入金":d.pay.length-1,"立替":d.rc.length-1},shared={};
   for(const [t,k] of GUARD_TABS)shared[t]=sheetCount(rows[t],k);
@@ -4735,7 +4736,12 @@ async function salesEdSave(ids){
   return w;
 }
 /* v1.50.72 担当の候補（社長の端末が書く。社員の端末は同期で読む） */
-const NAMES_TAB="担当の候補", NAMES_COLS=["氏名","会社","シートID","役割"];/* v1.50.127 役割を足した（社員の予定の画面で、同じ会社の人と本部長＝役割「全社」を見分けるため）。前の3列の形も読む */
+const NAMES_TAB="担当の候補", NAMES_COLS=["氏名","会社","シートID","役割","照合キー"];
+/* v1.50.127 照合キー：Gmailそのものは記録シートに書かず、照合用の記号（Gmailを小文字にして記号に変えたもの）だけを書く。
+   社員の端末で、Googleカレンダーから直接「CPG HUB」に入れた予定（担当の行がない）を、作った人の予定として出すため（トシさん「カレンダーからも入れられる方がいい」）。
+   暗号ほど強いものではない（アドレスを画面やシートにそのまま出さないためのもの） */
+const mailKey=m=>{const t="cpghub:"+String(m||"").trim().toLowerCase();let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<t.length;i++){const c=t.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return "k"+(4294967296*(2097151&h2)+(h1>>>0)).toString(36)};/* v1.50.127 役割を足した（社員の予定の画面で、同じ会社の人と本部長＝役割「全社」を見分けるため）。前の3列の形も読む */
 /* v1.50.83 会社の住所（予定を入れるの場所の候補）。社長が社員一覧の「HUBの設定」の「会社の住所」に「名前｜住所」を1行ずつ入れる。社長の同期で全員の記録シートの「会社の住所」タブに書く */
 const OFFICE_KEY="会社の住所",OFFICE_TAB="会社の住所",OFFICE_COLS=["名前","住所"];
 const officeParse=raw=>String(raw||"").split(/\n+|\s*／\s*/).map(x=>x.trim()).filter(Boolean).map(x=>{const m=x.split(/[｜|]/);return m.length>1?{name:m[0].trim()||"会社",addr:m.slice(1).join("|").trim()}:{name:"会社",addr:x}}).filter(x=>x.addr).slice(0,10);
@@ -4746,7 +4752,7 @@ const officeRows=()=>[OFFICE_COLS,...officeAddrs().map(a=>[a.name,a.addr])];
 const PLACES_KEY="地図の候補キー",STAFFSET_TAB="HUBの設定",STAFFSET_COLS=["項目","値"];
 const placesKey=()=>String(D().placesKey||"").trim();
 const staffSetRows=()=>[STAFFSET_COLS,...(placesKey()?[[PLACES_KEY,placesKey()]]:[])];
-const namesRows=staff=>[NAMES_COLS,...(staff||[]).filter(s=>!s.removed&&s.sheetId&&s.name).map(s=>[String(s.name).trim(),String(s.company||""),s.sheetId,String(s.role||"")])];
+const namesRows=staff=>[NAMES_COLS,...(staff||[]).filter(s=>!s.removed&&s.sheetId&&s.name).map(s=>[String(s.name).trim(),String(s.company||""),s.sheetId,String(s.role||""),String(s.email||"").trim()?mailKey(s.email):""])];
 async function namesTabWrite(s,rows,tab=NAMES_TAB){
  const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(tab))await addTab(s.sheetId,tab);
  const prev=(await shareRead(()=>sheetRead(s.sheetId,[tab])))[tab]||[];

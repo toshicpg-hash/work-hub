@@ -5,7 +5,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
-const hook='window.HO={get db(){return DB},get ui(){return ui},scopeState,G,go,save,render,scopeIdentity,gReadOne,calHubOwner,get ADMIN(){return ADMIN_ACCOUNT},authorize(){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000}};';
+const hook='window.HO={get db(){return DB},get ui(){return ui},scopeState,mailKey,G,go,save,render,scopeIdentity,gReadOne,calHubOwner,get ADMIN(){return ADMIN_ACCOUNT},authorize(){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000}};';
 const A='synthetic-a-sheet-0000000001',B='synthetic-b-sheet-0000000002',C='synthetic-c-sheet-0000000003',D2='synthetic-d-sheet-0000000004';
 const HUB='hub-shared@group.example.com',SELF_A='a@example.com',SELF_B='b@example.com';
 let server,browser,origin;const results=[];
@@ -145,15 +145,18 @@ async function main(){
  await check('v1.50.127 一般社員（CPY）の端末：同じ会社の人と本部長の予定が出て、ほかの会社の人の予定は出ない。人で絞れる。予定の画面だけ',async()=>{
   const d=await device({self:B,rows:[],admin:false});all.push(d);
   await d.p.evaluate(({roster,B})=>{const s=HO.db.settings.data;s.viewListId='';HO.ui.viewList=[];
-   s.nameCands={sheetId:B,list:roster.concat([{name:'見本 五郎',company:'CPY',sheetId:'synthetic-e-sheet-0000000005',role:'GM'}]).map(x=>({name:x.name,company:x.company,sheetId:x.sheetId,role:x.role}))};HO.save();HO.render()},{roster,B});
+   s.nameCands={sheetId:B,list:roster.concat([{name:'見本 五郎',company:'CPY',sheetId:'synthetic-e-sheet-0000000005',role:'GM'}]).map(x=>({name:x.name,company:x.company,sheetId:x.sheetId,role:x.role,mailKey:HO.mailKey(x.email||'e@example.com')}))};HO.save();HO.render()},{roster,B});
   await d.p.evaluate(({HUB})=>{const k='workhub_gcal_last_v1',v=JSON.parse(localStorage.getItem(k));v.data.events=v.data.events.concat([
    {private:false,calendarId:HUB,calendar:'CPG HUB',id:'t1',hub:'',title:'作業　見本の現場A',allDay:false,start:'2026-11-07T13:00:00+09:00',end:'2026-11-07T14:00:00+09:00',owner:'見本 五郎',creator:'e@example.com'},
    {private:false,calendarId:HUB,calendar:'CPG HUB',id:'t2',hub:'',title:'営業　見本の現場B',allDay:false,start:'2026-11-07T15:00:00+09:00',end:'2026-11-07T16:00:00+09:00',owner:'見本 一郎',creator:'a@example.com'},
+   {private:false,calendarId:HUB,calendar:'CPG HUB',id:'t4',hub:'',title:'見本の直接入れた予定',allDay:false,start:'2026-11-07T17:00:00+09:00',end:'2026-11-07T18:00:00+09:00',creator:'E@Example.com'},
    {private:false,calendarId:HUB,calendar:'CPG HUB',id:'t3',hub:'',title:'作業　見本の現場C',allDay:false,start:'2026-11-07T16:00:00+09:00',end:'2026-11-07T17:00:00+09:00',owner:'仮名 四郎',creator:'d@example.com'}]);localStorage.setItem(k,JSON.stringify(v));HO.render()},{HUB});
   let t=await titles(d.p);
   assert.match(t,/見本荘 103/,'own');assert.match(t,/見本の現場A/,'same company (GM)');assert.match(t,/見本の現場B/,'本部長（全社）');
   assert.doesNotMatch(t,/見本の現場C/,'other company (AT)');assert.doesNotMatch(t,/見本ハイツ 201|見本荘 104/,'other company (CP)');
   assert.equal((await cards(d.p)).find(x=>/見本の現場A/.test(x.text)).tag,'見本 五郎');
+  /* Googleカレンダーから直接「CPG HUB」に入れた予定（担当の行なし）も、照合キーで作った人の予定になる */
+  assert.match(t,/見本の直接入れた予定/,'direct entry by a teammate');assert.equal((await cards(d.p)).find(x=>/見本の直接入れた予定/.test(x.text)).tag,'見本 五郎');
   /* 人で絞れる（同じ会社の人・本部長が選べる。ほかの会社の人は選べない） */
   const opts=await d.p.$$eval('main [data-scope-person] option',o=>o.map(x=>x.textContent));
   assert.ok(opts.includes('見本 五郎')&&opts.includes('見本 一郎'),opts.join(','));assert.ok(!opts.includes('仮名 四郎')&&!opts.includes('試験 三郎'),opts.join(','));
