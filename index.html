@@ -388,7 +388,7 @@ table.items input,table.items select{min-height:36px;padding:5px 8px}
 div.ordtile{cursor:default}
 .ordmini .ord-ttl{font-weight:800;color:var(--blue)}.ordmini .ord-sub{font-size:13px;color:var(--muted);font-weight:600}.ordmini .ord-to{align-self:flex-end;font-size:12.5px;font-weight:800;color:var(--blue);border:1.5px solid var(--blue);border-radius:99px;padding:1px 10px;background:var(--surface);margin-top:2px}/* v1.50.109 小さいタイル：1行に 会社・件数・金額 */.ordmini{gap:2px}.ordtile.ordmini .ord-r{display:grid;grid-template-columns:3.2em 4.2em 1fr;align-items:baseline;gap:0 6px;font-size:15px}.ordtile.ordmini .ord-r .num{font-weight:700}.ordtile.ordmini .ord-a{text-align:right}.ordmini.ordtile .ord-sum{font-size:15.5px;padding-top:3px}.ordtile .ord-go{font-family:inherit;cursor:pointer;align-self:flex-end;margin-top:2px;font-size:14px;font-weight:800;color:var(--blue);border:1.5px solid var(--blue);border-radius:99px;padding:3px 12px;background:var(--surface)}
 .ordtile .ord-r{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 10px;font-size:18px}.ordtile .ord-r>b{min-width:3.2em}.ordtile .ord-r .num{font-weight:800}
-.ordtile .ord-t{font-size:14.5px;color:var(--muted);flex-basis:100%;padding-left:calc(3.2em + 10px)}.ordtile .ord-r .ord-t{font-weight:600}.ordtile .ord-sum{border-top:1px solid var(--line);padding-top:4px;font-size:19px}
+.ordtile .ord-t{font-size:14.5px;color:var(--muted);flex-basis:100%;padding-left:calc(3.2em + 10px)}.ordtile .ord-r .ord-t{font-weight:600}.ordtile .ord-sum{border-top:1px solid var(--line);padding-top:4px;font-size:19px}.ordmini .ord-pre{margin-top:8px;padding-top:6px;border-top:1px dashed var(--line)}.ordmini .ord-diff{font-size:12.5px}
 /* v1.50.69 字が小さいと言われたので大きく（見出し・会社ごとの行・1件単価） */
 .ordtile>.k{font-size:15px;color:var(--fg)}.ordtile>.s{font-size:13px}
 /* v1.50.68 売上の速報 */
@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.129" title="使い方マニュアルを開く">v1.50.129・11/23更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.129" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.130" title="使い方マニュアルを開く">v1.50.130・11/23更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.130" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.129"></script>
+<script src="./share-management.js?v=1.50.130"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.129"></script>
-<script src="./calendar-view-scope.js?v=1.50.129"></script>
+<script src="./view-scope.js?v=1.50.130"></script>
+<script src="./calendar-view-scope.js?v=1.50.130"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2805,7 +2805,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.129";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.130";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -3004,7 +3004,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.129" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.129" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.130" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.130" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -4161,7 +4161,23 @@ function ordTile(){
   const isToday=v.date===t,sumN=v.cos.reduce((s,c)=>s+c.n,0),sumA=v.cos.reduce((s,c)=>s+c.amt,0);
   const row=(co,n,a,cls)=>'<span class="ord-r'+cls+'"><b>'+h(co)+'</b><span class="num">'+n+'件</span><span class="num ord-a">'+yen(a)+'</span></span>';
   return '<'+tag+' class="tile wide ordtile ordmini" id="home-orders"'+(sv?' aria-label="グループ各社売上進捗報告を開く"':'')+'>'+ttl+'<span class="ord-sub">今月の受注（'+md(v.date)+'まで'+(isToday?'':'・'+md(v.date)+'の時点')+'）</span>'+
-    v.cos.map(c=>row(c.co,c.n,c.amt,'')).join("")+row('合計',sumN,sumA,' ord-sum')+goTo+'</'+end+'>';
+    v.cos.map(c=>row(c.co,c.n,c.amt,'')).join("")+row('合計',sumN,sumA,' ord-sum')+ordPrelimRows()+goTo+'</'+end+'>';
+}
+/* v1.50.130 トシさんの指示：ホームのタイルに、確定前の月（今月を除く。今なら10月）の売上の進み具合も出す。
+   売上だけ（確定前の粗利は、あとから仕入れの額が入って低めに出るので出さない。粗利は確定してから見る）。
+   ％は目標売上に対する達成率。会社の行と担当の合計が違う会社には「担当の合計と違います」を出す（v1.50.124 と同じ判定） */
+function ordPrelimRows(){
+  const S=ui.sales;if(!S||!Array.isArray(S.months))return "";const cur=todayS().slice(0,7);
+  const Ms=S.months.filter(M=>M&&M.key<cur&&salesPrelim(M.key)&&Array.isArray(M.cos)&&M.cos.length).sort((a,b)=>a.key.localeCompare(b.key));
+  const ord=c=>{const i=SALES_ORDER.indexOf(c.co);return i<0?99:i};
+  return Ms.map(M0=>{const M={...M0,cos:M0.cos.slice().sort((a,b)=>ord(a)-ord(b))},num=x=>Number(x)||0,pc=(a,g)=>g?Math.round(a/g*100)+"%":"—";
+    const row=(co,a,g,cls)=>'<span class="ord-r'+cls+'"><b>'+h(co)+'</b><span class="num">'+pc(a,g)+'</span><span class="num ord-a">'+yen(a)+'</span></span>';
+    const sa=M.cos.reduce((t,c)=>t+num(c["実績売上"]),0),sg=M.cos.reduce((t,c)=>t+num(c["目標売上"]),0);
+    const diff=M.cos.filter(c=>{try{return !!salesCoDiff(M,c.co)}catch(e){return false}}).map(c=>c.co);
+    return '<span class="ord-sub ord-pre">'+Number(M.key.slice(5))+'月の売上（確定前・'+md(salesFixDate(M.key))+'確定）・％は達成率</span>'+
+      M.cos.map(c=>row(c.co,num(c["実績売上"]),num(c["目標売上"]),'')).join("")+row('合計',sa,sg,' ord-sum')+
+      (diff.length?'<span class="sales-diff-tag ord-diff">'+h(diff.join("・"))+'：会社の行と担当の合計が違います</span>':'');
+  }).join("");
 }
 /* 試作用：架空の数字だけのシートを作る（実在の名前・金額は入れない） */
 function salesDemoRows(ym,k,upto=20){

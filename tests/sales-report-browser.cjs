@@ -390,6 +390,11 @@ async function main(){
    for(const co of ['CP','AT','CPY']){const [n,a]=want(co);assert.ok(tile.includes(co+n+'件'+a.toLocaleString('ja-JP')+'円'),co+' '+tile)}
    const [tn,ta]=['CP','AT','CPY'].map(want).reduce((s,x)=>[s[0]+x[0],s[1]+x[1]],[0,0]);assert.ok(tile.includes('合計'+tn+'件'+ta.toLocaleString('ja-JP')+'円'),tile);
    assert.doesNotMatch(tile,/今日 /);assert.doesNotMatch(tile,/粗利/);
+   /* v1.50.130 確定前の月（今月を除く）の売上と達成率も出す。粗利は出さない */
+   {const f10=Object.values(G.files).find(x=>x.name==='CPG HUB_売上報告（試作・架空）'),t10=tabOf(f10,'2026-10 会社'),hi=t10.findIndex(r=>r[0]==='会社'),ks=t10[hi].indexOf('実績売上'),kg=t10[hi].indexOf('目標売上');
+    assert.match(tile,/10月の売上（確定前・12\/15確定）・％は達成率/);
+    for(const co of ['CP','AT','CPY']){const r=t10.find(x=>x[0]===co),a=Number(String(r[ks]).replace(/,/g,'')),g=Number(String(r[kg]).replace(/,/g,''));assert.ok(tile.includes(co+Math.round(a/g*100)+'%'+a.toLocaleString('ja-JP')+'円'),'10月 '+co+' '+tile)}
+    assert.doesNotMatch(tile,/11月の売上/,'not this month')}
    /* v1.50.109 小さいタイル：1件単価・前日・ボタンは出さない */
    assert.doesNotMatch(tile,/1件単価|前日|タップして|毎日の受注を見る/);assert.ok(await A.p.$eval('#home-orders .ord-to',e=>{const r=e.getBoundingClientRect(),t=e.closest('#home-orders').getBoundingClientRect();return t.right-r.right<40&&t.bottom-r.bottom<40}),'bottom right');assert.equal(await A.p.$$eval('#home-orders button',a=>a.length),0,'no inner buttons');
    assert.equal(await A.p.$eval('#home-summary .tiles',t=>t.firstElementChild.id),'home-orders','first tile');
@@ -410,7 +415,7 @@ async function main(){
    await S.p.evaluate(()=>{const d=BB.db.settings.data;d.ob={legacy:true};d.sheetId='rec00000000000000000001';BB.save();BB.go('home')});
    assert.equal(await S.p.$$eval('#home-orders',a=>a.length),0,'nothing before it arrives');
    await S.p.evaluate(()=>BB.gAuthorize(true));await S.p.evaluate(()=>BB.ordLoad());await S.p.evaluate(()=>BB.render());
-   assert.equal(await S.p.textContent('#home-orders'),tile.replace(/報告書へ ›$/,''),'same tile on the staff device (no link until the report arrives)');
+   assert.equal(await S.p.textContent('#home-orders'),tile.replace(/報告書へ ›$/,'').replace(/\d+月の売上（確定前.*$/,''),'same tile on the staff device (no link until the report arrives; the not-yet-final months come with the report)');
    assert.equal(await S.p.$$eval('#home-orders .ord-go',a=>a.length),0);assert.equal(await S.p.$eval('#home-orders',e=>e.tagName),'DIV');
    if(width===400)await S.p.locator('#home-orders').screenshot({path:path.join(require('node:os').tmpdir(),'ord-tile-staff-400.png')});
    /* v1.50.108 売上報告を全社員に（見るだけ）：社長の同期で会社の数字のファイルに「売上報告（見るだけ）」を書き出し、社員の端末はそれを読んで数字タブに出す。
