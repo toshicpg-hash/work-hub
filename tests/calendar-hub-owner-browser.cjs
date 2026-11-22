@@ -5,7 +5,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
-const hook='window.HO={get db(){return DB},get ui(){return ui},G,go,save,render,scopeIdentity,gReadOne,calHubOwner,get ADMIN(){return ADMIN_ACCOUNT},authorize(){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000}};';
+const hook='window.HO={get db(){return DB},get ui(){return ui},scopeState,G,go,save,render,scopeIdentity,gReadOne,calHubOwner,get ADMIN(){return ADMIN_ACCOUNT},authorize(){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000}};';
 const A='synthetic-a-sheet-0000000001',B='synthetic-b-sheet-0000000002',C='synthetic-c-sheet-0000000003',D2='synthetic-d-sheet-0000000004';
 const HUB='hub-shared@group.example.com',SELF_A='a@example.com',SELF_B='b@example.com';
 let server,browser,origin;const results=[];
@@ -140,6 +140,34 @@ async function main(){
   assert.ok(c.some(x=>x.tag==='社長・来客'),t);assert.ok(c.some(x=>x.text.includes('見本の視察')),t);
   assert.ok(!t.includes('見本ハイツ')&&!t.includes('見本の打合せ'),'other people are not shown: '+t);
   const m=await d.p.textContent('main');assert.ok(!m.includes('持ち主不明')&&!m.includes('誰の予定か分からない'),m.slice(0,300));
+ });
+ /* v1.50.127 役割が「社員」の人：予定の画面だけ、同じ会社の人と本部長（役割「全社」）の予定も出す。人で絞れる。ほかの画面は自分だけのまま */
+ await check('v1.50.127 一般社員（CPY）の端末：同じ会社の人と本部長の予定が出て、ほかの会社の人の予定は出ない。人で絞れる。予定の画面だけ',async()=>{
+  const d=await device({self:B,rows:[],admin:false});all.push(d);
+  await d.p.evaluate(({roster,B})=>{const s=HO.db.settings.data;s.viewListId='';HO.ui.viewList=[];
+   s.nameCands={sheetId:B,list:roster.concat([{name:'見本 五郎',company:'CPY',sheetId:'synthetic-e-sheet-0000000005',role:'GM'}]).map(x=>({name:x.name,company:x.company,sheetId:x.sheetId,role:x.role}))};HO.save();HO.render()},{roster,B});
+  await d.p.evaluate(({HUB})=>{const k='workhub_gcal_last_v1',v=JSON.parse(localStorage.getItem(k));v.data.events=v.data.events.concat([
+   {private:false,calendarId:HUB,calendar:'CPG HUB',id:'t1',hub:'',title:'作業　見本の現場A',allDay:false,start:'2026-11-07T13:00:00+09:00',end:'2026-11-07T14:00:00+09:00',owner:'見本 五郎',creator:'e@example.com'},
+   {private:false,calendarId:HUB,calendar:'CPG HUB',id:'t2',hub:'',title:'営業　見本の現場B',allDay:false,start:'2026-11-07T15:00:00+09:00',end:'2026-11-07T16:00:00+09:00',owner:'見本 一郎',creator:'a@example.com'},
+   {private:false,calendarId:HUB,calendar:'CPG HUB',id:'t3',hub:'',title:'作業　見本の現場C',allDay:false,start:'2026-11-07T16:00:00+09:00',end:'2026-11-07T17:00:00+09:00',owner:'仮名 四郎',creator:'d@example.com'}]);localStorage.setItem(k,JSON.stringify(v));HO.render()},{HUB});
+  let t=await titles(d.p);
+  assert.match(t,/見本荘 103/,'own');assert.match(t,/見本の現場A/,'same company (GM)');assert.match(t,/見本の現場B/,'本部長（全社）');
+  assert.doesNotMatch(t,/見本の現場C/,'other company (AT)');assert.doesNotMatch(t,/見本ハイツ 201|見本荘 104/,'other company (CP)');
+  assert.equal((await cards(d.p)).find(x=>/見本の現場A/.test(x.text)).tag,'見本 五郎');
+  /* 人で絞れる（同じ会社の人・本部長が選べる。ほかの会社の人は選べない） */
+  const opts=await d.p.$$eval('main [data-scope-person] option',o=>o.map(x=>x.textContent));
+  assert.ok(opts.includes('見本 五郎')&&opts.includes('見本 一郎'),opts.join(','));assert.ok(!opts.includes('仮名 四郎')&&!opts.includes('試験 三郎'),opts.join(','));
+  await pick(d.p,'synthetic-e-sheet-0000000005');t=await titles(d.p);assert.match(t,/見本の現場A/);assert.doesNotMatch(t,/見本荘 103|見本の現場B/);
+  const m=await d.p.textContent('main');assert.ok(!m.includes('未読込'),'no 未読込 for teammates');
+  /* ほかの画面（ToDo）では、人の選択肢は今までどおり（同じ会社の人は出ない）。予定の画面で選んだ人が持ち込まれない */
+  await d.p.evaluate(()=>HO.go('todo'));const o2=await d.p.$$eval('main [data-scope-person] option',o=>o.map(x=>x.textContent));
+  assert.ok(!o2.includes('見本 五郎')&&!o2.includes('見本 一郎'),o2.join(','));
+  assert.equal(await d.p.evaluate(()=>HO.scopeState().state),'ready','todo scope not broken');
+  /* 予定の画面に戻ると、選んだ人のまま */
+  await d.p.evaluate(()=>HO.go('cal',{calDay:'2026-11-07',calMonth:'2026-11',calView:'day'}));t=await titles(d.p);assert.match(t,/見本の現場A/);assert.doesNotMatch(t,/見本荘 103/);
+  /* 役割が「社員」でない（担当の候補に役割がない古い形）ときは今までどおり */
+  await d.p.evaluate(()=>{const s=HO.db.settings.data;s.nameCands.list=s.nameCands.list.map(({role,...x})=>x);HO.save();HO.render()});
+  t=await titles(d.p);assert.doesNotMatch(t,/見本の現場A|見本の現場B/,'old 3-column names: unchanged');
  });
  await check('400px・360pxで横にはみ出さない・スクリプトのエラーなし',async()=>{
   for(const width of [400,360]){const d=await device({rows:[{id:HUB,work:true,mode:'mixed'}],width});all.push(d);await pick(d.p,B);
