@@ -471,7 +471,7 @@ async function main(){
    assert.deepEqual(G.patches,[['numcp000000000000000001',STAFF,'writer']],'only the reader is raised');
    /* v1.50.72 社長の同期で、社員の記録シートに「担当の候補」（社員全員のフルネーム）を書く */
    await A.p.waitForFunction(()=>String(BB.db.settings.data.namesWritten||'').includes('rec00000000000000000001'));
-   assert.deepEqual(tabOf(rec,'担当の候補'),[['氏名','会社','シートID'],['見本 専務','CP','rec00000000000000000001']]);
+   assert.deepEqual(tabOf(rec,'担当の候補').map(r=>r.slice(0,4)),[['氏名','会社','シートID','役割'],['見本 専務','CP','rec00000000000000000001','全社']]);assert.equal(tabOf(rec,'担当の候補')[0][4],'照合キー');assert.match(tabOf(rec,'担当の候補')[1][4],/^k[0-9a-z]+$/,'match key, not the Gmail');assert.ok(!JSON.stringify(tabOf(rec,'担当の候補')).includes('@'),'no Gmail in the tab');
    assert.match((await A.p.evaluate(()=>BB.ui.gsync.rows)).find(x=>x.name==='売上報告').msg,/会社の数字の編集者にしました：1件/);
    /* v1.50.83 会社の住所があれば、社長の同期で社員の記録シートの「会社の住所」にも書く（予定を入れるの場所の候補） */
    await A.p.evaluate(()=>{BB.db.settings.data.officeAddrs=[{name:'本社',addr:'○○県○○市○○町1-2-3'}];BB.save()});

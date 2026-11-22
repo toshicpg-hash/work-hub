@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.126" title="使い方マニュアルを開く">v1.50.126・11/22更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.126" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.127" title="使い方マニュアルを開く">v1.50.127・11/22更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.127" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.126"></script>
+<script src="./share-management.js?v=1.50.127"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.126"></script>
-<script src="./calendar-view-scope.js?v=1.50.126"></script>
+<script src="./view-scope.js?v=1.50.127"></script>
+<script src="./calendar-view-scope.js?v=1.50.127"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1354,6 +1354,18 @@ function vCompany(){
   return v.includes(k)?v.replace(k,'<div class="sec-h"><button type="button" class="back" data-nav="home">‹ ホームへ戻る</button>'+k.slice('<div class="sec-h">'.length)):'<button type="button" class="back" data-nav="home">‹ ホームへ戻る</button>'+v;
 }
 
+/* v1.50.127 トシさんの指示：役割が「社員」の人は、予定の画面で、同じ会社の人と本部長（役割「全社」）の予定も見られる（誰がどの辺りにいるか分かるように）。
+   予定の画面だけ。案件・ToDo・数字などの見える範囲は変えない。人の会社と役割は、社長の同期で記録シートに届く「担当の候補」で見る（社長・見る人の端末は今までどおり） */
+const coSplit=x=>String(x||"").split(/[,、，\s]+/).filter(c=>COMPANIES.includes(c));
+function calTeam(){
+  if(D().admin||D().viewListId)return null;const own=D().sheetId||"",list=nameCands();if(!own||!list)return null;
+  const me=list.find(p=>p.sheetId===own);if(!me||me.role!=="社員")return null;const cos=coSplit(me.company);
+  return list.filter(p=>p.sheetId!==own&&(p.role==="全社"||coSplit(p.company).some(c=>cos.includes(c))));
+}
+const calTeamOn=()=>ui.view==="cal"&&!!calTeam();
+/* 予定の画面で人を選んでも、ほかの画面の選択（自分）は変えないように、予定の画面の選択は別に覚える */
+function scopeSelId(){const i=scopeIdentity();return calTeamOn()?{...i,viewer:i.viewer+"|cal-team"}:i}
+function scopeLoadSel(context){const l=CPGViewScope.load(localStorage,scopeSelId(),context);return calTeamOn()&&l.state==="default"?{...l,selection:{company:"all",person:"all"}}:l}
 /* Shared display selection: no business DB or synchronization changes. */
 function scopeIdentity(){return {account:D().admin?ADMIN_ACCOUNT:D().viewEmail||'',record:D().sheetId||'',viewer:D().admin?D().listId||'':D().viewListId||''};}
 function scopeContext(){
@@ -1367,11 +1379,15 @@ function scopeContext(){
  const people=roster.slice();if(own&&!people.some(p=>p.sheetId===own))people.push({...ownNameProfile(),sheetId:own,name:ownNameProfile()?.name||me?.name||RS().name||D().sheetName||'自分',company:ownNameProfile()?.company||me?.company||[...new Set(localCompanies.concat(selfMapped()))].join(','),role:me?.role||'社員'});
  const fixedCompany=!D().admin&&me?.role==='GM'&&COMPANIES.includes(me.gmCo)?me.gmCo:'';
  const availableCompanies=[...new Set((ui.corp?.data||[]).filter(x=>x.ok&&x.s&&canView(x.s)).flatMap(x=>(x.cases||[]).map(r=>r['会社'])).filter(c=>COMPANIES.includes(c)))];
+ /* v1.50.127 予定の画面の社員：同じ会社の人と本部長を足す（予定の画面だけ） */
+ const team=ui.view==='cal'?calTeam():null;
+ if(team){const ids=new Set(team.map(p=>p.sheetId));for(const p of team)if(!people.some(q=>q.sheetId===p.sheetId))people.push({...p});
+  const base=canView;return {people:people.map(p=>({...p,label:dispName(p)})),selfId:own,fixedCompany,localCompanies,availableCompanies,canView:p=>base(p)||!!(p&&!p.removed&&ids.has(p.sheetId)),allowAll:true,readState:'ready'};}
  /* v1.50.2 会社・人の選択肢と予定の読み込み状況には、表示名を出す（照合は氏名のまま） */
  return {people:people.map(p=>({...p,label:dispName(p)})),selfId:own,fixedCompany,localCompanies,availableCompanies,canView,allowAll:true,readState:'ready'};
 }
 function scopeState(){
- const context=scopeContext(),loaded=CPGViewScope.load(localStorage,scopeIdentity(),context),selection=loaded.selection;
+ const context=scopeContext(),loaded=scopeLoadSel(context),selection=loaded.selection;
  const m=CPGViewScope.model(context,selection),data=ui.corp?.data;
  const remote=m.people.filter(p=>p.sheetId!==context.selfId&&(selection.person==='all'||selection.person===p.sheetId)&&(selection.company==='all'||selection.company==='none'||p.companies.includes(selection.company)));
  const missing=remote.filter(p=>!data?.find(x=>x.s?.sheetId===p.sheetId&&x.ok));
@@ -1451,7 +1467,7 @@ function scopeHeader(){
  const s=scopeState(),meaning=ui.view==='rcpt'?'領収書を出した人':ui.view==='requests'?'リクエストのあて先':ui.view==='todo'?'担当（リクエストはあて先）':'担当（リクエストはあて先、領収書は出した人）';
  const overdue=scopeAvailableTodos().filter(t=>t.due&&t.due<todayS()).length;
  const all=scopeSourceCases(),urgent=all.filter(c=>c.type==='kinkyu'&&['new','site'].includes(c.stage)).length,undated=all.filter(c=>c.stage==='lost'&&!c.cancelledAt&&!c.lossDate).length;
- const missing=s.people.filter(p=>p.sheetId!==s.context.selfId&&!(ui.corp?.data||[]).some(x=>x.s?.sheetId===p.sheetId&&x.ok)).length;
+ const missing=calTeamOn()?0:s.people.filter(p=>p.sheetId!==s.context.selfId&&!(ui.corp?.data||[]).some(x=>x.s?.sheetId===p.sheetId&&x.ok)).length;
  const tag=[overdue?'期限切れToDo '+overdue+'件':'',urgent?'緊急 '+urgent+'件':'',undated?'失注日なし '+undated+'件':'',missing?'未読込 '+missing+'人':''].filter(Boolean);
  const ctl=CPGViewScope.controls({...s.context,readState:s.state},s.selection).replace('>閲覧できる会社すべて<','>全社<').replace('>閲覧できる人すべて<','>全員<').replace('>自分（この端末の記録）<','>自分<');
  return '<div class="scope-bar"><div class="scope-row">'+ctl+(ui.view==='home'?'':syncMini())+infoBtn('scope','表示の説明')+'</div>'+
@@ -2450,7 +2466,7 @@ const gcalUnknown=(g,s)=>!gcalCovered(g,s)||!!g.data.missing;
 /* v1.50.1 予定の札：「仕事用カレンダーの対応設定」で人物に結び付けたカレンダー（本人の端末の自分の主カレンダーを含む）は、その人の表示名（担当バッジと同じ personLabel）と担当バッジの色。
    結び付けていないカレンダーと、複数の人が使うカレンダーは、今までどおりカレンダー名 */
 function calPersonTags(rows){
- const out=new Map(),list=staffOrder();
+ const out=new Map(),list=staffOrder().concat(ui.view==="cal"?(calTeam()||[]):[]);/* v1.50.127 社員の予定の画面：同じ会社の人・本部長の名前も札に出す */
  for(const r of rows||[]){if(!r||r.mode!=="person"||!r.id||!r.person||out.has(r.id))continue;
   let p=list.find(x=>x&&!x.removed&&x.sheetId===r.person),i=p?list.indexOf(p):-1;
   if(!p&&r.person===D().sheetId){const o=ownNameProfile(),n=(o&&o.name)||String(RS().name||"").trim();if(n)p={...(o||{}),name:n,sheetId:r.person}}
@@ -2489,7 +2505,8 @@ function calHubOwner(e,ctx,model,cases){
  if(raw){hit=CPGNames.matches(people,raw,STAFF);if(!hit.length)hit=people.filter(p=>CPGNames.flat(p.displayName)&&CPGNames.flat(p.displayName)===CPGNames.flat(raw));}
  /* v1.50.13 担当の行があって1人に決まらないときは、担当の名前に当てはまる人の中に作成者がいればその人。いなければ割り当てない（担当とずれないように）。
     担当の行がない予定（HUB外から直接入れた予定も）は、作成者のGmailが社員一覧の人と一致すればその人。社長が作った予定（来社・会議など）は割り当てない */
- const byCreator=list=>e.creator&&!eq(e.creator,ADMIN_ACCOUNT)?list.filter(p=>eq(p.email,e.creator)):[];
+ /* v1.50.127 社員の端末（Gmailが届かない）では、照合キーで作った人を見分ける */
+ const byCreator=list=>e.creator&&!eq(e.creator,ADMIN_ACCOUNT)?list.filter(p=>eq(p.email,e.creator)||(!!p.mailKey&&p.mailKey===mailKey(e.creator))):[];
  if(raw){if(new Set(hit.map(p=>p.sheetId)).size>1)hit=byCreator(hit);}
  else hit=byCreator(people);
  const sids=[...new Set(hit.map(p=>p.sheetId))];if(sids.length!==1)return null;
@@ -2502,8 +2519,9 @@ function calHubOwner(e,ctx,model,cases){
 function calHubRow(rows){
  const hub=gHubId();
  /* v1.50.106 ほかの人の予定を見ない端末（一般社員）も、「CPG HUB」の社長の予定だけは出す（bossOnly：社長の予定のほかは読まない） */
- if(hub&&!gHubAuto()&&!(rows||[]).some(r=>gIdKey(r.id)===gIdKey(hub))&&gShowIds().some(id=>gIdKey(id)===gIdKey(hub)))return (rows||[]).concat({id:hub,work:true,mode:"mixed",auto:true,bossOnly:true});
- if(!hub||!gHubAuto()||(rows||[]).some(r=>gIdKey(r.id)===gIdKey(hub))||!gShowIds().some(id=>gIdKey(id)===gIdKey(hub)))return rows||[];
+ const auto=gHubAuto()||calTeamOn();/* v1.50.127 社員の予定の画面（同じ会社の人・本部長）も、「CPG HUB」の予定を担当で人に分けて出す */
+ if(hub&&!auto&&!(rows||[]).some(r=>gIdKey(r.id)===gIdKey(hub))&&gShowIds().some(id=>gIdKey(id)===gIdKey(hub)))return (rows||[]).concat({id:hub,work:true,mode:"mixed",auto:true,bossOnly:true});
+ if(!hub||!auto||(rows||[]).some(r=>gIdKey(r.id)===gIdKey(hub))||!gShowIds().some(id=>gIdKey(id)===gIdKey(hub)))return rows||[];
  return (rows||[]).concat({id:hub,work:true,mode:"mixed",auto:true});
 }
 /* v1.50.9 対応設定でのカレンダーの見せ方：IDは出さず名前で。「CPG HUB」→ 社員（社員一覧のGmailと一致する主カレンダーは人の名前）→ そのほか。祝日は出さない */
@@ -2652,7 +2670,7 @@ function vCalBody(){
   const dueToday=scopeTodos().filter(x=>!x.done&&/^\d{4}-\d{2}-\d{2}$/.test(x.due||"")&&x.due<=t);
   const day=s=>({td:s===t?dueToday:[]});
   const [rFrom,rTo]=calRange();
-  const raw=gcalRange(rFrom,rTo), context=scopeContext(), loaded=CPGViewScope.load(localStorage,scopeIdentity(),context), model=CPGViewScope.model(context,loaded.selection);
+  const raw=gcalRange(rFrom,rTo), context=scopeContext(), loaded=scopeLoadSel(context), model=CPGViewScope.model(context,loaded.selection);
   const mapping=CPGCalendarScope.load(localStorage,scopeIdentity());
   const projected=CPGCalendarScope.project({g:{...raw,data:gSafeData(raw.data)},rows:ui.calendarMapError?[]:calPersonAutoRows(calSelfRows(calHubRow(mapping.rows),model),model,((raw.data&&raw.data.sources)||[]).map(x=>x.id)),model,cases:scopeSourceCases(),resolvePerson:scopePerson,readable:gConcreteReadable,from:rFrom,to:rTo,attribute:e=>calHubOwner(e,context,model,scopeSourceCases())});
   const g={...raw,data:raw.data?{...raw.data,events:projected.events,sources:(raw.data.sources||[]).filter(s=>projected.approved.some(r=>r.id===s.id)),calendars:[]}:null};
@@ -2777,7 +2795,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.126";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.127";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2976,7 +2994,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.126" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.126" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.127" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.127" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3608,8 +3626,8 @@ async function sharedCheck(id){
     const a=rows[OFFICE_TAB].slice(1).map(r=>({name:String((r||[])[0]||"").trim()||"会社",addr:String((r||[])[1]||"").trim()})).filter(x=>x.addr).slice(0,10);
     if(JSON.stringify(a)!==JSON.stringify(officeAddrs())){D().officeAddrs=a;save()}}
   /* v1.50.72 担当の候補を受け取る（社長が書いた社員の一覧） */
-  if(!D().admin&&Array.isArray(rows[NAMES_TAB])&&JSON.stringify((rows[NAMES_TAB][0]||[]).map(String))===JSON.stringify(NAMES_COLS)){
-    const list=rows[NAMES_TAB].slice(1).filter(r=>r&&String(r[0]||"").trim()&&String(r[2]||"").trim()).map(r=>({name:String(r[0]).trim(),company:String(r[1]||""),sheetId:String(r[2]).trim()}));
+  if(!D().admin&&Array.isArray(rows[NAMES_TAB])&&JSON.stringify((rows[NAMES_TAB][0]||[]).slice(0,3).map(String))===JSON.stringify(NAMES_COLS.slice(0,3))){
+    const list=rows[NAMES_TAB].slice(1).filter(r=>r&&String(r[0]||"").trim()&&String(r[2]||"").trim()).map(r=>({name:String(r[0]).trim(),company:String(r[1]||""),sheetId:String(r[2]).trim(),...(String(r[3]||"").trim()?{role:String(r[3]).trim()}:{}),...(/^k[0-9a-z]+$/.test(String(r[4]||"").trim())?{mailKey:String(r[4]).trim()}:{})}));
     const cur=nameCands();if(list.length&&JSON.stringify(cur)!==JSON.stringify(list)){D().nameCands={sheetId:id,list};save()}}
   const d=dataRows(),local={"案件":d.cases.length-1,"入金":d.pay.length-1,"立替":d.rc.length-1},shared={};
   for(const [t,k] of GUARD_TABS)shared[t]=sheetCount(rows[t],k);
@@ -4718,7 +4736,12 @@ async function salesEdSave(ids){
   return w;
 }
 /* v1.50.72 担当の候補（社長の端末が書く。社員の端末は同期で読む） */
-const NAMES_TAB="担当の候補", NAMES_COLS=["氏名","会社","シートID"];
+const NAMES_TAB="担当の候補", NAMES_COLS=["氏名","会社","シートID","役割","照合キー"];
+/* v1.50.127 照合キー：Gmailそのものは記録シートに書かず、照合用の記号（Gmailを小文字にして記号に変えたもの）だけを書く。
+   社員の端末で、Googleカレンダーから直接「CPG HUB」に入れた予定（担当の行がない）を、作った人の予定として出すため（トシさん「カレンダーからも入れられる方がいい」）。
+   暗号ほど強いものではない（アドレスを画面やシートにそのまま出さないためのもの） */
+const mailKey=m=>{const t="cpghub:"+String(m||"").trim().toLowerCase();let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<t.length;i++){const c=t.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return "k"+(4294967296*(2097151&h2)+(h1>>>0)).toString(36)};/* v1.50.127 役割を足した（社員の予定の画面で、同じ会社の人と本部長＝役割「全社」を見分けるため）。前の3列の形も読む */
 /* v1.50.83 会社の住所（予定を入れるの場所の候補）。社長が社員一覧の「HUBの設定」の「会社の住所」に「名前｜住所」を1行ずつ入れる。社長の同期で全員の記録シートの「会社の住所」タブに書く */
 const OFFICE_KEY="会社の住所",OFFICE_TAB="会社の住所",OFFICE_COLS=["名前","住所"];
 const officeParse=raw=>String(raw||"").split(/\n+|\s*／\s*/).map(x=>x.trim()).filter(Boolean).map(x=>{const m=x.split(/[｜|]/);return m.length>1?{name:m[0].trim()||"会社",addr:m.slice(1).join("|").trim()}:{name:"会社",addr:x}}).filter(x=>x.addr).slice(0,10);
@@ -4729,7 +4752,7 @@ const officeRows=()=>[OFFICE_COLS,...officeAddrs().map(a=>[a.name,a.addr])];
 const PLACES_KEY="地図の候補キー",STAFFSET_TAB="HUBの設定",STAFFSET_COLS=["項目","値"];
 const placesKey=()=>String(D().placesKey||"").trim();
 const staffSetRows=()=>[STAFFSET_COLS,...(placesKey()?[[PLACES_KEY,placesKey()]]:[])];
-const namesRows=staff=>[NAMES_COLS,...(staff||[]).filter(s=>!s.removed&&s.sheetId&&s.name).map(s=>[String(s.name).trim(),String(s.company||""),s.sheetId])];
+const namesRows=staff=>[NAMES_COLS,...(staff||[]).filter(s=>!s.removed&&s.sheetId&&s.name).map(s=>[String(s.name).trim(),String(s.company||""),s.sheetId,String(s.role||""),String(s.email||"").trim()?mailKey(s.email):""])];
 async function namesTabWrite(s,rows,tab=NAMES_TAB){
  const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(tab))await addTab(s.sheetId,tab);
  const prev=(await shareRead(()=>sheetRead(s.sheetId,[tab])))[tab]||[];
@@ -6040,7 +6063,7 @@ document.addEventListener("change",e=>{
     const names=reqTargets().filter(t=>ui.reqTo.has(t.x.s.sheetId)).map(t=>dispName(t.x.s));const sum=document.querySelector("#req-compose .req-sum-t");if(sum)sum.textContent="宛先："+(names.length?names.join("・"):"宛先を選ぶ");return}
   if(e.target.id==="rq_due"){reqDraftSave();return}
   {const fm=e.target.closest&&e.target.closest("form");if(fm&&KEEP_FORMS.includes(fm.id))ui.keepDirty.add(fm.id)}
-  if(e.target.matches("[data-scope-company],[data-scope-person]")){if(["new","detail","rform"].includes(ui.view))return;const field=e.target.matches("[data-scope-company]")?"company":"person",next={...scopeState().selection,[field]:e.target.value};ui.scopeSaveError=!CPGViewScope.save(localStorage,scopeIdentity(),next).ok;render();main.querySelector(field==="company"?"[data-scope-company]":"[data-scope-person]")?.focus();return;}
+  if(e.target.matches("[data-scope-company],[data-scope-person]")){if(["new","detail","rform"].includes(ui.view))return;const field=e.target.matches("[data-scope-company]")?"company":"person",next={...scopeState().selection,[field]:e.target.value};ui.scopeSaveError=!CPGViewScope.save(localStorage,scopeSelId(),next).ok;render();main.querySelector(field==="company"?"[data-scope-company]":"[data-scope-person]")?.focus();return;}
 
   if(caseSaveGuard()){e.preventDefault();return}
   const t=e.target, c=ui.caseId?editCase(ui.caseId):null;
