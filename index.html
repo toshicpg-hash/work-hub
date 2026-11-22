@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.125" title="使い方マニュアルを開く">v1.50.125・11/21更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.125" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.126" title="使い方マニュアルを開く">v1.50.126・11/22更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.126" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.125"></script>
+<script src="./share-management.js?v=1.50.126"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.125"></script>
-<script src="./calendar-view-scope.js?v=1.50.125"></script>
+<script src="./view-scope.js?v=1.50.126"></script>
+<script src="./calendar-view-scope.js?v=1.50.126"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -613,6 +613,12 @@ const TYPES={
 const STAGES={new:"受付",site:"現地確認済",quoted:"見積提出済",hold:"保留",won:"受注・引渡待ち",handed:"引渡済・施工中",working:"施工中",built:"完工・請求待ち",billed:"請求済・入金待ち",paid:"入金済（完了）",lost:"失注"};
 const SYMPTOMS=["水漏れ","給湯器凍結","その他"];
 const LOSS=["価格","他社に決定","時期が合わない","連絡なし","その他"];
+/* v1.50.126 トシさんの指示（黒木GMの質問 11/22）：立会・現地調査や見積の前に依頼がキャンセルになったら、理由を付けて「キャンセル」にできるようにする。
+   前は「受付」「現地確認済」の段階に失注のボタンがなく、「この案件を削除」しかなかった（記録も理由も残らない）。
+   記録は失注と同じ列に残す（段階＝失注・失注日・失注理由の頭に「キャンセル：」）。見積を出していないので、失注の件数・受注率には数えず、「数字」の「見積前のキャンセル」に出す */
+const CANCEL_PFX="キャンセル：",CANCEL_REASONS=["依頼元の都合","入居者の都合","日程が合わない","他社に依頼","その他"];
+const isPreCancel=c=>!!c&&c.stage==="lost"&&!c.cancelledAt&&String(c.lossReason||"").startsWith(CANCEL_PFX);
+const preCancelKey=c=>String(c.lossReason||"").slice(CANCEL_PFX.length).split("（")[0]||"その他";
 const CLIENT_NAMES=["アレップス","オリバー","ハウスコムコミュニケーションズ立川","ハウスコムコミュニケーションズ大和","ミニミニ城西","ミニミニ神奈川","ミニテック立川","その他"];
 /* v1.50.125 トシさんの指示：iPhoneでは入力欄の候補の一覧（datalist）が出ないため、受付の「依頼元の名前」の候補を、入力欄の下のボタンにする（どの端末も同じ）。
    候補は会社ごとに変えられる。社長が社員一覧の「依頼元の候補」タブ（会社・依頼元の名前）に入れる（会社が「全社」か空欄なら3社とも）。
@@ -967,7 +973,7 @@ function since(iso){
   return "受付から"+(d?d+"日":"")+(d||hh?hh+"時間":"")+mm+"分";
 }
 const typeChip=c=>'<span class="chip t-'+c.type+'">'+TYPES[c.type].label+'</span>';
-const caseStageLabel=c=>c.stage==="lost"&&c.cancelledAt?"受注後取消済み":STAGES[c.stage];
+const caseStageLabel=c=>c.stage==="lost"&&c.cancelledAt?"受注後取消済み":isPreCancel(c)?"キャンセル（見積前）":STAGES[c.stage];
 const japanStamp=iso=>iso?new Date(iso).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"})+"（日本時間）":"";
 const stagePill=c=>'<span class="pill s-'+c.stage+(lateDays(c)?" late":"")+'">'+(c.stage==="billed"&&paidSum(c)>0?"一部入金・残あり":caseStageLabel(c))+'</span>';
 
@@ -1755,11 +1761,12 @@ function vDetail(){
       (ui.jobDup&&ui.jobDup.id===c.id?'<p class="note" role="alert" style="margin:0;color:var(--amber)"><b>同じ仕事番号の案件があります：</b>'+h(ui.jobDup.text)+'。別の工事なら、Accessで振られた番号を確かめてください。同じ工事の続きで間違いなければ、もう一度「引渡済にする」を押してください。</p>':'')+
       '<div class="row"><button class="btn pri" type="button" data-act="hand">引渡済にする</button><button class="btn sm" type="button" data-act="csvone">この案件をAccess用に書き出す</button></div></div>';
   }else if(c.stage==="lost"){
-    act=c.cancelledAt?'<div class="ro"><b>受注後取消済み</b><br>'+h(japanStamp(c.cancelledAt))+'<br>理由：'+h(c.cancelReason)+'<br>元の記録を保持しています。毎日の一覧には出ません。再開はできません。</div>':'<div class="ro">失注（'+h(c.lossReason)+'・'+md(c.lossDate)+'）。毎日の一覧には出ません。<button class="btn sm" type="button" data-act="reopen">見積提出済に戻す</button></div>';
+    act=c.cancelledAt?'<div class="ro"><b>受注後取消済み</b><br>'+h(japanStamp(c.cancelledAt))+'<br>理由：'+h(c.cancelReason)+'<br>元の記録を保持しています。毎日の一覧には出ません。再開はできません。</div>':'<div class="ro">'+(isPreCancel(c)?'見積前のキャンセル（'+h(String(c.lossReason).slice(CANCEL_PFX.length))+'・'+md(c.lossDate)+'）。毎日の一覧には出ません。<button class="btn sm" type="button" data-act="reopen">キャンセルを取り消して元に戻す</button>':'失注（'+h(c.lossReason)+'・'+md(c.lossDate)+'）。毎日の一覧には出ません。<button class="btn sm" type="button" data-act="reopen">見積提出済に戻す</button>')+'</div>';
   }else if(ro){
     act=(isEizen(c)?'<div class="ro">受付・見積の記録は読み取り専用です。施工完了・請求・入金を記録します。</div>':'<div class="ro"><b>Access引渡済</b>　仕事番号 <b class="num">'+h(c.jobNo)+'</b>（'+md(c.handedDate)+'）<br>受付内容と立会の記録は読み取り専用です。施工完了・請求・入金はここで記録します。</div>')+payPanel(c);
   }
   if(c.stage==="won")act+=ui.wonCancel===c.id?'<div class="panel" role="alert"><h3>受注後の依頼を取り消しますか？</h3><p>'+h(c.id)+' ／ '+h(c.property)+' '+h(c.room)+' ／ '+h(c.client)+'</p><p>受注日 '+h(c.orderDate)+'・見積 '+yen(estOf(c))+'。元の記録を残し、自動ToDoと動いている案件から外します。完了・入金済みにはしません。「数字」の元の受注月の受注件数・受注額には残ります。取消を新たな失注実績には加算しません。</p><label class="f">取消理由（必須）<textarea id="d_cancel_reason" maxlength="1000"></textarea></label><div class="row"><button class="btn danger" data-act="woncancelsave">取消を記録する</button><button class="btn" data-act="woncancelno">やめる</button></div><p id="wonCancelStatus" role="status"></p></div>':'<div class="row"><button class="btn danger" data-act="woncancelask">受注後の依頼を取り消す</button></div>';
+  if((c.stage==="new"||c.stage==="site")&&!c.cancelledAt)act+=preCancelPanel(c);
   const ph=photos[c.id]||[];
   return '<button class="back" type="button" data-nav="cases">‹ 案件へ戻る</button>'+
   '<section class="sec"><div class="row">'+coChip(c.company)+typeChip(c)+'<span class="note num">'+h(c.id)+'</span><span class="sp"></span>'+stagePill(c)+'</div>'+
@@ -1796,12 +1803,22 @@ function vDetail(){
   '<div class="row"><span class="sp"></span><button class="btn sm danger" type="button" data-act="cdel">この案件を削除</button></div>'+
   (ui.cdel===c.id?caseDeletePanel(c):'');
 }
+/* v1.50.126 見積前のキャンセル（理由は必ず選ぶ。「その他」は詳しい理由も必ず）。立会・現地調査の予定をGoogleカレンダーに入れてあれば、一緒に消せる */
+function preCancelPanel(c){
+  const cal=!!(c.gcal&&c.gcal.id&&c.gcal.cal);
+  return '<details class="billfix precancel"'+(ui.preCancel===c.id?' open':'')+'><summary>依頼がキャンセルになったとき</summary><div class="form">'+
+    '<label class="f">キャンセルの理由<select id="d_pcr">'+CANCEL_REASONS.map(r=>'<option>'+h(r)+'</option>').join("")+'</select></label>'+
+    '<label class="f full">詳しく（「その他」のときは必ず）<input type="text" id="d_pcd" maxlength="100" placeholder="例：退去が取りやめになった"></label>'+
+    (cal?'<label class="row full" style="gap:6px"><input type="checkbox" id="d_pccal" checked> Googleカレンダーの予定も消す</label>':'')+'</div>'+
+    '<p class="note" style="margin:0">キャンセルにすると、自動ToDoと「動いている案件」から外れます。案件の記録と理由は残ります（削除はしません）。失注の件数には数えず、「数字」の「見積前のキャンセル」に出ます。</p>'+
+    '<div class="row"><button class="btn danger" type="button" data-act="precancel">キャンセルにする</button></div><p id="preCancelStatus" role="status"></p></details>';
+}
 /* Deleting a case: only for cases registered by mistake (a cancelled request is 失注). Its 受付番号 is never reused (seq stays) */
 function caseDeletePanel(c){
   const linked=DB.receipts.filter(r=>r.caseId===c.id).length, cal=!!(c.gcal&&c.gcal.id);
   const box=x=>'<div class="ro" role="alert" style="display:flex;flex-direction:column;gap:8px">'+x+'</div>';
   if(linked)return box('<b style="color:var(--red)">この案件に紐づいた領収書が'+linked+'件あります。先に領収書の案件の紐づけを外してください。</b><div class="row"><button class="btn" type="button" data-act="cdelno">閉じる</button></div>');
-  return box('<b style="color:var(--red)">'+h(c.id)+'（'+h(c.property)+' '+h(c.room)+'）を削除します。元に戻せません。</b><span>間違えて登録した案件のときだけ使ってください。依頼が無くなった場合は、見積提出済・保留なら「失注」、受注・引渡待ちなら「受注後の依頼を取り消す」を使ってください。</span>'+
+  return box('<b style="color:var(--red)">'+h(c.id)+'（'+h(c.property)+' '+h(c.room)+'）を削除します。元に戻せません。</b><span>間違えて登録した案件のときだけ使ってください。依頼が無くなった場合は、受付・現地確認済なら「依頼がキャンセルになったとき」、見積提出済・保留なら「失注」、受注・引渡待ちなら「受注後の依頼を取り消す」を使ってください。</span>'+
     (cal?'<label class="row"><input type="checkbox" id="cdel_gcal"'+(ui.cdelCal!==false?' checked':'')+'> Googleカレンダーの予定も削除する</label>'+
       (ui.cdelCal!==false&&!gSignedIn()?'<span class="note" style="color:var(--amber)">Googleにログインしていません。カレンダーの予定も消すときは、「Googleとまとめて同期」でログインしてから削除してください。チェックを外すと、カレンダーの予定を残して案件だけ削除します。</span>':''):'')+
     (ui.cdelMsg?'<span style="color:var(--red)">'+h(ui.cdelMsg)+'</span>':'')+
@@ -2760,7 +2777,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.125";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.126";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2876,8 +2893,9 @@ function vStats(){
   const all=coMode?(coMode.cases||[]):scopeCases(), sco=coMode?coMode.co:scopeState().selection.company, gmCo=coMode?"":statsGmCo();
   const sent=all.filter(c=>inM(c.estSentDate));
   const won=all.filter(c=>(c.stage!=="lost"||c.cancelledAt)&&inM(c.orderDate));
-  const lost=all.filter(c=>c.stage==="lost"&&!c.cancelledAt&&inM(c.lossDate));
-  const undatedLost=all.filter(c=>c.stage==="lost"&&!c.cancelledAt&&!c.lossDate);
+  const lost=all.filter(c=>c.stage==="lost"&&!c.cancelledAt&&!isPreCancel(c)&&inM(c.lossDate));
+  const undatedLost=all.filter(c=>c.stage==="lost"&&!c.cancelledAt&&!isPreCancel(c)&&!c.lossDate);
+  const preCan=all.filter(c=>isPreCancel(c)&&inM(c.lossDate)),preCanR=CANCEL_REASONS.map(r=>[r,preCan.filter(c=>preCancelKey(c)===r).length]).filter(x=>x[1]||x[0]!=="その他"),preCanMax=Math.max(1,...preCanR.map(r=>r[1]));
   const dec=won.length+lost.length, rate=dec?Math.round(won.length/dec*100):null;
   const wonAmt=won.reduce((s,c)=>s+(Number(estOf(c))||0),0);
   const reasons=LOSS.map(r=>[r,lost.filter(c=>c.lossReason===r).length]).concat(lost.some(c=>!LOSS.includes(c.lossReason))?[["理由が届いていない（社員の記録）",lost.filter(c=>!LOSS.includes(c.lossReason)).length]]:[]);
@@ -2938,6 +2956,8 @@ function vStats(){
   statFold("st_tantou",'<h2>'+periodLabel+'の担当別</h2>','','<div class="panel">'+byTanTbl+'</div>')+
   statFold("st_reasons",'<h2>失注の理由</h2>',lost.length+'件','<div class="panel">'+
     reasons.map(([r,n])=>'<div class="brk"><span>'+r+'</span><span class="bar"><i style="width:'+(n/maxR*100)+'%"></i></span><span class="num">'+n+'件</span></div>').join("")+'</div>')+
+  statFold("st_precancel",'<h2>見積前のキャンセル</h2>',preCan.length+'件','<div class="panel" id="stats-precancel"><p class="note" style="margin:0 0 6px">立会・現地調査や見積の前にキャンセルになった案件です。見積を出していないので、失注の件数・受注率には入れていません。</p>'+
+    preCanR.map(([r,n])=>'<div class="brk"><span>'+h(r)+'</span><span class="bar"><i style="width:'+(n/preCanMax*100)+'%"></i></span><span class="num">'+n+'件</span></div>').join("")+'</div>')+
   statFold("st_types",'<h2>依頼の種類別</h2>','','<div class="panel"><div class="tbl-wrap"><table class="items" style="min-width:0"><thead><tr><th>種類</th><th>見積提出</th><th>受注</th><th>失注</th></tr></thead><tbody>'+
     byType.map(([l,n,w,x])=>'<tr><td>'+l+'</td><td class="num">'+n+'件</td><td class="num">'+w+'件</td><td class="num">'+x+'件</td></tr>').join("")+'</tbody></table></div></div>')+
   "":'<section class="sec"><div class="sec-h"><h2>数字</h2>'+statsModeSeg()+'</div>'+statsPeriodControls()+'</section>'+scopeUnconfirmed())+
@@ -2956,7 +2976,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.125" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.125" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.126" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.126" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -5843,7 +5863,7 @@ document.addEventListener("click",e=>{
     viewerConnect(v).then(m=>{ui.obMsg={ok:true,text:"見る人用一覧につなぎました（"+roleLabel(m)+"）。"}},
       err=>{ui.obMsg={ok:false,text:err.message==="badid"?"リンクの形が違います（https://docs.google.com/spreadsheets/d/…）":err.message==="notview"?"見る人用の一覧ではありません。社長から届いた「見る人用のリンク」か確かめてください":err.message==="notviewer"?(err.me||"このアカウント")+" は、全社・GMの役割になっていません。社長に確かめてください":"つなげませんでした："+dMsg(err)}}).finally(()=>{ui.obBusy=false;render()});return}
   if(!c)return;
-  if(c.cancelledAt&&["plan","site","rushwin","quote","win","eizenwork","lose","hold","built","bill","billfix","pay","payundo","acctnopay","hand","reopen"].includes(a)){toast("受注後取消済みの案件は再開できません");return}
+  if(c.cancelledAt&&["plan","site","rushwin","quote","win","eizenwork","lose","precancel","hold","built","bill","billfix","pay","payundo","acctnopay","hand","reopen"].includes(a)){toast("受注後取消済みの案件は再開できません");return}
   if(a==="woncancelask"){if(c.stage!=="won"||c.cancelledAt)return;ui.wonCancel=c.id;render();document.getElementById("d_cancel_reason")?.focus();return}
   if(a==="woncancelno"){ui.wonCancel=null;render();return}
   if(a==="woncancelsave"){
@@ -5894,6 +5914,16 @@ document.addEventListener("click",e=>{
     c.estSentDate=val("d_sent")||todayS();c.stage="quoted";save();render();toast("見積を提出済みにしました");return}
   if(a==="win"){c.orderDate=val("d_order")||todayS();c.stage=isEizen(c)?"working":"won";c.holdDate="";save();render();toast(isEizen(c)?"受注しました。施工完了を記録できます":"受注にしました。Accessへ引き渡してください");return}
   if(a==="eizenwork"&&isEizen(c)&&c.stage==="won"){c.stage="working";save();render();return}
+  if(a==="precancel"){if(!["new","site"].includes(c.stage)||c.cancelledAt)return;
+    const st=document.getElementById("preCancelStatus"),r=val("d_pcr"),d=val("d_pcd").trim();ui.preCancel=c.id;
+    if(!CANCEL_REASONS.includes(r))return;if(r==="その他"&&!d){st.textContent="「その他」のときは、詳しい理由を入れてください";return}
+    const g=c.gcal&&c.gcal.id&&c.gcal.cal?c.gcal:null,withCal=!!g&&!!document.getElementById("d_pccal")?.checked;
+    const done=()=>{c.lossReason=CANCEL_PFX+r+(d?"（"+d+"）":"");c.lossDate=todayS();c.stage="lost";c.holdDate="";if(withCal)c.gcal=null;ui.preCancel=null;save();render();toast(withCal?"キャンセルにして、Googleカレンダーの予定を消しました":"キャンセルにしました。毎日の一覧から外れます")};
+    if(!withCal)return done();
+    if(!gSignedIn()){st.textContent="Googleにログインしていないため、カレンダーの予定を消せません。「Googleとまとめて同期」でログインしてからもう一度押すか、チェックを外してください";return}
+    st.textContent="Googleカレンダーの予定を消しています…";
+    gApi("calendars/"+encodeURIComponent(g.cal)+"/events/"+encodeURIComponent(g.id),{method:"DELETE"}).catch(err=>{if(err.status!==404&&err.status!==410)throw err})
+      .then(done,err=>{const s2=document.getElementById("preCancelStatus");if(s2)s2.textContent="カレンダーの予定を消せませんでした（"+gMsg(err)+"）。チェックを外せば、案件だけキャンセルにできます"});return}
   if(a==="lose"){c.lossReason=val("d_loss");c.lossDate=todayS();c.stage="lost";c.holdDate="";save();render();toast("失注にしました。毎日の一覧から外れます");return}
   if(a==="hold"){const d=val("d_hold");if(!d){toast("次に確認する日を入れてください");return}c.holdDate=d;c.stage="hold";save();render();toast(md(d)+"に再確認のToDoを出します");return}
   if(a==="built"){c.builtDate=val("d_built")||todayS();c.stage="built";save();render();toast("施工完了にしました。次は請求です");return}
@@ -5937,7 +5967,8 @@ document.addEventListener("click",e=>{
       .then(()=>{caseDelete(c);toast(c.id+"とGoogleカレンダーの予定を削除しました")},
         err=>{ui.cdelBusy=false;ui.cdelMsg="Googleカレンダーの予定を削除できなかったため、案件は削除していません（"+gMsg(err)+"）";render()});
     return}
-  if(a==="reopen"){c.stage="quoted";c.lossReason="";c.lossDate="";save();render();return}
+  if(a==="reopen"){if(isPreCancel(c)){c.stage=!isEizen(c)&&c.siteDate?"site":"new";c.lossReason="";c.lossDate="";save();render();toast("キャンセルを取り消しました。立会・現地調査の予定は、必要なら入れ直してください");return}
+    c.stage="quoted";c.lossReason="";c.lossDate="";save();render();return}
   if(a==="hand"){const j=val("d_job").trim();if(!j){toast("Accessで振られた仕事番号を入力してください");return}
     /* v1.50.97 同じ仕事番号の案件がすでにあれば、いったん知らせる（止めはしない。2回目に押せば記録する） */
     {const dup=jobNoDups(j,c.id);if(dup.length&&!(ui.jobDup&&ui.jobDup.id===c.id&&ui.jobDup.no===j)){ui.jobDup={id:c.id,no:j,text:dup.slice(0,3).map(x=>x.id+"（"+[x.property,x.room].filter(Boolean).join(" ")+"）").join("・")+(dup.length>3?" ほか"+(dup.length-3)+"件":"")};render();toast("同じ仕事番号の案件があります。確かめてください",5000);return}
