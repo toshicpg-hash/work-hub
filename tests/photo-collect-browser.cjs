@@ -3,7 +3,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
-const hook='window.PC={get db(){return DB},get ui(){return ui},G,go,save,render,collect:photoCollect,text:photoText,after:photoAfterSync,SCOPE:PHOTO_SCOPE,authorize(extra){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE+(extra?" "+extra:"");G.exp=Date.now()+3600000}};';
+const hook='window.PC={get db(){return DB},get ui(){return ui},G,go,save,render,collect:photoCollect,text:photoText,todayS,dailySyncStart,after:photoAfterSync,SCOPE:PHOTO_SCOPE,authorize(extra){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE+(extra?" "+extra:"");G.exp=Date.now()+3600000}};';
 let server,browser,origin;const results=[];
 const check=async(n,fn)=>{await fn();results.push(n);console.log('PASS',n)};
 const link=id=>'https://drive.google.com/file/d/'+id+'/view?usp=drivesdk';
@@ -50,7 +50,14 @@ const link=id=>'https://drive.google.com/file/d/'+id+'/view?usp=drivesdk';
   driveCalls=0;res=await p.evaluate(()=>PC.collect(200,true));assert.deepEqual({add:res.add,had:res.had},{add:0,had:3});assert.ok(driveCalls>=4,'all people checked: '+driveCalls);
   /* 1日たったら全員を確かめる */
   await p.evaluate(()=>{const k=JSON.parse(localStorage.getItem('workhub_photo_seen_v1'));k.full-=25*3600e3;localStorage.setItem('workhub_photo_seen_v1',JSON.stringify(k))});
-  driveCalls=0;res=await p.evaluate(()=>PC.collect());assert.ok(!res.quick&&driveCalls>=4,'full check after a day: '+driveCalls);
+  /* v1.50.129 その日の最初の同期では全員確認をしない（2日以上たっていなければ）。2回目の同期でする */
+  await p.evaluate(()=>{localStorage.setItem('workhub_daily_v1',JSON.stringify({day:'2000-01-01',n:5,last:{photo:Date.now()-25*3600e3}}));PC.dailySyncStart()});
+  driveCalls=0;res=await p.evaluate(()=>PC.collect());assert.ok(res.quick&&driveCalls===0,'first sync of the day: deferred '+driveCalls);
+  await p.evaluate(()=>PC.dailySyncStart());
+  driveCalls=0;res=await p.evaluate(()=>PC.collect());assert.ok(!res.quick&&driveCalls>=4,'full check after a day (2nd sync): '+driveCalls);
+  /* 前に全員確認してから2日以上たっていれば、最初の同期でもする */
+  await p.evaluate(()=>{const k=JSON.parse(localStorage.getItem('workhub_photo_seen_v1'));k.full-=25*3600e3;localStorage.setItem('workhub_photo_seen_v1',JSON.stringify(k));localStorage.setItem('workhub_daily_v1',JSON.stringify({day:'2000-01-01',n:5,last:{photo:Date.now()-49*3600e3}}));PC.dailySyncStart()});
+  driveCalls=0;res=await p.evaluate(()=>PC.collect());assert.ok(!res.quick&&driveCalls>=4,'over 2 days: first sync too '+driveCalls);
  });
  await check('同期のあと：許可がなければ何もしない。あれば「領収書の写真（会社）」の行を出す',async()=>{
   await p.evaluate(()=>{PC.authorize();PC.db.settings.data.photoOn=true;PC.ui.gsync={busy:false,rows:[],complete:true}});await p.evaluate(()=>PC.after());assert.equal(await p.evaluate(()=>PC.ui.gsync.rows.length),0);
