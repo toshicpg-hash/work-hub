@@ -529,8 +529,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.128" title="使い方マニュアルを開く">v1.50.128・11/22更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.128" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.129" title="使い方マニュアルを開く">v1.50.129・11/23更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.129" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +590,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.128"></script>
+<script src="./share-management.js?v=1.50.129"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.128"></script>
-<script src="./calendar-view-scope.js?v=1.50.128"></script>
+<script src="./view-scope.js?v=1.50.129"></script>
+<script src="./calendar-view-scope.js?v=1.50.129"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1112,6 +1112,8 @@ const SGUARD_KEY="workhub_sheetguard_v1",SGUARD_NOTE="CPG HUBが読み書きす�
 async function sheetGuard(id){
   if(!D().admin||!id)return 0;const t=todayS();let mark={};try{mark=JSON.parse(localStorage.getItem(SGUARD_KEY)||"{}")||{}}catch(e){}
   if(mark[id]===t)return 0;
+  /* v1.50.129 1日1回の作業：最初の同期にまとめない（月のタブを作ったときは、すぐ保護をかける） */
+  if(!ui.guardForce){if(!dailyGate("guard"))return 0;dailyDone("guard")}ui.guardForce=false;
   const v=await gReq(SHEETS+"/"+encodeURIComponent(id)+"?fields="+encodeURIComponent("sheets(properties(sheetId,title),protectedRanges(range,warningOnly))"));
   const whole=r=>r&&r.startRowIndex==null&&r.endRowIndex==null&&r.startColumnIndex==null&&r.endColumnIndex==null;
   const need=((v&&v.sheets)||[]).filter(x=>!(x.protectedRanges||[]).some(p=>whole(p.range)&&Number((p.range||{}).sheetId||0)===Number(x.properties.sheetId||0)));
@@ -1128,7 +1130,7 @@ async function salesAfterSync(){
     try{await numbersEnsure();const w=await ordWriteAll(ordSummary(S));if(w.errs.length)row.msg+="（社員への今月の受注：書けなかった会社 "+w.errs.join("・")+"）"}catch(err){row.msg+="（社員への今月の受注：書けませんでした）"}
     try{const n=await salesChkReflect();if(n)row.msg+="（本部長・GMの確認を"+n+"件シートに入れました）"}catch(err){if(err.message==="signin")throw err;row.msg+="（本部長・GMの確認を入れられませんでした："+(err.message==="http"?dMsg(err):err.message)+"）"}
     try{const w=await salesViewWriteAll();if(w.errs.length)row.msg+="（社員への売上報告：書けなかった会社 "+w.errs.join("・")+"）"}catch(err){if(err.message==="signin")throw err;row.msg+="（社員への売上報告：書けませんでした。"+(err.message==="http"?dMsg(err):err.message)+"）"}
-    try{const made=await salesMonthEnsure();if(made.length){row.msg+="（"+made.join("・")+"のタブを作りました）";try{const m=JSON.parse(localStorage.getItem(SGUARD_KEY)||"{}")||{};delete m[S.id];localStorage.setItem(SGUARD_KEY,JSON.stringify(m))}catch(e){}await salesLoad()}}
+    try{const made=await salesMonthEnsure();if(made.length){row.msg+="（"+made.join("・")+"のタブを作りました）";try{const m=JSON.parse(localStorage.getItem(SGUARD_KEY)||"{}")||{};delete m[S.id];localStorage.setItem(SGUARD_KEY,JSON.stringify(m))}catch(e){}ui.guardForce=true;await salesLoad()}}
     catch(err){if(err.message==="signin")throw err;row.msg+="（次の月のタブを作れませんでした："+(err.message==="http"?dMsg(err):err.message)+"）"}
     try{const n=await sheetGuard(ui.sales&&ui.sales.id);if(n)row.msg+="（シートの"+n+"タブに保護をかけました）"}catch(err){if(err.message==="signin")throw err}
     try{const n=await ordWriterFix();if(n)row.msg+="（3社を入れられる人を、会社の数字の編集者にしました："+n+"件）"}catch(err){if(err.message==="signin")throw err;row.msg+="（会社の数字の編集者にできませんでした："+(err.message==="http"?dMsg(err):err.message)+"）"}}
@@ -1195,7 +1197,7 @@ function photoSeenSave(set,full){try{localStorage.setItem(PHOTO_SEEN_KEY,JSON.st
 async function photoCollect(limit=200,force=false){
   const d=D();if(!d.admin)throw Error("社長の端末でしてください");if(!gHas(PHOTO_SCOPE))throw Error("signin");
   const data=(ui.corp&&ui.corp.data)||[];if(!data.length)throw Error("先に「Googleとまとめて同期」で社員の記録を読み込んでください");
-  const seen=photoSeen(),seenSet=new Set(seen.ids),full=force||!(Date.now()-(seen.full||0)<PHOTO_FULL_MS);
+  const seen=photoSeen(),seenSet=new Set(seen.ids),full=force||(!(Date.now()-(seen.full||0)<PHOTO_FULL_MS)&&dailyGate("photo"));if(full&&!force)dailyDone("photo");
   const idsOf=x=>(x.rc||[]).flatMap(r=>photoIdsOf(r["写真リンク"]));
   if(!full){const all=data.filter(x=>x&&x.ok&&x.s).flatMap(idsOf);if(all.every(id=>seenSet.has(id))){const res={add:0,had:all.length,miss:0,bad:0,more:false,quick:true};d.photoLast={at:new Date().toISOString(),...res};save();return res}}
   const root=d.photoRoot||(d.photoRoot=await photoFolderEnsure(PHOTO_ROOT,""));save();
@@ -2290,7 +2292,7 @@ async function gSyncAll(){
     syncHid=syncHid||document.visibilityState==="hidden";syncResumeMark(true);ui.syncResume=null;
     /* v1.50.85 同期にかかった時間を測る（トシさんの指示：同期を短くする前に、何にどれだけかかっているかを見る）。同期の中身（gSyncAllRun）は変えず、結果の行が足されるたびに時刻を控える */
     const now=()=>(globalThis.performance&&performance.now)?performance.now():Date.now(),t0=now(),tm={steps:[],after:[]};let last=t0;
-    st={now,t0,tm};tm.detail={};syncDiag=tm.detail;
+    st={now,t0,tm};tm.detail={};syncDiag=tm.detail;if(D().admin)dailySyncStart();
     const p=gSyncAllRun();const rows=ui.gsync&&ui.gsync.rows;
     if(Array.isArray(rows)){const push=rows.push;rows.push=function(...a){const t=now();for(const x of a)tm.steps.push({name:String(x&&x.name||""),ms:Math.round(t-last)});last=t;return push.apply(this,a)}}
     const r=await p;
@@ -2366,6 +2368,14 @@ function syncTimingText(t){if(!t)return "";
    社員の記録：見る人数・前回の控えがあった人数・読み直さなかった人数（うち「情報」タブで確かめた人数）・全部読んだ人数・いちばん時間がかかった人の秒数・社長の更新日時が何分前か・端末への控えの保存（できたか・大きさ）。
    今月の受注：中の処理ごとの秒数と、売上報告のタブの数。画面の表示は変えない */
 let syncDiag=null;
+/* v1.50.129 トシさんの指示（長いときの同期の解決策 2）：1日1回の作業（領収書の写真の全員確認・シートの保護の確認・会社の数字の編集者の確認）を、その日の最初の同期にまとめない。
+   その日の2回目以降の同期で、1回に1つずつする。ただし、前にしてから2日以上たっていれば、最初の同期でもする（1日1回しか同期しない日が続いても止まらないように）。端末ごとに数える */
+const DAILY_KEY="workhub_daily_v1";
+function dailyGet(){try{const v=JSON.parse(localStorage.getItem(DAILY_KEY)||"null");return v&&typeof v==="object"?{day:String(v.day||""),n:Number(v.n)||0,last:v.last&&typeof v.last==="object"?v.last:{}}:{day:"",n:0,last:{}}}catch(e){return {day:"",n:0,last:{}}}}
+function dailySet(v){try{localStorage.setItem(DAILY_KEY,JSON.stringify(v))}catch(e){}}
+function dailySyncStart(){const v=dailyGet(),t=todayS();dailySet({...v,day:t,n:v.day===t?v.n+1:1});ui.dailyUsed=false}
+function dailyGate(name){if(ui.dailyUsed)return false;const v=dailyGet();if(v.day===todayS()&&v.n<=1&&Date.now()-(Number(v.last[name])||0)<48*3600e3)return false;return true}
+function dailyDone(name){const v=dailyGet();v.last={...v.last,[name]:Date.now()};dailySet(v);ui.dailyUsed=true}
 /* v1.50.118 1回の同期でGoogleに何回問い合わせたか（表計算の読む・書く、ドライブ、カレンダー、回数制限に当たった回数）。回数制限（429）の原因を見るため */
 function syncReqCount(url,method){if(!syncDiag)return;const u=String(url),q=syncDiag.req=syncDiag.req||{};
   const k=u.startsWith(SHEETS)?(!method||method==="GET"?"sr":"sw"):u.startsWith(DRIVE)||u.includes("/drive/")?"dr":u.includes("/calendar/")?"cal":"etc";q[k]=(q[k]||0)+1}
@@ -2375,7 +2385,7 @@ function syncDetailText(t){const d=t&&t.detail;if(!d)return "";const out=[];
   if(d.corp){const c=d.corp;out.push("社員の記録："+c.n+"人・前回の控え "+(c.prevN??"?")+"人・読み直さず "+(c.reused||0)+"人（うち「情報」で確認 "+(c.probed||0)+"人）・全部読んだ "+(c.full??"?")+"人・いちばん遅い人 "+syncSec(c.slow||0)+(c.prep!=null?"・読む前の準備 "+syncSec(c.prep):"")+(c.ms!=null?"・読み込み全体 "+syncSec(c.ms):"")+(!("shared" in c)?"":c.shared==null?"・社長の更新日時 なし/古い":"・社長の更新日時 "+c.shared+"分前")+"・控えの保存 "+(c.keep?(c.keep.ok?"できた ":"できなかった ")+c.keep.kb+"KB":"?"))}
   {const post=[["corpList","一覧の読み込み"],["corpSave","画面の作り直しと保存"],["corpBoss","済みの印の保存"],["corpNum","会社の数字の書き出し"]].filter(([k])=>d[k]!=null);
    if(post.length)out.push("社員の記録の前後："+post.map(([k,l])=>l+" "+syncSec(d[k])).join("・"))}
-  if(d.req){const q=d.req;out.push("Googleへの問い合わせ："+((q.sr||0)+(q.sw||0)+(q.dr||0)+(q.cal||0)+(q.etc||0))+"回（表計算の読み "+(q.sr||0)+"・書き "+(q.sw||0)+"・ドライブ "+(q.dr||0)+"・カレンダー "+(q.cal||0)+(q.etc?"・ほか "+q.etc:"")+"）"+(q.r429?"・回数制限（429） "+q.r429+"回":""))}
+  if(d.req){const q=d.req;out.push("Googleへの問い合わせ："+((q.sr||0)+(q.sw||0)+(q.dr||0)+(q.cal||0)+(q.etc||0))+"回（表計算の読み "+(q.sr||0)+"・書き "+(q.sw||0)+"・ドライブ "+(q.dr||0)+"・カレンダー "+(q.cal||0)+(q.etc?"・ほか "+q.etc:"")+"）"+(q.r429?"・回数制限（429） "+q.r429+"回":"")+(q.paceMs?"・回数の上限に合わせて待った "+syncSec(q.paceMs):""))}
   if(d.ord){const o=d.ord,names={ptr:"場所",sales:"売上報告の読み込み",write:"書き出し",ordLoad:"受注の読み直し",view:"見るだけの読み込み"};
     out.push("今月の受注："+Object.keys(names).filter(k=>o[k]!=null).map(k=>names[k]+" "+syncSec(o[k])).join("・")+(d.salesTabs!=null?"（売上報告のタブ "+d.salesTabs+"）":""))}
   return out.join("／")}
@@ -2795,7 +2805,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.128";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.129";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -2994,7 +3004,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.128" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.128" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.129" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.129" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3407,10 +3417,23 @@ const dataOn=()=>!!(D().sheetId||D().admin||D().viewListId);
 /* Google APIs other than Calendar (Sheets / Drive). body: JSON, raw: Blob for uploads */
 /* 1回の通信の打ち切り（ミリ秒） */
 let gReqTimeout=45000;
+/* v1.50.129 トシさんの指示（長いときの同期の解決策 1）：表計算への問い合わせのペースを配る。
+   Googleは1人1分あたりの読み・書きの回数に上限がある（初期は各60回）。前は上限を超えてから断られ（429）、10秒・20秒・30秒と待っていた（11/22朝：1人で60秒）。
+   ここでは直近1分の読み・書きをそれぞれ数え、55回に達していたら、いちばん古い分が1分を過ぎるまで待ってから出す（断られて長く待つのを避ける）。
+   429が来たら、その1分はもう出せないものとして扱う（次の問い合わせは1分の区切りまで待つ） */
+const SHEET_PER_MIN=55,sheetRate={read:[],write:[]};
+/* 自動の試験（まねのGoogleで、返事が一瞬）では数えない。試験で数えるときは window.__WH_PACE_ON=true にする。実際の端末（navigator.webdriver が立たない）では必ず数える */
+const sheetPaceOff=()=>!!(globalThis.navigator&&navigator.webdriver)&&!globalThis.__WH_PACE_ON;
+async function sheetPace(kind){const q=sheetRate[kind];if(sheetPaceOff())return;
+  for(;;){const now=Date.now();while(q.length&&now-q[0]>=60000)q.shift();if(q.length<SHEET_PER_MIN){q.push(now);return}
+    const w=Math.max(50,60000-(now-q[0])+50);if(syncDiag){syncDiag.req=syncDiag.req||{};syncDiag.req.paceMs=(syncDiag.req.paceMs||0)+w}await new Promise(r=>setTimeout(r,w))}}
+function sheetPaceFull(kind){if(sheetPaceOff())return;const q=sheetRate[kind],now=Date.now();while(q.length<SHEET_PER_MIN)q.push(now)}
 async function gReq(url,o){
   o=o||{};
   if(caseSaveUncertain&&o.method&&o.method!=="GET")throw Error(CASE_SAVE_NOTICE);
   if(!gSignedIn())throw new Error("signin");
+  const paceKind=String(url).startsWith(SHEETS+"/")?(o.method&&o.method!=="GET"?"write":"read"):"";
+  if(paceKind){await sheetPace(paceKind);if(!gSignedIn())throw new Error("signin")}
   syncReqCount(url,o.method);
   if(o.method&&o.method!=="GET"&&String(url).startsWith(SHEETS+"/"))corpDirtyMark(decodeURIComponent(String(url).slice(SHEETS.length+1).split(/[/:?]/)[0]));
   const ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(),gReqTimeout);
@@ -3418,7 +3441,7 @@ async function gReq(url,o){
     const r=await fetch(url,{method:o.method||"GET",signal:ctl.signal,cache:"no-store",credentials:"omit",
       headers:Object.assign({Authorization:"Bearer "+G.token},o.body?{"Content-Type":"application/json"}:{},o.headers||{}),body:o.raw||(o.body?JSON.stringify(o.body):undefined)});
     if(r.status===401){G.token="";G.exp=0;throw new Error("signin")}
-    if(!r.ok){const e=new Error("http");e.status=r.status;if(r.status===429&&syncDiag){syncDiag.req=syncDiag.req||{};syncDiag.req.r429=(syncDiag.req.r429||0)+1}const ra=Number(r.headers&&r.headers.get&&r.headers.get("Retry-After"));if(r.headers&&r.headers.get&&r.headers.get("Retry-After")!==null&&Number.isFinite(ra)&&ra>=0)e.retryAfter=ra;throw e}
+    if(!r.ok){const e=new Error("http");e.status=r.status;if(r.status===429&&paceKind)sheetPaceFull(paceKind);if(r.status===429&&syncDiag){syncDiag.req=syncDiag.req||{};syncDiag.req.r429=(syncDiag.req.r429||0)+1}const ra=Number(r.headers&&r.headers.get&&r.headers.get("Retry-After"));if(r.headers&&r.headers.get&&r.headers.get("Retry-After")!==null&&Number.isFinite(ra)&&ra>=0)e.retryAfter=ra;throw e}
     return r.status===204?null:await r.json();
   }catch(err){if(err&&err.name==="TypeError"&&!err.status)err.network=true;throw err}
   finally{clearTimeout(tm)}
@@ -4722,6 +4745,8 @@ async function ordWriterFix(){
   const d=D();if(!d.admin)return 0;const ws0=(d.staff||[]).filter(ordWriter);if(!ws0.length)return 0;
   /* v1.50.87 共有の確かめは、同じ顔ぶれなら1日1回だけ（同期を短くする） */
   const fk=todayS()+"|"+ws0.map(w=>String(w.email||"").toLowerCase()).sort().join(",");try{if(localStorage.getItem("workhub_ordfix_v1")===fk)return 0}catch(e){}
+  /* v1.50.129 1日1回の作業：最初の同期にまとめない */
+  if(!dailyGate("ordfix"))return 0;dailyDone("ordfix");
   const nums=await numbersEnsure(),ws=ws0;let n=0;
   for(const co of COMPANIES){const id=nums[co];if(!id)continue;
     const ps=await permList(id);
