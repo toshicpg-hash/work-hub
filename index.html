@@ -534,8 +534,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.132" title="使い方マニュアルを開く">v1.50.132・11/23更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.132" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.133" title="使い方マニュアルを開く">v1.50.133・11/23更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.133" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -595,10 +595,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.132"></script>
+<script src="./share-management.js?v=1.50.133"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.132"></script>
-<script src="./calendar-view-scope.js?v=1.50.132"></script>
+<script src="./view-scope.js?v=1.50.133"></script>
+<script src="./calendar-view-scope.js?v=1.50.133"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2812,7 +2812,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.132";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.133";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -3011,7 +3011,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.132" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.132" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.133" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.133" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -4020,6 +4020,7 @@ function salesSet(S){
   const cur=todayS().slice(0,7),def=S.keys.includes(cur)?cur:S.keys.filter(k=>k<=cur).at(-1)||S.keys.at(-1)||"";
   ui.sales=S;if(!ui.salesMonth||!S.keys.includes(ui.salesMonth)||!ui.salesMonthPicked)ui.salesMonth=def;
   if(!S.view){const sum=ordSummary(S);if(sum)ordKeepSave(sum)}
+  ordPrelimKeepSave(S);
 }
 /* v1.50.113 社員に書き出す月は4か月（翌月のタブを先に作っても、前の3か月が見えるように） */
 /* v1.50.108 トシさんの指示：売上報告を全社員に見せる（見るだけ。旧3社報告と同じ範囲：3社とも、会社・担当者別・毎日の受注・確認）。
@@ -4174,16 +4175,24 @@ function ordTile(){
 /* v1.50.130 トシさんの指示：ホームのタイルに、確定前の月（今月を除く。今なら10月）の売上の進み具合も出す。
    売上だけ（確定前の粗利は、あとから仕入れの額が入って低めに出るので出さない。粗利は確定してから見る）。
    ％は目標売上に対する達成率。会社の行と担当の合計が違う会社には「担当の合計と違います」を出す（v1.50.124 と同じ判定） */
+/* v1.50.133 トシさんの指示（「HUBを開いたときに同期するまで10月の売上が出ないのはなぜ」）：確定前の月の数字も、今月の受注と同じように端末に控えを残し、
+   開いたときは控えで出す（同期で売上報告を読んだら新しい数字に置き換える）。控えは会社ごとの実績売上・目標売上と、担当の合計と違う会社だけ */
+const PRELIM_KEY="workhub_prelim_v1";
+function ordPrelimData(S){
+  const cur=todayS().slice(0,7),ord=c=>{const i=SALES_ORDER.indexOf(c.co);return i<0?99:i},num=x=>Number(x)||0;
+  return S.months.filter(M=>M&&M.key<cur&&salesPrelim(M.key)&&Array.isArray(M.cos)&&M.cos.length).sort((a,b)=>a.key.localeCompare(b.key)).map(M=>({key:M.key,
+    cos:M.cos.slice().sort((a,b)=>ord(a)-ord(b)).map(c=>({co:c.co,a:num(c["実績売上"]),g:num(c["目標売上"])})),
+    diff:M.cos.filter(c=>{try{return !!salesCoDiff(M,c.co)}catch(e){return false}}).map(c=>c.co)}));
+}
+function ordPrelimKeep(){try{const v=JSON.parse(localStorage.getItem(PRELIM_KEY)||"null");return v&&Array.isArray(v.months)?v.months.filter(m=>m&&typeof m.key==="string"&&Array.isArray(m.cos)):null}catch(e){return null}}
+function ordPrelimKeepSave(S){try{if(S&&Array.isArray(S.months))localStorage.setItem(PRELIM_KEY,JSON.stringify({at:Date.now(),months:ordPrelimData(S)}))}catch(e){}}
 function ordPrelimRows(){
-  const S=ui.sales;if(!S||!Array.isArray(S.months))return "";const cur=todayS().slice(0,7);
-  const Ms=S.months.filter(M=>M&&M.key<cur&&salesPrelim(M.key)&&Array.isArray(M.cos)&&M.cos.length).sort((a,b)=>a.key.localeCompare(b.key));
-  const ord=c=>{const i=SALES_ORDER.indexOf(c.co);return i<0?99:i};
-  return Ms.map(M0=>{const M={...M0,cos:M0.cos.slice().sort((a,b)=>ord(a)-ord(b))},num=x=>Number(x)||0,pc=(a,g)=>g?Math.round(a/g*100)+"%":"—";
+  const S=ui.sales,Ms=(S&&Array.isArray(S.months)?ordPrelimData(S):ordPrelimKeep()||[]).filter(M=>M.key<todayS().slice(0,7)&&salesPrelim(M.key));
+  return Ms.map(M=>{const pc=(a,g)=>g?Math.round(a/g*100)+"%":"—",num=x=>Number(x)||0;
     const row=(co,a,g,cls)=>'<span class="ord-r'+cls+'"><b>'+h(co)+'</b><span class="num">'+pc(a,g)+'</span><span class="num ord-a">'+yen(a)+'</span></span>';
-    const sa=M.cos.reduce((t,c)=>t+num(c["実績売上"]),0),sg=M.cos.reduce((t,c)=>t+num(c["目標売上"]),0);
-    const diff=M.cos.filter(c=>{try{return !!salesCoDiff(M,c.co)}catch(e){return false}}).map(c=>c.co);
+    const sa=M.cos.reduce((t,c)=>t+num(c.a),0),sg=M.cos.reduce((t,c)=>t+num(c.g),0),diff=Array.isArray(M.diff)?M.diff:[];
     return '<span class="ord-sub ord-pre">'+Number(M.key.slice(5))+'月の売上（確定前・'+md(salesFixDate(M.key))+'確定）・％は達成率</span>'+
-      M.cos.map(c=>row(c.co,num(c["実績売上"]),num(c["目標売上"]),'')).join("")+row('合計',sa,sg,' ord-sum')+
+      M.cos.map(c=>row(c.co,num(c.a),num(c.g),'')).join("")+row('合計',sa,sg,' ord-sum')+
       (diff.length?'<span class="sales-diff-tag ord-diff">'+h(diff.join("・"))+'：会社の行と担当の合計が違います</span>':'');
   }).join("");
 }
