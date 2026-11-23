@@ -27,7 +27,8 @@ const EVENTS=[
  E('e8','【修繕】見本ビル 501',{hub:'U-0107',owner:'不明 太郎',creator:'zz@example.com'}),             // 一致しない
  E('e9','見本の打合せ',{creator:'c@example.com'}),                                                   // v1.50.13 HUB外から直接入れた予定（担当の行なし）→ 作成者
  E('e10','【修繕】見本タワー 601',{hub:'U-0108',owner:'見本',creator:'d@example.com'}),            // v1.50.13 担当「見本」が2人・作成者は候補にいない → 割り当てない（U-0004 の例）
- E('e11','【修繕】見本タワー 602',{hub:'U-0109',owner:'見本',creator:'b@example.com'})];            // v1.50.13 担当「見本」が2人・作成者が候補の1人 → その人（専務の古い分の例）
+ E('e11','【修繕】見本タワー 602',{hub:'U-0109',owner:'見本',creator:'b@example.com'}),
+ E('e12','見本の段取り立会',{owner:'見本　一郎',creator:'a@example.com'})];                              // v1.50.134 本部長（全社）の、案件に結び付かない予定            // v1.50.13 担当「見本」が2人・作成者が候補の1人 → その人（専務の古い分の例）
 async function device({self=A,rows,admin=true,width=400}){
  const c=await browser.newContext({viewport:{width,height:900},timezoneId:'Asia/Tokyo',locale:'ja-JP',serviceWorkers:'block'});
  await c.route('**/*',r=>{const u=new URL(r.request().url());if(u.origin===origin){if(u.pathname==='/'||u.pathname==='/index.html')return r.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(root,'index.html'),'utf8').replace('corpKeepLoad();\nrender();',hook+'\ncorpKeepLoad();\nrender();')});return r.continue()}return r.fulfill({status:200,body:'{}'})});
@@ -171,6 +172,14 @@ async function main(){
   /* 役割が「社員」でない（担当の候補に役割がない古い形）ときは今までどおり */
   await d.p.evaluate(()=>{const s=HO.db.settings.data;s.nameCands.list=s.nameCands.list.map(({role,...x})=>x);HO.save();HO.render()});
   t=await titles(d.p);assert.doesNotMatch(t,/見本の現場A|見本の現場B/,'old 3-column names: unchanged');
+ });
+ await check('本部長（役割「全社」）の、案件に結び付かない予定は、会社を選んでも出る（誰の予定か分からないにしない）',async()=>{
+  const d=await device({rows:[{id:HUB,work:true,mode:'mixed'}]});all.push(d);
+  for(const co of ['CP','CPY','AT']){await pick(d.p,'all',co);const t=await titles(d.p);assert.match(t,/見本の段取り立会/,co);
+   const card=(await cards(d.p)).find(x=>/見本の段取り立会/.test(x.text));assert.equal(card.tag,'見本 一郎',co);
+   assert.match(await d.p.textContent('main'),/持ち主不明の予定 4件/,co+'：本部長の予定は持ち主不明に数えない（ほかの4件は今までどおり）')}
+  await pick(d.p,B,'CPY');assert.doesNotMatch(await titles(d.p),/見本の段取り立会/,'person filter still applies');
+  await pick(d.p,A,'CP');assert.match(await titles(d.p),/見本の段取り立会/);
  });
  await check('400px・360pxで横にはみ出さない・スクリプトのエラーなし',async()=>{
   for(const width of [400,360]){const d=await device({rows:[{id:HUB,work:true,mode:'mixed'}],width});all.push(d);await pick(d.p,B);
