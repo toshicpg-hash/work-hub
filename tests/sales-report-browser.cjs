@@ -395,6 +395,10 @@ async function main(){
     assert.match(tile,/10月の売上（確定前・12\/15確定）・％は達成率/);
     for(const co of ['CP','AT','CPY']){const r=t10.find(x=>x[0]===co),a=Number(String(r[ks]).replace(/,/g,'')),g=Number(String(r[kg]).replace(/,/g,''));assert.ok(tile.includes(co+Math.round(a/g*100)+'%'+a.toLocaleString('ja-JP')+'円'),'10月 '+co+' '+tile)}
     assert.doesNotMatch(tile,/11月の売上/,'not this month')}
+   /* v1.50.133 開いた直後（まだ同期していない・売上報告を読んでいない）も、端末の控えで確定前の月を出す */
+   {const keep=await A.p.evaluate(()=>{const S=BB.ui.sales;BB.ui.sales=null;BB.render();const t=document.querySelector('#home-orders').textContent;BB.ui.sales=S;BB.render();return t});
+    assert.equal(keep,tile,'same tile from the device copy before the report is read');
+    assert.ok(await A.p.evaluate(()=>JSON.parse(localStorage.getItem('workhub_prelim_v1')).months.some(m=>m.key==='2026-10')),'copy kept')}
    /* v1.50.109 小さいタイル：1件単価・前日・ボタンは出さない */
    assert.doesNotMatch(tile,/1件単価|前日|タップして|毎日の受注を見る/);assert.ok(await A.p.$eval('#home-orders .ord-to',e=>{const r=e.getBoundingClientRect(),t=e.closest('#home-orders').getBoundingClientRect();return t.right-r.right<40&&t.bottom-r.bottom<40}),'bottom right');assert.equal(await A.p.$$eval('#home-orders button',a=>a.length),0,'no inner buttons');
    assert.equal(await A.p.$eval('#home-summary .tiles',t=>t.firstElementChild.id),'home-orders','first tile');
