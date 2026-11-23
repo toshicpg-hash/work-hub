@@ -7,7 +7,9 @@ const root=path.resolve(__dirname,'..');
 const hook='window.AU={get next(){return updNext},check:updCheck,get ui(){return ui},get db(){return DB},save,go,render};';
 const SRC=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const CUR=SRC.match(/class="ver"[^>]*>v(\d+\.\d+\.\d+)/)[1];
-const withVer=v=>SRC.replace(/(class="ver"[^>]*>)v\d+\.\d+\.\d+/,'$1v'+v).replace('corpKeepLoad();\nrender();',hook+'\ncorpKeepLoad();\nrender();');
+const withVer=v=>SRC.replace(/(class="ver"[^>]*>)v\d+\.\d+\.\d+/,'$1v'+v).replace('corpKeepLoad();\nrender();',hook+'\ncorpKeepLoad();\nrender();')
+ /* v1.50.136 見本のお知らせ（社員にも関係あり・社長だけ） */
+ .replace('const RELEASE_NOTES=[','const RELEASE_NOTES=[{v:"9.0.1",text:"見本の変更（9.0.1）"},{v:"9.0.3",text:"社長だけの見本（9.0.3）",admin:true},{v:"9.0.4",text:"見本の変更（9.0.4）"},');
 let server,browser,origin;const results=[];
 const check=async(name,fn)=>{await fn();results.push(name);console.log('PASS',name)};
 /* page: 開くときに返す版、latest: 版を確かめる読み直しで返す版 */
@@ -58,12 +60,13 @@ async function main(){
    assert.equal(new URL(p.url()).search,'','URL mark removed');
    await p.clock.runFor(500);
    /* v1.50.58 お知らせは画面のいちばん上（スクロールしなくても見える）。閉じるまで消えない */
-   assert.match(await p.textContent('main .updok'),/新しい版（v9\.0\.1）にしました/);
+   assert.match(await p.textContent('main .updok'),/新しい版（v9\.0\.1）になりました/);assert.match(await p.textContent('main .updok'),/見本の変更（9\.0\.1）/);
    const box=await p.$eval('main .updok',e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,vh:innerHeight}});assert.ok(box.top>=0&&box.bottom<=box.vh/2,JSON.stringify(box));
    assert.equal(await p.$eval('main',m=>m.firstElementChild.classList.contains('updok')),true,'first in main');
    await p.clock.runFor(60000);await p.evaluate(()=>AU.render());assert.equal(await p.locator('main .updok').count(),1,'stays until closed');
    assert.ok(await overflow(p)<=0);
    await p.click('main .updok [data-act=upddone]');assert.equal(await p.locator('main .updok').count(),0);
+   assert.equal(await p.evaluate(()=>localStorage.getItem('workhub_seen_ver_v1')),'9.0.1','remembered when closed');
    assert.ok(await overflow(p)<=0);
   });
   await check('古い版が返ってきても、同じ版への更新は繰り返さない（5分に1回まで） '+width+'px',async()=>{
@@ -83,6 +86,24 @@ async function main(){
    await p.clock.runFor(16000);assert.equal(state.docs.length,3,'dialog open');
    await p.evaluate(()=>document.getElementById('au_dlg').close());await waitDocs(p,4);
    assert.equal(state.docs[3],'/?u=9.0.3');assert.match(await verText(p),/v9\.0\.3/);
+   /* v1.50.136 社長だけの変更しかない版：社員の端末には出さず、見た版を進める */
+   assert.equal(await p.locator('main .updok').count(),0,'admin-only change is not shown to staff');
+   assert.equal(await p.evaluate(()=>localStorage.getItem('workhub_seen_ver_v1')),'9.0.3');
+  });
+  await check('v1.50.136 新しく開いた（自動の切り替えでない）ときも、社員に関係のある変更があれば出す。社長の端末には社長だけの項目も出す '+width+'px',async()=>{
+   state.latest='9.0.4';state.page='9.0.4';
+   await p.goto(origin+'/');await p.waitForFunction(()=>!!window.AU);
+   assert.match(await verText(p),/v9\.0\.4/);const t=await p.textContent('main .updok');assert.match(t,/新しい版（v9\.0\.4）になりました/);assert.match(t,/見本の変更（9\.0\.4）/);assert.doesNotMatch(t,/9\.0\.1|社長だけ/);
+   assert.ok(await overflow(p)<=0);
+   /* 閉じずに開き直すと、また出る */
+   await p.goto(origin+'/');await p.waitForFunction(()=>!!window.AU);assert.equal(await p.locator('main .updok').count(),1,'until closed');
+   /* 社長の端末：前に見た版が 9.0.2 なら、社長だけの 9.0.3 も出る（新しい順） */
+   await p.evaluate(()=>{AU.db.settings.data.admin=true;AU.save();localStorage.setItem('workhub_seen_ver_v1','9.0.2')});
+   await p.goto(origin+'/');await p.waitForFunction(()=>!!window.AU);
+   assert.deepEqual(await p.$$eval('main .updok .updnotes li',a=>a.map(x=>x.textContent)),['見本の変更（9.0.4）','社長だけの見本（9.0.3）']);
+   await p.click('main .updok [data-act=upddone]');await p.goto(origin+'/');await p.waitForFunction(()=>!!window.AU);
+   assert.equal(await p.locator('main .updok').count(),0,'not again after closing');
+   await p.evaluate(()=>{AU.db.settings.data.admin=false;AU.save()});
   });
   await check('案件などの記録（workhub_proto_v1）は開き直しても残る '+width+'px',async()=>{
    assert.ok((await p.evaluate(()=>localStorage.getItem('workhub_proto_v1')||'')).length>0);
