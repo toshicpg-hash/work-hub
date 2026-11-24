@@ -536,8 +536,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.144" title="使い方マニュアルを開く">v1.50.144・11/24更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.144" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.145" title="使い方マニュアルを開く">v1.50.145・11/24更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.145" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -597,10 +597,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.144"></script>
+<script src="./share-management.js?v=1.50.145"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.144"></script>
-<script src="./calendar-view-scope.js?v=1.50.144"></script>
+<script src="./view-scope.js?v=1.50.145"></script>
+<script src="./calendar-view-scope.js?v=1.50.145"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2851,7 +2851,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.144";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.145";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -3050,7 +3050,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.144" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.144" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.145" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.145" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -5069,7 +5069,7 @@ async function adminShareOperation(run){if(shareRunning||ui.gsync?.busy||ui.gbus
  catch(err){shareDoneText="";if(shareProg&&/^中止しました。/.test(err&&err.message||""))shareProgressEnd();else if(shareProg&&err&&err.progressShown){}else if(shareProg){const at=shareStage;shareProgress("ここで止まりました："+(at||"（始める前）")+"\n理由："+shareErrText(err)+"\n"+(shareChanging?"止まる前に反映した共有は、そのまま残っています（戻していません）。記録は社員一覧の「共有管理履歴」にあります。\n続ける場合だけ、もう一度はじめから操作してください。変える前に、変更の一覧で確かめられます。":"共有を変える処理は止まりました。共有はまだ何も変えていません（外していません）。\n続ける場合だけ、もう一度「共有を外す」など、はじめの操作からやり直してください。"),{error:true})}throw err}
  finally{shareRunning=false}}
 /* ===== v1.50.0 予定の共有：本人のメインのカレンダーを、その人の予定を見てよい人に「見るだけ」で共有する。
-   共有先は社長の端末で社員一覧の役割から決め（社長・全社・その人を見られるGM・担当の会社の経理と業務管理。canSee と同じ判定。v1.50.105 統括GMは社長・全社・同じ会社のGMだけ）、各社員の記録シートの「予定の共有先」タブに書く。
+   共有先は社長の端末で社員一覧の役割から決め（社長・全社・その人を見られるGM・担当の会社の経理と業務管理。canSee と同じ判定。v1.50.105 統括GMは社長・全社・同じ会社のGMだけ。v1.50.143 担当の会社の業務管理も）、各社員の記録シートの「予定の共有先」タブに書く。
    社員の端末はそのタブを読むだけ。共有は足すだけで、外したり権限を下げたりしない。本人のメイン以外のカレンダーには触らない。
    HUBで共有した相手は本人の記録シートの「予定の共有の記録」に残し、今の共有先にない人は社長の画面で要確認にする（外すのは社長が確かめてから） */
 const ACL_SCOPE="https://www.googleapis.com/auth/calendar.acls";
@@ -5748,7 +5748,7 @@ function dSettings(){
       '<div class="row"><button class="btn pri" type="button" data-act="dadd">社員を追加</button></div>'+
       '<p class="note" style="margin:0">追加後、共有一覧を確認してから、その人のGmailに「編集者」で共有します。案内メールは自動送信しません。Google Cloud の「対象」で、その人をテストユーザーに追加しておいてください。</p>'+
       '<p class="note" style="margin:0">役割が「全社」の人は全員の、「GM」の人は同じ1社だけに所属する一般社員の、「経理」「業務管理」の人は担当の会社に所属する社員（複数の会社に所属する人は、そのどれかが担当の会社なら）の記録を、見るだけで見られます（閲覧者で共有します）。見る人の端末は、社長の同期のあと、本人が同期すると自動でつながります（リンクを送らなくてよくなりました。下のリンクを貼ってつなぐこともできます）。</p>'+
-      '<p class="note" style="margin:0">予定の共有先（その人の予定を見てよい人：社長・全社・その人を見られるGM・担当の会社の経理と業務管理。統括GMは社長・全社・同じ会社のGMだけ）は、会社・役割を保存すると、各社員の記録シートに書きます。社員が自分の端末の「予定の共有」を押すと、足りない相手だけに「見るだけ」で共有します。</p><div class="row"><button class="btn sm" type="button" data-act="dcaltargets"'+(ui.dbusy?' disabled':'')+'>予定の共有先を書く</button></div>'+
+      '<p class="note" style="margin:0">予定の共有先（その人の予定を見てよい人：社長・全社・その人を見られるGM・担当の会社の経理と業務管理。統括GMは社長・全社・同じ会社のGM・担当の会社の業務管理だけ）は、会社・役割を保存すると、各社員の記録シートに書きます。社員が自分の端末の「予定の共有」を押すと、足りない相手だけに「見るだけ」で共有します。</p><div class="row"><button class="btn sm" type="button" data-act="dcaltargets"'+(ui.dbusy?' disabled':'')+'>予定の共有先を書く</button></div>'+
       '<p class="note" style="margin:0">社員の「数字」の「会社全体」：会社ごとの「会社の数字」シートを、その会社の社員にだけ「見るだけ」で共有します。最初の1回と、社員の会社を変えたときは下のボタンで共有を合わせてください（会社・役割の保存でも合わせます）。数字は「社員の記録を読み込む」をするたびに書き直します。受付番号の記号（人ごとのアルファベット3文字）も、このボタンで記号のない人に自動で決めて、各社員に届けます。</p><div class="row"><button class="btn sm" type="button" data-act="dnumshare"'+(ui.dbusy?' disabled':'')+'>会社の数字の共有を合わせる</button></div>'+
       (d.viewListId?'<label class="f">見る人用のリンク<input type="text" id="d_vlink" readonly value="https://docs.google.com/spreadsheets/d/'+h(d.viewListId)+'/edit"></label><div class="row"><button class="btn sm" type="button" data-act="dvcopy">リンクをコピー</button></div>':''))+'</div>':'';
   const view=d.admin?'':'<div class="panel"><h3>会社の動きを見る（管理者用）</h3>'+
