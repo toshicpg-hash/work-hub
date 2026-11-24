@@ -84,6 +84,8 @@ async function main(){
   assert.equal(await p.evaluate(()=>OI.ui.ordInMsg.ok),true,await p.evaluate(()=>OI.ui.ordInMsg.text));
   assert.deepEqual(S[2],['CP',18,35,1800000]);assert.equal(A[3][7],'反映済み');assert.match(A[3][9],/社長の確認で直しました（前は 36件・1,800,000円）/);
   assert.equal(await p.locator('.ordin').count(),0);
+  /* v1.50.141 直し終わって枠が消えても、結果のお知らせは出る */
+  assert.match(await p.textContent('.ordin-done'),/✓ 売上報告を直して、入力シートに「反映済み」を付けました/);
  });
  await check('直さない：見送りにして売上報告は変えない',async()=>{
   A.push(['2026/11/22','2026-11','CP','17','8','700,000']);await p.evaluate(async()=>{await OI.salesLoad();await OI.ordInReflect();OI.render()});
