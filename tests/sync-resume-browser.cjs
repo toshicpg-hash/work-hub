@@ -4,7 +4,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
 /* gSyncAllRun を差し替える：plan の順に、complete（true/false）で終わる。hideDuring なら途中で裏に回る */
-const hook=`window.SR={get ui(){return ui},detailText:t=>syncDetailText(t),get db(){return DB},G,save,go,render,sync:gSyncAll,calls:0,plan:[],
+const hook=`window.SR={get ui(){return ui},detailText:t=>syncDetailText(t),hideStart:()=>syncHideStart(),hideEnd:()=>syncHideEnd(),timingText:t=>syncTimingText(t),get db(){return DB},G,save,go,render,sync:gSyncAll,calls:0,plan:[],
  signIn(){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000},
  stub(){gSyncAllRun=async()=>{SR.calls++;const p=SR.plan.shift()||{complete:true};
    if(p.timed){const rows=[];ui.gsync={busy:true,rows};render();syncDiagSet('salesTabs',16);syncReqCount(SHEETS+'/a/values:batchGet','GET');syncReqCount(SHEETS+'/a/values:batchGet');syncReqCount(SHEETS+'/a:batchUpdate','POST');syncReqCount('https://www.googleapis.com/calendar/v3/x','GET');await syncDiagTime('sales',()=>new Promise(r=>setTimeout(r,60)));await new Promise(r=>setTimeout(r,120));rows.push({name:"Googleにログイン",ok:true,msg:""});await new Promise(r=>setTimeout(r,300));rows.push({name:"記録シート「案件」",ok:true,msg:"1行"});ui.gsync={busy:false,at:Date.now(),rows,complete:true};render();return}
@@ -56,6 +56,17 @@ const mark=p=>p.evaluate(()=>localStorage.getItem('workhub_sync_resume_v1'));
   });
   assert.deepEqual(d.errors,[]);await d.c.close();
  }
+ await check('v1.50.146 同期の間にアプリが画面の裏にあった時間を測り、かかった時間に出す（1秒未満は出さない）',async()=>{
+  const d=await device(400);
+  const r=await d.p.evaluate(async()=>{SR.hideStart();SR.setVis('hidden');await new Promise(r=>setTimeout(r,1100));SR.setVis('visible');await new Promise(r=>setTimeout(r,100));SR.setVis('hidden');await new Promise(r=>setTimeout(r,50));SR.setVis('visible');const h=SR.hideEnd();
+   SR.setVis('hidden');await new Promise(r=>setTimeout(r,30));SR.setVis('visible');/* 同期のあとは数えない */
+   return {h,txt:SR.timingText({total:20000,button:5000,hidden:h.ms,hiddenN:h.n,steps:[{name:'売上報告',ms:9000}],after:[]}),part:SR.timingText({partial:true,button:5000,hidden:h.ms,hiddenN:h.n}),none:SR.timingText({total:20000,button:5000,hidden:400,hiddenN:1,steps:[],after:[]})}});
+  assert.ok(r.h.ms>=1100&&r.h.ms<2500,JSON.stringify(r.h));assert.equal(r.h.n,2);
+  assert.match(r.txt,/^合計 20\.0秒・ボタンが戻るまで 5\.0秒・うちアプリが画面の裏にあった時間 1\.\d秒（2回）（長かったもの：売上報告 9\.0秒）$/);
+  assert.match(r.part,/^ボタンが戻るまで 5\.0秒・うちアプリが画面の裏にあった時間 1\.\d秒（2回）（続きの処理をしています/);
+  assert.equal(r.none,'合計 20.0秒・ボタンが戻るまで 5.0秒','under 1 second: not shown');
+  assert.deepEqual(d.errors,[]);await d.c.close();
+ });
  await check('v1.50.85 同期にかかった時間：合計と長かったものを出し、端末に残す（行の形は変えない）',async()=>{
   const d=await device(400);
   await d.p.evaluate(()=>{SR.signIn();SR.plan=[{timed:true}]});
