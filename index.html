@@ -536,8 +536,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.139" title="使い方マニュアルを開く">v1.50.139・11/24更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.139" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.140" title="使い方マニュアルを開く">v1.50.140・11/24更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.140" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -597,10 +597,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.139"></script>
+<script src="./share-management.js?v=1.50.140"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.139"></script>
-<script src="./calendar-view-scope.js?v=1.50.139"></script>
+<script src="./view-scope.js?v=1.50.140"></script>
+<script src="./calendar-view-scope.js?v=1.50.140"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2402,6 +2402,7 @@ async function syncDiagTime(k,fn){const t=Date.now();try{return await fn()}final
 function syncDetailText(t){const d=t&&t.detail;if(!d)return "";const out=[];
   if(d.corp){const c=d.corp;out.push("社員の記録："+c.n+"人・前回の控え "+(c.prevN??"?")+"人・読み直さず "+(c.reused||0)+"人（うち「情報」で確認 "+(c.probed||0)+"人）・全部読んだ "+(c.full??"?")+"人・いちばん遅い人 "+syncSec(c.slow||0)+(c.slowWho?"（"+c.slowWho+(c.slowTries>1?"・"+c.slowTries+"回試した"+(c.slowWhy?"："+c.slowWhy.split(",").map(k=>({rate:"回数制限",server:"Google側の不具合",timeout:"時間切れ",network:"通信の失敗"})[k]||k).join("・"):""):"")+"）":"")+(c.prep!=null?"・読む前の準備 "+syncSec(c.prep):"")+(c.ms!=null?"・読み込み全体 "+syncSec(c.ms):"")+(!("shared" in c)?"":c.shared==null?"・社長の更新日時 なし/古い":"・社長の更新日時 "+c.shared+"分前")+"・控えの保存 "+(c.keep?(c.keep.ok?"できた ":"できなかった ")+c.keep.kb+"KB":"?"))}
   {const post=[["corpList","一覧の読み込み"],["corpSave","画面の作り直しと保存"],["corpBoss","済みの印の保存"],["corpNum","会社の数字の書き出し"]].filter(([k])=>d[k]!=null);
+   if(d.names){const n=d.names;out.push("担当の候補など："+n.n+"人・書いた "+n.wrote+"人・同じ "+n.same+"人・前に済み "+n.skip+"人"+(n.bad?"・できなかった "+n.bad+"人（次の同期でその人だけ）":"")+(n.retry?"・やり直し "+n.retry+"回":""))}
    const lp=d.corpListParts;if(post.length)out.push("社員の記録の前後："+post.map(([k,l])=>l+" "+syncSec(d[k])+(k==="corpList"&&lp?"（移転の確認 "+syncSec(lp.follow)+"・一覧 "+syncSec(lp.list)+"・氏名の履歴 "+syncSec(lp.names)+"）":"")).join("・"))}
   if(d.req){const q=d.req;out.push("Googleへの問い合わせ："+((q.sr||0)+(q.sw||0)+(q.dr||0)+(q.cal||0)+(q.etc||0))+"回（表計算の読み "+(q.sr||0)+"・書き "+(q.sw||0)+"・ドライブ "+(q.dr||0)+"・カレンダー "+(q.cal||0)+(q.etc?"・ほか "+q.etc:"")+"）"+(q.r429?"・回数制限（429） "+q.r429+"回":"")+(q.paceMs?"・回数の上限に合わせて待った "+syncSec(q.paceMs):""))}
   if(d.ord){const o=d.ord,names={ptr:"場所",sales:"売上報告の読み込み",write:"書き出し",ordLoad:"受注の読み直し",view:"見るだけの読み込み"};
@@ -2832,7 +2833,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.139";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.140";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -3031,7 +3032,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.139" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.139" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.140" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.140" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -4992,13 +4993,6 @@ const PLACES_KEY="地図の候補キー",STAFFSET_TAB="HUBの設定",STAFFSET_CO
 const placesKey=()=>String(D().placesKey||"").trim();
 const staffSetRows=()=>[STAFFSET_COLS,...(placesKey()?[[PLACES_KEY,placesKey()]]:[])];
 const namesRows=staff=>[NAMES_COLS,...(staff||[]).filter(s=>!s.removed&&s.sheetId&&s.name).map(s=>[String(s.name).trim(),String(s.company||""),s.sheetId,String(s.role||""),String(s.email||"").trim()?mailKey(s.email):""])];
-async function namesTabWrite(s,rows,tab=NAMES_TAB){
- const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(tab))await addTab(s.sheetId,tab);
- const prev=(await shareRead(()=>sheetRead(s.sheetId,[tab])))[tab]||[];
- const norm=r=>JSON.stringify(r.map(x=>x.map(y=>String(y??""))).filter(x=>x.some(Boolean)));
- if(norm(prev)===norm(rows))return false;
- await sheetWrite(s.sheetId,tab,rows,prev);return true;
-}
 /* 社長の同期のあと：社員一覧が前に書いたときから変わっていれば、全員の記録シートに書き直す（同じなら何もしない） */
 async function namesAfterSync(){
  const d=D();if(!d.admin||!gSignedIn())return;
@@ -5008,8 +5002,20 @@ async function namesAfterSync(){
  const cls=clientIsDefault(clientList())&&!d.clientWritten?null:clientRows(clientList());
  const rows=namesRows(d.staff),offs=officeRows(),sets=staffSetRows(),key=JSON.stringify(offs.length>1||sets.length>1||cls?[rows,offs,...(sets.length>1?[sets]:[]),...(cls?[cls]:[])]:rows);if(d.namesWritten===key)return;
  const list=(d.staff||[]).filter(s=>!s.removed&&s.sheetId&&s.sheetId!==d.sheetId);let bad=0;
- await sharePool(list,async s=>{try{await namesTabWrite(s,rows);if(offs.length>1)await namesTabWrite(s,offs,OFFICE_TAB);if(sets.length>1||d.placesKeyWritten)await namesTabWrite(s,sets,STAFFSET_TAB);if(cls)await namesTabWrite(s,cls,CLIENT_TAB)}catch(err){if(err.message==="signin")throw err;bad++}});
- if(!bad){d.namesWritten=key;d.placesKeyWritten=sets.length>1;if(cls)d.clientWritten=true;save()}
+ /* v1.50.140 トシさんの指示（社長の同期で「担当の候補・会社の住所」が 907.9秒）：前は1人につき「タブの一覧を読む→そのタブを読む」を4回（17人で約136回読む）。
+    1人につき、タブの一覧を1回・書くタブをまとめて1回だけ読み、違うタブだけ書く。配れた人は覚えておき、だれかが失敗しても次の同期では失敗した人だけやり直す */
+ const tabs=[[NAMES_TAB,rows],...(offs.length>1?[[OFFICE_TAB,offs]]:[]),...(sets.length>1||d.placesKeyWritten?[[STAFFSET_TAB,sets]]:[]),...(cls?[[CLIENT_TAB,cls]]:[])];
+ const done=new Set(d.namesDone&&d.namesDone.key===key?d.namesDone.ids||[]:[]),st={n:list.length,skip:0,wrote:0,same:0,bad:0,retry:0};
+ const read=fn=>shareRead(async()=>{try{return await fn()}catch(err){if(corpErrKind(err))st.retry++;throw err}});
+ const norm=r=>JSON.stringify((r||[]).map(x=>(x||[]).map(y=>String(y??""))).filter(x=>x.some(Boolean)));
+ await sharePool(list,async s=>{if(done.has(s.sheetId)){st.skip++;return}
+   try{const have=await read(()=>sheetTabNames(s.sheetId));for(const [t] of tabs)if(!have.includes(t))await addTab(s.sheetId,t);
+     const cur=await read(()=>sheetRead(s.sheetId,tabs.map(([t])=>t)));let w=0;
+     for(const [t,r] of tabs){const prev=cur[t]||[];if(norm(prev)===norm(r))continue;await sheetWrite(s.sheetId,t,r,prev);w++}
+     done.add(s.sheetId);if(w)st.wrote++;else st.same++;d.namesDone={key,ids:[...done]};save()}
+   catch(err){if(err.message==="signin")throw err;bad++;st.bad++}});
+ syncDiagSet("names",st);
+ if(!bad){d.namesWritten=key;d.placesKeyWritten=sets.length>1;if(cls)d.clientWritten=true;delete d.namesDone;save()}
 }
 async function numPtrWrite(s,numbers){
  const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(NUMPTR_TAB))await addTab(s.sheetId,NUMPTR_TAB);
