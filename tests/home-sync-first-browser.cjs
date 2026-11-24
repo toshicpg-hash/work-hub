@@ -30,5 +30,5 @@ const old=cp.execFileSync('git',['show','fb3a577:index.html'],{cwd:root,encoding
 const corpOld=norm(old).match(/    if\(D\(\)\.admin\|\|D\(\)\.viewListId\)\{\n      try\{const data=await corpRun\(\)[\s\S]*?\n    \}\n/);assert.ok(corpOld,'old corp block');
 /* v1.50.138 住所を直した案件のカレンダーの場所を直す（日付の変わった案件の行のすぐあと）。この1か所も足して比べる */
 const addrBlk=norm(now).match(/\n    \/\* v1\.50\.138 住所を直したのに[\s\S]*?"住所を直した予定"[^\n]*\n/);assert.ok(addrBlk,'address retry block');
-assert.equal(norm(old).replace(corpOld[0],'    if(D().admin||D().viewListId)corpBgStart(step);/* v1.50.87 社員の記録は裏で読む（ボタンを早く戻す） */\n'),norm(now).replace(addrBlk[0],'\n'));results.push('sync implementation unchanged; DOM order and warnings checked above');console.log(results.map(x=>'PASS '+x).join('\n'));console.log('ALL PASS',results.length);}
+assert.equal(norm(old).replace(corpOld[0],'    if(D().admin||D().viewListId)corpBgStart(step);/* v1.50.87 社員の記録は裏で読む（ボタンを早く戻す） */\n'),norm(now).replace(addrBlk[0],'\n').replace('\n    await viewAutoConnect(step);/* v1.50.144 */\n','\n'));results.push('sync implementation unchanged; DOM order and warnings checked above');console.log(results.map(x=>'PASS '+x).join('\n'));console.log('ALL PASS',results.length);}
 main().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();if(server)server.close()});

@@ -536,8 +536,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.143" title="使い方マニュアルを開く">v1.50.143・11/24更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.143" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.144" title="使い方マニュアルを開く">v1.50.144・11/24更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.144" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -597,10 +597,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.143"></script>
+<script src="./share-management.js?v=1.50.144"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.143"></script>
-<script src="./calendar-view-scope.js?v=1.50.143"></script>
+<script src="./view-scope.js?v=1.50.144"></script>
+<script src="./calendar-view-scope.js?v=1.50.144"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2377,6 +2377,7 @@ async function gSyncAllRun(){
     {const pend=DB.cases.filter(c=>c.gcal&&c.gcal.addrPending);if(pend.length){let ok=0;const bad=[];for(const c of pend){try{await caseAddrCal(c);ok++}catch(err){if(err.message==="signin")throw err;bad.push(c.id)}}
       step("住所を直した予定",!bad.length,ok+"件の場所を直しました"+(bad.length?"・直せなかった "+bad.join("・")+"（次の同期でもう一度）":""))}}
     if(D().sheetId)await dataSync(step);
+    await viewAutoConnect(step);/* v1.50.144 */
     if(D().admin||D().viewListId)corpBgStart(step);/* v1.50.87 社員の記録は裏で読む（ボタンを早く戻す） */
     complete=true;
   }finally{ui.gsync={busy:false,at:Date.now(),rows,complete};render()}
@@ -2850,7 +2851,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.143";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.144";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -3049,7 +3050,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.143" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.143" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.144" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.144" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3688,7 +3689,9 @@ async function sharedCheck(id){
   if(!D().admin&&Array.isArray(rows[CLIENT_TAB])){const cl=clientParse(rows[CLIENT_TAB]);if(cl&&cl.length&&JSON.stringify(cl)!==JSON.stringify(D().clientNames||null)){D().clientNames=cl;save()}}
   /* v1.50.84 社長が書いた設定（地図の候補キー）を受け取る */
   if(!D().admin&&Array.isArray(rows[STAFFSET_TAB])&&JSON.stringify((rows[STAFFSET_TAB][0]||[]).map(String))===JSON.stringify(STAFFSET_COLS)){
-    const k=hubSetGet(rows[STAFFSET_TAB],PLACES_KEY);if(k!==placesKey()){D().placesKey=k;save()}}
+    const k=hubSetGet(rows[STAFFSET_TAB],PLACES_KEY);if(k!==placesKey()){D().placesKey=k;save()}
+    /* v1.50.144 社長が書いた見る人用一覧のID（見る人の記録シートにだけ書かれる） */
+    const vo=sheetIdOf(hubSetGet(rows[STAFFSET_TAB],HUBSET_VIEW));if(vo!==(D().viewOffer||"")){D().viewOffer=vo;save()}}
   /* v1.50.83 会社の住所を受け取る（社長が書いた分） */
   if(!D().admin&&Array.isArray(rows[OFFICE_TAB])&&JSON.stringify((rows[OFFICE_TAB][0]||[]).map(String))===JSON.stringify(OFFICE_COLS)){
     const a=rows[OFFICE_TAB].slice(1).map(r=>({name:String((r||[])[0]||"").trim()||"会社",addr:String((r||[])[1]||"").trim()})).filter(x=>x.addr).slice(0,10);
@@ -5020,22 +5023,25 @@ async function namesAfterSync(){
  if(ui.clientTabMissing&&d.listId){try{const tabs=await sheetTabNames(d.listId);if(!tabs.includes(CLIENT_TAB)){await addTab(d.listId,CLIENT_TAB);await sheetWrite(d.listId,CLIENT_TAB,clientRows(clientList()),[])}ui.clientTabMissing=false}catch(err){if(err.message==="signin")throw err}}
  /* 候補が今までのまま（3社共通）で、前に書いたこともなければ、社員の記録シートには書かない（社員の端末も今までの候補を出すため） */
  const cls=clientIsDefault(clientList())&&!d.clientWritten?null:clientRows(clientList());
- const rows=namesRows(d.staff),offs=officeRows(),sets=staffSetRows(),key=JSON.stringify(offs.length>1||sets.length>1||cls?[rows,offs,...(sets.length>1?[sets]:[]),...(cls?[cls]:[])]:rows);if(d.namesWritten===key)return;
+ /* v1.50.144 トシさんの指示：見る人（全社・GM・経理・業務管理）の記録シートの「HUBの設定」にだけ、見る人用一覧のIDを書く（本人の端末が同期で自動でつなぐ）。役割が外れた人の分は消える */
+ const viewIds=d.viewListId?(d.staff||[]).filter(s=>!s.removed&&s.sheetId&&isViewer(s)).map(s=>s.sheetId).sort():[];
+ const rows=namesRows(d.staff),offs=officeRows(),sets=staffSetRows(),key0=JSON.stringify(offs.length>1||sets.length>1||cls?[rows,offs,...(sets.length>1?[sets]:[]),...(cls?[cls]:[])]:rows),key=d.viewListId||d.viewOfferWritten?JSON.stringify([key0,d.viewListId||"",viewIds]):key0;if(d.namesWritten===key)return;
+ const setsFor=s=>d.viewListId&&viewIds.includes(s.sheetId)?[...sets,[HUBSET_VIEW,d.viewListId]]:sets;
  const list=(d.staff||[]).filter(s=>!s.removed&&s.sheetId&&s.sheetId!==d.sheetId);let bad=0;
  /* v1.50.140 トシさんの指示（社長の同期で「担当の候補・会社の住所」が 907.9秒）：前は1人につき「タブの一覧を読む→そのタブを読む」を4回（17人で約136回読む）。
     1人につき、タブの一覧を1回・書くタブをまとめて1回だけ読み、違うタブだけ書く。配れた人は覚えておき、だれかが失敗しても次の同期では失敗した人だけやり直す */
- const tabs=[[NAMES_TAB,rows],...(offs.length>1?[[OFFICE_TAB,offs]]:[]),...(sets.length>1||d.placesKeyWritten?[[STAFFSET_TAB,sets]]:[]),...(cls?[[CLIENT_TAB,cls]]:[])];
+ const tabsFor=s=>[[NAMES_TAB,rows],...(offs.length>1?[[OFFICE_TAB,offs]]:[]),...(sets.length>1||d.placesKeyWritten||d.viewListId||d.viewOfferWritten?[[STAFFSET_TAB,setsFor(s)]]:[]),...(cls?[[CLIENT_TAB,cls]]:[])];
  const done=new Set(d.namesDone&&d.namesDone.key===key?d.namesDone.ids||[]:[]),st={n:list.length,skip:0,wrote:0,same:0,bad:0,retry:0};
  const read=fn=>shareRead(async()=>{try{return await fn()}catch(err){if(corpErrKind(err))st.retry++;throw err}});
  const norm=r=>JSON.stringify((r||[]).map(x=>(x||[]).map(y=>String(y??""))).filter(x=>x.some(Boolean)));
  await sharePool(list,async s=>{if(done.has(s.sheetId)){st.skip++;return}
-   try{const have=await read(()=>sheetTabNames(s.sheetId));for(const [t] of tabs)if(!have.includes(t))await addTab(s.sheetId,t);
+   const tabs=tabsFor(s);try{const have=await read(()=>sheetTabNames(s.sheetId));for(const [t] of tabs)if(!have.includes(t))await addTab(s.sheetId,t);
      const cur=await read(()=>sheetRead(s.sheetId,tabs.map(([t])=>t)));let w=0;
      for(const [t,r] of tabs){const prev=cur[t]||[];if(norm(prev)===norm(r))continue;await sheetWrite(s.sheetId,t,r,prev);w++}
      done.add(s.sheetId);if(w)st.wrote++;else st.same++;d.namesDone={key,ids:[...done]};save()}
    catch(err){if(err.message==="signin")throw err;bad++;st.bad++}});
  syncDiagSet("names",st);
- if(!bad){d.namesWritten=key;d.placesKeyWritten=sets.length>1;if(cls)d.clientWritten=true;delete d.namesDone;save()}
+ if(!bad){d.namesWritten=key;d.placesKeyWritten=sets.length>1;d.viewOfferWritten=!!d.viewListId;if(cls)d.clientWritten=true;delete d.namesDone;save()}
 }
 async function numPtrWrite(s,numbers){
  const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(NUMPTR_TAB))await addTab(s.sheetId,NUMPTR_TAB);
@@ -5356,6 +5362,15 @@ async function gWho(){if(G.email)return G.email;if(!gSignedIn()||!gHas(DSCOPE))r
 const gWhoLine=()=>G.email&&gSignedIn()?'<p class="note" style="margin:0">ログイン中のGoogleアカウント：<b style="overflow-wrap:anywhere">'+h(G.email)+'</b></p>':'';
 const gReloginBtn=(label)=>'<button class="btn sm" type="button" data-act="grelogin">'+(label||'別のGoogleアカウントでログインし直す')+'</button>';
 async function myEmail(){const r=await gReq(DRIVE.replace("/files","/about")+"?fields=user(emailAddress)");return (r&&r.user&&r.user.emailAddress)||""}
+/* v1.50.144 トシさんの指示（伊藤さんの件。社長からリンクが届かないと、見る人になってもつながらない）：
+   社長の同期で記録シートの「HUBの設定」に見る人用一覧のIDが届いていれば、同期のときに自動でつなぐ（「つなぐ」と同じ確かめ：本人のGmailが一覧で見る人の役割か）。
+   本人が「つなぐのをやめる」を押した一覧には自動でつながない。見る人でなければ何もしない（次の同期でもう一度確かめる） */
+const viewAutoOn=()=>{const d=D();return !d.admin&&!!d.sheetId&&!d.viewListId&&!!d.viewOffer&&d.viewOptOut!==d.viewOffer&&!obBefore("view")};
+async function viewAutoConnect(step){
+  if(!viewAutoOn())return false;
+  try{const m=await viewerConnect(D().viewOffer);delete D().viewOptOut;save();step("会社の動きにつなぐ",true,"社長の設定で、会社の動き（見るだけ）につなぎました（"+roleLabel(m)+"）");return true}
+  catch(err){if(err.message==="signin")throw err;if(err.message!=="notviewer")step("会社の動きにつなぐ",false,"つなげませんでした（次の同期でもう一度）："+(err.message==="notview"?"見る人用の一覧ではありません":dMsg(err)));return false}
+}
 async function viewerConnect(input){
   const id=sheetIdOf(input);if(!id)throw new Error("badid");
   await gAuthorize(true);
@@ -5732,13 +5747,13 @@ function dSettings(){
       roleForm("da",{company:"",role:"社員",gmCo:"",charge:"",displayName:""})+
       '<div class="row"><button class="btn pri" type="button" data-act="dadd">社員を追加</button></div>'+
       '<p class="note" style="margin:0">追加後、共有一覧を確認してから、その人のGmailに「編集者」で共有します。案内メールは自動送信しません。Google Cloud の「対象」で、その人をテストユーザーに追加しておいてください。</p>'+
-      '<p class="note" style="margin:0">役割が「全社」の人は全員の、「GM」の人は同じ1社だけに所属する一般社員の、「経理」「業務管理」の人は担当の会社に所属する社員（複数の会社に所属する人は、そのどれかが担当の会社なら）の記録を、見るだけで見られます（閲覧者で共有します）。見る人には、下のリンクを送って、CPG HUB の「会社の動きを見る（管理者用）」に貼り付けてもらってください。</p>'+
+      '<p class="note" style="margin:0">役割が「全社」の人は全員の、「GM」の人は同じ1社だけに所属する一般社員の、「経理」「業務管理」の人は担当の会社に所属する社員（複数の会社に所属する人は、そのどれかが担当の会社なら）の記録を、見るだけで見られます（閲覧者で共有します）。見る人の端末は、社長の同期のあと、本人が同期すると自動でつながります（リンクを送らなくてよくなりました。下のリンクを貼ってつなぐこともできます）。</p>'+
       '<p class="note" style="margin:0">予定の共有先（その人の予定を見てよい人：社長・全社・その人を見られるGM・担当の会社の経理と業務管理。統括GMは社長・全社・同じ会社のGMだけ）は、会社・役割を保存すると、各社員の記録シートに書きます。社員が自分の端末の「予定の共有」を押すと、足りない相手だけに「見るだけ」で共有します。</p><div class="row"><button class="btn sm" type="button" data-act="dcaltargets"'+(ui.dbusy?' disabled':'')+'>予定の共有先を書く</button></div>'+
       '<p class="note" style="margin:0">社員の「数字」の「会社全体」：会社ごとの「会社の数字」シートを、その会社の社員にだけ「見るだけ」で共有します。最初の1回と、社員の会社を変えたときは下のボタンで共有を合わせてください（会社・役割の保存でも合わせます）。数字は「社員の記録を読み込む」をするたびに書き直します。受付番号の記号（人ごとのアルファベット3文字）も、このボタンで記号のない人に自動で決めて、各社員に届けます。</p><div class="row"><button class="btn sm" type="button" data-act="dnumshare"'+(ui.dbusy?' disabled':'')+'>会社の数字の共有を合わせる</button></div>'+
       (d.viewListId?'<label class="f">見る人用のリンク<input type="text" id="d_vlink" readonly value="https://docs.google.com/spreadsheets/d/'+h(d.viewListId)+'/edit"></label><div class="row"><button class="btn sm" type="button" data-act="dvcopy">リンクをコピー</button></div>':''))+'</div>':'';
   const view=d.admin?'':'<div class="panel"><h3>会社の動きを見る（管理者用）</h3>'+
     (d.viewListId?'<p style="margin:0">つないでいます（'+h(d.viewEmail||"")+'）。ホームの「会社の動き」で見られます。</p><div class="row"><button class="btn sm" type="button" data-act="dvunlink">つなぐのをやめる</button></div>':
-     '<p class="note" style="margin:0">全社・GM・経理・業務管理の役割の人だけが使います。社長から届いた「見る人用のリンク」を貼り付けて「つなぐ」を押してください。</p>'+
+     '<p class="note" style="margin:0">全社・GM・経理・業務管理の役割の人だけが使います。社長の同期のあと、ここで同期すると自動でつながります。つながらないときは、社長から届いた「見る人用のリンク」を貼り付けて「つなぐ」を押してください。</p>'+
      '<label class="f">見る人用のリンク<input type="url" id="d_view" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://docs.google.com/spreadsheets/d/…/edit"></label>'+
      '<div class="row"><button class="btn pri" type="button" data-act="dvlink">つなぐ</button></div>')+'</div>';
   const force=!!(msg||ui.dName!=null||ui.dUnshare!=null||ui.dRole!=null||ui.dAsk||ui.dCodes||ui.dbusy);
@@ -6089,9 +6104,9 @@ document.addEventListener("click",e=>{
   if(a==="dvcopy"){const el=document.getElementById("d_vlink");try{navigator.clipboard.writeText(el.value).then(()=>toast("コピーしました"),()=>{el.select();toast("選択しました。長押しでコピーしてください")})}catch(err){el.select()}return}
   if(a==="dvlink"){const b=obBefore("view");if(b){ui.dmsg=[{ok:false,text:"先に「"+b+"」をしてください（ホームの初期設定）。逆の順番だと、会社・人の選択肢から自分が外れます。"}];render();return}
     const v=val("d_view");ui.dmsg=[{ok:true,text:"つないでいます…"}];ui.dview="";render();
-    viewerConnect(v).then(m=>{ui.dmsg=[{ok:true,text:"会社の動き（見るだけ）につなぎました（"+roleLabel(m)+"）。ホームの「会社の動き」で「社員の記録を読み込む」を押してください"}]},
+    viewerConnect(v).then(m=>{delete D().viewOptOut;save();ui.dmsg=[{ok:true,text:"会社の動き（見るだけ）につなぎました（"+roleLabel(m)+"）。ホームの「会社の動き」で「社員の記録を読み込む」を押してください"}]},
       err=>{ui.dmsg=[{ok:false,text:err.message==="badid"?"リンクの形が違います（https://docs.google.com/spreadsheets/d/…）":err.message==="notview"?"見る人用の一覧ではありません。社長から届いた「見る人用のリンク」か確かめてください":err.message==="notviewer"?(err.me||"このアカウント")+" は、全社・GMの役割になっていません。社長に確かめてください":"つなげませんでした："+dMsg(err)}]}).then(render);return}
-  if(a==="dvunlink"){corpKeepClear();Object.assign(D(),{viewListId:"",viewEmail:""});ui.corp=null;ui.corpRO=null;ui.viewList=null;ui.dmsg=[{ok:true,text:"会社の動きとのつながりを外しました"}];save();render();return}
+  if(a==="dvunlink"){corpKeepClear();Object.assign(D(),{viewOptOut:D().viewListId||D().viewOffer||"",viewListId:"",viewEmail:""});ui.corp=null;ui.corpRO=null;ui.viewList=null;ui.dmsg=[{ok:true,text:"会社の動きとのつながりを外しました"}];save();render();return}
   if(a==="dadd"){const name=val("d_name").trim(),mail=val("d_mail").trim();
     if(!name||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)){ui.dmsg=[{ok:false,text:"氏名とGmailを入れてください"}];render();return}
     const dup=staffDup(mail);if(dup){ui.dview="";ui.dmsg=[{ok:false,text:dup.name+"さんはすでに追加されています（"+dup.email+"）"}];render();return}
@@ -6426,6 +6441,7 @@ let updNext="",updChecking=false,updLast=0;
    ・admin:true の項目は社長の端末だけ。初めて開いた端末（覚えた版がない）は出さずに今の版を覚える。
    ・決まり：社員の画面や使い方が変わる版では、ここに1行足す（マニュアルの改訂履歴と同じ版）。 */
 const RELEASE_NOTES=[
+ {v:"1.50.144",admin:true,text:"見る人（全社・GM・経理・業務管理）の端末は、社長の同期のあと、本人が同期すると自動で「会社の動き」につながるようになりました。見る人用のリンクを送る必要はありません。"},
  {v:"1.50.143",admin:true,text:"予定：統括GMの予定の共有先に、担当の会社が合う業務管理の人を加えました。社長の端末で「予定の共有先を書く」を押したあと、統括GM本人が「予定の共有」を押すと共有されます。"},
  {v:"1.50.139",text:"売上報告：確定前の月（今なら10月）にも「毎日の確認」が付きました。社長・本部長・GMは、確定日まで毎日、その月の数字を見て「確定前の今日の分を確認済みにする」を押してください。"},
  {v:"1.50.138",text:"案件：登録したあとでも、案件の画面の「受付内容」で住所を入れる・直すことができるようになりました。Googleカレンダーの予定の場所も一緒に直ります。"},
