@@ -536,8 +536,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.145" title="使い方マニュアルを開く">v1.50.145・11/24更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.145" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.146" title="使い方マニュアルを開く">v1.50.146・11/24更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.146" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -597,10 +597,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.145"></script>
+<script src="./share-management.js?v=1.50.146"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.145"></script>
-<script src="./calendar-view-scope.js?v=1.50.145"></script>
+<script src="./view-scope.js?v=1.50.146"></script>
+<script src="./calendar-view-scope.js?v=1.50.146"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2324,12 +2324,12 @@ async function gSyncAll(){
     syncHid=syncHid||document.visibilityState==="hidden";syncResumeMark(true);ui.syncResume=null;
     /* v1.50.85 同期にかかった時間を測る（トシさんの指示：同期を短くする前に、何にどれだけかかっているかを見る）。同期の中身（gSyncAllRun）は変えず、結果の行が足されるたびに時刻を控える */
     const now=()=>(globalThis.performance&&performance.now)?performance.now():Date.now(),t0=now(),tm={steps:[],after:[]};let last=t0;
-    st={now,t0,tm};tm.detail={};syncDiag=tm.detail;if(D().admin)dailySyncStart();
+    st={now,t0,tm};tm.detail={};syncDiag=tm.detail;syncHideStart();if(D().admin)dailySyncStart();
     const p=gSyncAllRun();const rows=ui.gsync&&ui.gsync.rows;
     if(Array.isArray(rows)){const push=rows.push;rows.push=function(...a){const t=now();for(const x of a)tm.steps.push({name:String(x&&x.name||""),ms:Math.round(t-last)});last=t;return push.apply(this,a)}}
     const r=await p;
     /* v1.50.89 ボタンが戻った時点の時間をすぐ出す（全部の合計は、裏の処理が終わってから出る） */
-    tm.button=Math.round(now()-t0);if(ui.gsync){ui.gsync.timing={...tm,partial:true};render()}
+    tm.button=Math.round(now()-t0);{const hm=syncHideNow();if(hm>0){tm.hidden=hm;tm.hiddenN=syncHide.n}}if(ui.gsync){ui.gsync.timing={...tm,partial:true};render()}
     return r;
   };
   const whole=async()=>{
@@ -2339,7 +2339,7 @@ async function gSyncAll(){
       ui.syncAfterBusy=true;ui.syncAfterDoneAt=0;render();const {now,tm}=st;
       if(corpBg)await corpBg.catch(()=>{});
       for(const [n,fn] of [["共有の書き出し",bbAfterSync],["売上報告",salesAfterSync],["今月の受注",ordAfterSync],["担当の候補・会社の住所",namesAfterSync],["領収書の写真（会社）",photoAfterSync]]){const s=now();try{await fn()}catch(e){if(n!=="担当の候補・会社の住所")throw e}const ms=Math.round(now()-s);if(ms>=50)tm.after.push({name:n,ms})}
-    }finally{if(ui.syncAfterBusy)ui.syncAfterDoneAt=Date.now();ui.syncAfterBusy=false;if(st){const {now,t0,tm}=st;tm.total=Math.round(now()-t0);delete tm.partial;tm.at=new Date().toISOString();tm.ver=APP_VER;tm.ok=!!(ui.gsync&&ui.gsync.complete);syncTimingSave(tm);syncDiag=null;if(ui.gsync)ui.gsync.timing=tm;syncResumeAfter();render()}}
+    }finally{if(ui.syncAfterBusy)ui.syncAfterDoneAt=Date.now();ui.syncAfterBusy=false;if(st){const {now,t0,tm}=st;tm.total=Math.round(now()-t0);{const hd=syncHideEnd();if(hd.ms>0){tm.hidden=hd.ms;tm.hiddenN=hd.n}else{delete tm.hidden;delete tm.hiddenN}}delete tm.partial;tm.at=new Date().toISOString();tm.ver=APP_VER;tm.ok=!!(ui.gsync&&ui.gsync.complete);syncTimingSave(tm);syncDiag=null;if(ui.gsync)ui.gsync.timing=tm;syncResumeAfter();render()}}
     return r;
   };
   manualTodoSyncPending=Promise.resolve().then(whole);
@@ -2396,10 +2396,18 @@ const SYNC_TIME_KEY="workhub_sync_timing_v1";
 const syncTimingSave=t=>{try{localStorage.setItem(SYNC_TIME_KEY,JSON.stringify(t))}catch(e){}};
 const syncTimingLoad=()=>{try{const t=JSON.parse(localStorage.getItem(SYNC_TIME_KEY)||"null");return t&&Number.isFinite(t.total)?t:null}catch(e){return null}};
 const syncSec=ms=>(Math.round((Number(ms)||0)/100)/10).toFixed(1)+"秒";
+/* v1.50.146 トシさんの指示（11/24 同期が30分止まった・回線は速いのに141.6秒）：同期の間に、アプリが画面の裏にあった時間を測る。
+   スマホは裏に回ったアプリの通信を止める・遅くするので、長かった原因が「裏にあった」のか「本当に遅かった」のかを数字で分ける */
+const syncHide={on:false,ms:0,n:0,at:0};
+const syncHideStart=()=>{syncHide.on=true;syncHide.ms=0;syncHide.n=0;syncHide.at=document.visibilityState==="hidden"?Date.now():0;if(syncHide.at)syncHide.n=1};
+const syncHideNow=()=>syncHide.ms+(syncHide.at?Date.now()-syncHide.at:0);
+const syncHideEnd=()=>{const ms=syncHideNow(),n=syncHide.n;syncHide.on=false;syncHide.at=0;return {ms,n}};
+document.addEventListener("visibilitychange",()=>{if(!syncHide.on)return;if(document.visibilityState==="hidden"){if(!syncHide.at){syncHide.at=Date.now();syncHide.n++}}else if(syncHide.at){syncHide.ms+=Date.now()-syncHide.at;syncHide.at=0}});
+const syncHideText=t=>t&&Number(t.hidden)>=1000?"・うちアプリが画面の裏にあった時間 "+syncSec(t.hidden)+(t.hiddenN>1?"（"+t.hiddenN+"回）":""):"";
 function syncTimingText(t){if(!t)return "";
-  if(t.partial&&Number.isFinite(t.button))return "ボタンが戻るまで "+syncSec(t.button)+"（続きの処理をしています。終わると合計が出ます）";
+  if(t.partial&&Number.isFinite(t.button))return "ボタンが戻るまで "+syncSec(t.button)+syncHideText(t)+"（続きの処理をしています。終わると合計が出ます）";
   if(!Number.isFinite(t.total))return "";const all=(t.steps||[]).concat(t.after||[]).filter(x=>x.ms>0).sort((a,b)=>b.ms-a.ms).slice(0,3);
-  return "合計 "+syncSec(t.total)+(Number.isFinite(t.button)?"・ボタンが戻るまで "+syncSec(t.button):"")+(all.length?"（長かったもの："+all.map(x=>x.name+" "+syncSec(x.ms)).join("・")+"）":"")}
+  return "合計 "+syncSec(t.total)+(Number.isFinite(t.button)?"・ボタンが戻るまで "+syncSec(t.button):"")+syncHideText(t)+(all.length?"（長かったもの："+all.map(x=>x.name+" "+syncSec(x.ms)).join("・")+"）":"")}
 /* v1.50.116 トシさんの指示（専務の端末の同期が v1.50.114・115 のあとも短くならない）：原因を調べるため、同期の内訳を記録シート「情報」の「前回の同期の内訳」に書く。
    社員の記録：見る人数・前回の控えがあった人数・読み直さなかった人数（うち「情報」タブで確かめた人数）・全部読んだ人数・いちばん時間がかかった人の秒数・社長の更新日時が何分前か・端末への控えの保存（できたか・大きさ）。
    今月の受注：中の処理ごとの秒数と、売上報告のタブの数。画面の表示は変えない */
@@ -2851,7 +2859,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.145";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.146";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -3050,7 +3058,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.145" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.145" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.146" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.146" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
