@@ -218,6 +218,11 @@ ol.hist li{overflow-wrap:anywhere}
 #stats-sales tr.sales-done td{background:var(--green-soft)}
 /* v1.50.53 完了の行の数字は少し太く（合計の行はもともと太字） */
 #stats-sales .sales-st tr.sales-done:not(.sales-sum) td.num{font-weight:600;color:var(--fg)}
+/* v1.50.132 受注の入力シートの直し（社長の売上報告の画面） */
+.ordin{display:flex;flex-direction:column;gap:8px;border-color:var(--amber)}
+.ordin-row{display:flex;flex-direction:column;gap:4px;padding-top:6px;border-top:1px solid var(--line)}
+.ordin-row .num{overflow-wrap:anywhere}
+.ordtile .ord-wait{display:block;margin-top:4px;color:var(--amber);font-weight:700;font-size:13px}
 /* v1.50.51 毎日の受注の表：今日の行・土日 */
 .sales-days{font-size:12px}.sales-days td,.sales-days th{padding:6px 3px}.sales-days td.num,.sales-days th{white-space:nowrap}.sales-days .sales-pct{font-size:10.5px}
 #stats-sales tr.sales-today td{background:var(--amber-soft)}#stats-sales .sales-days tr.sun td:first-child b{color:var(--red)}#stats-sales .sales-days tr.sat td:first-child b{color:var(--blue)}
@@ -404,6 +409,8 @@ div.ordtile{cursor:default}
 #plan-add .plan-kinds .pick.rest{border-color:var(--amber);color:var(--amber);background:var(--amber-soft)}#plan-add .plan-kinds .pick.rest[aria-pressed="true"]{background:var(--amber);color:#fff}/* v1.50.73 休みの種類は色を変える */
 .filters-on{color:var(--accent);font-weight:700}/* v1.50.71 かかっている絞り込み */
 .banner.syncres{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--red-soft,#fbe9e7);color:var(--fg);border:2px solid var(--red);font-weight:700}.banner.syncres>span{flex:1 1 200px}/* v1.50.82 */
+.sales-pchk{border-color:var(--amber)}
+.banner.updok .updnotes{margin:4px 0;padding-left:1.2em;font-weight:400;overflow-wrap:anywhere}
 .banner.updok{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--green-soft,#e3f3e8);color:var(--fg);border:2px solid var(--green);font-weight:700}.banner.updok>span{flex:1 1 200px}.banner.updok a{white-space:nowrap}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + 14px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
 .empty{color:var(--muted);font-size:14px;padding:14px;border:1px dashed var(--line);border-radius:12px;text-align:center}
@@ -529,8 +536,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.131" title="使い方マニュアルを開く">v1.50.131・11/23更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.131" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.142" title="使い方マニュアルを開く">v1.50.142・11/24更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.142" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -590,10 +597,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.131"></script>
+<script src="./share-management.js?v=1.50.142"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.131"></script>
-<script src="./calendar-view-scope.js?v=1.50.131"></script>
+<script src="./view-scope.js?v=1.50.142"></script>
+<script src="./calendar-view-scope.js?v=1.50.142"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1124,7 +1131,7 @@ async function sheetGuardOne(id,note,skip,mark,t){
   mark[id]=t;try{localStorage.setItem(SGUARD_KEY,JSON.stringify(mark))}catch(e){}
   return need.length;
 }
-/* v1.50.131 トシさんの指示（HUBのファイルの安全対策 3）：社員一覧・見る人用一覧・会社の数字（3社）にも、売上報告と同じ「警告だけの保護」をかける。
+/* v1.50.142（PR#215で作った v1.50.131 の分） トシさんの指示（HUBのファイルの安全対策 3）：社員一覧・見る人用一覧・会社の数字（3社）にも、売上報告と同じ「警告だけの保護」をかける。
    手で書きかえようとすると注意が出る（押せば書ける。HUBの書き込みはそのまま動く）。
    社員一覧の「依頼元の候補」「HUBの設定」は社長が手で入れるタブなので、保護しない。
    1日1回・ファイルごと。軽い作業なので「1回の同期に1つ」の数には入れず、その日の2回目以降の同期でする（2日以上たっていれば最初の同期でも） */
@@ -1143,6 +1150,8 @@ async function salesAfterSync(){
   let row;try{/* v1.50.87 回数制限・通信の失敗・Google側の不具合のときは、待って2回までやり直す */
     for(let tries=1;;tries++){try{await salesLoad();break}catch(err){const w=err&&err.message!=="signin"&&corpErrKind(err)?corpRetryWait(err,tries):null;if(w==null||tries>=3)throw err;await corpWait(w)}}
     const S=ui.sales,mt=S&&S.modified;row={name:"売上報告",ok:S&&S.today?true:"warn",msg:S&&S.today?"今日の更新を読みました（"+salesLast(S)+"）":"シートが今日はまだ更新されていません（最終更新 "+salesLast(S)+"）"};
+    /* v1.50.132 受注の入力シート（伊藤・橋本など）の行を売上報告に入れる。前に入れた数字を直す行は止めて、社長に確かめる */
+    try{const r=await ordInReflect();if(r.msg)row.msg+="（受注の入力："+r.msg+"）";if(r.wrote)await salesLoad()}catch(err){if(err.message==="signin")throw err;row.msg+="（受注の入力シートを読めませんでした："+(err.message==="http"?dMsg(err):err.message)+"）"}
     /* v1.50.60 今月の受注を、社員に共有済みの会社の数字のファイルに書き出す（失敗しても売上報告の行は変えず、理由を足す） */
     try{await numbersEnsure();const w=await ordWriteAll(ordSummary(S));if(w.errs.length)row.msg+="（社員への今月の受注：書けなかった会社 "+w.errs.join("・")+"）"}catch(err){row.msg+="（社員への今月の受注：書けませんでした）"}
     try{const n=await salesChkReflect();if(n)row.msg+="（本部長・GMの確認を"+n+"件シートに入れました）"}catch(err){if(err.message==="signin")throw err;row.msg+="（本部長・GMの確認を入れられませんでした："+(err.message==="http"?dMsg(err):err.message)+"）"}
@@ -1812,7 +1821,13 @@ function vDetail(){
   caseDateWarning(c)+act+
   (caseDateEditable(c)?'<div class="row"><button class="btn" type="button" data-cddate="'+h(c.id)+'">受注日・失注日・理由を直す</button>'+(c.stage==='lost'&&c.cancelledAt?'<button class="btn" type="button" data-cdconvert="'+h(c.id)+'">失注（受注していなかった）に直す</button>':'')+'</div>':'')+caseDateHistory(c)+
   '<div class="panel"><h3>受付内容</h3><dl class="kv">'+
-    '<dt>住所</dt><dd>'+(c.addr?h(c.addr)+' <a class="btn sm" style="display:inline-flex;align-items:center;text-decoration:none;margin-left:4px" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(c.addr)+'">地図を開く</a>':'—')+'</dd>'+
+    '<dt>住所</dt><dd>'+(c.addr?h(c.addr)+' <a class="btn sm" style="display:inline-flex;align-items:center;text-decoration:none;margin-left:4px" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(c.addr)+'">地図を開く</a>':'—')+
+      /* v1.50.138 トシさんの指示（大平さんの質問）：登録済みの案件の住所を、あとから入れる・直す。Googleカレンダーの予定の場所も一緒に直す */
+      (ui.addrEdit===c.id?'<div class="ro" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"><label class="f">住所（Googleカレンダーの「場所」に入ります）<input type="text" id="d_addr" maxlength="200" value="'+h(c.addr||"")+'" placeholder="例：神奈川県相模原市中央区…"></label>'+
+        (c.gcal&&c.gcal.id&&c.gcal.date?'<span class="note">保存すると、Googleカレンダーの予定の「場所」も直します（ログインしていなければ、次の同期で直します）。</span>':'')+
+        '<div class="row"><button class="btn pri" type="button" data-act="addrsave">住所を保存</button><button class="btn" type="button" data-act="addrno">やめる</button></div></div>'
+        :' <button class="btn sm" type="button" data-act="addredit">'+(c.addr?'直す':'入れる')+'</button>')+
+      (c.gcal&&c.gcal.addrPending?'<div class="note" style="color:var(--amber)">Googleカレンダーの予定の場所は、次の同期で直します</div>':'')+'</dd>'+
     '<dt>会社</dt><dd>'+(ui.coEdit?coSeg("data-cset",c.company)+'<div class="row" style="margin-top:6px"><button class="btn" type="button" data-act="coeditno">やめる</button></div>':coChip(c.company)+' <button class="btn sm" type="button" data-act="coedit">'+(c.company?'直す':'選ぶ')+'</button>')+'</dd>'+
     '<dt>依頼元</dt><dd>'+h(c.client)+'（'+h(c.clientKind)+'）</dd>'+
     '<dt>担当</dt><dd>'+h(tantouLabel(c.tantou))+'</dd>'+
@@ -2358,6 +2373,9 @@ async function gSyncAllRun(){
     catch(err){step("予定の読み込み",false,gMsg(err))}
     const moved=calendarDriftCases();
     if(moved.length)step("日付の変わった案件",false,moved.length+"件がGoogleカレンダーと違います（案件の画面で「カレンダーの予定を更新」を押してください）");
+    /* v1.50.138 住所を直したのに、カレンダーの場所をまだ直せていない案件 */
+    {const pend=DB.cases.filter(c=>c.gcal&&c.gcal.addrPending);if(pend.length){let ok=0;const bad=[];for(const c of pend){try{await caseAddrCal(c);ok++}catch(err){if(err.message==="signin")throw err;bad.push(c.id)}}
+      step("住所を直した予定",!bad.length,ok+"件の場所を直しました"+(bad.length?"・直せなかった "+bad.join("・")+"（次の同期でもう一度）":""))}}
     if(D().sheetId)await dataSync(step);
     if(D().admin||D().viewListId)corpBgStart(step);/* v1.50.87 社員の記録は裏で読む（ボタンを早く戻す） */
     complete=true;
@@ -2399,9 +2417,10 @@ function syncReqCount(url,method){if(!syncDiag)return;const u=String(url),q=sync
 const syncDiagSet=(k,v)=>{if(syncDiag)syncDiag[k]=v};
 async function syncDiagTime(k,fn){const t=Date.now();try{return await fn()}finally{if(syncDiag){syncDiag.ord=syncDiag.ord||{};syncDiag.ord[k]=(syncDiag.ord[k]||0)+Date.now()-t}}}
 function syncDetailText(t){const d=t&&t.detail;if(!d)return "";const out=[];
-  if(d.corp){const c=d.corp;out.push("社員の記録："+c.n+"人・前回の控え "+(c.prevN??"?")+"人・読み直さず "+(c.reused||0)+"人（うち「情報」で確認 "+(c.probed||0)+"人）・全部読んだ "+(c.full??"?")+"人・いちばん遅い人 "+syncSec(c.slow||0)+(c.prep!=null?"・読む前の準備 "+syncSec(c.prep):"")+(c.ms!=null?"・読み込み全体 "+syncSec(c.ms):"")+(!("shared" in c)?"":c.shared==null?"・社長の更新日時 なし/古い":"・社長の更新日時 "+c.shared+"分前")+"・控えの保存 "+(c.keep?(c.keep.ok?"できた ":"できなかった ")+c.keep.kb+"KB":"?"))}
+  if(d.corp){const c=d.corp;out.push("社員の記録："+c.n+"人・前回の控え "+(c.prevN??"?")+"人・読み直さず "+(c.reused||0)+"人（うち「情報」で確認 "+(c.probed||0)+"人）・全部読んだ "+(c.full??"?")+"人・いちばん遅い人 "+syncSec(c.slow||0)+(c.slowWho?"（"+c.slowWho+(c.slowTries>1?"・"+c.slowTries+"回試した"+(c.slowWhy?"："+c.slowWhy.split(",").map(k=>({rate:"回数制限",server:"Google側の不具合",timeout:"時間切れ",network:"通信の失敗"})[k]||k).join("・"):""):"")+"）":"")+(c.prep!=null?"・読む前の準備 "+syncSec(c.prep):"")+(c.ms!=null?"・読み込み全体 "+syncSec(c.ms):"")+(!("shared" in c)?"":c.shared==null?"・社長の更新日時 なし/古い":"・社長の更新日時 "+c.shared+"分前")+"・控えの保存 "+(c.keep?(c.keep.ok?"できた ":"できなかった ")+c.keep.kb+"KB":"?"))}
   {const post=[["corpList","一覧の読み込み"],["corpSave","画面の作り直しと保存"],["corpBoss","済みの印の保存"],["corpNum","会社の数字の書き出し"]].filter(([k])=>d[k]!=null);
-   if(post.length)out.push("社員の記録の前後："+post.map(([k,l])=>l+" "+syncSec(d[k])).join("・"))}
+   if(d.names){const n=d.names;out.push("担当の候補など："+n.n+"人・書いた "+n.wrote+"人・同じ "+n.same+"人・前に済み "+n.skip+"人"+(n.bad?"・できなかった "+n.bad+"人（次の同期でその人だけ）":"")+(n.retry?"・やり直し "+n.retry+"回":""))}
+   const lp=d.corpListParts;if(post.length)out.push("社員の記録の前後："+post.map(([k,l])=>l+" "+syncSec(d[k])+(k==="corpList"&&lp?"（移転の確認 "+syncSec(lp.follow)+"・一覧 "+syncSec(lp.list)+"・氏名の履歴 "+syncSec(lp.names)+"）":"")).join("・"))}
   if(d.req){const q=d.req;out.push("Googleへの問い合わせ："+((q.sr||0)+(q.sw||0)+(q.dr||0)+(q.cal||0)+(q.etc||0))+"回（表計算の読み "+(q.sr||0)+"・書き "+(q.sw||0)+"・ドライブ "+(q.dr||0)+"・カレンダー "+(q.cal||0)+(q.etc?"・ほか "+q.etc:"")+"）"+(q.r429?"・回数制限（429） "+q.r429+"回":"")+(q.paceMs?"・回数の上限に合わせて待った "+syncSec(q.paceMs):""))}
   if(d.ord){const o=d.ord,names={ptr:"場所",sales:"売上報告の読み込み",write:"書き出し",ordLoad:"受注の読み直し",view:"見るだけの読み込み"};
     out.push("今月の受注："+Object.keys(names).filter(k=>o[k]!=null).map(k=>names[k]+" "+syncSec(o[k])).join("・")+(d.salesTabs!=null?"（売上報告のタブ "+d.salesTabs+"）":""))}
@@ -2429,13 +2448,21 @@ function gSyncPanel(home=false){
 const gRand=()=>{const a="0123456789abcdefghijklmnopqrstuv", b=new Uint8Array(20);crypto.getRandomValues(b);return "cpghub"+Array.from(b,x=>a[x%32]).join("")};
 const gTitle=c=>"【"+TYPES[c.type].label+"】"+c.property+" "+c.room;
 const gDesc=c=>["受付番号："+c.id,"依頼の種類："+TYPES[c.type].label,"依頼元："+c.client+"（"+c.clientKind+"）","担当："+tantouFull(c.tantou),"（CPG HUBから登録）"].join("\n");
+/* v1.50.138 案件の住所を直したとき：その案件のGoogleカレンダーの予定の「場所」だけを直す（ほかは触らない）。予定が消えていれば何もしない */
+async function caseAddrCal(c){
+  const g=c.gcal;if(!g||!g.id||!g.cal)return;
+  try{await gApi("calendars/"+encodeURIComponent(g.cal)+"/events/"+encodeURIComponent(g.id),{method:"PATCH",body:{location:c.addr||""}})}
+  catch(err){if(err.status!==404&&err.status!==410)throw err}
+  const {addrPending,...rest}=c.gcal;c.gcal={...rest,addr:c.addr||""};save();
+}
 async function gRegister(c){
   await gAuthorize();
   if(!G.cals)await gLoadCalendars();
   /* 時刻があれば、その時間（日本時間）の予定。なければ終日。終日⇔時間の切り替えでは、使わない方を null にして消す */
   const endT=planEndEff(c),endDay=endT==="24:00"?addDays(c.planDate,1):c.planDate,endHM=endT==="24:00"?"00:00":endT;
   const when=planTimed(c)?{start:{dateTime:c.planDate+"T"+c.planTime+":00+09:00",timeZone:"Asia/Tokyo",date:null},end:{dateTime:endDay+"T"+endHM+":00+09:00",timeZone:"Asia/Tokyo",date:null}}:{start:{date:c.planDate,dateTime:null,timeZone:null},end:{date:addDays(c.planDate,1),dateTime:null,timeZone:null}};
-  const body={summary:gTitle(c),location:c.addr||"",description:gDesc(c),status:"confirmed",...when,extendedProperties:{private:{cpgHubCase:c.id}}},sig=planSig(c);
+  /* v1.50.138 案件に住所がないときは場所を送らない（Googleカレンダーで直接入れた場所を、予定の書き直しで消さない） */
+  const body={summary:gTitle(c),...(c.addr?{location:c.addr}:{}),description:gDesc(c),status:"confirmed",...when,extendedProperties:{private:{cpgHubCase:c.id}}},sig=planSig(c);
   /* 新しく作るときは null を送らない（null は PATCH で前の値を消すときだけ） */
   const post=JSON.parse(JSON.stringify(body,(k,v)=>v===null?undefined:v));
   if(c.gcal&&c.gcal.id&&c.gcal.cal){
@@ -2538,8 +2565,9 @@ function calHubOwner(e,ctx,model,cases){
  else hit=byCreator(people);
  const sids=[...new Set(hit.map(p=>p.sheetId))];if(sids.length!==1)return null;
  const p=hit[0],own=(cases||[]).filter(c=>e.hub&&(c.srcId===e.hub||c.id===e.hub)&&c._scopeOwner===p.sheetId&&COMPANIES.includes(c.company));
- const cos=(model.people||[]).find(x=>x.sheetId===p.sheetId)?.companies||[];
- return {person:p.sheetId,company:own.length===1?own[0].company:cos.length===1?cos[0]:"unknown"};
+ const cos=(model.people||[]).find(x=>x.sheetId===p.sheetId)?.companies||[],company=own.length===1?own[0].company:cos.length===1?cos[0]:"unknown";
+ /* v1.50.134 トシさんの指示：専務・本部長（役割「全社」）の予定で、案件に結び付かず会社が決まらないものは、どの会社を選んでいても出す（前は会社を選ぶと「誰の予定か分からない予定あり」になった） */
+ return {person:p.sheetId,company,...(company==="unknown"&&p.role==="全社"?{hq:true}:{})};
 }
 /* v1.50.9 ほかの人の予定を見る端末で、「CPG HUB」の対応がまだ無ければ「複数の人が使う仕事用」として扱う（保存はしない。この端末で対応を保存すれば、それが優先）。
    予定画面に表示するカレンダーに「CPG HUB」が入っているときだけ */
@@ -2822,7 +2850,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.131";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.142";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -3021,7 +3049,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.131" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.131" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.142" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.142" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3929,6 +3957,7 @@ async function adminSync(log){
   {const a=officeParse(hubSetGet(listV[HUBSET_TAB],OFFICE_KEY));if(JSON.stringify(a)!==JSON.stringify(officeAddrs())){d.officeAddrs=a;save()}}
   /* v1.50.84 Googleの場所の候補のキー */
   {const k=hubSetGet(listV[HUBSET_TAB],PLACES_KEY);if(k!==placesKey()){d.placesKey=k;save()}}
+  {const a=ordInParse(hubSetGet(listV[HUBSET_TAB],ORDIN_KEY));if(JSON.stringify(a)!==JSON.stringify(d.ordInputs||[])){d.ordInputs=a;save()}}
   {const raw=hubSetGet(listV[HUBSET_TAB],SALES_ED_KEY),ids=raw?raw.split(",").map(x=>x.trim()).filter(Boolean):null;if(ids&&JSON.stringify(ids)!==JSON.stringify(d.salesEditors||[])){d.salesEditors=ids;save()}}
   return found;
 }
@@ -3999,8 +4028,8 @@ const salesPrelim=key=>todayS()<=salesFixDate(key);
 const salesMyCos=()=>D().admin?SALES_ORDER.slice():(D().salesEditCos||[]).filter(c=>SALES_ORDER.includes(c));
 async function salesLoad(){
   const id=salesSrc();if(!id)return;await gAuthorize(true);
-  const all=(await sheetTabNames(id)).filter(t=>SALES_TAB.test(t));syncDiagSet("salesTabs",all.length);
-  const v=all.length?await sheetRead(id,all):{};
+  const names=await sheetTabNames(id),all=names.filter(t=>SALES_TAB.test(t)),pTab=names.includes(PCHK_TAB);syncDiagSet("salesTabs",all.length);
+  const v=all.length||pTab?await sheetRead(id,all.concat(pTab?[PCHK_TAB]:[])):{},pchk=pTab?(v[PCHK_TAB]||[]):null;if(pTab)delete v[PCHK_TAB];
   /* 同じ月のタブを1つずつ読んでまとめる（salesFrom）。表を分けたタブは、その表だけを探す。読めなかったところにはタブの名前を付ける */
   /* 最終更新（Googleドライブの更新日時）。今日（日本時間）に更新されたかを見る。読めなくても内容は出す */
   /* v1.50.52 HUBのログインはドライブを「HUBが作ったファイルだけ」見られる（drive.file）。HUB以外で作ったシートは、ドライブから名前も更新日時も取れない。
@@ -4008,11 +4037,11 @@ async function salesLoad(){
   let modified="",name="";
   try{name=String((((await gReq(SHEETS+"/"+encodeURIComponent(id)+"?fields=properties.title"))||{}).properties||{}).title||"")}catch(err){if(err.message==="signin")throw err}
   try{const f=(await gReq(DRIVE+"/"+encodeURIComponent(id)+"?fields=modifiedTime,name"))||{};modified=String(f.modifiedTime||"");name=name||String(f.name||"")}catch(err){if(err.message==="signin")throw err}
-  salesSet(salesFrom({id,all,v,modified,name}));
-  ui.salesRaw={all,v,modified,name};
+  salesSet(salesFrom({id,all,v,modified,name,pchk}));
+  ui.salesRaw={all,v,modified,name,pchk};
 }
 /* v1.50.108 読んだタブ（all）と中身（v）から売上報告の形を作る。社長・入力できる人はシートから、社員は書き出された控えから（同じ作り） */
-function salesFrom({id,all,v,modified,name,at}){
+function salesFrom({id,all,v,modified,name,at,pchk}){
   const tabs=[...new Set(all.map(t=>t.slice(0,7)))].sort();
   const month=key=>{const out={cos:[],staff:[],days:[],chk:[],bad:[]},mine=all.filter(t=>t.slice(0,7)===key),split=mine.length>1||mine[0]!==key;
     const need=["co","st","day"].filter(k=>!mine.some(t=>t===key||SALES_PARTS[t.slice(8)]===k));
@@ -4021,7 +4050,7 @@ function salesFrom({id,all,v,modified,name,at}){
     return {key,...out}};
   const months=tabs.map(month),t=todayS(),md=v=>{const m=String(v||"").trim().match(/^(\d{1,2})\/(\d{1,2})$/);return m?m[1].padStart(2,"0")+"/"+m[2].padStart(2,"0"):""};
   const cur=months.find(m=>m.key===t.slice(0,7)),upd=cur?cur.cos.map(c=>md(c["更新日"])).filter(Boolean).sort().at(-1)||"":"";
-  return {at:at||Date.now(),id,modified,name,upd,tabs:all,today:(!!modified&&jstDay(modified)===jstDay(new Date().toISOString()))||upd===t.slice(5,7)+"/"+t.slice(8),months,keys:tabs};
+  return {at:at||Date.now(),id,modified,name,upd,tabs:all,pchk:pchkParse(pchk),pchkTab:Array.isArray(pchk),today:(!!modified&&jstDay(modified)===jstDay(new Date().toISOString()))||upd===t.slice(5,7)+"/"+t.slice(8),months,keys:tabs};
 }
 function salesSet(S){
   /* v1.50.113 トシさんの指示：はじめに開く月は今月（前はいちばん新しいタブ。翌月のタブを先に作ると空の月が出た）。今月のタブがなければいちばん新しい月。
@@ -4029,6 +4058,7 @@ function salesSet(S){
   const cur=todayS().slice(0,7),def=S.keys.includes(cur)?cur:S.keys.filter(k=>k<=cur).at(-1)||S.keys.at(-1)||"";
   ui.sales=S;if(!ui.salesMonth||!S.keys.includes(ui.salesMonth)||!ui.salesMonthPicked)ui.salesMonth=def;
   if(!S.view){const sum=ordSummary(S);if(sum)ordKeepSave(sum)}
+  ordPrelimKeepSave(S);
 }
 /* v1.50.113 社員に書き出す月は4か月（翌月のタブを先に作っても、前の3か月が見えるように） */
 /* v1.50.108 トシさんの指示：売上報告を全社員に見せる（見るだけ。旧3社報告と同じ範囲：3社とも、会社・担当者別・毎日の受注・確認）。
@@ -4039,6 +4069,8 @@ function salesViewRows(raw,at){
   const keys=[...new Set(raw.all.map(t=>t.slice(0,7)))].sort().slice(-SALESV_MONTHS),tabs=raw.all.filter(t=>keys.includes(t.slice(0,7)));
   const rows=[[SALESV_HEAD,"1"],["書き出し日時",at],["シートの最終更新",raw.modified||""],["シートの名前",raw.name||""]];
   for(const t of tabs){const j=JSON.stringify((raw.v[t]||[]).map(r=>(r||[]).map(x=>x==null?"":String(x))));if(j.length>45000)throw Error("「"+t+"」が大きすぎて書き出せません");rows.push(["タブ",t,j])}
+  /* v1.50.139 確定前の毎日の確認（本部長・GMの端末で、今日押したかを出すため） */
+  if(Array.isArray(raw.pchk)){const j=JSON.stringify(raw.pchk.map(r=>(r||[]).map(x=>x==null?"":String(x))));if(j.length<=45000)rows.push([PCHK_TAB,j])}
   return rows;
 }
 function salesViewParse(rows){
@@ -4047,7 +4079,8 @@ function salesViewParse(rows){
   for(const r of rows){if(!r||String(r[0])!=="タブ"||!SALES_TAB.test(String(r[1]||"")))continue;let x;try{x=JSON.parse(String(r[2]||"[]"))}catch(e){continue}
     if(!Array.isArray(x)||!x.every(a=>Array.isArray(a)))continue;all.push(String(r[1]));v[String(r[1])]=x.map(a=>a.map(c=>String(c??"")))}
   const at=get("書き出し日時");if(!at||!all.length)return null;
-  return {at,all,v,modified:get("シートの最終更新"),name:get("シートの名前")};
+  let pchk=null;{const r=rows.find(r=>r&&String(r[0])===PCHK_TAB);if(r)try{const x=JSON.parse(String(r[1]||"[]"));if(Array.isArray(x)&&x.every(a=>Array.isArray(a)))pchk=x}catch(e){}}
+  return {at,all,v,modified:get("シートの最終更新"),name:get("シートの名前"),pchk};
 }
 /* 社長の端末：会社の数字のファイルそれぞれに書き、読み戻して確かめる（中身が前と同じファイルは書かない） */
 async function salesViewWriteAll(){
@@ -4178,21 +4211,29 @@ function ordTile(){
   const isToday=v.date===t,sumN=v.cos.reduce((s,c)=>s+c.n,0),sumA=v.cos.reduce((s,c)=>s+c.amt,0);
   const row=(co,n,a,cls)=>'<span class="ord-r'+cls+'"><b>'+h(co)+'</b><span class="num">'+n+'件</span><span class="num ord-a">'+yen(a)+'</span></span>';
   return '<'+tag+' class="tile wide ordtile ordmini" id="home-orders"'+(sv?' aria-label="グループ各社売上進捗報告を開く"':'')+'>'+ttl+'<span class="ord-sub">今月の受注（'+md(v.date)+'まで'+(isToday?'':'・'+md(v.date)+'の時点')+'）</span>'+
-    v.cos.map(c=>row(c.co,c.n,c.amt,'')).join("")+row('合計',sumN,sumA,' ord-sum')+ordPrelimRows()+goTo+'</'+end+'>';
+    v.cos.map(c=>row(c.co,c.n,c.amt,'')).join("")+row('合計',sumN,sumA,' ord-sum')+ordPrelimRows()+ordInTileLine()+goTo+'</'+end+'>';
 }
 /* v1.50.130 トシさんの指示：ホームのタイルに、確定前の月（今月を除く。今なら10月）の売上の進み具合も出す。
    売上だけ（確定前の粗利は、あとから仕入れの額が入って低めに出るので出さない。粗利は確定してから見る）。
    ％は目標売上に対する達成率。会社の行と担当の合計が違う会社には「担当の合計と違います」を出す（v1.50.124 と同じ判定） */
+/* v1.50.133 トシさんの指示（「HUBを開いたときに同期するまで10月の売上が出ないのはなぜ」）：確定前の月の数字も、今月の受注と同じように端末に控えを残し、
+   開いたときは控えで出す（同期で売上報告を読んだら新しい数字に置き換える）。控えは会社ごとの実績売上・目標売上と、担当の合計と違う会社だけ */
+const PRELIM_KEY="workhub_prelim_v1";
+function ordPrelimData(S){
+  const cur=todayS().slice(0,7),ord=c=>{const i=SALES_ORDER.indexOf(c.co);return i<0?99:i},num=x=>Number(x)||0;
+  return S.months.filter(M=>M&&M.key<cur&&salesPrelim(M.key)&&Array.isArray(M.cos)&&M.cos.length).sort((a,b)=>a.key.localeCompare(b.key)).map(M=>({key:M.key,
+    cos:M.cos.slice().sort((a,b)=>ord(a)-ord(b)).map(c=>({co:c.co,a:num(c["実績売上"]),g:num(c["目標売上"])})),
+    diff:M.cos.filter(c=>{try{return !!salesCoDiff(M,c.co)}catch(e){return false}}).map(c=>c.co)}));
+}
+function ordPrelimKeep(){try{const v=JSON.parse(localStorage.getItem(PRELIM_KEY)||"null");return v&&Array.isArray(v.months)?v.months.filter(m=>m&&typeof m.key==="string"&&Array.isArray(m.cos)):null}catch(e){return null}}
+function ordPrelimKeepSave(S){try{if(S&&Array.isArray(S.months))localStorage.setItem(PRELIM_KEY,JSON.stringify({at:Date.now(),months:ordPrelimData(S)}))}catch(e){}}
 function ordPrelimRows(){
-  const S=ui.sales;if(!S||!Array.isArray(S.months))return "";const cur=todayS().slice(0,7);
-  const Ms=S.months.filter(M=>M&&M.key<cur&&salesPrelim(M.key)&&Array.isArray(M.cos)&&M.cos.length).sort((a,b)=>a.key.localeCompare(b.key));
-  const ord=c=>{const i=SALES_ORDER.indexOf(c.co);return i<0?99:i};
-  return Ms.map(M0=>{const M={...M0,cos:M0.cos.slice().sort((a,b)=>ord(a)-ord(b))},num=x=>Number(x)||0,pc=(a,g)=>g?Math.round(a/g*100)+"%":"—";
+  const S=ui.sales,Ms=(S&&Array.isArray(S.months)?ordPrelimData(S):ordPrelimKeep()||[]).filter(M=>M.key<todayS().slice(0,7)&&salesPrelim(M.key));
+  return Ms.map(M=>{const pc=(a,g)=>g?Math.round(a/g*100)+"%":"—",num=x=>Number(x)||0;
     const row=(co,a,g,cls)=>'<span class="ord-r'+cls+'"><b>'+h(co)+'</b><span class="num">'+pc(a,g)+'</span><span class="num ord-a">'+yen(a)+'</span></span>';
-    const sa=M.cos.reduce((t,c)=>t+num(c["実績売上"]),0),sg=M.cos.reduce((t,c)=>t+num(c["目標売上"]),0);
-    const diff=M.cos.filter(c=>{try{return !!salesCoDiff(M,c.co)}catch(e){return false}}).map(c=>c.co);
+    const sa=M.cos.reduce((t,c)=>t+num(c.a),0),sg=M.cos.reduce((t,c)=>t+num(c.g),0),diff=Array.isArray(M.diff)?M.diff:[];
     return '<span class="ord-sub ord-pre">'+Number(M.key.slice(5))+'月の売上（確定前・'+md(salesFixDate(M.key))+'確定）・％は達成率</span>'+
-      M.cos.map(c=>row(c.co,num(c["実績売上"]),num(c["目標売上"]),'')).join("")+row('合計',sa,sg,' ord-sum')+
+      M.cos.map(c=>row(c.co,num(c.a),num(c.g),'')).join("")+row('合計',sa,sg,' ord-sum')+
       (diff.length?'<span class="sales-diff-tag ord-diff">'+h(diff.join("・"))+'：会社の行と担当の合計が違います</span>':'');
   }).join("");
 }
@@ -4253,6 +4294,102 @@ const SALES_COLS={co:{"目標売上":1,"目標粗利":2,"実績売上":3,"実績
 const salesColL=i=>String.fromCharCode(65+i);
 const salesSame=(cur,base)=>{const e=v=>v===undefined||v===null||v==="";if(e(cur)&&e(base))return true;if(e(cur)||e(base))return false;
   if(typeof base==="number"){const n=salesNum(cur);return n===base}return String(cur).trim()===String(base).trim()};
+/* v1.50.132 トシさんの指示（11/23「作って」）：受注の入力シート（「CPG HUB_受注の入力（名前）」の「毎日の受注」タブ）の行を、社長の端末の同期で売上報告の「受注」に入れる。
+   前は入力シートを読む仕組みがなく、11/20からの行が入っていなかった。
+   ・どのシートを読むかは、社員一覧の「HUBの設定」の「受注の入力シート」に1行ずつ「名前｜シートのIDかURL｜入れてよい会社（CP,CPY など。省くと3社）」で書く（IDはコードに書かない）。
+   ・右の列「反映（運営企画室）」が空欄の行を見る。同じ月・会社・日が何行かあれば、いちばん下の行を使う（上の行は「見送り」にして運営メモに書く）。
+   ・売上報告にその日の行がなければ足して「反映済み」。もう同じ数字なら「同じ」。
+   ・売上報告に別の数字が入っていれば（前に入れた数字を直す行）、書かずに「確認待ち」にして、社長の端末の売上報告の画面に「直す／直さない」を出す。
+   ・形がおかしい行（月の形・入れてよくない会社・日・先の日付・数字でない）は書かずに「見送り」にし、運営メモに理由を書く。
+   ・その月の受注のタブがまだないときは、何も付けずに次の同期を待つ */
+const ORDIN_KEY="受注の入力シート",ORDIN_TAB="毎日の受注",ORDIN_STORE="workhub_ordin_v1";
+const ORDIN_HEAD=["入れた日","月","会社","日","受注件数","受注金額"],ORDIN_MARK="反映（運営企画室）",ORDIN_WAIT="確認待ち";
+function ordInParse(raw){
+  return String(raw||"").split(/\r?\n|；|;/).map(l=>l.split(/[｜|]/).map(x=>x.trim())).map(p=>{const id=sheetIdOf(p.length>1?p[1]:p[0]);if(!id)return null;
+    const cos=[...new Set(String(p[2]||"").split(/[,、，\s]+/).filter(c=>COMPANIES.includes(c)))];return {name:p.length>1?p[0]:"",id,cos:cos.length?cos:COMPANIES.slice()}}).filter(Boolean);
+}
+const ordInStamp=()=>{const d=new Date(Date.now()+9*3600e3).toISOString();return d.slice(0,10).replace(/-/g,"/")+" "+d.slice(11,16)};
+const ordInPending=()=>{try{const v=JSON.parse(localStorage.getItem(ORDIN_STORE)||"null");return v&&Array.isArray(v.items)?v.items:[]}catch(e){return []}};
+const ordInPendingSet=items=>{try{localStorage.setItem(ORDIN_STORE,JSON.stringify({at:Date.now(),items}))}catch(e){}};
+async function ordInRead(id){
+  const v=await gReq(SHEETS+"/"+encodeURIComponent(id)+"/values:batchGet?valueRenderOption=FORMATTED_VALUE&ranges="+encodeURIComponent(A1(ORDIN_TAB)));
+  return ((v&&v.valueRanges||[])[0]||{}).values||[];
+}
+/* 1行の印を付ける（反映・反映日時・運営メモ）。印の列の位置は見出しで探す */
+async function ordInMark(src,marks){
+  if(!marks.length)return;
+  await gReq(SHEETS+"/"+encodeURIComponent(src.id)+"/values:batchUpdate",{method:"POST",body:{valueInputOption:"RAW",data:marks.map(m=>({range:A1(ORDIN_TAB)+"!"+salesColL(src.col)+m.row+":"+salesColL(src.col+2)+m.row,values:[[m.mark,ordInStamp(),m.memo||""]]}))}});
+}
+/* 入力シートの中身から、行ごとの扱いを決める（書かない。テストしやすいように分けた） */
+function ordInPlan(src,rows,S,today){
+  const cell=(r,i)=>String((r||[])[i]??"").trim(),head=(rows[0]||[]).map(x=>String(x??"").trim());
+  if(!ORDIN_HEAD.every((k,i)=>head[i]===k))return {err:"「"+ORDIN_TAB+"」の見出し（"+ORDIN_HEAD.join("｜")+"）が見つかりません"};
+  const col=head.indexOf(ORDIN_MARK);if(col<0)return {err:"「"+ORDIN_MARK+"」の列が見つかりません"};
+  const marks=[],adds=[],wait=[],hold=[],byKey=new Map();
+  for(let i=1;i<rows.length;i++){const r=rows[i],row=i+1,mk=cell(r,col);
+    if(!ORDIN_HEAD.some((_,j)=>cell(r,j)))continue;if(mk&&mk!==ORDIN_WAIT)continue;
+    const key=cell(r,1),co=cell(r,2),dayT=cell(r,3),n=salesNum(cell(r,4)),amt=salesNum(cell(r,5)),day=Number(dayT);
+    const bad=!/^\d{4}-\d{2}$/.test(key)?"月の形（2026-11 の形）":!src.cos.includes(co)?"会社「"+co+"」はこのシートでは入れられません":!(/^\d{1,2}$/.test(dayT)&&day>=1&&day<=new Date(Number(key.slice(0,4)),Number(key.slice(5)),0).getDate())?"日「"+dayT+"」":
+      key+"-"+String(day).padStart(2,"0")>today?"先の日付":!(Number.isInteger(n)&&n>=0)?"受注件数「"+cell(r,4)+"」":!(Number.isFinite(amt)&&amt>=0)?"受注金額「"+cell(r,5)+"」":"";
+    if(bad){marks.push({row,mark:"見送り",memo:"入れませんでした："+bad});continue}
+    const k=key+"|"+co+"|"+day;if(byKey.has(k)){const p=byKey.get(k);marks.push({row:p.row,mark:"見送り",memo:"同じ日の下の行（"+row+"行目）を使いました"})}
+    byKey.set(k,{row,key,co,day,n,amt,was:mk})}
+  for(const x of byKey.values()){const M=(S.months||[]).find(m=>m.key===x.key),tab=x.key+" 受注";
+    if(!M||!(S.tabs||[]).includes(tab)){hold.push(x.key+"のタブがない "+x.co+" "+x.day+"日");continue}
+    const have=M.days.filter(d=>d.co===x.co&&d.day===x.day);
+    if(have.length>1){hold.push(x.co+" "+Number(x.key.slice(5))+"/"+x.day+"は売上報告に同じ日が"+have.length+"行あります");continue}
+    const d=have[0];
+    if(!d){adds.push({tab,row:[x.co,x.day,x.n,x.amt],label:x.co+" "+x.day+"日",mark:{row:x.row,mark:"反映済み"}});continue}
+    if(salesSame(d.n,x.n)&&salesSame(d.amt,x.amt)){marks.push({row:x.row,mark:"同じ",memo:x.was?"売上報告がもう同じ数字でした":""});continue}
+    wait.push({src:src.id,name:src.name,col,row:x.row,key:x.key,co:x.co,day:x.day,n:x.n,amt:x.amt,tab:d.tab,srow:d.row,bn:d.n,bamt:d.amt});
+    if(!x.was)marks.push({row:x.row,mark:ORDIN_WAIT,memo:"前に入れた数字（"+d.n+"件・"+(d.amt==null?"空":Math.round(d.amt).toLocaleString("ja-JP"))+"円）と違うので、社長に確かめます"})}
+  return {col,marks,adds,wait,hold};
+}
+async function ordInReflect(){
+  const d=D(),S=ui.sales;if(!d.admin||!S||!S.id||S.view)return {msg:"",wrote:0};
+  const srcs=d.ordInputs||[];if(!srcs.length){ordInPendingSet([]);return {msg:"",wrote:0}}
+  const t=todayS(),wait=[],errs=[],hold=[];let added=0,same=0,skip=0;
+  for(const src of srcs){const nm=src.name||"入力シート";
+    let rows;try{rows=await ordInRead(src.id)}catch(err){if(err.message==="signin")throw err;errs.push(nm+"："+(err.message==="http"?dMsg(err):err.message));continue}
+    const p=ordInPlan(src,rows,S,t);if(p.err){errs.push(nm+"："+p.err);continue}
+    const sc={...src,col:p.col};
+    if(p.adds.length){try{await salesWrite(S.id,[],p.adds)}catch(err){if(err.message==="signin")throw err;errs.push(nm+"："+(err.message==="http"?dMsg(err):err.message));p.adds.length=0}}
+    const marks=p.marks.concat(p.adds.map(a=>a.mark));
+    try{await ordInMark(sc,marks)}catch(err){if(err.message==="signin")throw err;errs.push(nm+"の印："+(err.message==="http"?dMsg(err):err.message))}
+    added+=p.adds.length;same+=p.marks.filter(m=>m.mark==="同じ").length;skip+=p.marks.filter(m=>m.mark==="見送り").length;wait.push(...p.wait);hold.push(...p.hold.map(x=>nm+"："+x))}
+  ordInPendingSet(wait);
+  const msg=[added?added+"日分を入れました":"",same?"同じ数字 "+same+"行":"",skip?"見送り "+skip+"行（運営メモに理由）":"",wait.length?"前の数字を直す行が"+wait.length+"件。売上報告の画面で「直す／直さない」を選んでください":"",hold.length?"待っている行："+hold.slice(0,3).join("・")+(hold.length>3?" ほか":""):"",errs.length?"できなかったこと："+errs.join("・"):""].filter(Boolean).join("・");
+  return {msg,wrote:added};
+}
+/* 社長が「直す」を押したとき：売上報告の数字が確かめたときのままなら書き、入力シートに「反映済み」。「直さない」は「見送り」 */
+async function ordInDecide(i,fix){
+  const x=ordInPending()[i];if(!x)throw Error("もう一度同期してください（確かめる行が見つかりません）");
+  await gAuthorize(true);
+  const rows=await ordInRead(x.src),r=rows[x.row-1]||[],c=j=>String(r[j]??"").trim();
+  if(!(c(1)===x.key&&c(2)===x.co&&Number(c(3))===x.day&&salesNum(c(4))===x.n&&salesNum(c(5))===x.amt&&c(x.col)===ORDIN_WAIT))throw Error("入力シートの行が変わっています。もう一度同期してください");
+  const src={id:x.src,col:x.col},old=x.bn+"件・"+(x.bamt==null?"空":Math.round(x.bamt).toLocaleString("ja-JP"))+"円";
+  if(fix){const cells=[];if(!salesSame(x.n,x.bn))cells.push({tab:x.tab,row:x.srow,col:SALES_COLS.day.n,base:x.bn,next:x.n,label:x.co+" "+x.day+"日の受注件数"});
+    if(!salesSame(x.amt,x.bamt))cells.push({tab:x.tab,row:x.srow,col:SALES_COLS.day.amt,base:x.bamt,next:x.amt,label:x.co+" "+x.day+"日の受注金額"});
+    if(cells.length)await salesWrite(D().salesId,cells,[]);
+    await ordInMark(src,[{row:x.row,mark:"反映済み",memo:"社長の確認で直しました（前は "+old+"）"}])}
+  else await ordInMark(src,[{row:x.row,mark:"見送り",memo:"社長の確認で直さないことにしました（売上報告は "+old+" のまま）"}]);
+  ordInPendingSet(ordInPending().filter((_,j)=>j!==i));
+  if(fix)await salesLoad();
+}
+/* ホームのタイル（社長）：確かめる直しがあれば1行出す（押すと売上報告へ） */
+const ordInTileLine=()=>{const n=D().admin?ordInPending().length:0;return n?'<span class="ord-wait">受注の入力シートの直し '+n+'件（確かめてください）</span>':''};
+function ordInPanel(){
+  const items=ordInPending();if(!D().admin)return "";
+  /* v1.50.141 トシさんの指摘（「直す」を押したら、ボタンが消えただけ）：直し終わると枠ごと消えて、結果のお知らせも見えなかった。直すものがなくなっても、結果だけは出す */
+  if(!items.length)return ui.ordInMsg?'<p class="ordin-done" role="status" style="margin:0;color:'+(ui.ordInMsg.ok?'var(--green)':'var(--red)')+'">'+(ui.ordInMsg.ok?'✓ ':'')+h(ui.ordInMsg.text)+'（受注の入力シートの直し）</p>':"";
+  const y=n=>n==null?"空":Math.round(n).toLocaleString("ja-JP")+"円",busy=ui.ordInBusy?' disabled':'';
+  return '<div class="panel ordin" role="region" aria-label="受注の入力シートの直し"><h3 style="margin:0">受注の入力シートの直し（'+items.length+'件）</h3>'+
+    '<p class="note" style="margin:0">前に売上報告に入れた数字と違う行です。直すときは「直す」、今のままにするときは「直さない」を押してください。</p>'+
+    items.map((x,i)=>'<div class="ordin-row"><div><b>'+h(x.co)+' '+Number(x.key.slice(5))+'/'+x.day+'</b>'+(x.name?'<span class="note">（'+h(x.name)+'さんの入力）</span>':'')+'</div>'+
+      '<div class="num">'+x.bn+'件 → <b>'+x.n+'件</b>・'+y(x.bamt)+' → <b>'+y(x.amt)+'</b></div>'+
+      '<div class="row" style="gap:6px"><button class="btn sm pri" type="button" data-act="ordinfix" data-i="'+i+'"'+busy+'>直す</button><button class="btn sm" type="button" data-act="ordinskip" data-i="'+i+'"'+busy+'>直さない</button></div></div>').join("")+
+    (ui.ordInMsg?'<p role="status" style="margin:0;color:'+(ui.ordInMsg.ok?'var(--green)':'var(--red)')+'">'+h(ui.ordInMsg.text)+'</p>':'')+'</div>';
+}
 async function salesWrite(id,cells,adds){
   const tabs=[...new Set(cells.map(c=>c.tab).concat(adds.map(a=>a.tab)))];
   const q=tabs.map(t=>"ranges="+encodeURIComponent(A1(t))).join("&");
@@ -4374,6 +4511,44 @@ async function salesMonPress(key,co,k){
   const pd=salesChkPending();pd[[key,co,"月",k].join("|")]=Date.now();try{localStorage.setItem(SCHK_KEY,JSON.stringify(pd))}catch(e){}
   return "record";
 }
+/* v1.50.139 トシさんの指示：確定前の月（今なら10月。確定日まで実績売上・粗利・担当者別が毎日変わる）にも「毎日の確認」を付ける。
+   押すのは社長・本部長・GM（毎日の確認と同じ人）。見るものは、その月の会社の数字と担当者別の、今日の時点の数字。確定日を過ぎたら出さない。
+   記録は売上報告のシートの「確定前の確認」タブ（月・会社・日付・社長・本部長・GM）。1つのタブに、どの月の分もまとめる（12/1〜15のように確定前の月が2つある時期もあるため）。
+   日付は「2026-11-24」の形の文字。行は押した日に足す（社長の端末か、シートを開ける端末）。シートを開けない端末（GMなど）は、自分の記録シートの「売上の確認」に
+   1行書き（日＝「確定前」、役割＝hq_p・gm_p）、社長の端末の同期でこのタブに入れる */
+const PCHK_TAB="確定前の確認",PCHK_COLS=["月","会社","日付","社長","本部長","GM"],PCHK_COL={boss:"D",hq:"E",gm:"F"};
+const pchkOn=v=>v===true||String(v).toUpperCase()==="TRUE";
+function pchkParse(rows){
+  if(!Array.isArray(rows)||JSON.stringify((rows[0]||[]).slice(0,6).map(x=>String(x??"").trim()))!==JSON.stringify(PCHK_COLS))return [];
+  return rows.slice(1).map((r,i)=>({key:String((r||[])[0]??"").trim(),co:String((r||[])[1]??"").trim(),date:String((r||[])[2]??"").trim(),boss:pchkOn((r||[])[3]),hq:pchkOn((r||[])[4]),gm:pchkOn((r||[])[5]),row:i+2}))
+    .filter(x=>/^\d{4}-\d{2}$/.test(x.key)&&COMPANIES.includes(x.co)&&/^\d{4}-\d{2}-\d{2}$/.test(x.date));
+}
+/* 確定前の毎日の確認を出す月か（今月より前で、確定日がまだ） */
+const pchkMonth=(key,day=todayS())=>/^\d{4}-\d{2}$/.test(String(key||""))&&key<day.slice(0,7)&&day<=salesFixDate(key);
+async function pchkWrite(S,items){
+  /* items：[{key,co,date,k}]。タブがなければ作る。今ある行はそのマスだけ、ない行は足す */
+  if(!items.length)return 0;
+  if(!S.pchkTab){await addTab(S.id,PCHK_TAB);await sheetWrite(S.id,PCHK_TAB,[PCHK_COLS]);S.pchkTab=true;S.pchk=[]}
+  const cells=[],adds={};
+  for(const it of items){const ex=(S.pchk||[]).find(x=>x.key===it.key&&x.co===it.co&&x.date===it.date);
+    if(ex){if(!ex[it.k])cells.push({range:A1(PCHK_TAB)+"!"+PCHK_COL[it.k]+ex.row,values:[[true]]});continue}
+    const id=[it.key,it.co,it.date].join("|");adds[id]=adds[id]||[it.key,it.co,it.date,false,false,false];adds[id][3+["boss","hq","gm"].indexOf(it.k)]=true}
+  if(cells.length)await gReq(SHEETS+"/"+encodeURIComponent(S.id)+"/values:batchUpdate",{method:"POST",body:{valueInputOption:"USER_ENTERED",data:cells}});
+  const rows=Object.values(adds);
+  if(rows.length)await gReq(SHEETS+"/"+encodeURIComponent(S.id)+"/values/"+encodeURIComponent(A1(PCHK_TAB)+"!A:F")+":append?valueInputOption=RAW&insertDataOption=INSERT_ROWS",{method:"POST",body:{values:rows}});
+  return cells.length+rows.length;
+}
+async function salesPchkPress(key,co,k){
+  const S=ui.sales,t=todayS();if(!S)throw Error("先に読み込んでください");if(!pchkMonth(key,t))throw Error(Number(key.slice(5))+"月は確定前ではありません");
+  const me=k==="boss"?null:salesChkMe();if(k==="boss"?!D().admin:!salesChkCan(me,co,k))throw Error("この確認はできません（"+SMON_LABEL[k]+"・"+co+"）");
+  await gAuthorize(true);
+  if((D().admin||salesCan())&&!S.view){await pchkWrite(S,[{key,co,date:t,k}]);await salesLoad();return "sheet"}
+  const id=D().sheetId;if(!id)throw Error("自分の記録シートにつないでから押してください");
+  if(!(await sheetTabNames(id)).includes(SCHK_TAB)){await addTab(id,SCHK_TAB);await sheetWrite(id,SCHK_TAB,[SCHK_COLS])}
+  await gReq(SHEETS+"/"+encodeURIComponent(id)+"/values/"+encodeURIComponent(A1(SCHK_TAB)+"!A:F")+":append?valueInputOption=RAW&insertDataOption=INSERT_ROWS",{method:"POST",body:{values:[[key,co,"確定前",k+"_p",new Date().toISOString(),String(me.name||"")]]}});
+  const pd=salesChkPending();pd[[key,co,"p"+t,k].join("|")]=Date.now();try{localStorage.setItem(SCHK_KEY,JSON.stringify(pd))}catch(e){}
+  return "record";
+}
 /* 社長の端末：社員の記録シートの「売上の確認」を、売上報告のシートの確認のタブに入れる。戻り値は入れたマスの数 */
 async function salesChkReflect(){
   const d=D(),S=ui.sales;if(!d.admin||!S||!S.id||S.view)return 0;
@@ -4397,10 +4572,19 @@ async function salesChkReflect(){
   for(const v of Object.values(mon)){const M=S.months.find(m=>m.key===v.key),c=M&&M.cos.find(q=>q.co===v.co);if(!c)continue;const md=salesMonMd(v.at),cur=String(c[SMON_COL[v.k]]??"");
     if(!md||cur===md)continue;if(cur&&/^\d{2}\/\d{2}$/.test(cur)&&jstDay(v.at)&&cur>md&&cur.slice(0,2)===md.slice(0,2))continue;
     mcells.push({range:A1(c.tab)+"!"+salesColL(SALES_COLS.co[SMON_COL[v.k]])+c.row,values:[[md]]})}
-  if(!cells.length&&!mcells.length)return 0;
+  /* v1.50.139 確定前の毎日の確認（役割＝hq_p・gm_p）：押した日（日本時間）が、その月の確定前の間（今月より前で確定日まで）のものだけ */
+  const pitems=[],pseen=new Set();
+  for(const x of data){if(!x||!x.ok||!x.s||!Array.isArray(x.salesChk))continue;
+    const p=(d.staff||[]).find(q=>q.sheetId===x.s.sheetId&&!q.removed);if(!p)continue;
+    for(const r of x.salesChk){const key=String(r["月"]||""),co=String(r["会社"]||""),k=String(r["役割"]||"").replace(/_p$/,""),date=jstDay(String(r["押した日時"]||""));
+      if(!/_p$/.test(String(r["役割"]||""))||!["hq","gm"].includes(k)||!salesChkCan(p,co,k)||!date||!pchkMonth(key,date))continue;
+      const id=[key,co,date,k].join("|");if(pseen.has(id))continue;pseen.add(id);
+      const ex=(S.pchk||[]).find(q=>q.key===key&&q.co===co&&q.date===date);if(ex&&ex[k])continue;pitems.push({key,co,date,k})}}
+  const pn=pitems.length?await pchkWrite(S,pitems):0;
+  if(!cells.length&&!mcells.length){if(pn)await salesLoad();return pn}
   if(cells.length)await gReq(SHEETS+"/"+encodeURIComponent(S.id)+"/values:batchUpdate",{method:"POST",body:{valueInputOption:"USER_ENTERED",data:cells.map(range=>({range,values:[[true]]}))}});
   if(mcells.length)await gReq(SHEETS+"/"+encodeURIComponent(S.id)+"/values:batchUpdate",{method:"POST",body:{valueInputOption:"RAW",data:mcells}});
-  await salesLoad();return cells.length+mcells.length;
+  await salesLoad();return cells.length+mcells.length+pn;
 }
 /* 最後に更新された日：ドライブの更新日時（取れるとき）か、今月の会社の「更新日」のいちばん新しい日 */
 const salesLast=S=>S&&S.modified?salesWhen(S.modified):S&&S.upd?S.upd.replace(/^0/,"").replace("/0","/")+"（会社の更新日）":"不明";
@@ -4438,7 +4622,7 @@ function salesSec(){
   /* v1.50.52 名前が分からないときは試作と見なさない（作り直すボタンを出さない） */
   const demo=admin&&!!S&&S.id===d.salesId&&!!S.name&&S.name.includes("試作");
   const head=(!admin&&ui.ordWriteMsg?'<p class="note" role="status" style="margin:0;color:var(--amber)">'+h(ui.ordWriteMsg)+'（社長に、会社の数字の共有を「編集者」にしてもらってください）</p>':'')+'<div class="row" style="gap:6px"><span class="chip">'+(viewer?'見るだけ':!admin?'入力できる人':demo||!d.salesId?'試作・社長だけ':(d.salesEditors||[]).length?'社長と入力できる人':'社長だけ')+'</span></div>'+(!admin&&ui.salesErr?'<p class="banner" role="status" style="margin:0">'+h(ui.salesErr)+'</p>':'');
-  const wrap=b=>'<section class="sec" id="stats-sales" style="display:flex;flex-direction:column;gap:10px">'+head+b+msg+'</section>';
+  const wrap=b=>'<section class="sec" id="stats-sales" style="display:flex;flex-direction:column;gap:10px">'+head+(admin?ordInPanel():'')+b+msg+'</section>';
   if(!src)return wrap('<p class="note" style="margin:0">Googleスプレッドシートの売上報告を読んで、今の3社報告と同じ項目を出します。今は試作で、社長の端末にだけ出ます（社員には見えません）。</p><div class="row"><button class="btn pri" type="button" data-act="salesdemo"'+busy+'>試作用のシートを作る（架空のデータ）</button></div>');
   /* v1.50.99 「シートを開く」は社長の端末だけ（トシさんの指示：シートに直接入力されると見出し・行・式が崩れ、全員の売上報告が正しく出なくなる。社員はHUBの「数字を入れる」から入れる） */
   const link=admin?'<a class="btn sm" href="https://docs.google.com/spreadsheets/d/'+h(src)+'/edit" target="_blank" rel="noopener" style="text-decoration:none">シートを開く</a>':'';
@@ -4480,7 +4664,7 @@ function salesSec(){
     return '<div class="tbl-wrap"><table class="items sales-days" style="min-width:0"><thead><tr><th>日</th><th>件数</th><th>金額（円）</th><th>累計（円）<span class="sales-pct">累計件数</span></th></tr></thead><tbody>'+rows+
       '<tr class="sales-sum"><td><b>合計</b></td><td class="num"><b>'+cnt(cn)+'</b></td><td class="num"><b>'+yn(ca)+'</b></td><td class="num">1件単価<span class="sales-pct">'+(cn?yn(ca/cn)+'円':'—')+'</span></td></tr></tbody></table></div>'+
       '<details class="sales-open sub"><summary>グラフで見る</summary><div class="sales-chart" role="img" aria-label="'+h(co)+'の毎日の受注金額">'+cols+'</div><div class="sales-axis note"><span>1日</span><span>'+last+'日</span></div>'+
-      '<p class="note num" style="margin:0" role="status" id="sales-day-'+h(co)+'">'+(pick?pick+"日："+(px?cnt(px.n)+"・"+y(px.amt):"入力なし"):"棒を押すと、その日の件数と金額が出ます")+'</p></details>'};
+      '<p class="note num" style="margin:0" role="status" id="sales-daypick-'+h(co)+'">'+(pick?pick+"日："+(px?cnt(px.n)+"・"+y(px.amt):"入力なし"):"棒を押すと、その日の件数と金額が出ます")+'</p></details>'};
   const curM=M.key===todayS().slice(0,7),tdN=Number(todayS().slice(8)),lastD=new Date(Number(M.key.slice(0,4)),Number(M.key.slice(5)),0).getDate();
   const chkMe=salesChkMe(),pend=salesChkPending();
   const card=c=>{const ck=M.chk.filter(x=>x.co===c.co),upto=curM?tdN:lastD,tdc=curM?ck.find(x=>x.day===tdN):null;
@@ -4492,6 +4676,18 @@ function salesSec(){
       (curM&&tdc?['hq','gm'].filter(k=>salesChkCan(chkMe,c.co,k)&&!tdc[k]&&pend[[M.key,c.co,tdN,k].join("|")]).map(k=>'<p class="note" style="margin:0">'+SCHK_LABEL[k]+'の確認：押しました（社長の端末の同期で、シートに入ります）</p>').join(""):'')+
       (curM&&(admin||salesChkAny(chkMe))?'<p class="note sales-chk-hint" style="margin:0">前日の受注の件数・金額が入っていて、おかしな数字がないか見てから押してください。</p>':'')+
       (curM&&!tdc?'<p class="note" style="margin:0">シートの確認のタブに今日の行がありません</p>':'')+'</div>':'';
+    /* v1.50.139 確定前の月：毎日の確認（その月の会社の数字と担当者別の、今日の時点の数字を見る）。確定日を過ぎたら出さない */
+    const pOn=pchkMonth(M.key),tdS=todayS(),pAll=pOn?(S.pchk||[]).filter(x=>x.key===M.key&&x.co===c.co&&x.date<=tdS):[],tdp=pAll.find(x=>x.date===tdS)||null;
+    const pWho=pOn?['boss','hq','gm'].filter(k=>k==="boss"?admin:salesChkCan(chkMe,c.co,k)):[];
+    const pPend=k=>!!pend[[M.key,c.co,"p"+tdS,k].join("|")];
+    const pBtn=k=>'<button class="btn sm pri" type="button" data-act="salespchk" data-key="'+h(M.key)+'" data-co="'+h(c.co)+'" data-k="'+k+'"'+busy+'>'+Number(M.key.slice(5))+'月（確定前）の今日の分を確認済みにする（'+SMON_LABEL[k]+'）</button>';
+    const pTodo=pWho.filter(k=>!(tdp&&tdp[k])&&!pPend(k));
+    const pBox=pOn?'<div class="sales-chk sales-pchk"><div class="sales-lab">毎日の確認（確定前・今日 '+tdN+'日）</div>'+
+      '<div class="row" style="gap:6px">'+SALES_ROLES.map(([k,l])=>{const on=!!(tdp&&tdp[k]);return '<span class="sales-chip '+(on?'on':'off')+'">'+l+' '+(on?'✓ 済':'未')+'</span>'}).join("")+'</div>'+
+      '<div class="note num">確定前の間（'+md(salesFixDate(M.key))+'確定）：'+SALES_ROLES.map(([k,l])=>l+' '+pAll.filter(x=>x[k]).length+'日').join("・")+'</div>'+
+      pWho.filter(k=>!(tdp&&tdp[k])&&pPend(k)).map(k=>'<p class="note" style="margin:0">'+SMON_LABEL[k]+'の確認：押しました（社長の端末の同期で、シートに入ります）</p>').join("")+
+      (pWho.length?'<p class="note sales-chk-hint" style="margin:0">'+Number(M.key.slice(5))+'月の会社の数字と担当ごとの数字を、今日の時点で見てから押してください。確定日（'+md(salesFixDate(M.key))+'）まで毎日です。</p>':'')+
+      (pTodo.length?'<div class="row in-box" style="gap:6px">'+pTodo.map(pBtn).join("")+'</div>':'')+'</div>':'';
     /* v1.50.119 終わった月：月に1回の確認（押した日が、その月の会社の行の確認日に入る） */
     const monWho=salesMonDone(M.key)?['boss','hq','gm'].filter(k=>k==="boss"?admin:salesChkCan(chkMe,c.co,k)):[];
     const monBox=salesMonDone(M.key)?'<div class="sales-chk sales-mon"><div class="sales-lab">この月の確認（月に1回）</div>'+
@@ -4505,6 +4701,7 @@ function salesSec(){
     const qb=[];
     if(admin&&curM&&tdc&&!tdc.boss)qb.push('<button class="btn sm pri" type="button" data-act="salescheck" data-co="'+h(c.co)+'"'+busy+'>今日の分を確認済みにする（社長）</button>');
     if(curM&&tdc)['hq','gm'].filter(k=>salesChkCan(chkMe,c.co,k)&&!tdc[k]&&!pend[[M.key,c.co,tdN,k].join("|")]).forEach(k=>qb.push('<button class="btn sm pri" type="button" data-act="saleschk" data-co="'+h(c.co)+'" data-k="'+k+'"'+busy+'>今日の分を確認済みにする（'+SCHK_LABEL[k]+'）</button>'));
+    pTodo.forEach(k=>qb.push(pBtn(k)));
     monWho.filter(k=>!pend[[M.key,c.co,"月",k].join("|")]).forEach(k=>qb.push(salesMonBtn(M.key,c.co,k,busy)));
     const quick=qb.length?'<span class="sales-quick">'+qb.join("")+'</span>':'';
     const dif=salesCoDiff(M,c.co),difOld=!salesPrelim(M.key);
@@ -4521,7 +4718,7 @@ function salesSec(){
     '<div class="sales-profbox"><div class="sales-lab">粗利（実績）</div><div class="num sales-big">'+y(c["実績粗利"])+'</div><div class="sales-rate num">粗利率 <b>'+pt(pc(c["実績粗利"],c["実績売上"]))+'</b><span class="note">（目標粗利率 '+pt(pc(c["目標粗利"],c["目標売上"]))+'）</span></div><div class="note num">目標 '+y(c["目標粗利"])+'・達成 '+pt(rp)+'</div>'+bar(rp,'var(--green)')+'</div></div>'+
     '<div class="sales-grid sales-kv">'+kv("前月の金額",y(c["前月売上"]))+kv("前月の粗利",c["前月粗利"]==null?"—":y(c["前月粗利"])+'（'+pt(pc(c["前月粗利"],c["前月売上"]))+'）')+kv("最終粗利予想",y(c["最終粗利予想"]))+'</div>'+/* v1.50.47 人件費・Notes未入力は画面に出さない（シートの列は読むだけ残す） */
     /* v1.50.51 並び：確認日・毎日の確認 → （v1.50.100 から）毎日の受注。開け閉めする見出しは色の帯（.sales-open） */
-    (!curM?'':'<div class="note"><span class="sales-lab">確認日</span>　社長 '+h(lastChk("boss")||c["社長確認日"]||"—")+'・本部長 '+h(lastChk("hq")||c["本部長確認日"]||"—")+'・'+h(c["GMの名前"]||"GM")+' '+h(lastChk("gm")||c["GM確認日"]||"—")+'</div>')+monBox+chkBox+
+    (!curM?'':'<div class="note"><span class="sales-lab">確認日</span>　社長 '+h(lastChk("boss")||c["社長確認日"]||"—")+'・本部長 '+h(lastChk("hq")||c["本部長確認日"]||"—")+'・'+h(c["GMの名前"]||"GM")+' '+h(lastChk("gm")||c["GM確認日"]||"—")+'</div>')+/* v1.50.135 トシさんの指示：毎日の確認を上、この月の確認を下に（前は逆） */chkBox+pBox+monBox+
     /* v1.50.105 トシさんの指示：「担当者別」は「毎日の受注」のすぐ上（v1.50.100 では先頭だった） */
     (st.length?'<details class="sales-open sales-staff"><summary>担当者別<span class="sales-open-sub">'+new Set(st.map(x=>x.name)).size+'人</span></summary>'+stTable(st)+'</details>':'')+
     '<details class="sales-open sales-day" id="sales-day-'+h(c.co)+'" data-sales-day-co="'+h(c.co)+'"'+(ds.length?'':' hidden')+((ui.salesDayOpen||{})[c.co]?' open':'')+'><summary>毎日の受注<span class="sales-open-sub">受注Total '+cnt(dn)+'・'+y(da)+'・1件単価 '+(dn?y(da/dn):"—")+'</span></summary>'+dayChart(c.co,ds)+'</details>'+'</div></details>'};
@@ -4815,13 +5012,6 @@ const PLACES_KEY="地図の候補キー",STAFFSET_TAB="HUBの設定",STAFFSET_CO
 const placesKey=()=>String(D().placesKey||"").trim();
 const staffSetRows=()=>[STAFFSET_COLS,...(placesKey()?[[PLACES_KEY,placesKey()]]:[])];
 const namesRows=staff=>[NAMES_COLS,...(staff||[]).filter(s=>!s.removed&&s.sheetId&&s.name).map(s=>[String(s.name).trim(),String(s.company||""),s.sheetId,String(s.role||""),String(s.email||"").trim()?mailKey(s.email):""])];
-async function namesTabWrite(s,rows,tab=NAMES_TAB){
- const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(tab))await addTab(s.sheetId,tab);
- const prev=(await shareRead(()=>sheetRead(s.sheetId,[tab])))[tab]||[];
- const norm=r=>JSON.stringify(r.map(x=>x.map(y=>String(y??""))).filter(x=>x.some(Boolean)));
- if(norm(prev)===norm(rows))return false;
- await sheetWrite(s.sheetId,tab,rows,prev);return true;
-}
 /* 社長の同期のあと：社員一覧が前に書いたときから変わっていれば、全員の記録シートに書き直す（同じなら何もしない） */
 async function namesAfterSync(){
  const d=D();if(!d.admin||!gSignedIn())return;
@@ -4832,8 +5022,20 @@ async function namesAfterSync(){
  const cls=clientIsDefault(clientList())&&!d.clientWritten?null:clientRows(clientList());
  const rows=namesRows(d.staff),offs=officeRows(),sets=staffSetRows(),key=JSON.stringify(offs.length>1||sets.length>1||cls?[rows,offs,...(sets.length>1?[sets]:[]),...(cls?[cls]:[])]:rows);if(d.namesWritten===key)return;
  const list=(d.staff||[]).filter(s=>!s.removed&&s.sheetId&&s.sheetId!==d.sheetId);let bad=0;
- await sharePool(list,async s=>{try{await namesTabWrite(s,rows);if(offs.length>1)await namesTabWrite(s,offs,OFFICE_TAB);if(sets.length>1||d.placesKeyWritten)await namesTabWrite(s,sets,STAFFSET_TAB);if(cls)await namesTabWrite(s,cls,CLIENT_TAB)}catch(err){if(err.message==="signin")throw err;bad++}});
- if(!bad){d.namesWritten=key;d.placesKeyWritten=sets.length>1;if(cls)d.clientWritten=true;save()}
+ /* v1.50.140 トシさんの指示（社長の同期で「担当の候補・会社の住所」が 907.9秒）：前は1人につき「タブの一覧を読む→そのタブを読む」を4回（17人で約136回読む）。
+    1人につき、タブの一覧を1回・書くタブをまとめて1回だけ読み、違うタブだけ書く。配れた人は覚えておき、だれかが失敗しても次の同期では失敗した人だけやり直す */
+ const tabs=[[NAMES_TAB,rows],...(offs.length>1?[[OFFICE_TAB,offs]]:[]),...(sets.length>1||d.placesKeyWritten?[[STAFFSET_TAB,sets]]:[]),...(cls?[[CLIENT_TAB,cls]]:[])];
+ const done=new Set(d.namesDone&&d.namesDone.key===key?d.namesDone.ids||[]:[]),st={n:list.length,skip:0,wrote:0,same:0,bad:0,retry:0};
+ const read=fn=>shareRead(async()=>{try{return await fn()}catch(err){if(corpErrKind(err))st.retry++;throw err}});
+ const norm=r=>JSON.stringify((r||[]).map(x=>(x||[]).map(y=>String(y??""))).filter(x=>x.some(Boolean)));
+ await sharePool(list,async s=>{if(done.has(s.sheetId)){st.skip++;return}
+   try{const have=await read(()=>sheetTabNames(s.sheetId));for(const [t] of tabs)if(!have.includes(t))await addTab(s.sheetId,t);
+     const cur=await read(()=>sheetRead(s.sheetId,tabs.map(([t])=>t)));let w=0;
+     for(const [t,r] of tabs){const prev=cur[t]||[];if(norm(prev)===norm(r))continue;await sheetWrite(s.sheetId,t,r,prev);w++}
+     done.add(s.sheetId);if(w)st.wrote++;else st.same++;d.namesDone={key,ids:[...done]};save()}
+   catch(err){if(err.message==="signin")throw err;bad++;st.bad++}});
+ syncDiagSet("names",st);
+ if(!bad){d.namesWritten=key;d.placesKeyWritten=sets.length>1;if(cls)d.clientWritten=true;delete d.namesDone;save()}
 }
 async function numPtrWrite(s,numbers){
  const tabs=await shareRead(()=>sheetTabNames(s.sheetId));if(!tabs.includes(NUMPTR_TAB))await addTab(s.sheetId,NUMPTR_TAB);
@@ -5139,11 +5341,13 @@ async function viewListFollow(){const id=D().viewListId;if(!id||viewMoveChecked=
   if(!ok){ui.viewListWarn="社長が見る人用一覧を新しくしましたが、新しい一覧を開けません。社長に共有を確かめてもらってください";return}
   D().viewListId=to;viewMoveChecked=to;save();}
 async function viewerList(){
-  await viewListFollow();
-  const rows=objRows((await sheetRead(D().viewListId,["一覧"]))["一覧"]);
+  /* v1.50.137 一覧の読み込みが長い（専務 56.3秒）ので、どこで時間がかかっているかを内訳に出す */
+  const t0=Date.now();await viewListFollow();const t1=Date.now();
+  const rows=objRows((await sheetRead(D().viewListId,["一覧"]))["一覧"]);const t2=Date.now();
   const list=rows.filter(r=>r["シートID"]).map(r=>({name:String(r["氏名"]),email:String(r["Gmail"]),company:String(r["会社"]||""),role:String(r["役割"]||"社員"),gmCo:String(r["GMの会社"]||""),sheetId:String(r["シートID"]),boxId:String(r["指示箱ID"]||""),charge:chargeNorm(r["担当の会社"]),displayName:dispNorm(r["表示名"]),gmLead:String(r["GM統括"]||"").trim()==="統括",removed:false}));
   /* v1.49.8 正規氏名の履歴が読めなくても、一覧そのものは使う（読めないと全社・GMの端末でほかの社員が選べなくなるため）。名前は一覧の氏名のまま */
   let names=[];ui.viewListWarn="";try{names=await namesRead(D().viewListId)}catch(err){if(err.message==="signin")throw err;ui.viewListWarn="社員の正式な氏名の履歴を読めなかったため、一覧の氏名で出しています（"+(err.message||dMsg(err))+"）";}
+  syncDiagSet("corpListParts",{follow:t1-t0,list:t2-t1,names:Date.now()-t2});
   return CPGNames.overlay(list,names);
 }
 /* v1.50.34 いまログインしているGoogleアカウント（画面に出す。分からなければ空） */
@@ -5244,7 +5448,7 @@ async function corpLoad(){
   /* v1.50.43 だれかが回数制限（429）に当たったら、ほかの人の読み込みもその間は始めない（同時に読み続けると上限が戻らない） */
   let cool=0;const gate=async()=>{const w=cool-Date.now();if(w>0)await corpWait(w,"gate")};
   const one=async s=>{
-    const started=Date.now();let tries=0,x=null,fresh=false;
+    const started=Date.now();let tries=0,x=null,fresh=false;const why=[];
     const noRc0=viewer&&noReceipts(me)&&s.sheetId!==me.sheetId, boxOn=!!s.boxId&&(!viewer||s.sheetId===me.sheetId||canOrder(me,s)), key=corpReadKey(viewer,me,s,noRc0,boxOn);
     const mt=mts[s.sheetId]||"", bmt=boxOn?(mts[s.boxId]||""):"", old=prev[s.sheetId];
     if(old&&mt&&old.mt===mt&&(!boxOn||bmt&&old.bmt===bmt)&&old.rk===key&&Date.now()-(old.readAt||0)<CORP_REUSE_MS
@@ -5254,12 +5458,14 @@ async function corpLoad(){
        前は全員の記録シートを全部読み直していた。そこで、まず「情報」タブ（その人の同期で毎回書く。最終同期・前回の同期の時間）と指示箱だけを読み、
        前に読んだときとまったく同じなら、前の内容を使う。見る人が読むタブ（案件・入金・立替・ToDo・指示・指示の報告）は、その人の端末の同期でしか書かれず、同期の最後に「情報」を書くため。
        違う・読めない・前に読んでから12時間たった・自分の記録シート・この端末が書いたシートは、今までどおり全部読む */
-    if(viewer&&!mt&&old&&old.infoJ&&old.rk===key&&Date.now()-(old.readAt||0)<CORP_REUSE_MS
+    /* v1.50.137 トシさんの指示（専務の同期が4〜5分、18人全員を読み直していた）：前に読んだとき社長の更新日時が古くて使えなかった人（控えに更新日時がない）は、
+       今回の更新日時と比べられず、前は全部を読み直していた。そういう人も「情報」タブだけで同じか確かめる。同じなら今回の更新日時を控えに残す（次からは問い合わせなしで済む） */
+    if(viewer&&(!mt||!old?.mt)&&old&&old.infoJ&&old.rk===key&&Date.now()-(old.readAt||0)<CORP_REUSE_MS
       &&!(s.sheetId===me.sheetId||wrote(s.sheetId,old.readAt)||boxOn&&wrote(s.boxId,old.readAt))){
       try{await gate();
         const [iv,bx]=await Promise.all([sheetRead(s.sheetId,["情報"]),boxOn?sheetRead(s.boxId,[BOX_TAB]).then(r=>objRows(r[BOX_TAB]).filter(o=>o["指示ID"]),err=>{if(err.message==="signin")throw err;return null}):Promise.resolve(null)]);
         if(JSON.stringify(iv["情報"]||[])===old.infoJ&&(!boxOn||old.boxJ!==undefined&&JSON.stringify(bx)===old.boxJ)){
-          x=Object.assign({},old,{s:Object.assign(s,{lastSync:old.s.lastSync||""}),reused:true,probed:true,ms:Date.now()-started,tries:0});return x}}
+          x=Object.assign({},old,{s:Object.assign(s,{lastSync:old.s.lastSync||""}),reused:true,probed:true,ms:Date.now()-started,tries:0},mt?{mt,bmt:boxOn?bmt:old.bmt}:{});return x}}
       catch(err){if(err.message==="signin")throw err}}
     /* v1.50.5 読めなかった人だけ、少し待って最大2回やり直す（回数制限・Google側の不具合・時間切れ・通信の失敗のとき）。成功した人は読み直さない */
     for(;;){tries++;await gate();
@@ -5282,14 +5488,16 @@ async function corpLoad(){
       s.lastSync=String(info["最終同期"]||"");
       x={s,ok:true,salesChk:hasChk?objRows(v[SCHK_TAB]):null,calRec:hasCal?objRows(v[CALREC_TAB]).map(r=>String(r["Gmail"]||"").trim()).filter(mailOK):null,receiptRead:noRc?{state:"hidden",at:Date.now(),version:String(info["版"]||"")}:{...(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.parseSheet(v["立替"]):{state:"invalid",message:"領収書の表示機能を読み込めません。"}),at:Date.now(),version:String(info["版"]||"")},cases:objRows(v["案件"]),rc:noRc?[]:rcFor(me,s,objRows(v["立替"])),todo:hasTodo?objRows(v["ToDo"]):null,orders:hasOrd?objRows(v["指示"]).filter(o=>o["指示ID"]):[],box,reports:hasRep?objRows(v[REPORT_TAB]).filter(r=>r["指示ID"]):[],mt,bmt:box===null?"":bmt,rk:key,readAt:started,infoJ:viewer?JSON.stringify(v["情報"]||[]):undefined,boxJ:viewer&&boxOn?JSON.stringify(box):undefined}}
     catch(err){if(err.message==="signin")throw err;
-      const wait=corpRetryWait(err,tries);if(wait!==null){if(corpErrKind(err)==="rate")cool=Math.max(cool,Date.now()+wait);await corpWait(wait);continue}
+      const wait=corpRetryWait(err,tries);why.push(corpErrKind(err)||String(err.status||err.message||"?"));if(wait!==null){if(corpErrKind(err)==="rate")cool=Math.max(cool,Date.now()+wait);await corpWait(wait);continue}
       x={s,ok:false,accessDenied:err.status===403||err.status===404,msg:corpReadMsg(err)+(tries>1?"・"+tries+"回試しました":""),status:err.status||(err.name==="AbortError"?"timeout":err.network?"network":"")}}
-    x.ms=Date.now()-started;x.tries=tries;return x}
+    x.ms=Date.now()-started;x.tries=tries;x.why=why;return x}
   };
   const prepMs=Date.now()-tPrep;
   {let next=0,stop=null;const work=async()=>{while(!stop&&next<list.length){const i=next++;try{out[i]=await one(list[i])}catch(e){stop=stop||e}}};
    await Promise.all(Array.from({length:Math.min(CORP_POOL,list.length)},work));if(stop)throw stop;}
   out.timing={ms:Date.now()-t0,n:list.length,reused:out.filter(x=>x&&x.reused).length,probed:out.filter(x=>x&&x.probed).length,prevN:Object.keys(prev).length,prep:prepMs,full:out.filter(x=>x&&x.ok&&!x.reused).length,slow:Math.max(0,...out.map(x=>x&&x.ms||0))};
+  /* v1.50.137 いちばん遅い人の名前と、やり直した回数・理由（専務の端末で1人に238秒かかっていた。だれが・なぜかを内訳に出す） */
+  {const w=out.filter(Boolean).reduce((a,x)=>!a||(x.ms||0)>(a.ms||0)?x:a,null);if(w&&w.s){out.timing.slowWho=dispName(w.s)||w.s.name||"";out.timing.slowTries=w.tries||0;out.timing.slowWhy=(w.why||[]).join(",")}}
   if(viewer)out.timing.shared=shared?Math.round(shared.age/60e3):null;
   if(pub){const e=await pub;if(e&&e.message==="signin")throw e}
   save();return out;
@@ -5592,7 +5800,7 @@ function render(){
         h2.setAttribute("aria-label",full);h2.textContent=short;h2.title=full}}}}
   /* v1.50.58 自動で新しい版にしたら、画面のいちばん上に出す（下に出すと見えないことがあるため）。「閉じる」を押すまで消えない */
   if(ui.syncResume)main.insertAdjacentHTML("afterbegin",'<div class="banner syncres" role="status"><span>⚠ '+h(ui.syncResume.text)+'</span><button class="btn sm pri" type="button" data-act="gsync">Googleとまとめて同期</button></div>');
-  if(ui.updDone)main.insertAdjacentHTML("afterbegin",'<div class="banner updok" role="status"><span>✓ 新しい版（v'+h(ui.updDone)+'）にしました。<a href="./manual.html?v='+encodeURIComponent(ui.updDone)+'#history">変わったことを見る</a></span><button class="btn xs" type="button" data-act="upddone">閉じる</button></div>');
+  if(ui.updNotes)main.insertAdjacentHTML("afterbegin",'<div class="banner updok" role="status"><span>✓ 新しい版（v'+h(ui.updNotes.v)+'）になりました<ul class="updnotes">'+ui.updNotes.items.map(n=>'<li>'+h(n.text)+'</li>').join("")+'</ul><a href="./manual.html?v='+encodeURIComponent(ui.updNotes.v)+'#history">くわしくは使い方の改訂履歴へ</a></span><button class="btn xs" type="button" data-act="upddone">閉じる</button></div>');
   scopePickDecorate();
   document.querySelector(".proto").hidden=!hasExamples();
   const ml=document.getElementById("manualLink");if(ml)ml.setAttribute("href",manualHref()); /* 社長・全社・GMの端末は管理者向けのマニュアル */
@@ -5670,7 +5878,7 @@ document.addEventListener("click",e=>{
   if(el.dataset.act==='cddateclose'){caseDateClose();return}
   if(el.dataset.caseidentity){caseIdentityOpen(el.dataset.caseidentity);return}
   if(el.dataset.caseprevious!=null){try{caseIdentityFill(caseIdentityApi().previousFields(caseIdentityHistoryRows[Number(el.dataset.caseprevious)],caseIdentitySession.id));document.getElementById("caseIdentityStatus").textContent="以前の物件名・号室を編集欄に戻しました。保存すると新しい履歴を残します。進捗は変わりません。";}catch(error){toast(error.message,5000)}return}
-  if(el.dataset.act==="upddone"){ui.updDone="";render();return}
+  if(el.dataset.act==="upddone"){try{if(ui.updNotes)localStorage.setItem(SEEN_VER_KEY,ui.updNotes.v)}catch(e){}ui.updNotes=null;render();return}
   if(el.dataset.act==="caseidentityclose"){caseIdentityClose();return}
   if(el.dataset.act==="caseidentitybackup"||el.dataset.act==="caseidentitydraft"){caseIdentityDownload(el.dataset.act==="caseidentitydraft");return}
   if(el.dataset.mtdcancel){manualTodoCancelOpen(el.dataset.mtdcancel);return}
@@ -5738,7 +5946,7 @@ document.addEventListener("click",e=>{
   if(el.dataset.salesEdco){ui.salesEd={...(ui.salesEd||{}),co:el.dataset.salesEdco};ui.salesEdOpen=true;render();return}
   if(el.dataset.salesEdkind){ui.salesEd={...(ui.salesEd||{}),kind:el.dataset.salesEdkind};ui.salesEdOpen=true;render();return}
   /* 棒を押したら、その日の数字の行だけ書き換える（描き直すと開いた欄が閉じるため） */
-  if(el.dataset.salesDay){ui.salesDay=el.dataset.salesDay;const [co]=el.dataset.salesDay.split("|"),o=document.getElementById("sales-day-"+co);if(o)o.textContent=(el.getAttribute("title")||"");return}
+  if(el.dataset.salesDay){ui.salesDay=el.dataset.salesDay;const [co]=el.dataset.salesDay.split("|"),o=document.getElementById("sales-daypick-"+co);if(o)o.textContent=(el.getAttribute("title")||"");return}/* v1.50.135 棒を押したら、グラフの下の1行だけを書き換える（前は「毎日の受注」の欄と同じ名前で、欄ごと1行に置き換わっていた） */
   if(el.dataset.bbrestore){const x=(ui.bbList||[]).find(y=>y.id===el.dataset.bbrestore);if(x){ui.bbAsk={id:x.id,name:x.name};render()}return}
   if(el.dataset.bcancel){ui.bCancel=el.dataset.bcancel;render();showAlert();return}
   if(el.dataset.ocancel){ui.oCancel=el.dataset.ocancel;render();showAlert();return}
@@ -5807,6 +6015,8 @@ document.addEventListener("click",e=>{
     if(!r.changes.length){ui.dmsg=[{ok:true,text:"変わった記号はありません"}];render();return}
     const log=[];ui.dbusy=true;ui.dview="";ui.dmsg=log;render();
     adminCodesSave(r.changes,(text,ok)=>{log.push({ok:ok===false?"warn":true,text});render()}).then(()=>{ui.dCodes=false;ui.dCodesDraft=null},err=>{log.push({ok:false,text:"途中で止まりました："+(err.message==="http"?dMsg(err):err.message||dMsg(err))})}).finally(()=>{ui.dbusy=false;render()});return}
+  if(a==="ordinfix"||a==="ordinskip"){if(ui.ordInBusy)return;ui.ordInBusy=true;ui.ordInMsg=null;render();
+    ordInDecide(Number(el.dataset.i),a==="ordinfix").then(()=>{ui.ordInMsg={ok:true,text:a==="ordinfix"?"売上報告を直して、入力シートに「反映済み」を付けました":"直さずに、入力シートに「見送り」を付けました"}},err=>{ui.ordInMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.ordInBusy=false;render()});return}
   if(a==="salessave"){if(ui.salesBusy)return;ui.salesBusy=true;ui.salesMsg=null;ui.salesDiffWarn="";ui.salesEdOpen=true;
     salesSave().then(n=>{ui.salesMsg={ok:true,text:n?"シートに保存しました（"+n+"か所）":"変わったところはありません"};
       /* v1.50.124 保存したあと、その月・その会社の会社の行と担当者別の合計が違えば、赤で知らせる */
@@ -5828,6 +6038,8 @@ document.addEventListener("click",e=>{
     salesEdSave(ids).then(w=>{ui.salesMsg={ok:true,text:"入力できる人を保存しました（記録シートを書き直した人 "+w+"人）。選んだ人を、シートの共有で編集者に加えてください"}},err=>{ui.salesMsg={ok:false,text:"保存できませんでした："+(err.message==="http"?dMsg(err):err.message)}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="salescheck"){if(ui.salesBusy)return;const co=el.dataset.co;ui.salesBusy=true;ui.salesMsg=null;render();
     salesCheck(co).then(()=>{ui.salesMsg={ok:true,text:co+"：今日の社長の確認を付けました"}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.salesBusy=false;render()});return}
+  if(a==="salespchk"){if(ui.salesBusy)return;const key=el.dataset.key,co=el.dataset.co,k=el.dataset.k;ui.salesBusy=true;ui.salesMsg=null;render();
+    salesPchkPress(key,co,k).then(w=>{ui.salesMsg={ok:true,text:co+"："+Number(key.slice(5))+"月（確定前）の今日の"+SMON_LABEL[k]+"の確認を"+(w==="sheet"?"付けました":"送りました（社長の端末の同期でシートに入ります）")}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="saleschk"){if(ui.salesBusy)return;const co=el.dataset.co,k=el.dataset.k;ui.salesBusy=true;ui.salesMsg=null;render();
     salesChkPress(co,k).then(w=>{ui.salesMsg={ok:true,text:co+"：今日の"+SCHK_LABEL[k]+"の確認を"+(w==="sheet"?"付けました":"送りました（社長の端末の同期でシートに入ります）")}},err=>{ui.salesMsg={ok:false,text:err.message==="http"?dMsg(err):err.message}}).finally(()=>{ui.salesBusy=false;render()});return}
   if(a==="salesmon"){if(ui.salesBusy)return;const key=el.dataset.key,co=el.dataset.co,k=el.dataset.k;ui.salesBusy=true;ui.salesMsg=null;render();
@@ -5962,6 +6174,13 @@ document.addEventListener("click",e=>{
   }
   if(a==="coedit"){ui.coEdit=true;render();return}
   if(a==="coeditno"){ui.coEdit=false;render();return}
+  if(a==="addredit"){ui.addrEdit=c.id;render();const i=document.getElementById("d_addr");if(i){i.scrollIntoView({block:"center"});i.focus()}return}
+  if(a==="addrno"){ui.addrEdit=null;render();return}
+  if(a==="addrsave"){const v=val("d_addr").trim();ui.addrEdit=null;if(v===(c.addr||"")){render();return}
+    c.addr=v;if(c.gcal&&c.gcal.id&&c.gcal.cal&&c.gcal.date)c.gcal=Object.assign({},c.gcal,{addrPending:true});save();render();
+    if(!(c.gcal&&c.gcal.addrPending)){toast(v?"住所を保存しました":"住所を消しました");return}
+    if(!gSignedIn()){toast("住所を保存しました。Googleカレンダーの予定の場所は、次の同期で直します",4000);return}
+    caseAddrCal(c).then(()=>toast("住所を保存し、Googleカレンダーの予定の場所も直しました",4000),err=>toast("住所は保存しました。カレンダーの場所は直せなかったので、次の同期でもう一度直します（"+gMsg(err)+"）",5000)).finally(render);return}
   if(a==="rcvedit"){ui.rcvEdit=true;ui.rcvSuggest="";render();const i=document.getElementById("d_rcv");if(i){i.scrollIntoView({block:"center"});i.focus()}return}
   if(a==="rcvno"){ui.rcvEdit=false;ui.rcvSuggest="";render();return}
   if(a==="rcvsave"){const v=val("d_rcv");if(!v){toast("受付日時を入れてください");return}
@@ -6200,6 +6419,18 @@ setInterval(()=>{document.querySelectorAll("[data-since]").forEach(el=>el.textCo
 const APP_VER=((document.querySelector(".ver")||{}).textContent||"").match(/v(\d+\.\d+\.\d+)/)?.[1]||"",UPD_KEY="workhub_autoupd_v1";
 const verNewer=(a,b)=>{const x=String(a).split(".").map(Number),y=String(b).split(".").map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0)}return false};
 let updNext="",updChecking=false,updLast=0;
+/* v1.50.136 トシさんの指示：新しい版のお知らせは、社員に関係のある変更があったときだけ、何が変わったかを書いて出す。
+   前は「開いたまま自動で切り替えたときだけ」出し、新しく開いたときは出なかった。毎回出すと読まずに閉じる癖がつくので、関係のない変更だけのときは出さない。
+   ・この端末で前に見た版を覚えておく（閉じるを押したときに覚える）。開いたときに前より新しい版なら、その間の RELEASE_NOTES を出す。
+   ・admin:true の項目は社長の端末だけ。初めて開いた端末（覚えた版がない）は出さずに今の版を覚える。
+   ・決まり：社員の画面や使い方が変わる版では、ここに1行足す（マニュアルの改訂履歴と同じ版）。 */
+const RELEASE_NOTES=[
+ {v:"1.50.139",text:"売上報告：確定前の月（今なら10月）にも「毎日の確認」が付きました。社長・本部長・GMは、確定日まで毎日、その月の数字を見て「確定前の今日の分を確認済みにする」を押してください。"},
+ {v:"1.50.138",text:"案件：登録したあとでも、案件の画面の「受付内容」で住所を入れる・直すことができるようになりました。Googleカレンダーの予定の場所も一緒に直ります。"},
+ {v:"1.50.135",text:"売上報告：「毎日の受注」のグラフの棒を押しても、欄が消えなくなりました。会社ごとの欄は「毎日の確認」が上、「この月の確認」が下になりました。"},
+ {v:"1.50.134",text:"予定：会社を選んでいても、専務・本部長の予定が出るようになりました。"},
+],SEEN_VER_KEY="workhub_seen_ver_v1";
+const relNotesFor=(prev,cur,admin)=>RELEASE_NOTES.filter(n=>verNewer(n.v,prev)&&!verNewer(n.v,cur)&&(!n.admin||admin)).sort((a,b)=>verNewer(a.v,b.v)?-1:1);
 function updBusy(){
   if(receiptSaving||receiptSelecting||receiptSending||shareRunning)return true;
   if(ui.gsync&&(ui.gsync.busy||Date.now()-(ui.gsync.at||0)<60e3))return true;
@@ -6223,7 +6454,11 @@ async function updCheck(force){
 }
 /* 更新して開き直したとき：URLの印を消し、「新しい版にしました」と出す */
 try{const q=new URLSearchParams(location.search);if(q.has("u"))history.replaceState(null,"",location.pathname+location.hash);
-  const t=JSON.parse(sessionStorage.getItem(UPD_KEY)||"null");if(t&&t.v===APP_VER){sessionStorage.removeItem(UPD_KEY);ui.updDone=APP_VER}}catch(e){}
+  const t=JSON.parse(sessionStorage.getItem(UPD_KEY)||"null");if(t&&t.v===APP_VER)sessionStorage.removeItem(UPD_KEY)}catch(e){}
+/* v1.50.136 開き方（自動の切り替え・新しく開いた）に関係なく、前に見た版より新しければ、社員に関係のある変更だけを出す */
+try{if(APP_VER){const prev=localStorage.getItem(SEEN_VER_KEY)||"";
+  if(!prev)localStorage.setItem(SEEN_VER_KEY,APP_VER);
+  else if(verNewer(APP_VER,prev)){const items=relNotesFor(prev,APP_VER,!!D().admin);if(items.length)ui.updNotes={v:APP_VER,items};else localStorage.setItem(SEEN_VER_KEY,APP_VER)}}}catch(e){}
 if(typeof window.addEventListener==="function"){
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){updCheck(true);if(syncResumeWant)setTimeout(syncResumeTry,1500)}else if(ui.gsync?.busy)syncHid=true});
   window.addEventListener("focus",()=>updCheck(false));

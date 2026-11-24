@@ -520,6 +520,18 @@ async function main(){
    mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
    assert.ok(tabReads(mark,b.id).some(q=>/案件/.test(q)),'box changed: read in full');
    assert.ok(await z.p.evaluate(id=>RB.ui.corp.data.find(x=>x.s.sheetId===id).box.some(o=>o['指示ID']==='B-TEST-0115'),b.id))}
+  /* v1.50.137 前の読み込みで社長の更新日時が古くて使えなかった人（控えに更新日時がない）も、社長の新しい更新日時が来たときに全部は読み直さず、「情報」タブだけで確かめる。
+     確かめたら今回の更新日時を控えに残し、次は問い合わせない（前は全員を全部読み直していた：専務の同期 4〜5分） */
+  {await A.p.clock.setSystemTime(new Date(tA+31*60e3));await A.p.evaluate(()=>RB.corpRun());
+   const noMt=await z.p.evaluate(()=>RB.ui.corp.data.filter(x=>x.ok&&!x.mt).map(x=>x.s.sheetId));
+   const target=others.filter(x=>noMt.includes(x.id));assert.ok(target.length>=1,'some people have no stored time after the stale read');
+   mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
+   for(const x of target){const r=tabReads(mark,x.id);assert.ok(r.length>=1&&r.every(q=>/情報/.test(q)&&!/案件/.test(q)),'info tab only (was a full reread): '+x.name+' '+r.join('|'))}
+   t=await z.p.evaluate(()=>RB.ui.corp.timing);assert.equal(t.reused,others.length);assert.ok(t.probed>=target.length);assert.equal(t.shared,0);
+   assert.ok(await z.p.evaluate(ids=>ids.every(id=>!!RB.ui.corp.data.find(x=>x.s.sheetId===id).mt),target.map(x=>x.id)),'the time is kept after the check');
+   mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
+   for(const x of others)assert.equal(tabReads(mark,x.id).length,0,'next time no reads at all: '+x.name)
+   assert.ok(typeof (await z.p.evaluate(()=>RB.ui.corp.timing.slowWho))==='string','slowest person is named')}
   /* 前に全部読んでから12時間たった：全員を全部読む */
   await z.p.clock.setSystemTime(new Date(tA+13*3600e3));
   mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());

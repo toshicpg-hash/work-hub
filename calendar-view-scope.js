@@ -25,7 +25,9 @@ function project({g,rows,model,cases=[],resolvePerson,readable,from='',to='9999-
   /* v1.50.75 社長の予定（「担当：社長」・社長のGmailで作成）で、社長を人として持たない端末：持ち主不明にはしない。
      v1.50.106 トシさんの指示：社長が「CPG HUB」に入れた予定はみんなに見せる。会社・人の絞り込みに関係なく出す（前は全社・全員のときだけ） */
   if(a&&a.boss){events.push({...e,boss:true});continue}
-  if(a&&a.person){if(!allowed.has(a.person))continue;company=['CP','CPY','AT'].includes(a.company)?a.company:'unknown';id=a.person;}
+  if(a&&a.person){if(!allowed.has(a.person))continue;company=['CP','CPY','AT'].includes(a.company)?a.company:'unknown';id=a.person;
+   /* v1.50.134 専務・本部長（役割「全社」）の、会社が決まらない予定：会社の絞り込みに関係なく出す（人の絞り込みはそのまま） */
+   if(a.hq&&company==='unknown'){if(person==='all'||person===id)events.push({...e,person:id});continue}}
   else if(r.mode==='mixed'){
    // A bare case number is not provenance. Require exact saved event+calendar identity.
    const hit=cases.filter(c=>e.id&&e.hub&&c.id===e.hub&&c.gcal?.id===e.id&&c.gcal?.cal===e.calendarId);

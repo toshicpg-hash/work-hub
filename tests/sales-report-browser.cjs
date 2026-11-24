@@ -128,6 +128,9 @@ async function main(){
    assert.ok(nameLines.length>0&&nameLines.every(n=>n<=1),'names on one line '+nameLines);
    assert.deepEqual(await A.p.$$eval('#stats-sales .sales-co h3',a=>a.map(x=>x.textContent)),['CP本社','ATアートテック','CPY横浜'],'company order CP, AT, CPY');
    await A.p.click('#stats-sales .sales-col[data-sales-day="CP|1"]');assert.equal(await A.p.$$eval('#stats-sales details:not([data-fold])[open]',a=>a.length)>0,true,'open sections stay open');
+   /* v1.50.135 棒を押しても「毎日の受注」の欄（見出し・表）は消えず、グラフの下の1行だけが変わる */
+   {const d=await A.p.$eval('#stats-sales details.sales-day[data-sales-day-co="CP"]',x=>({sum:x.querySelector(':scope>summary')?.textContent||'',tbl:!!x.querySelector('table.sales-days'),pick:x.querySelector('#sales-daypick-CP')?.textContent||''}));
+    assert.match(d.sum,/^毎日の受注/,'summary kept');assert.ok(d.tbl,'table kept');assert.match(d.pick,/^1日：/,'only the line changes')}
    if(width===400)await A.p.locator('#stats-sales .panel').nth(1).screenshot({path:path.join(require('node:os').tmpdir(),'sales-cp-400.png')});assert.match(await A.p.textContent('#stats-sales'),/1日：(\d+件・[\d,]+円|入力なし)/);
    assert.ok(await overflow(A.p)<=0,'overflow '+await overflow(A.p));
    if(width===400)await A.p.screenshot({path:path.join(require('node:os').tmpdir(),'sales-400.png'),fullPage:true});
@@ -153,6 +156,8 @@ async function main(){
   });
   await check('毎日の確認（社長・本部長・GM）：今日の済み・未と今月の日数を出し、社長はHUBから今日の確認を付けられる（その1マスだけ書く）。完了の行は薄い色、粗利に粗利率 '+width+'px',async()=>{
    await open(A.p);await A.p.click('[data-sales-month="2026-11"]');
+   /* v1.50.135 毎日の確認が上、この月の確認が下 */
+   assert.deepEqual(await A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).first().evaluate(p=>[...p.querySelectorAll('.sales-chk')].map(x=>x.classList.contains('sales-mon')?'mon':'day')),['day','mon'],'daily box first');
    const box=()=>A.p.locator('#stats-sales .panel').filter({hasText:'CP本社'}).locator('.sales-chk:not(.sales-mon)'),qk=()=>A.p.locator('#stats-sales details.sales-card[data-sales-co="CP"]>summary .sales-quick');
    /* v1.50.120 確認のボタンは会社名の行のすぐ下（たたんだままでも押せる。押しても欄は開け閉めしない） */
    await A.p.evaluate(()=>{BB.ui.salesCoOpen={};BB.render()});assert.equal(await qk().locator('[data-act=salescheck]').count(),1);assert.ok(await qk().locator('[data-act=salescheck]').isVisible(),'visible while the card is closed');
@@ -395,6 +400,10 @@ async function main(){
     assert.match(tile,/10月の売上（確定前・12\/15確定）・％は達成率/);
     for(const co of ['CP','AT','CPY']){const r=t10.find(x=>x[0]===co),a=Number(String(r[ks]).replace(/,/g,'')),g=Number(String(r[kg]).replace(/,/g,''));assert.ok(tile.includes(co+Math.round(a/g*100)+'%'+a.toLocaleString('ja-JP')+'円'),'10月 '+co+' '+tile)}
     assert.doesNotMatch(tile,/11月の売上/,'not this month')}
+   /* v1.50.133 開いた直後（まだ同期していない・売上報告を読んでいない）も、端末の控えで確定前の月を出す */
+   {const keep=await A.p.evaluate(()=>{const S=BB.ui.sales;BB.ui.sales=null;BB.render();const t=document.querySelector('#home-orders').textContent;BB.ui.sales=S;BB.render();return t});
+    assert.equal(keep,tile,'same tile from the device copy before the report is read');
+    assert.ok(await A.p.evaluate(()=>JSON.parse(localStorage.getItem('workhub_prelim_v1')).months.some(m=>m.key==='2026-10')),'copy kept')}
    /* v1.50.109 小さいタイル：1件単価・前日・ボタンは出さない */
    assert.doesNotMatch(tile,/1件単価|前日|タップして|毎日の受注を見る/);assert.ok(await A.p.$eval('#home-orders .ord-to',e=>{const r=e.getBoundingClientRect(),t=e.closest('#home-orders').getBoundingClientRect();return t.right-r.right<40&&t.bottom-r.bottom<40}),'bottom right');assert.equal(await A.p.$$eval('#home-orders button',a=>a.length),0,'no inner buttons');
    assert.equal(await A.p.$eval('#home-summary .tiles',t=>t.firstElementChild.id),'home-orders','first tile');

@@ -5,6 +5,12 @@ const {chromium}=require('/opt/codex/runtimes/codex-primary-runtime/dependencies
 const root=path.resolve(__dirname,'..'),out=path.resolve(root,'..','shared-test-output'),KEY='workhub_proto_v1',CK='workhub_corp_last_v1';
 const hook='window.SH={get db(){return DB},ui,go,render,emptyDB,RECEIPT_DEFAULTS,photoPut,photoGet,corpRun,corpKeepLoad,authorize(){G.token="SYNTHETIC";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000;/* v1.50.5 やり直しの待ち時間は試験では待たない */if(typeof corpWait!=="undefined")corpWait=async()=>{};}};';
 let browser,server,origin,fixture,headers;const results=[];
+/* 比べる古い版（v1.43、領収書の共有が入る前）の画面。前はリポジトリの外の ../base/index.html を読む作りで、そのフォルダが無い環境では毎回ここで止まっていた。
+   ../base があればそれを使い、なければ git の履歴（v1.43 のマージ bdf209d）から取り出す。どちらも無いときは、理由を書いて止める */
+const BASE_COMMIT='bdf209da78de692ccb7bd613393725e3a20c5a86';let baseCache=null;
+function baseHtml(){if(baseCache)return baseCache;const f=path.join(root,'..','base','index.html');if(fs.existsSync(f))return baseCache=fs.readFileSync(f,'utf8');
+ try{return baseCache=require('node:child_process').execFileSync('git',['-C',root,'show',BASE_COMMIT+':index.html'],{encoding:'utf8',maxBuffer:64*1024*1024,stdio:['ignore','pipe','pipe']})}
+ catch(e){throw Error('比べる古い版（v1.43）がありません。../base/index.html を置くか、git の履歴を取り寄せてください（git fetch --unshallow）：'+String(e.stderr||e.message).trim())}}
 const staff=[{sheetId:'source-a',name:'検証社員A',email:'a@example.invalid',company:'CP',role:'社員',lastSync:'2026-10-27 21:28'},{sheetId:'source-b',name:'検証社員B',email:'b@example.invalid',company:'CPY',role:'社員',lastSync:'2026-10-27 21:28'}];
 const row=(id,price,method='法人カード',company='CP')=>({'受付ID':id,'日付':'2026-10-27','支払先':'SYNTHETIC '+id,'内容':'検証用の明細','区分':'駐車場代','金額':price,'会社':company,'現場':'SYNTHETIC SITE','仕事番号':'TEST-JOB','状態':method==='法人カード'?'締め前':'未提出','精算書番号':'','写真リンク':'https://drive.google.com/file/d/SYNTHETIC-'+id+'/view?usp=drivesdk','支払い方法':method,'提出者':'SYNTHETIC'});
 const source=(s=staff[0],rc=[row('R-0001',100),row('R-0002',250)])=>({s:structuredClone(s),ok:true,cases:[],todo:[],orders:[],rc,receiptRead:{state:'ready',at:Date.parse('2026-10-27T12:30:00Z'),version:'v1.42'}});
@@ -12,7 +18,7 @@ const cache=(data=[source()])=>({at:Date.parse('2026-10-27T12:30:00Z'),who:'admi
 async function setup({db=fixture,kept=cache(),width=390,baseline=false,missingModule=false}={}){
  const ctx=await browser.newContext({viewport:{width,height:1000},locale:'ja-JP',timezoneId:'Asia/Tokyo',isMobile:true,hasTouch:true,serviceWorkers:'block'}),network=[],errors=[],response={mode:'ok',rows:[row('R-0001',100),row('R-0002',250)]};
  await ctx.route('**/*',async r=>{const q=r.request(),u=new URL(q.url());
-  if(u.origin===origin){if(missingModule&&u.pathname==='/shared-receipts.js')return r.fulfill({status:503,body:''});if(u.pathname==='/'||u.pathname==='/index.html'){const file=baseline?path.join(root,'..','base','index.html'):root+'/index.html';return r.fulfill({contentType:'text/html',body:fs.readFileSync(file,'utf8').replace('corpKeepLoad();\nrender();',hook+'\ncorpKeepLoad();\nrender();')})}return r.continue();}
+  if(u.origin===origin){if(missingModule&&u.pathname==='/shared-receipts.js')return r.fulfill({status:503,body:''});if(u.pathname==='/'||u.pathname==='/index.html'){return r.fulfill({contentType:'text/html',body:(baseline?baseHtml():fs.readFileSync(root+'/index.html','utf8')).replace('corpKeepLoad();\nrender();',hook+'\ncorpKeepLoad();\nrender();')})}return r.continue();}
   network.push({url:u.href,method:q.method()});
   if(u.hostname==='sheets.googleapis.com'){
    if(response.mode==='global')return r.fulfill({status:500,contentType:'application/json',body:'{}'});
