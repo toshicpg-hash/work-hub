@@ -75,6 +75,9 @@ const mark=p=>p.evaluate(()=>localStorage.getItem('workhub_sync_resume_v1'));
   /* v1.50.121 社員の記録の前後の秒数。社長の端末（shared がない）は「社長の更新日時」を出さない */
   assert.equal(await d.p.evaluate(t=>SR.detailText({...t,detail:{corp:{n:18,prevN:18,reused:11,probed:0,full:7,slow:4100,prep:700,ms:7000,keep:{ok:true,kb:151}},corpList:1200,corpSave:300,corpNum:14800}}),t),
     '社員の記録：18人・前回の控え 18人・読み直さず 11人（うち「情報」で確認 0人）・全部読んだ 7人・いちばん遅い人 4.1秒・読む前の準備 0.7秒・読み込み全体 7.0秒・控えの保存 できた 151KB／社員の記録の前後：一覧の読み込み 1.2秒・画面の作り直しと保存 0.3秒・会社の数字の書き出し 14.8秒');
+  /* v1.50.137 いちばん遅い人の名前と、やり直した回数・理由 */
+  assert.match(await d.p.evaluate(t=>SR.detailText({...t,detail:{corp:{n:18,prevN:17,reused:12,probed:12,full:6,slow:238000,slowWho:'見本 太郎',slowTries:3,slowWhy:'timeout,rate',ms:242400}}}),t),/いちばん遅い人 238\.0秒（見本 太郎・3回試した：時間切れ・回数制限）/);
+  assert.match(await d.p.evaluate(t=>SR.detailText({...t,detail:{corp:{n:18,full:6,slow:9000,slowWho:'見本 次郎',slowTries:1,slowWhy:''}}}),t),/いちばん遅い人 9\.0秒（見本 次郎）/);
   /* v1.50.137 一覧の読み込みの内訳（見る人の端末） */
   assert.match(await d.p.evaluate(t=>SR.detailText({...t,detail:{corpList:56300,corpListParts:{follow:1200,list:50100,names:5000}}}),t),/一覧の読み込み 56\.3秒（移転の確認 1\.2秒・一覧 50\.1秒・氏名の履歴 5\.0秒）/);
   /* v1.50.118 社長の端末（記録シートがない）は、画面に内訳を出す */

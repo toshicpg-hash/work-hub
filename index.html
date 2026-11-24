@@ -2390,7 +2390,7 @@ function syncReqCount(url,method){if(!syncDiag)return;const u=String(url),q=sync
 const syncDiagSet=(k,v)=>{if(syncDiag)syncDiag[k]=v};
 async function syncDiagTime(k,fn){const t=Date.now();try{return await fn()}finally{if(syncDiag){syncDiag.ord=syncDiag.ord||{};syncDiag.ord[k]=(syncDiag.ord[k]||0)+Date.now()-t}}}
 function syncDetailText(t){const d=t&&t.detail;if(!d)return "";const out=[];
-  if(d.corp){const c=d.corp;out.push("社員の記録："+c.n+"人・前回の控え "+(c.prevN??"?")+"人・読み直さず "+(c.reused||0)+"人（うち「情報」で確認 "+(c.probed||0)+"人）・全部読んだ "+(c.full??"?")+"人・いちばん遅い人 "+syncSec(c.slow||0)+(c.prep!=null?"・読む前の準備 "+syncSec(c.prep):"")+(c.ms!=null?"・読み込み全体 "+syncSec(c.ms):"")+(!("shared" in c)?"":c.shared==null?"・社長の更新日時 なし/古い":"・社長の更新日時 "+c.shared+"分前")+"・控えの保存 "+(c.keep?(c.keep.ok?"できた ":"できなかった ")+c.keep.kb+"KB":"?"))}
+  if(d.corp){const c=d.corp;out.push("社員の記録："+c.n+"人・前回の控え "+(c.prevN??"?")+"人・読み直さず "+(c.reused||0)+"人（うち「情報」で確認 "+(c.probed||0)+"人）・全部読んだ "+(c.full??"?")+"人・いちばん遅い人 "+syncSec(c.slow||0)+(c.slowWho?"（"+c.slowWho+(c.slowTries>1?"・"+c.slowTries+"回試した"+(c.slowWhy?"："+c.slowWhy.split(",").map(k=>({rate:"回数制限",server:"Google側の不具合",timeout:"時間切れ",network:"通信の失敗"})[k]||k).join("・"):""):"")+"）":"")+(c.prep!=null?"・読む前の準備 "+syncSec(c.prep):"")+(c.ms!=null?"・読み込み全体 "+syncSec(c.ms):"")+(!("shared" in c)?"":c.shared==null?"・社長の更新日時 なし/古い":"・社長の更新日時 "+c.shared+"分前")+"・控えの保存 "+(c.keep?(c.keep.ok?"できた ":"できなかった ")+c.keep.kb+"KB":"?"))}
   {const post=[["corpList","一覧の読み込み"],["corpSave","画面の作り直しと保存"],["corpBoss","済みの印の保存"],["corpNum","会社の数字の書き出し"]].filter(([k])=>d[k]!=null);
    const lp=d.corpListParts;if(post.length)out.push("社員の記録の前後："+post.map(([k,l])=>l+" "+syncSec(d[k])+(k==="corpList"&&lp?"（移転の確認 "+syncSec(lp.follow)+"・一覧 "+syncSec(lp.list)+"・氏名の履歴 "+syncSec(lp.names)+"）":"")).join("・"))}
   if(d.req){const q=d.req;out.push("Googleへの問い合わせ："+((q.sr||0)+(q.sw||0)+(q.dr||0)+(q.cal||0)+(q.etc||0))+"回（表計算の読み "+(q.sr||0)+"・書き "+(q.sw||0)+"・ドライブ "+(q.dr||0)+"・カレンダー "+(q.cal||0)+(q.etc?"・ほか "+q.etc:"")+"）"+(q.r429?"・回数制限（429） "+q.r429+"回":"")+(q.paceMs?"・回数の上限に合わせて待った "+syncSec(q.paceMs):""))}
@@ -5341,7 +5341,7 @@ async function corpLoad(){
   /* v1.50.43 だれかが回数制限（429）に当たったら、ほかの人の読み込みもその間は始めない（同時に読み続けると上限が戻らない） */
   let cool=0;const gate=async()=>{const w=cool-Date.now();if(w>0)await corpWait(w,"gate")};
   const one=async s=>{
-    const started=Date.now();let tries=0,x=null,fresh=false;
+    const started=Date.now();let tries=0,x=null,fresh=false;const why=[];
     const noRc0=viewer&&noReceipts(me)&&s.sheetId!==me.sheetId, boxOn=!!s.boxId&&(!viewer||s.sheetId===me.sheetId||canOrder(me,s)), key=corpReadKey(viewer,me,s,noRc0,boxOn);
     const mt=mts[s.sheetId]||"", bmt=boxOn?(mts[s.boxId]||""):"", old=prev[s.sheetId];
     if(old&&mt&&old.mt===mt&&(!boxOn||bmt&&old.bmt===bmt)&&old.rk===key&&Date.now()-(old.readAt||0)<CORP_REUSE_MS
@@ -5381,14 +5381,16 @@ async function corpLoad(){
       s.lastSync=String(info["最終同期"]||"");
       x={s,ok:true,salesChk:hasChk?objRows(v[SCHK_TAB]):null,calRec:hasCal?objRows(v[CALREC_TAB]).map(r=>String(r["Gmail"]||"").trim()).filter(mailOK):null,receiptRead:noRc?{state:"hidden",at:Date.now(),version:String(info["版"]||"")}:{...(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.parseSheet(v["立替"]):{state:"invalid",message:"領収書の表示機能を読み込めません。"}),at:Date.now(),version:String(info["版"]||"")},cases:objRows(v["案件"]),rc:noRc?[]:rcFor(me,s,objRows(v["立替"])),todo:hasTodo?objRows(v["ToDo"]):null,orders:hasOrd?objRows(v["指示"]).filter(o=>o["指示ID"]):[],box,reports:hasRep?objRows(v[REPORT_TAB]).filter(r=>r["指示ID"]):[],mt,bmt:box===null?"":bmt,rk:key,readAt:started,infoJ:viewer?JSON.stringify(v["情報"]||[]):undefined,boxJ:viewer&&boxOn?JSON.stringify(box):undefined}}
     catch(err){if(err.message==="signin")throw err;
-      const wait=corpRetryWait(err,tries);if(wait!==null){if(corpErrKind(err)==="rate")cool=Math.max(cool,Date.now()+wait);await corpWait(wait);continue}
+      const wait=corpRetryWait(err,tries);why.push(corpErrKind(err)||String(err.status||err.message||"?"));if(wait!==null){if(corpErrKind(err)==="rate")cool=Math.max(cool,Date.now()+wait);await corpWait(wait);continue}
       x={s,ok:false,accessDenied:err.status===403||err.status===404,msg:corpReadMsg(err)+(tries>1?"・"+tries+"回試しました":""),status:err.status||(err.name==="AbortError"?"timeout":err.network?"network":"")}}
-    x.ms=Date.now()-started;x.tries=tries;return x}
+    x.ms=Date.now()-started;x.tries=tries;x.why=why;return x}
   };
   const prepMs=Date.now()-tPrep;
   {let next=0,stop=null;const work=async()=>{while(!stop&&next<list.length){const i=next++;try{out[i]=await one(list[i])}catch(e){stop=stop||e}}};
    await Promise.all(Array.from({length:Math.min(CORP_POOL,list.length)},work));if(stop)throw stop;}
   out.timing={ms:Date.now()-t0,n:list.length,reused:out.filter(x=>x&&x.reused).length,probed:out.filter(x=>x&&x.probed).length,prevN:Object.keys(prev).length,prep:prepMs,full:out.filter(x=>x&&x.ok&&!x.reused).length,slow:Math.max(0,...out.map(x=>x&&x.ms||0))};
+  /* v1.50.137 いちばん遅い人の名前と、やり直した回数・理由（専務の端末で1人に238秒かかっていた。だれが・なぜかを内訳に出す） */
+  {const w=out.filter(Boolean).reduce((a,x)=>!a||(x.ms||0)>(a.ms||0)?x:a,null);if(w&&w.s){out.timing.slowWho=dispName(w.s)||w.s.name||"";out.timing.slowTries=w.tries||0;out.timing.slowWhy=(w.why||[]).join(",")}}
   if(viewer)out.timing.shared=shared?Math.round(shared.age/60e3):null;
   if(pub){const e=await pub;if(e&&e.message==="signin")throw e}
   save();return out;

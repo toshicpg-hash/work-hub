@@ -530,7 +530,8 @@ async function main(){
    t=await z.p.evaluate(()=>RB.ui.corp.timing);assert.equal(t.reused,others.length);assert.ok(t.probed>=target.length);assert.equal(t.shared,0);
    assert.ok(await z.p.evaluate(ids=>ids.every(id=>!!RB.ui.corp.data.find(x=>x.s.sheetId===id).mt),target.map(x=>x.id)),'the time is kept after the check');
    mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
-   for(const x of others)assert.equal(tabReads(mark,x.id).length,0,'next time no reads at all: '+x.name)}
+   for(const x of others)assert.equal(tabReads(mark,x.id).length,0,'next time no reads at all: '+x.name)
+   assert.ok(typeof (await z.p.evaluate(()=>RB.ui.corp.timing.slowWho))==='string','slowest person is named')}
   /* 前に全部読んでから12時間たった：全員を全部読む */
   await z.p.clock.setSystemTime(new Date(tA+13*3600e3));
   mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
