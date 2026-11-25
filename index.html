@@ -536,8 +536,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.148" title="使い方マニュアルを開く">v1.50.148・11/25更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.148" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.149" title="使い方マニュアルを開く">v1.50.149・11/26更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.149" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -597,10 +597,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.148"></script>
+<script src="./share-management.js?v=1.50.149"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.148"></script>
-<script src="./calendar-view-scope.js?v=1.50.148"></script>
+<script src="./view-scope.js?v=1.50.149"></script>
+<script src="./calendar-view-scope.js?v=1.50.149"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2876,7 +2876,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.148";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.149";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -3075,7 +3075,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.148" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.148" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.149" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.149" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -5454,6 +5454,11 @@ function corpTabsSet(id,tabs){const all=corpTabsAll();if(tabs)all[id]=tabs.map(S
    前に読んだときと記録シート・指示箱の更新日時が同じで、読み方（見る人・役割・担当・指示箱）も同じなら、前の内容をそのまま使う。
    更新日時が取れないファイル（一覧に出ない・失敗した）は今までどおり読む。前に実際に読んでから12時間たった人も読む */
 const CORP_REUSE_MS=12*3600e3;
+/* v1.50.149 トシさんの指示（11/26 朝、専務の同期 294.9秒：前に読んでから12時間を過ぎていて18人全員を読み直し、Googleの回数の上限で262.2秒待った）：
+   見る人の端末で「情報」タブを見て確かめるとき（下の v1.50.115/137）、ほかの人が書くタブ「指示」（社長の端末が書く）も同じ問い合わせで一緒に読んで比べる。
+   見る人が読むタブのうち、本人の端末以外が書くのは「指示」と指示箱だけ（ほかは本人の同期で書かれ、そのたびに「情報」も変わる）なので、
+   両方が同じなら、前に読んでから7日までは前の内容を使う。「指示」を控えていない古い控えは、今までどおり12時間まで */
+const CORP_PROBE_MS=7*86400e3;
 async function corpModTimes(){
   const out={};let pt="",pages=0;
   try{do{const r=await gReq(DRIVE+"?"+new URLSearchParams(Object.assign({q:"mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",fields:"nextPageToken,files(id,modifiedTime)",pageSize:"1000",spaces:"drive"},pt?{pageToken:pt}:{})));
@@ -5510,7 +5515,8 @@ async function corpLoad(){
     const started=Date.now();let tries=0,x=null,fresh=false;const why=[];
     const noRc0=viewer&&noReceipts(me)&&s.sheetId!==me.sheetId, boxOn=!!s.boxId&&(!viewer||s.sheetId===me.sheetId||canOrder(me,s)), key=corpReadKey(viewer,me,s,noRc0,boxOn);
     const mt=mts[s.sheetId]||"", bmt=boxOn?(mts[s.boxId]||""):"", old=prev[s.sheetId];
-    if(old&&mt&&old.mt===mt&&(!boxOn||bmt&&old.bmt===bmt)&&old.rk===key&&Date.now()-(old.readAt||0)<CORP_REUSE_MS
+    /* v1.50.149 見る人の端末で、社長の端末が取った更新日時が同じなら（指示を書いても更新日時は変わる）、前に全部読んでから7日までは使う。社長の端末は今までどおり12時間 */
+    if(old&&mt&&old.mt===mt&&(!boxOn||bmt&&old.bmt===bmt)&&old.rk===key&&Date.now()-(old.readAt||0)<(viewer?CORP_PROBE_MS:CORP_REUSE_MS)
       &&!(viewer&&(s.sheetId===me.sheetId||wrote(s.sheetId,old.readAt)||boxOn&&wrote(s.boxId,old.readAt)))){
       x=Object.assign({},old,{s:Object.assign(s,{lastSync:old.s.lastSync||""}),reused:true,ms:Date.now()-started,tries:0});return x}
     /* v1.50.115 トシさんの指示（専務の端末の同期で「社員の記録（裏で）」29.5秒）：見る人の端末で、社長の端末が書いた更新日時が古い（30分より前）・ないとき、
@@ -5519,11 +5525,16 @@ async function corpLoad(){
        違う・読めない・前に読んでから12時間たった・自分の記録シート・この端末が書いたシートは、今までどおり全部読む */
     /* v1.50.137 トシさんの指示（専務の同期が4〜5分、18人全員を読み直していた）：前に読んだとき社長の更新日時が古くて使えなかった人（控えに更新日時がない）は、
        今回の更新日時と比べられず、前は全部を読み直していた。そういう人も「情報」タブだけで同じか確かめる。同じなら今回の更新日時を控えに残す（次からは問い合わせなしで済む） */
-    if(viewer&&(!mt||!old?.mt)&&old&&old.infoJ&&old.rk===key&&Date.now()-(old.readAt||0)<CORP_REUSE_MS
+    /* 「指示」タブがなかった人（"-"）も、「指示」と一緒に読んでみる。まだなければ（読めなければ）「情報」だけを読み直し、「指示」はまだないとみる */
+    const ordProbe=typeof old?.ordJ==="string";
+    if(viewer&&(!mt||!old?.mt)&&old&&old.infoJ&&old.rk===key&&Date.now()-(old.readAt||0)<(ordProbe?CORP_PROBE_MS:CORP_REUSE_MS)
       &&!(s.sheetId===me.sheetId||wrote(s.sheetId,old.readAt)||boxOn&&wrote(s.boxId,old.readAt))){
       try{await gate();
-        const [iv,bx]=await Promise.all([sheetRead(s.sheetId,["情報"]),boxOn?sheetRead(s.boxId,[BOX_TAB]).then(r=>objRows(r[BOX_TAB]).filter(o=>o["指示ID"]),err=>{if(err.message==="signin")throw err;return null}):Promise.resolve(null)]);
-        if(JSON.stringify(iv["情報"]||[])===old.infoJ&&(!boxOn||old.boxJ!==undefined&&JSON.stringify(bx)===old.boxJ)){
+        const readInfo=async()=>{if(!ordProbe)return sheetRead(s.sheetId,["情報"]);
+          try{const r=await sheetRead(s.sheetId,["情報","指示"]);r.ordJ=JSON.stringify(r["指示"]||[]);return r}
+          catch(err){if(err.message==="signin"||old.ordJ!=="-"||err.status!==400)throw err;const r=await sheetRead(s.sheetId,["情報"]);r.ordJ="-";return r}};
+        const [iv,bx]=await Promise.all([readInfo(),boxOn?sheetRead(s.boxId,[BOX_TAB]).then(r=>objRows(r[BOX_TAB]).filter(o=>o["指示ID"]),err=>{if(err.message==="signin")throw err;return null}):Promise.resolve(null)]);
+        if(JSON.stringify(iv["情報"]||[])===old.infoJ&&(!ordProbe||iv.ordJ===old.ordJ)&&(!boxOn||old.boxJ!==undefined&&JSON.stringify(bx)===old.boxJ)){
           x=Object.assign({},old,{s:Object.assign(s,{lastSync:old.s.lastSync||""}),reused:true,probed:true,ms:Date.now()-started,tries:0},mt?{mt,bmt:boxOn?bmt:old.bmt}:{});return x}}
       catch(err){if(err.message==="signin")throw err}}
     /* v1.50.5 読めなかった人だけ、少し待って最大2回やり直す（回数制限・Google側の不具合・時間切れ・通信の失敗のとき）。成功した人は読み直さない */
@@ -5545,7 +5556,7 @@ async function corpLoad(){
       const box=await boxP;
       const info=Object.fromEntries((v["情報"]||[]).slice(1).map(r=>[r[0],r[1]]));
       s.lastSync=String(info["最終同期"]||"");
-      x={s,ok:true,salesChk:hasChk?objRows(v[SCHK_TAB]):null,calRec:hasCal?objRows(v[CALREC_TAB]).map(r=>String(r["Gmail"]||"").trim()).filter(mailOK):null,receiptRead:noRc?{state:"hidden",at:Date.now(),version:String(info["版"]||"")}:{...(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.parseSheet(v["立替"]):{state:"invalid",message:"領収書の表示機能を読み込めません。"}),at:Date.now(),version:String(info["版"]||"")},cases:objRows(v["案件"]),rc:noRc?[]:rcFor(me,s,objRows(v["立替"])),todo:hasTodo?objRows(v["ToDo"]):null,orders:hasOrd?objRows(v["指示"]).filter(o=>o["指示ID"]):[],box,reports:hasRep?objRows(v[REPORT_TAB]).filter(r=>r["指示ID"]):[],mt,bmt:box===null?"":bmt,rk:key,readAt:started,infoJ:viewer?JSON.stringify(v["情報"]||[]):undefined,boxJ:viewer&&boxOn?JSON.stringify(box):undefined}}
+      x={s,ok:true,salesChk:hasChk?objRows(v[SCHK_TAB]):null,calRec:hasCal?objRows(v[CALREC_TAB]).map(r=>String(r["Gmail"]||"").trim()).filter(mailOK):null,receiptRead:noRc?{state:"hidden",at:Date.now(),version:String(info["版"]||"")}:{...(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.parseSheet(v["立替"]):{state:"invalid",message:"領収書の表示機能を読み込めません。"}),at:Date.now(),version:String(info["版"]||"")},cases:objRows(v["案件"]),rc:noRc?[]:rcFor(me,s,objRows(v["立替"])),todo:hasTodo?objRows(v["ToDo"]):null,orders:hasOrd?objRows(v["指示"]).filter(o=>o["指示ID"]):[],box,reports:hasRep?objRows(v[REPORT_TAB]).filter(r=>r["指示ID"]):[],mt,bmt:box===null?"":bmt,rk:key,readAt:started,infoJ:viewer?JSON.stringify(v["情報"]||[]):undefined,ordJ:viewer?(hasOrd?JSON.stringify(v["指示"]||[]):"-"):undefined,boxJ:viewer&&boxOn?JSON.stringify(box):undefined}}
     catch(err){if(err.message==="signin")throw err;
       const wait=corpRetryWait(err,tries);why.push(corpErrKind(err)||String(err.status||err.message||"?"));if(wait!==null){if(corpErrKind(err)==="rate")cool=Math.max(cool,Date.now()+wait);await corpWait(wait);continue}
       x={s,ok:false,accessDenied:err.status===403||err.status===404,msg:corpReadMsg(err)+(tries>1?"・"+tries+"回試しました":""),status:err.status||(err.name==="AbortError"?"timeout":err.network?"network":"")}}
@@ -6484,6 +6495,7 @@ let updNext="",updChecking=false,updLast=0;
    ・admin:true の項目は社長の端末だけ。初めて開いた端末（覚えた版がない）は出さずに今の版を覚える。
    ・決まり：社員の画面や使い方が変わる版では、ここに1行足す（マニュアルの改訂履歴と同じ版）。 */
 const RELEASE_NOTES=[
+ {v:"1.50.149",admin:true,text:"見る人（専務・GM・経理・業務管理）の端末の同期を短くしました。前に読んでから12時間を過ぎても、変わっていない人の記録は読み直しません（7日まで）。"},
  {v:"1.50.147",text:"同期のたびに出ていた「アカウントを選ぶ画面」が、たいてい出なくなりました（前にログインしたアカウントで自動で取り直します）。"},
  {v:"1.50.144",admin:true,text:"見る人（全社・GM・経理・業務管理）の端末は、社長の同期のあと、本人が同期すると自動で「会社の動き」につながるようになりました。見る人用のリンクを送る必要はありません。"},
  {v:"1.50.143",admin:true,text:"予定：統括GMの予定の共有先に、担当の会社が合う業務管理の人を加えました。社長の端末で「予定の共有先を書く」を押したあと、統括GM本人が「予定の共有」を押すと共有されます。"},
