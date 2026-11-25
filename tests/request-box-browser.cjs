@@ -532,10 +532,21 @@ async function main(){
    mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
    for(const x of others)assert.equal(tabReads(mark,x.id).length,0,'next time no reads at all: '+x.name)
    assert.ok(typeof (await z.p.evaluate(()=>RB.ui.corp.timing.slowWho))==='string','slowest person is named')}
-  /* 前に全部読んでから12時間たった：全員を全部読む */
+  /* v1.50.149 前に全部読んでから12時間たっても、7日までは「情報」と「指示」だけで確かめる（前は12時間で全員を全部読み直した：11/26 専務 294.9秒） */
   await z.p.clock.setSystemTime(new Date(tA+13*3600e3));
   mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
-  for(const x of others)assert.ok(tabReads(mark,x.id).some(q=>/案件/.test(q)),'read in full after 12 hours: '+x.name);
+  for(const x of others){const r=tabReads(mark,x.id);assert.ok(r.length>=1&&r.every(q=>!/案件/.test(q))&&r.some(q=>/情報/.test(q)),'info (and orders) only after 13 hours: '+x.name+' '+r.join('|'))}
+  t=await z.p.evaluate(()=>RB.ui.corp.timing);assert.equal(t.reused,others.length);
+  /* 社長の端末がその人の「指示」に書いた（「情報」は変わらない）：その人だけ全部読み直して、新しい指示が出る */
+  {const c=others.find(x=>x.name==='社員 一郎'),sc=G.files[c.id];let ot=sc.tabs.find(x=>x.title==='指示');
+   if(!ot){ot={title:'指示',rows:[['指示ID','内容']]};sc.tabs.push(ot)}ot.rows=[...(ot.rows||[]),['O-TEST-0149','社長から（テスト）']];
+   mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
+   assert.ok(tabReads(mark,c.id).some(q=>/案件/.test(q)),'orders changed: read in full');
+   for(const x of others.filter(x=>x!==c))assert.ok(tabReads(mark,x.id).every(q=>!/案件/.test(q)),'others are not: '+x.name)}
+  /* 前に全部読んでから7日たった：全員を全部読む */
+  await z.p.clock.setSystemTime(new Date(tA+8*86400e3));
+  mark=G.calls.length;await z.p.evaluate(()=>RB.corpRun());
+  for(const x of others)assert.ok(tabReads(mark,x.id).some(q=>/案件/.test(q)),'read in full after 7 days: '+x.name);
   t=await z.p.evaluate(()=>RB.ui.corp.timing);assert.equal(t.reused,0);
   /* 一覧のタブが読めない（形が違う）：全員読む */
   await A.p.clock.setSystemTime(new Date(tA+31*60e3));await A.p.evaluate(()=>RB.corpRun());
