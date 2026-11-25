@@ -536,8 +536,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.146" title="使い方マニュアルを開く">v1.50.146・11/24更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.146" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.147" title="使い方マニュアルを開く">v1.50.147・11/24更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.147" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -597,10 +597,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.146"></script>
+<script src="./share-management.js?v=1.50.147"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.146"></script>
-<script src="./calendar-view-scope.js?v=1.50.146"></script>
+<script src="./view-scope.js?v=1.50.147"></script>
+<script src="./calendar-view-scope.js?v=1.50.147"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2073,14 +2073,18 @@ function gAuthorize(withData,extra,pick){
   if(!pick&&gSignedIn()&&(!withData||gHas(DSCOPE))&&(!extra||gHas(extra)))return Promise.resolve();
   if(G.pending)return G.pending;
   if(!(window.google&&google.accounts&&google.accounts.oauth2))return Promise.reject(new Error("gis"));
-  const p=new Promise((res,rej)=>{try{google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:need,
+  /* v1.50.147 トシさんの指摘（同期のたびにアカウントを選ぶ画面が出て煩わしい）：前にログインしたGoogleアカウントを Google に伝えて、選ぶ画面を出さずに取り直す。
+     「別のGoogleアカウントでログインし直す」（pick）のときは伝えない。ログインの画面が出ている間は「アプリが画面の裏にあった時間」に数えない */
+  const hint=pick?"":gAcctHint();
+  syncHide.authing=true;
+  const p=new Promise((res,rej)=>{try{google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:need,...(hint?{login_hint:hint,hint}:{}),
     callback:r=>{if(!r||r.error||!r.access_token){rej(new Error(r&&r.error==="access_denied"?"denied":"auth"));return}
       const sc=typeof r.scope==="string"?r.scope:need;
       if(withData&&!DSCOPE.split(" ").every(x=>sc.split(/\s+/).includes(x))){rej(new Error("denied"));return} /* the person unticked the Drive / Sheets permission */
       if(extra&&!extra.split(" ").every(x=>sc.split(/\s+/).includes(x))){rej(new Error("denied"));return}
       gResetReads(true);G.cals=null;G.email="";G.token=r.access_token;G.scope=sc;G.exp=Date.now()+Math.max(0,(Number(r.expires_in)||3600)-60)*1000;res()},
-    error_callback:e=>rej(new Error(e&&e.type==="popup_failed_to_open"?"popup":e&&e.type==="popup_closed"?"closed":"auth"))}).requestAccessToken({prompt:pick?"select_account":""})}catch(e){rej(new Error("auth"))}});
-  G.pending=p;p.then(()=>{G.pending=null},()=>{G.pending=null});return p;
+    error_callback:e=>rej(new Error(e&&e.type==="popup_failed_to_open"?"popup":e&&e.type==="popup_closed"?"closed":"auth"))}).requestAccessToken({prompt:pick?"select_account":"",...(hint?{login_hint:hint,hint}:{})})}catch(e){rej(new Error("auth"))}});
+  G.pending=p;p.then(()=>{G.pending=null;syncHide.authing=false},()=>{G.pending=null;syncHide.authing=false});return p;
 }
 async function gApi(path,opt){
   if(!gSignedIn())throw new Error("signin");
@@ -2329,7 +2333,7 @@ async function gSyncAll(){
     if(Array.isArray(rows)){const push=rows.push;rows.push=function(...a){const t=now();for(const x of a)tm.steps.push({name:String(x&&x.name||""),ms:Math.round(t-last)});last=t;return push.apply(this,a)}}
     const r=await p;
     /* v1.50.89 ボタンが戻った時点の時間をすぐ出す（全部の合計は、裏の処理が終わってから出る） */
-    tm.button=Math.round(now()-t0);{const hm=syncHideNow();if(hm>0){tm.hidden=hm;tm.hiddenN=syncHide.n}}if(ui.gsync){ui.gsync.timing={...tm,partial:true};render()}
+    tm.button=Math.round(now()-t0);{const hm=syncHideNow(),am=syncAuthNow();if(hm>0){tm.hidden=hm;tm.hiddenN=syncHide.n}if(am>0)tm.authShown=am}if(ui.gsync){ui.gsync.timing={...tm,partial:true};render()}
     return r;
   };
   const whole=async()=>{
@@ -2339,7 +2343,7 @@ async function gSyncAll(){
       ui.syncAfterBusy=true;ui.syncAfterDoneAt=0;render();const {now,tm}=st;
       if(corpBg)await corpBg.catch(()=>{});
       for(const [n,fn] of [["共有の書き出し",bbAfterSync],["売上報告",salesAfterSync],["今月の受注",ordAfterSync],["担当の候補・会社の住所",namesAfterSync],["領収書の写真（会社）",photoAfterSync]]){const s=now();try{await fn()}catch(e){if(n!=="担当の候補・会社の住所")throw e}const ms=Math.round(now()-s);if(ms>=50)tm.after.push({name:n,ms})}
-    }finally{if(ui.syncAfterBusy)ui.syncAfterDoneAt=Date.now();ui.syncAfterBusy=false;if(st){const {now,t0,tm}=st;tm.total=Math.round(now()-t0);{const hd=syncHideEnd();if(hd.ms>0){tm.hidden=hd.ms;tm.hiddenN=hd.n}else{delete tm.hidden;delete tm.hiddenN}}delete tm.partial;tm.at=new Date().toISOString();tm.ver=APP_VER;tm.ok=!!(ui.gsync&&ui.gsync.complete);syncTimingSave(tm);syncDiag=null;if(ui.gsync)ui.gsync.timing=tm;syncResumeAfter();render()}}
+    }finally{if(ui.syncAfterBusy)ui.syncAfterDoneAt=Date.now();ui.syncAfterBusy=false;if(st){const {now,t0,tm}=st;tm.total=Math.round(now()-t0);{const hd=syncHideEnd();if(hd.ms>0){tm.hidden=hd.ms;tm.hiddenN=hd.n}else{delete tm.hidden;delete tm.hiddenN}if(hd.auth>0)tm.authShown=hd.auth;else delete tm.authShown}delete tm.partial;tm.at=new Date().toISOString();tm.ver=APP_VER;tm.ok=!!(ui.gsync&&ui.gsync.complete);syncTimingSave(tm);syncDiag=null;if(ui.gsync)ui.gsync.timing=tm;syncResumeAfter();render()}}
     return r;
   };
   manualTodoSyncPending=Promise.resolve().then(whole);
@@ -2398,12 +2402,16 @@ const syncTimingLoad=()=>{try{const t=JSON.parse(localStorage.getItem(SYNC_TIME_
 const syncSec=ms=>(Math.round((Number(ms)||0)/100)/10).toFixed(1)+"秒";
 /* v1.50.146 トシさんの指示（11/24 同期が30分止まった・回線は速いのに141.6秒）：同期の間に、アプリが画面の裏にあった時間を測る。
    スマホは裏に回ったアプリの通信を止める・遅くするので、長かった原因が「裏にあった」のか「本当に遅かった」のかを数字で分ける */
-const syncHide={on:false,ms:0,n:0,at:0};
-const syncHideStart=()=>{syncHide.on=true;syncHide.ms=0;syncHide.n=0;syncHide.at=document.visibilityState==="hidden"?Date.now():0;if(syncHide.at)syncHide.n=1};
+const syncHide={on:false,ms:0,n:0,at:0,authing:false,authMs:0,authAt:0};
+const syncHideStart=()=>{syncHide.on=true;syncHide.ms=0;syncHide.n=0;syncHide.authMs=0;syncHide.authAt=0;syncHide.at=document.visibilityState==="hidden"?Date.now():0;if(syncHide.at)syncHide.n=1};
 const syncHideNow=()=>syncHide.ms+(syncHide.at?Date.now()-syncHide.at:0);
-const syncHideEnd=()=>{const ms=syncHideNow(),n=syncHide.n;syncHide.on=false;syncHide.at=0;return {ms,n}};
-document.addEventListener("visibilitychange",()=>{if(!syncHide.on)return;if(document.visibilityState==="hidden"){if(!syncHide.at){syncHide.at=Date.now();syncHide.n++}}else if(syncHide.at){syncHide.ms+=Date.now()-syncHide.at;syncHide.at=0}});
-const syncHideText=t=>t&&Number(t.hidden)>=1000?"・うちアプリが画面の裏にあった時間 "+syncSec(t.hidden)+(t.hiddenN>1?"（"+t.hiddenN+"回）":""):"";
+const syncAuthNow=()=>syncHide.authMs+(syncHide.authAt?Date.now()-syncHide.authAt:0);
+const syncHideEnd=()=>{const ms=syncHideNow(),n=syncHide.n,auth=syncAuthNow();syncHide.on=false;syncHide.at=0;syncHide.authAt=0;return {ms,n,auth}};
+/* v1.50.147 Googleのログインの画面が前に出ている間（syncHide.authing）は、裏にあった時間ではなく「Googleのログイン」に数える */
+document.addEventListener("visibilitychange",()=>{if(!syncHide.on)return;const now=Date.now();
+  if(document.visibilityState==="hidden"){if(syncHide.at||syncHide.authAt)return;if(syncHide.authing)syncHide.authAt=now;else{syncHide.at=now;syncHide.n++}}
+  else{if(syncHide.at){syncHide.ms+=now-syncHide.at;syncHide.at=0}if(syncHide.authAt){syncHide.authMs+=now-syncHide.authAt;syncHide.authAt=0}}});
+const syncHideText=t=>(t&&Number(t.hidden)>=1000?"・うちアプリが画面の裏にあった時間 "+syncSec(t.hidden)+(t.hiddenN>1?"（"+t.hiddenN+"回）":""):"")+(t&&Number(t.authShown)>=1000?"・Googleのログインの画面 "+syncSec(t.authShown):"");
 function syncTimingText(t){if(!t)return "";
   if(t.partial&&Number.isFinite(t.button))return "ボタンが戻るまで "+syncSec(t.button)+syncHideText(t)+"（続きの処理をしています。終わると合計が出ます）";
   if(!Number.isFinite(t.total))return "";const all=(t.steps||[]).concat(t.after||[]).filter(x=>x.ms>0).sort((a,b)=>b.ms-a.ms).slice(0,3);
@@ -2859,7 +2867,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.146";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.147";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -3058,7 +3066,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.146" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.146" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.147" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.147" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -5369,7 +5377,11 @@ async function viewerList(){
 async function gWho(){if(G.email)return G.email;if(!gSignedIn()||!gHas(DSCOPE))return "";try{G.email=await myEmail()}catch(err){if(err.message==="signin")throw err;G.email=""}return G.email}
 const gWhoLine=()=>G.email&&gSignedIn()?'<p class="note" style="margin:0">ログイン中のGoogleアカウント：<b style="overflow-wrap:anywhere">'+h(G.email)+'</b></p>':'';
 const gReloginBtn=(label)=>'<button class="btn sm" type="button" data-act="grelogin">'+(label||'別のGoogleアカウントでログインし直す')+'</button>';
-async function myEmail(){const r=await gReq(DRIVE.replace("/files","/about")+"?fields=user(emailAddress)");return (r&&r.user&&r.user.emailAddress)||""}
+async function myEmail(){const r=await gReq(DRIVE.replace("/files","/about")+"?fields=user(emailAddress)");const m=(r&&r.user&&r.user.emailAddress)||"";if(m)gAcctKeep(m);return m}
+/* v1.50.147 前にログインしたGoogleアカウント（この端末だけ。記録には入れない）。なければ社長の端末は社長のアカウント、見る人は「つなぐ」で確かめたGmail */
+const GACCT_KEY="workhub_gaccount_v1";
+const gAcctKeep=m=>{try{if(/^[^\s@]+@[^\s@]+$/.test(m))localStorage.setItem(GACCT_KEY,m)}catch(e){}};
+const gAcctHint=()=>{let m="";try{m=localStorage.getItem(GACCT_KEY)||""}catch(e){}return m||(D().admin?ADMIN_ACCOUNT:String(D().viewEmail||""))};
 /* v1.50.144 トシさんの指示（伊藤さんの件。社長からリンクが届かないと、見る人になってもつながらない）：
    社長の同期で記録シートの「HUBの設定」に見る人用一覧のIDが届いていれば、同期のときに自動でつなぐ（「つなぐ」と同じ確かめ：本人のGmailが一覧で見る人の役割か）。
    本人が「つなぐのをやめる」を押した一覧には自動でつながない。見る人でなければ何もしない（次の同期でもう一度確かめる） */
@@ -6449,6 +6461,7 @@ let updNext="",updChecking=false,updLast=0;
    ・admin:true の項目は社長の端末だけ。初めて開いた端末（覚えた版がない）は出さずに今の版を覚える。
    ・決まり：社員の画面や使い方が変わる版では、ここに1行足す（マニュアルの改訂履歴と同じ版）。 */
 const RELEASE_NOTES=[
+ {v:"1.50.147",text:"同期のたびに出ていた「アカウントを選ぶ画面」が、たいてい出なくなりました（前にログインしたアカウントで自動で取り直します）。"},
  {v:"1.50.144",admin:true,text:"見る人（全社・GM・経理・業務管理）の端末は、社長の同期のあと、本人が同期すると自動で「会社の動き」につながるようになりました。見る人用のリンクを送る必要はありません。"},
  {v:"1.50.143",admin:true,text:"予定：統括GMの予定の共有先に、担当の会社が合う業務管理の人を加えました。社長の端末で「予定の共有先を書く」を押したあと、統括GM本人が「予定の共有」を押すと共有されます。"},
  {v:"1.50.139",text:"売上報告：確定前の月（今なら10月）にも「毎日の確認」が付きました。社長・本部長・GMは、確定日まで毎日、その月の数字を見て「確定前の今日の分を確認済みにする」を押してください。"},
