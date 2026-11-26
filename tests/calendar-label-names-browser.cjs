@@ -4,7 +4,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
-const hook='window.CL={get db(){return DB},get ui(){return ui},G,go,save,render,scopeIdentity,calPersonTags,personBadge};';
+const hook='window.CL={wkTime,get db(){return DB},get ui(){return ui},G,go,save,render,scopeIdentity,calPersonTags,personBadge};';
 const OWN='synthetic-self-sheet-000000001',B='synthetic-b-sheet-0000000002',SELF='self@example.com';
 let server,browser,origin;const results=[];
 const check=async(name,fn)=>{await fn();results.push(name);console.log('PASS',name)};
@@ -43,6 +43,8 @@ async function main(){
   /* 週・月の画面でも同じ札 */
   await p.evaluate(()=>CL.go('cal',{calDay:'2026-11-03',calMonth:'2026-11',calView:'week'}));
   assert.deepEqual(await p.evaluate(()=>[...document.querySelectorAll('main .wkev .ev')].map(e=>e.textContent).sort()),['見本 一郎','見本 二郎']);
+  /* v1.50.152 週表示にも終了時刻（開始〜終了。終了は小さく薄い字）。終日はそのまま */
+  assert.deepEqual(await p.evaluate(()=>['07:00〜17:00','07:00〜','〜17:00','終日'].map(t=>CL.wkTime(t))),['07:00〜<span class="wkend">17:00</span>','07:00〜','〜<span class="wkend">17:00</span>','終日']);
   await p.evaluate(()=>CL.go('cal',{calDay:'2026-11-03',calMonth:'2026-11',calView:'month'}));
   const mt=await p.textContent('main');assert.match(mt,/見本 二郎 見本の二郎の予定|見本 二郎/);assert.doesNotMatch(mt,/jiro 見本の二郎の予定/);
   assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
