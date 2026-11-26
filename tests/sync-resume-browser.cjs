@@ -84,6 +84,25 @@ const mark=p=>p.evaluate(()=>localStorage.getItem('workhub_sync_resume_v1'));
   assert.deepEqual(r.seen.map(x=>[x.cfg,x.req,x.prompt]),[[r.a,r.a,''],['sample.person@example.com','sample.person@example.com',''],['','','select_account']]);
   assert.deepEqual(d.errors,[]);await d.c.close();
  });
+ await check('v1.50.150 同期を押したとき、ログインが要るなら押したその場でログインの窓を開く。開けなければ「Googleにログインする」を出し、押すとログインして同期する（400px）',async()=>{
+  const d=await device(400);
+  const r=await d.p.evaluate(async()=>{const log=[];let fail=true;
+   window.google={accounts:{oauth2:{initTokenClient:cfg=>({requestAccessToken:o=>{log.push('open');if(fail){fail=false;setTimeout(()=>cfg.error_callback({type:'popup_failed_to_open'}),10)}else setTimeout(()=>cfg.callback({access_token:'x',expires_in:3600,scope:SR.G.scope||'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/calendar'}),10)}})}}};
+   SR.G.token='';SR.G.exp=0;SR.plan=[{complete:true}];const before=SR.calls;
+   document.querySelector('[data-act="gsync"]').click();const openedInClick=log.length;
+   await new Promise(r=>setTimeout(r,200));SR.render();
+   const banner=document.querySelector('main .banner.syncres');const btn=banner&&banner.querySelector('[data-act="glogin"]');
+   const text=banner?banner.textContent:'';const c1=SR.calls;
+   btn&&btn.click();const openedInClick2=log.length;
+   await new Promise(r=>setTimeout(r,300));
+   return {openedInClick,text,openedInClick2,callsAfterLogin:SR.calls-c1,signed:!!SR.G.token,bannerAfter:!!document.querySelector('main .banner.syncres [data-act="glogin"]')}});
+  assert.equal(r.openedInClick,1,'login window requested inside the click');
+  assert.match(r.text,/Googleにログインできていません（ログインの画面がブラウザに止められました）/);
+  assert.equal(r.openedInClick2,2,'the banner button opens the login inside its click');
+  assert.equal(r.signed,true);assert.ok(r.callsAfterLogin>=1,'sync runs after login');assert.equal(r.bannerAfter,false);
+  assert.ok(await d.p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal overflow');
+  assert.deepEqual(d.errors,[]);await d.c.close();
+ });
  await check('v1.50.85 同期にかかった時間：合計と長かったものを出し、端末に残す（行の形は変えない）',async()=>{
   const d=await device(400);
   await d.p.evaluate(()=>{SR.signIn();SR.plan=[{timed:true}]});
