@@ -536,8 +536,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.150" title="使い方マニュアルを開く">v1.50.150・11/26更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.150" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.151" title="使い方マニュアルを開く">v1.50.151・11/26更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.151" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -597,10 +597,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.150"></script>
+<script src="./share-management.js?v=1.50.151"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.150"></script>
-<script src="./calendar-view-scope.js?v=1.50.150"></script>
+<script src="./view-scope.js?v=1.50.151"></script>
+<script src="./calendar-view-scope.js?v=1.50.151"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1402,7 +1402,14 @@ function scopeSelId(){const i=scopeIdentity();return calTeamOn()?{...i,viewer:i.
 function scopeLoadSel(context){const l=CPGViewScope.load(localStorage,scopeSelId(),context);return calTeamOn()&&l.state==="default"?{...l,selection:{company:"all",person:"all"}}:l}
 /* Shared display selection: no business DB or synchronization changes. */
 function scopeIdentity(){return {account:D().admin?ADMIN_ACCOUNT:D().viewEmail||'',record:D().sheetId||'',viewer:D().admin?D().listId||'':D().viewListId||''};}
-function scopeContext(){
+/* v1.50.151 トシさんの指摘（11/26：ホームは3テンポ、ToDo・予定・ガント・領収書・会社の切り替えは1〜2テンポ遅れて切り替わる）：
+   画面を作る間、ToDo 1件ごとに全員の案件の一覧（scopeSourceCases）と絞り込み（scopeCases）を作り直し、その中で案件1件ごとに
+   人の照らし合わせ（scopePerson → scopeContext）をやり直していた（見本の18人で、ホーム約10秒・ToDoなど約3.3秒）。
+   画面を1回作る間（render の中）だけ、同じ計算の結果を使い回す。render の外は今までどおり毎回計算する（選択を変えた直後に古い結果を使わないため） */
+let scopeMemo=null;
+const scopeMemoGet=(k,fn)=>{if(!scopeMemo)return fn();if(!scopeMemo.has(k))scopeMemo.set(k,fn());return scopeMemo.get(k)};
+function scopeContext(){return scopeMemoGet("ctx",scopeContextCalc)}
+function scopeContextCalc(){
  const roster=staffOrder().filter(p=>p&&!p.removed),own=D().sheetId||'',matches=roster.filter(p=>eq(p.email,D().viewEmail));
  const me=matches.length===1?matches[0]:null;
  const canView=p=>{if(!p||p.removed)return false;if(p.sheetId===own)return true;const found=roster.filter(r=>r.sheetId===p.sheetId);return found.length===1&&(D().admin===true||!!(me&&canSee(me,found[0])));};
@@ -1420,7 +1427,8 @@ function scopeContext(){
  /* v1.50.2 会社・人の選択肢と予定の読み込み状況には、表示名を出す（照合は氏名のまま） */
  return {people:people.map(p=>({...p,label:dispName(p)})),selfId:own,fixedCompany,localCompanies,availableCompanies,canView,allowAll:true,readState:'ready'};
 }
-function scopeState(){
+function scopeState(){return scopeMemoGet("state",scopeStateCalc)}
+function scopeStateCalc(){
  const context=scopeContext(),loaded=scopeLoadSel(context),selection=loaded.selection;
  const m=CPGViewScope.model(context,selection),data=ui.corp?.data;
  const remote=m.people.filter(p=>p.sheetId!==context.selfId&&(selection.person==='all'||selection.person===p.sheetId)&&(selection.company==='all'||selection.company==='none'||p.companies.includes(selection.company)));
@@ -1428,7 +1436,8 @@ function scopeState(){
  if(ui.view!=='cal'&&m.state==='ready'&&selection.person!=='all'&&missing.length){m.state=data?.find(x=>x.s?.sheetId===selection.person&&!x.ok)?'failed':'unread';m.usable=false;}
  return {...m,context,missing,loadState:loaded.state};
 }
-function scopeSourceCases(){
+function scopeSourceCases(){return scopeMemoGet("src",scopeSourceCasesCalc).slice()}
+function scopeSourceCasesCalc(){
  const context=scopeContext(),out=DB.cases.map(c=>({...c,_scopeOwner:D().sheetId||'local:self',_scopeRaw:c.tantou})),seen=new Set();
  for(const x of ui.corp?.data||[]){if(!x.ok||!x.s||x.s.sheetId===D().sheetId||!context.canView(x.s))continue;
   for(const r of x.cases||[]){const no=String(r['受付番号']||''),key=JSON.stringify([x.s.sheetId,no]);if(!no||seen.has(key))continue;seen.add(key);out.push({...roCase(r,x),_scopeOwner:x.s.sheetId,_scopeRaw:String(r['担当']||'')});}}
@@ -1436,10 +1445,14 @@ function scopeSourceCases(){
 }
 function scopePerson(c){
  if(c._scopeOwner==='local:self')return 'local:self';
+ return scopeMemoGet("p\t"+c._scopeOwner+"\t"+c._scopeRaw,()=>scopePersonCalc(c));
+}
+function scopePersonCalc(c){
  const ctx=scopeContext(),p=CPGNames.resolve(ctx.people,c._scopeRaw,c._scopeOwner,STAFF);
  return p&&ctx.canView(p)?p.sheetId:'';
 }
-function scopeCases(){
+function scopeCases(){return scopeMemoGet("cases",scopeCasesCalc).slice()}
+function scopeCasesCalc(){
  const s=scopeState();if(!s.usable)return [];
  return scopeSourceCases().filter(c=>(s.selection.company==='all'||(s.selection.company==='none'?!COMPANIES.includes(c.company):c.company===s.selection.company))&&(s.selection.person==='all'||scopePerson(c)===s.selection.person));
 }
@@ -1455,8 +1468,8 @@ function scopeTodoMatch(t){
  const s=scopeState();if(!s.usable)return false;
  const owner=t._scopeOwner||D().sheetId||'local:self';
  if(isReqTodo(t))return scopeRecipientMatch(owner);
- const c=t.caseId&&scopeSourceCases().find(c=>c.id===t.caseId);
- if(c)return scopeCases().some(x=>x.id===c.id);
+ const c=t.caseId&&scopeMemoGet("srcIds",()=>new Set(scopeSourceCases().map(c=>c.id))).has(t.caseId);
+ if(c)return scopeMemoGet("caseIds",()=>new Set(scopeCases().map(x=>x.id))).has(t.caseId);
  const pid=scopePerson({_scopeOwner:owner,_scopeRaw:t._scopeRaw??t.tantou??''});
  if(s.selection.person!=='all'&&pid!==s.selection.person)return false;
  if(t.company)return scopeCompanyMatch(t.company);
@@ -2888,7 +2901,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.150";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.151";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -3087,7 +3100,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.150" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.150" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.151" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.151" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -5860,6 +5873,11 @@ function scopePickDecorate(){
 }
 function render(){
   if(ui.view==="rform"&&(receiptSaving||receiptSelecting))return;
+  /* v1.50.151 画面を1回作る間だけ、絞り込みの計算を使い回す（入れ子の render でも外側の終わりで消す） */
+  const memoOwner=!scopeMemo;if(memoOwner)scopeMemo=new Map();
+  try{renderBody()}finally{if(memoOwner)scopeMemo=null}
+}
+function renderBody(){
   if(ui.view==="rform"&&document.getElementById("rForm")){const ids={date:"r_date",payee:"r_payee",item:"r_item",amount:"r_amount",company:"r_co",method:"r_method",cardId:"r_card",cat:"r_cat",caseId:"r_case",site:"r_site",room:"r_room",jobNo:"r_job",note:"r_note"};ui.rDraft=Object.fromEntries(Object.entries(ids).map(([k,id])=>[k,val(id)]));}
   receiptReleaseURLs();
   const v={home:vHome,company:vCompany,cases:vCases,new:vNew,detail:vDetail,todo:vTodo,requests:vRequests,cal:vCal,gantt:vGantt,stats:vStats,rcpt:vRcpt,rform:vRform}[ui.view]||vHome;
@@ -6509,6 +6527,7 @@ let updNext="",updChecking=false,updLast=0;
    ・admin:true の項目は社長の端末だけ。初めて開いた端末（覚えた版がない）は出さずに今の版を覚える。
    ・決まり：社員の画面や使い方が変わる版では、ここに1行足す（マニュアルの改訂履歴と同じ版）。 */
 const RELEASE_NOTES=[
+ {v:"1.50.151",text:"ホーム・ToDo・予定・ガント・領収書の画面や、会社・人の切り替えが、すぐ切り替わるようになりました。"},
  {v:"1.50.150",text:"Googleのログインの画面がブラウザに止められて同期できないとき、画面の上に「Googleにログインする」ボタンが出るようになりました。押して、出てきたGoogleの画面で許可すると、そのまま同期します。"},
  {v:"1.50.149",admin:true,text:"見る人（専務・GM・経理・業務管理）の端末の同期を短くしました。前に読んでから12時間を過ぎても、変わっていない人の記録は読み直しません（7日まで）。"},
  {v:"1.50.147",text:"同期のたびに出ていた「アカウントを選ぶ画面」が、たいてい出なくなりました（前にログインしたアカウントで自動で取り直します）。"},
