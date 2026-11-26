@@ -539,8 +539,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.152" title="使い方マニュアルを開く">v1.50.152・11/26更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.152" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.153" title="使い方マニュアルを開く">v1.50.153・11/26更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.153" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -600,10 +600,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.152"></script>
+<script src="./share-management.js?v=1.50.153"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.152"></script>
-<script src="./calendar-view-scope.js?v=1.50.152"></script>
+<script src="./view-scope.js?v=1.50.153"></script>
+<script src="./calendar-view-scope.js?v=1.50.153"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -1091,7 +1091,23 @@ function todoRow(t,expanded=false){
 /* v1.49.2 新しい社員・GMの初期設定の案内（ホームの一番上）。順番：ログイン → 本人の記録シート → 氏名・会社 → 最初の同期 →
    社員は記録の保存と読み戻しの確認、GM・全社は見る人用一覧。社長の端末と、すでに使っている端末には出さない */
 const obState=()=>D().ob||{};
-const obActive=()=>{const o=obState();return !D().admin&&!o.legacy&&!o.done};
+/* v1.50.153 トシさんの指示（11/26 社長のPCで「この端末の記録が見つかりません」「初期設定（役割：社員）」が出て、何を押せばよいか分からなかった）：
+   社長のアカウントでログインしていて、まだ社長の端末になっていない端末は、社員の初期設定を出さず、「管理をはじめる」の案内を出す */
+const adminCandidate=()=>!D().admin&&!D().sheetId&&isAdminDevice();
+const obActive=()=>{const o=obState();return !D().admin&&!o.legacy&&!o.done&&!adminCandidate()};
+/* v1.50.153 「管理をはじめる」（管理の欄のボタンと、社長の端末にする案内のボタンから） */
+function adminStart(){const log=[];ui.dview="";
+    gAuthorize(true).then(()=>adminSync((text,ok)=>log.push({ok:ok===false?"warn":true,text}))).then(f=>{D().admin=true;save();
+      log.unshift({ok:true,text:f.list?"既存の管理データを読み込みました（社員"+f.n+"人）":f.folder?"既存のフォルダ「CPG HUB データ」を使います（社員一覧はまだありません）":"管理をはじめました"});ui.dmsg=log},
+      err=>{ui.dmsg=[{ok:false,text:err.message==="http"?"管理データを探せませんでした："+dMsg(err):gMsg(err)}]}).then(render);}
+function adminGuide(){
+  if(!adminCandidate())return "";
+  return '<section class="sec" id="admin-guide"><div class="banner" role="status" style="display:flex;flex-direction:column;gap:6px">'+
+    '<p style="margin:0"><b>社長のアカウントでログインしています。</b>この端末を社長の端末にするには、「管理をはじめる」を押してください。</p>'+
+    '<p class="note" style="margin:0">今の「CPG HUB データ」フォルダと社員一覧を読み込むだけで、社員一覧や社員のシートは書き換えません。ほかの端末（スマホ）の記録もそのままです。初期設定の「本人の記録シートにつなぐ」は押さないでください（社員用の端末になります）。</p>'+
+    '<p class="note" style="margin:0">管理をはじめたら、「管理（社長用）」の「この端末の控え」に、この端末の名前（例：Surface）を入れて控えを作ってください。ほかの端末の控えから「戻す」は使いません。</p>'+
+    '<div class="row"><button class="btn pri" type="button" data-act="adminstart">管理をはじめる</button></div></div></section>';
+}
 const obGM=()=>obState().role==="GM"||!!D().viewListId;
 const realRecords=db=>(db.cases||[]).filter(c=>!fake(c.client)&&!fake(c.property)).length+(db.receipts||[]).filter(r=>!fake(r.payee)).length+(db.todos||[]).filter(t=>!t.order&&!t.done&&!t.cancelled&&!exTodo(t)).length;
 function obSteps(){
@@ -1313,7 +1329,7 @@ function planHubIds(){const out=new Set(),add=d=>{for(const e of (d&&d.events)||
 const hasPlan=(c,ids)=>!!(c.planDate||c.gcal&&c.gcal.id)||ids.has(String(c.id))||!!c.srcId&&ids.has(String(c.srcId));
 /* v1.50.21 端末の記録が読めない・見つからないときの知らせ（ホームの一番上）。記録は消していないことと、次にすることを出す */
 function loadProblemBanner(){
-  const p=loadProblem;if(!p)return "";
+  const p=loadProblem;if(!p||adminCandidate())return "";
   const at=iso=>{const t=Date.parse(iso||"");return Number.isFinite(t)?new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(t)):""};
   let body;
   if(p.kind==="broken")body='<p style="margin:0"><b>この端末の記録を読めませんでした</b>（'+h(p.why)+'・'+p.len+'文字）。</p>'+
@@ -1327,10 +1343,11 @@ function loadProblemBanner(){
       :p.keys.length?'Googleとの同期の控えなどは残っています（'+p.keys.length+'件）。ただし、この控えは記録が消えたあとでも、ログインや同期をすると新しく作られるため、ブラウザのデータ全体が消えたのかどうかは、ここからは分かりません。'
       :'ほかのCPG HUBのデータも残っていません。')+'</p>';
   return '<section class="sec" id="load-problem"><div class="banner" role="alert" style="display:flex;flex-direction:column;gap:6px">'+body+
-    '<p class="note" style="margin:0">初期設定のボタンや同期は押さずに、管理者に知らせてください。</p></div></section>';
+    '<p class="note" style="margin:0">初期設定のボタンや同期は押さずに、管理者に知らせてください。</p>'+
+    '<p class="note" style="margin:0">社長の方へ：この端末を社長の端末にするときは、「Googleとまとめて同期」を押して社長のアカウントでログインしてください。社長の端末にする案内に変わります（記録シートにつないでいない端末の同期は、シートに何も書きません）。</p></div></section>';
 }
 function vHome(){
- if(!scopeState().usable)return loadProblemBanner()+obPanel()+'<section class="sec" id="home-sync">'+homeSyncNotice()+gSyncPanel(true)+'</section>'+scopeUnconfirmed()+((D().admin||D().viewListId)?homeCorpTile():'');
+ if(!scopeState().usable)return loadProblemBanner()+adminGuide()+obPanel()+'<section class="sec" id="home-sync">'+homeSyncNotice()+gSyncPanel(true)+'</section>'+scopeUnconfirmed()+((D().admin||D().viewListId)?homeCorpTile():'');
   const todos=genTodos(), t=todayS(), all=scopeCases(), tdAll=scopeTodos(); /* 社長の管理端末では、読み込んだ社員の分も含めた会社全体の数字 */
   const over=tdAll.filter(x=>x.due&&x.due<t), todayT=tdAll.filter(x=>x.due===t);
   const urgent=all.filter(c=>c.type==="kinkyu"&&(c.stage==="new"||c.stage==="site"));
@@ -1338,7 +1355,7 @@ function vHome(){
   const rp=scopeHomeReceipts(['未提出','差戻し']), rsub=scopeHomeReceipts(['提出済']), rnotes=rcptNotices();
   const un=all.filter(unpaid), unSum=un.reduce((s,c)=>s+remainOf(c),0), unLate=un.filter(c=>lateDays(c)).length;
   const ord=scopeTodos().filter(x=>x.order), ordOver=ord.filter(x=>x.due&&x.due<t).length;
-  return loadProblemBanner()+obPanel()+'<section class="sec" id="home-sync">'+homeSyncNotice()+gSyncPanel(true)+'</section>'+
+  return loadProblemBanner()+adminGuide()+obPanel()+'<section class="sec" id="home-sync">'+homeSyncNotice()+gSyncPanel(true)+'</section>'+
   (hasExamples()?'<div class="banner"><b>試作です。</b>（架空）のサンプルを含みます。</div>':'')+
   '<section class="sec" id="home-summary"><div class="sec-h"><h2>今日のまとめ</h2></div><div class="tiles">'+
     ordTile()+ /* v1.50.60 今月の受注（今日まで） */
@@ -2906,7 +2923,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.152";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.153";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -3105,7 +3122,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.152" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.152" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.153" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.153" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -6099,10 +6116,8 @@ document.addEventListener("click",e=>{
     sharedRestore().then(r=>{ui.sheetGuard=null;ui.sgDone="共有の記録から 案件"+r.cases+"件・立替"+r.receipts+"件・手入力のToDo"+r.todos+"件 を取り込み、読み戻して一致を確かめました。続けて「Googleとまとめて同期」を押してください。";toast("取り込みました",5000)},
       err=>{ui.sgMsg=err.message==="signin"?"Googleにログインできませんでした。もう一度押してください。":err.message||dMsg(err)}).finally(()=>{ui.sgBusy=false;render()});return}
   if(a==="dunlink"){ui.sheetGuard=null;ui.sgDone="";Object.assign(D(),{sheetId:"",sheetName:"",lastSync:""});ui.dmsg=[{ok:true,text:"記録シートとのつながりを外しました（シートは残っています）"}];save();render();return}
-  if(a==="dadmin"){const log=[];ui.dview="";
-    gAuthorize(true).then(()=>adminSync((text,ok)=>log.push({ok:ok===false?"warn":true,text}))).then(f=>{D().admin=true;save();
-      log.unshift({ok:true,text:f.list?"既存の管理データを読み込みました（社員"+f.n+"人）":f.folder?"既存のフォルダ「CPG HUB データ」を使います（社員一覧はまだありません）":"管理をはじめました"});ui.dmsg=log},
-      err=>{ui.dmsg=[{ok:false,text:err.message==="http"?"管理データを探せませんでした："+dMsg(err):gMsg(err)}]}).then(render);return}
+  if(a==="adminstart"){foldSet("dataAdmin",true);go("stats");adminStart();setTimeout(()=>document.querySelector('[data-fold="dataAdmin"]')?.scrollIntoView({block:"start"}),0);return}
+  if(a==="dadmin"){adminStart();return}
   if(a==="dreload"){if(ui.dbusy)return;const log=[];ui.dbusy=true;ui.dview=ui.view==="home"?"corp":"";render();
     gAuthorize(true).then(()=>adminSync((text,ok)=>log.push({ok:ok===false?"warn":true,text}))).then(f=>{log.unshift(f.list?{ok:true,text:"社員一覧を読み直しました（社員"+f.n+"人）"}:{ok:"warn",text:"「CPG HUB_社員一覧」がまだありません"});ui.dmsg=log},
       err=>{ui.dmsg=[{ok:false,text:"読み直せませんでした："+dMsg(err)}]}).finally(()=>{ui.dbusy=false;render()});return}
@@ -6532,6 +6547,7 @@ let updNext="",updChecking=false,updLast=0;
    ・admin:true の項目は社長の端末だけ。初めて開いた端末（覚えた版がない）は出さずに今の版を覚える。
    ・決まり：社員の画面や使い方が変わる版では、ここに1行足す（マニュアルの改訂履歴と同じ版）。 */
 const RELEASE_NOTES=[
+ {v:"1.50.153",admin:true,text:"社長のアカウントでログインした新しい端末（パソコンなど）には、社員の初期設定ではなく「管理をはじめる」の案内が出るようにしました。"},
  {v:"1.50.152",text:"予定の週表示にも、終わりの時刻が出るようになりました（例：07:00〜17:00）。在社・退社の時間も入れておくと、誰がいつまで会社にいるか分かります。"},
  {v:"1.50.151",text:"ホーム・ToDo・予定・ガント・領収書の画面や、会社・人の切り替えが、すぐ切り替わるようになりました。"},
  {v:"1.50.150",text:"Googleのログインの画面がブラウザに止められて同期できないとき、画面の上に「Googleにログインする」ボタンが出るようになりました。押して、出てきたGoogleの画面で許可すると、そのまま同期します。"},
