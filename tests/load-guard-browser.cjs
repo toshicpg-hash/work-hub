@@ -5,7 +5,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
 const KEY='workhub_proto_v1',META='workhub_proto_v1_meta',BP='workhub_proto_v1_broken:';
-const hook='window.LG={get db(){return DB},save,get problem(){return loadProblem},get blocked(){return loadBlocked},get persist(){return storagePersist}};';
+const hook='window.LG={get db(){return DB},get ui(){return ui},G,render,ADMIN:ADMIN_ACCOUNT,DSCOPE,GSCOPE,stubAdminSync(fn){adminSync=fn},save,get problem(){return loadProblem},get blocked(){return loadBlocked},get persist(){return storagePersist}};';
 let server,browser,origin;const results=[];
 const check=async(name,fn)=>{await fn();results.push(name);console.log('PASS',name)};
 async function open(seed,{failBackup=false,storage=null}={}){
@@ -60,6 +60,25 @@ async function main(){
   assert.match(t,/この端末の記録が見つかりません/);assert.match(t,/同期の控えなどは残っています（1件）/);assert.match(t,/ブラウザのデータ全体が消えたのかどうかは、ここからは分かりません/);
   assert.doesNotMatch(t,/この端末の記録だけが見つからない/);assert.doesNotMatch(t,/最後に保存したのは/);
   assert.deepEqual(errors,[]);await c.close();
+ });
+ await check('v1.50.153 社長のPC：記録が見つからない知らせに「社長の方へ」の一言。社長のアカウントでログインすると、社員の初期設定ではなく「管理をはじめる」の案内が出て、押すと社長の端末になる（400px）',async()=>{
+  const {c,p,errors}=await open({workhub_gcal_last_v1:'{}'});
+  assert.match(await p.textContent('#load-problem'),/社長の方へ：この端末を社長の端末にするときは、「Googleとまとめて同期」を押して社長のアカウントでログインしてください/);
+  await p.evaluate(()=>{LG.G.token='t';LG.G.exp=Date.now()+3600e3;LG.G.scope=LG.DSCOPE+' '+LG.GSCOPE;LG.G.cals=[{id:LG.ADMIN,primary:true,name:'自分'}];LG.stubAdminSync(async()=>({list:true,n:3}));LG.render()});
+  assert.equal(await p.locator('#load-problem').count(),0,'the missing-record notice gives way to the guide');
+  assert.equal(await p.locator('#onboarding').count(),0,'no employee onboarding');
+  const g=await p.textContent('#admin-guide');assert.match(g,/社長のアカウントでログインしています/);assert.match(g,/「本人の記録シートにつなぐ」は押さないでください/);
+  assert.ok(await overflow(p)<=0);
+  await p.click('#admin-guide [data-act=adminstart]');await p.waitForFunction(()=>LG.db.settings.data.admin===true);
+  assert.equal(await p.evaluate(()=>LG.ui.view),'stats');
+  await p.waitForFunction(()=>/既存の管理データを読み込みました（社員3人）/.test(document.querySelector('main').textContent));
+  await p.evaluate(()=>LG.render());assert.equal(await p.locator('#admin-guide').count(),0,'guide gone once this is the boss device');
+  assert.deepEqual(errors,[]);await c.close();
+ });
+ await check('ふつうの社員のアカウントでログインした端末には、社長の案内は出さない',async()=>{
+  const {c,p}=await open({});
+  await p.evaluate(()=>{LG.G.token='t';LG.G.exp=Date.now()+3600e3;LG.G.cals=[{id:'staff.sample@example.com',primary:true,name:'自分'}];LG.render()});
+  assert.equal(await p.locator('#admin-guide').count(),0);await c.close();
  });
  await check('はじめての端末（何もない・畳み方の記録だけ）には出さない',async()=>{
   for(const seed of [{},{workhub_fold_v1:'{}'}]){const {c,p}=await open(seed);assert.equal(await p.locator('#load-problem').count(),0);assert.equal(await p.evaluate(()=>LG.problem),null);await c.close();}
