@@ -536,8 +536,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.149" title="使い方マニュアルを開く">v1.50.149・11/26更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.149" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.150" title="使い方マニュアルを開く">v1.50.150・11/26更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.150" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -597,10 +597,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.149"></script>
+<script src="./share-management.js?v=1.50.150"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.149"></script>
-<script src="./calendar-view-scope.js?v=1.50.149"></script>
+<script src="./view-scope.js?v=1.50.150"></script>
+<script src="./calendar-view-scope.js?v=1.50.150"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2090,7 +2090,8 @@ function gAuthorize(withData,extra,pick){
       if(extra&&!extra.split(" ").every(x=>sc.split(/\s+/).includes(x))){rej(new Error("denied"));return}
       gResetReads(true);G.cals=null;G.email="";G.token=r.access_token;G.scope=sc;G.exp=Date.now()+Math.max(0,(Number(r.expires_in)||3600)-60)*1000;res()},
     error_callback:e=>rej(new Error(e&&e.type==="popup_failed_to_open"?"popup":e&&e.type==="popup_closed"?"closed":"auth"))}).requestAccessToken({prompt:pick?"select_account":"",...(hint?{login_hint:hint,hint}:{})})}catch(e){rej(new Error("auth"))}});
-  G.pending=p;p.then(()=>{G.pending=null;syncHide.authing=false},()=>{G.pending=null;syncHide.authing=false});return p;
+  /* v1.50.150 ログインの窓が開けなかった・閉じられたときは、画面の上に「Googleにログインする」ボタンを出す（ui.loginNeed）。できたら消す */
+  G.pending=p;p.then(()=>{G.pending=null;syncHide.authing=false;if(ui.loginNeed){ui.loginNeed=null;render()}},err=>{G.pending=null;syncHide.authing=false;if(["popup","closed","auth"].includes(err&&err.message)){ui.loginNeed={why:err.message};render()}});return p;
 }
 async function gApi(path,opt){
   if(!gSignedIn())throw new Error("signin");
@@ -2316,6 +2317,17 @@ function syncResumeTry(){
 /* v1.50.95 保存した中身を、鍵を持ったまま端末の記録（DB）に入れ替える。前は鍵を外してから入れ替えていたので、
    その間に裏の処理（同期の続き）が save() すると「別の画面で記録が更新されました」と止まるすき間があった */
 function lockedAdopt(result){if(result&&result.db&&typeof result.raw==="string"){DB=upgrade(result.db);dbPersistedRaw=result.raw}return result}
+/* v1.50.150 トシさんの指示（11/26 津村さんのパソコン：同期で「Googleの画面を開けませんでした」・1クリックに30秒〜数分）：
+   Googleのログインの窓は、押したその場で開かないとブラウザに止められることがある。同期のボタンを押したとき、ログインが要るなら、
+   同期の処理（鍵を待つなど）より先に、押したその場でログインの窓を開く（同期の中のログインは、同じ取り直しを待つだけになる）。
+   それでも開けなかったときは、画面の上に「Googleにログインする」ボタンを出す（押したその場で開く。できたら同期を続ける） */
+function gLoginInClick(thenSync){
+  const need=!gSignedIn()||(dataOn()&&!gHas(DSCOPE));
+  if(!need){if(thenSync){ui.loginNeed=null;render();gSyncAll()}return}
+  const p=gAuthorize(dataOn());
+  p.then(()=>{if(thenSync){toast("ログインできました。同期します",3000);gSyncAll()}},err=>{if(thenSync)toast(gMsg(err),6000)});
+  return p;
+}
 async function gSyncAll(){
   if(shareRunning){toast("共有の確認・処理が終わってから同期してください。");return;}
   if(ui.sgBusy){toast("共有の記録の取り込みが終わってから同期してください。");return;}
@@ -2876,7 +2888,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.149";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.150";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -3075,7 +3087,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.149" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.149" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.150" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.150" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -5869,6 +5881,7 @@ function render(){
         else{const [y,m]=String(ui.calMonth||"").split("-");if(y&&m)short=y+"/"+Number(m)}
         h2.setAttribute("aria-label",full);h2.textContent=short;h2.title=full}}}}
   /* v1.50.58 自動で新しい版にしたら、画面のいちばん上に出す（下に出すと見えないことがあるため）。「閉じる」を押すまで消えない */
+  if(ui.loginNeed&&!gSignedIn())main.insertAdjacentHTML("afterbegin",'<div class="banner syncres" role="alert"><span>⚠ Googleにログインできていません（'+(ui.loginNeed.why==="popup"?"ログインの画面がブラウザに止められました":ui.loginNeed.why==="closed"?"ログインの画面が閉じられました":"ログインできませんでした")+'）。下のボタンを押して、出てきたGoogleの画面で許可してください。</span><button class="btn sm pri" type="button" data-act="glogin">Googleにログインする</button></div>');
   if(ui.syncResume)main.insertAdjacentHTML("afterbegin",'<div class="banner syncres" role="status"><span>⚠ '+h(ui.syncResume.text)+'</span><button class="btn sm pri" type="button" data-act="gsync">Googleとまとめて同期</button></div>');
   if(ui.updNotes)main.insertAdjacentHTML("afterbegin",'<div class="banner updok" role="status"><span>✓ 新しい版（v'+h(ui.updNotes.v)+'）になりました<ul class="updnotes">'+ui.updNotes.items.map(n=>'<li>'+h(n.text)+'</li>').join("")+'</ul><a href="./manual.html?v='+encodeURIComponent(ui.updNotes.v)+'#history">くわしくは使い方の改訂履歴へ</a></span><button class="btn xs" type="button" data-act="upddone">閉じる</button></div>');
   scopePickDecorate();
@@ -6194,7 +6207,8 @@ document.addEventListener("click",e=>{
       err=>{ui.oMsg={k:Number(k),ok:false,text:err.message==="orderstate"?"このリクエストはもう「"+err.st+"」になっています。「社員の記録を読み込む」で最新にしてください":"取り消せませんでした："+dMsg(err)}}).then(render);return}
   if(a==="corp"){ui.corp=Object.assign({},ui.corp,{busy:true,err:""});render();
     corpRun().catch(err=>{ui.corp=Object.assign({},ui.corp,{busy:false,err:"読み込めませんでした："+corpErr(err)})}).then(render);return}
-  if(a==="gsync"){if(!(ui.gsync&&ui.gsync.busy))gSyncAll();return}
+  if(a==="gsync"){if(!(ui.gsync&&ui.gsync.busy)){if(!shareRunning&&!(D().sheetId&&obBefore("sync")))gLoginInClick();gSyncAll()}return}
+  if(a==="glogin"){gLoginInClick(true);return}
   if(a==="scopealert"){const t=todayS(),overdue=scopeAvailableTodos().some(x=>x.due&&x.due<t),urgent=scopeSourceCases().some(c=>c.type==='kinkyu'&&['new','site'].includes(c.stage)),undated=scopeSourceCases().some(c=>c.stage==='lost'&&!c.cancelledAt&&!c.lossDate);
     if(overdue)go("todo",{tPeriod:"today",tTantou:"all"});else if(urgent)go("cases",{type:"kinkyu"});else if(undated)go("stats");else go(D().admin||D().viewListId?"company":"home");return}
   if(a==="obclose"){try{obSet({done:new Date().toISOString()})}catch(err){toast(err.message,6000)}ui.obMsg=null;render();return}
@@ -6495,6 +6509,7 @@ let updNext="",updChecking=false,updLast=0;
    ・admin:true の項目は社長の端末だけ。初めて開いた端末（覚えた版がない）は出さずに今の版を覚える。
    ・決まり：社員の画面や使い方が変わる版では、ここに1行足す（マニュアルの改訂履歴と同じ版）。 */
 const RELEASE_NOTES=[
+ {v:"1.50.150",text:"Googleのログインの画面がブラウザに止められて同期できないとき、画面の上に「Googleにログインする」ボタンが出るようになりました。押して、出てきたGoogleの画面で許可すると、そのまま同期します。"},
  {v:"1.50.149",admin:true,text:"見る人（専務・GM・経理・業務管理）の端末の同期を短くしました。前に読んでから12時間を過ぎても、変わっていない人の記録は読み直しません（7日まで）。"},
  {v:"1.50.147",text:"同期のたびに出ていた「アカウントを選ぶ画面」が、たいてい出なくなりました（前にログインしたアカウントで自動で取り直します）。"},
  {v:"1.50.144",admin:true,text:"見る人（全社・GM・経理・業務管理）の端末は、社長の同期のあと、本人が同期すると自動で「会社の動き」につながるようになりました。見る人用のリンクを送る必要はありません。"},
