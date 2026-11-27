@@ -540,8 +540,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.156" title="使い方マニュアルを開く">v1.50.156・11/27更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.156" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.157" title="使い方マニュアルを開く">v1.50.157・11/27更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.157" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -601,10 +601,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.156"></script>
+<script src="./share-management.js?v=1.50.157"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.156"></script>
-<script src="./calendar-view-scope.js?v=1.50.156"></script>
+<script src="./view-scope.js?v=1.50.157"></script>
+<script src="./calendar-view-scope.js?v=1.50.157"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2497,12 +2497,17 @@ function syncDetailText(t){const d=t&&t.detail;if(!d)return "";const out=[];
   if(d.ord){const o=d.ord,names={ptr:"場所",sales:"売上報告の読み込み",write:"書き出し",ordLoad:"受注の読み直し",view:"見るだけの読み込み"};
     out.push("今月の受注："+Object.keys(names).filter(k=>o[k]!=null).map(k=>names[k]+" "+syncSec(o[k])).join("・")+(d.salesTabs!=null?"（売上報告のタブ "+d.salesTabs+"）":""))}
   return out.join("／")}
+/* v1.50.157 トシさんの指示（11/27）：裏の同期の赤い字に「入力は可能です」を足す。案件・ToDoの入力と保存は裏の同期の最中もできる。
+   領収書の保存は、裏の同期（領収書の写真（会社）など）が終わるまで止めている（receiptOtherBusy）ので、そのことも書く */
 /* v1.50.156 トシさんの指示（11/27）：たたんだ1行の後ろに「（押すと詳しい内容）」と出す（開いたら消す） */
 /* v1.50.155 トシさんの指示（11/27：同期のあとに出る「かかった時間」と「内訳」が長い）：合計が出たら「かかった時間：合計 ○秒」の1行だけ出し、押すと今までの文（長かったもの・内訳）を開く。
    続きの処理中（合計がまだ出ない）は短いので、今までどおりそのまま出す */
 const syncTimingNote=t=>{if(!t||!(Number.isFinite(t.total)||(t.partial&&Number.isFinite(t.button))))return '';
-  const body='<p class="note sync-time" style="margin:4px 0 0">かかった時間：'+h(syncTimingText(t))+'</p>'+(D().admin&&!t.partial&&syncDetailText(t)?'<p class="note sync-detail" style="margin:2px 0 0;overflow-wrap:anywhere">内訳：'+h(syncDetailText(t))+'</p>':'');
-  if(t.partial||!Number.isFinite(t.total))return body;
+  /* v1.50.157 トシさんの指摘（11/27）：開くと「かかった時間：合計 ○秒」が2回並ぶ。たたんだときは、中の文から合計を除く */
+  const fold=!t.partial&&Number.isFinite(t.total),all=syncTimingText(t),rest=fold?all.replace(/^合計 [^・（]+・?/,''):all;
+  const body=(rest?'<p class="note sync-time" style="margin:4px 0 0">'+(fold?'':'かかった時間：')+h(rest)+'</p>':'')+(D().admin&&!t.partial&&syncDetailText(t)?'<p class="note sync-detail" style="margin:2px 0 0;overflow-wrap:anywhere">内訳：'+h(syncDetailText(t))+'</p>':'');
+  if(!fold)return body;
+  if(!body)return '<p class="note sync-time" style="margin:4px 0 0">かかった時間：合計 '+h(syncSec(t.total))+'</p>';
   return '<details class="sync-time-fold" data-keep-open="synctime"><summary class="note" style="min-height:44px;display:flex;align-items:center;cursor:pointer;margin:0">かかった時間：合計 '+h(syncSec(t.total))+'<span class="fold-hint">（押すと詳しい内容）</span></summary>'+body+'</details>'};
 function gSyncPanel(home=false){
   const r=ui.gsync,attention=home?homeSyncAttention():{blocked:false,html:''};
@@ -2515,7 +2520,7 @@ function gSyncPanel(home=false){
   const list=resultList(success?r.rows.filter(x=>!companyErrors.includes(x)):r?.rows);
   const stamp=success?new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(r.at)):'';
   /* v1.50.123 トシさんの指示：ボタンが戻ったあとも裏の同期（社員の記録・売上報告など）が続いている間は、赤い字で「閉じないで」と出す（会議で、ボタンが戻ったら終わったと思ってアプリを閉じる人がいた）。終わったら「すべて終わりました」と出す */
-  const after=ui.syncAfterBusy?'<p class="sync-after" role="status">⏳ 裏で同期を続けています。終わるまでアプリを閉じないでください</p>':home&&r&&!r.busy&&ui.syncAfterDoneAt&&Date.now()-ui.syncAfterDoneAt<10*60e3?'<p class="sync-after done" role="status">✓ 同期がすべて終わりました。アプリを閉じても大丈夫です</p>':'';
+  const after=ui.syncAfterBusy?'<p class="sync-after" role="status">⏳ 裏で同期を続けています。終わるまでアプリを閉じないでください。入力は可能です（領収書の保存だけは、終わってからにしてください）</p>':home&&r&&!r.busy&&ui.syncAfterDoneAt&&Date.now()-ui.syncAfterDoneAt<10*60e3?'<p class="sync-after done" role="status">✓ 同期がすべて終わりました。アプリを閉じても大丈夫です</p>':'';
   return '<div class="gsync"><button type="button" class="gsyncbtn" data-act="gsync"'+(r&&r.busy||ui.syncAfterBusy?' disabled':'')+'>'+(r&&r.busy?'同期しています…':ui.syncAfterBusy?'裏で同期を続けています…':'Googleとまとめて同期')+'</button>'+after+(home?sheetGuardPanel():'')+
     (home&&r?.busy===false&&r.complete!==true&&r.rows?.length&&r.rows.every(x=>x.ok===true)?'<p class="banner" role="alert">同期の完了を確認できません。結果を確認して、もう一度同期してください。</p>':'')+
     (ui.wrongAccount&&ui.wrongAccount.id===D().sheetId?'<div class="row" style="margin-top:6px">'+gReloginBtn()+'</div>':'')+
@@ -2930,7 +2935,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.156";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.157";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -3129,7 +3134,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.156" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.156" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.157" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.157" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -6560,6 +6565,7 @@ let updNext="",updChecking=false,updLast=0;
    ・admin:true の項目は社長の端末だけ。初めて開いた端末（覚えた版がない）は出さずに今の版を覚える。
    ・決まり：社員の画面や使い方が変わる版では、ここに1行足す（マニュアルの改訂履歴と同じ版）。 */
 const RELEASE_NOTES=[
+ {v:"1.50.157",text:"裏で同期を続けている間の赤い字に「入力は可能です」と足しました（領収書の保存だけは、終わってからにしてください）。「かかった時間」を開いたとき、合計が2回出ていたのを1回にしました。"},
  {v:"1.50.156",text:"たたんだ「かかった時間」の後ろに「（押すと詳しい内容）」と出すようにしました。"},
  {v:"1.50.155",text:"同期のあとに出る「かかった時間」を、「かかった時間：合計 ○秒」の1行にたたみました。押すと、長かったものなどの詳しい内容が開きます。"},
  {v:"1.50.154",text:"案件の検索の欄で、日本語を入れると変換の途中で切れて文字が崩れていたのを直しました（変換を確定したときに絞り込みます）。"},

@@ -4,7 +4,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
 /* gSyncAllRun を差し替える：plan の順に、complete（true/false）で終わる。hideDuring なら途中で裏に回る */
-const hook=`window.SR={get ui(){return ui},detailText:t=>syncDetailText(t),hideStart:()=>syncHideStart(),setAuthing:v=>{syncHide.authing=v},auth:(w,x,pk)=>gAuthorize(w,x,pk),acctKeep:m=>gAcctKeep(m),acctHint:()=>gAcctHint(),hideEnd:()=>syncHideEnd(),timingText:t=>syncTimingText(t),get db(){return DB},G,save,go,render,sync:gSyncAll,calls:0,plan:[],
+const hook=`window.SR={get ui(){return ui},todoBusy:()=>manualTodoBusy(),caseBusy:()=>caseIdentityBusy(),rcBusy:()=>receiptOtherBusy(),detailText:t=>syncDetailText(t),hideStart:()=>syncHideStart(),setAuthing:v=>{syncHide.authing=v},auth:(w,x,pk)=>gAuthorize(w,x,pk),acctKeep:m=>gAcctKeep(m),acctHint:()=>gAcctHint(),hideEnd:()=>syncHideEnd(),timingText:t=>syncTimingText(t),get db(){return DB},G,save,go,render,sync:gSyncAll,calls:0,plan:[],
  signIn(){G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000},
  stub(){gSyncAllRun=async()=>{SR.calls++;const p=SR.plan.shift()||{complete:true};
    if(p.timed){const rows=[];ui.gsync={busy:true,rows};render();syncDiagSet('salesTabs',16);syncReqCount(SHEETS+'/a/values:batchGet','GET');syncReqCount(SHEETS+'/a/values:batchGet');syncReqCount(SHEETS+'/a:batchUpdate','POST');syncReqCount('https://www.googleapis.com/calendar/v3/x','GET');await syncDiagTime('sales',()=>new Promise(r=>setTimeout(r,60)));await new Promise(r=>setTimeout(r,120));rows.push({name:"Googleにログイン",ok:true,msg:""});await new Promise(r=>setTimeout(r,300));rows.push({name:"記録シート「案件」",ok:true,msg:"1行"});ui.gsync={busy:false,at:Date.now(),rows,complete:true};render();return}
@@ -112,7 +112,9 @@ const mark=p=>p.evaluate(()=>localStorage.getItem('workhub_sync_resume_v1'));
   assert.ok(await d.p.evaluate(()=>SR.ui.gsync.rows.every(x=>Object.keys(x).every(k=>['name','ok','msg'].includes(k)))),'rows unchanged');
   assert.equal(await d.p.evaluate(()=>!!localStorage.getItem('workhub_sync_timing_v1')&&!SR.db.settings.data.syncTiming),true,'kept on the device, not in the records');
   await d.p.evaluate(()=>{SR.go('home')});await d.p.evaluate(()=>{const x=document.querySelector('details.sync-result');if(x)x.open=true});const note=await d.p.textContent('.sync-time');
-  assert.match(note,/かかった時間：合計 0\.\d秒・ボタンが戻るまで 0\.\d秒（長かったもの：記録シート「案件」/);
+  /* v1.50.157 たたんだ中の文には合計を2回出さない */
+  assert.match(await d.p.textContent('.sync-time-fold summary'),/^かかった時間：合計 0\.\d秒（押すと詳しい内容）$/);
+  assert.match(note,/^ボタンが戻るまで 0\.\d秒（長かったもの：記録シート「案件」/);assert.doesNotMatch(note,/合計/);
   /* v1.50.116 同期の内訳（記録シート「情報」の「前回の同期の内訳」に書く。画面の表示は変えない） */
   assert.equal(t.detail.salesTabs,16);assert.ok(t.detail.ord.sales>=50,JSON.stringify(t.detail));
   assert.match(await d.p.evaluate(t=>SR.detailText(t),t),/^Googleへの問い合わせ：4回（表計算の読み 2・書き 1・ドライブ 0・カレンダー 1）／今月の受注：売上報告の読み込み 0\.\d秒（売上報告のタブ 16）$/);
@@ -152,6 +154,14 @@ const mark=p=>p.evaluate(()=>localStorage.getItem('workhub_sync_resume_v1'));
   /* 実際の同期の流れでも、終わると「すべて終わりました」になる */
   await d.p.evaluate(()=>{SR.ui.syncAfterDoneAt=0;SR.signIn();SR.plan=[{complete:true}]});await d.p.evaluate(()=>SR.sync());
   await d.p.waitForFunction(()=>!SR.ui.syncAfterBusy&&SR.ui.syncAfterDoneAt>0);await d.p.evaluate(()=>{SR.go('home')});assert.match(await d.p.textContent('.sync-after'),/すべて終わりました/);
+  /* v1.50.157 赤い字に「入力は可能です」。裏の同期の最中、手入力のToDo・案件名の保存は止めない。領収書の保存は止める（そのことも書く） */
+  await d.p.evaluate(()=>{SR.ui.syncAfterDoneAt=0;SR.plan=[{complete:true}]});
+  const during=await d.p.evaluate(()=>new Promise(res=>{const home=document.querySelector('main')||document.body;let got=null;
+    const mo=new MutationObserver(()=>{const x=document.querySelector('.sync-after');if(!got&&x&&SR.ui.syncAfterBusy){got={text:x.textContent,todo:SR.todoBusy(),cs:SR.caseBusy(),rc:SR.rcBusy()}}});
+    mo.observe(home,{childList:true,subtree:true,characterData:true});SR.go('home');SR.sync().then(()=>{mo.disconnect();res(got)})}));
+  assert.ok(during,'saw the background phase');
+  assert.match(during.text,/終わるまでアプリを閉じないでください。入力は可能です（領収書の保存だけは、終わってからにしてください）/);
+  assert.deepEqual({todo:during.todo,cs:during.cs,rc:during.rc},{todo:false,cs:false,rc:true});
   assert.deepEqual(d.errors,[]);await d.c.close();
  });
  await check('アプリを閉じて開き直したとき、止まったままなら上に出す（印が残っている）',async()=>{
