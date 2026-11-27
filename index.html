@@ -539,8 +539,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.154" title="使い方マニュアルを開く">v1.50.154・11/27更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.154" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.155" title="使い方マニュアルを開く">v1.50.155・11/27更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.155" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -600,10 +600,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.154"></script>
+<script src="./share-management.js?v=1.50.155"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.154"></script>
-<script src="./calendar-view-scope.js?v=1.50.154"></script>
+<script src="./view-scope.js?v=1.50.155"></script>
+<script src="./calendar-view-scope.js?v=1.50.155"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2496,7 +2496,12 @@ function syncDetailText(t){const d=t&&t.detail;if(!d)return "";const out=[];
   if(d.ord){const o=d.ord,names={ptr:"場所",sales:"売上報告の読み込み",write:"書き出し",ordLoad:"受注の読み直し",view:"見るだけの読み込み"};
     out.push("今月の受注："+Object.keys(names).filter(k=>o[k]!=null).map(k=>names[k]+" "+syncSec(o[k])).join("・")+(d.salesTabs!=null?"（売上報告のタブ "+d.salesTabs+"）":""))}
   return out.join("／")}
-const syncTimingNote=t=>t&&(Number.isFinite(t.total)||(t.partial&&Number.isFinite(t.button)))?'<p class="note sync-time" style="margin:4px 0 0">かかった時間：'+h(syncTimingText(t))+'</p>'+(D().admin&&!t.partial&&syncDetailText(t)?'<p class="note sync-detail" style="margin:2px 0 0;overflow-wrap:anywhere">内訳：'+h(syncDetailText(t))+'</p>':''):'';
+/* v1.50.155 トシさんの指示（11/27：同期のあとに出る「かかった時間」と「内訳」が長い）：合計が出たら「かかった時間：合計 ○秒」の1行だけ出し、押すと今までの文（長かったもの・内訳）を開く。
+   続きの処理中（合計がまだ出ない）は短いので、今までどおりそのまま出す */
+const syncTimingNote=t=>{if(!t||!(Number.isFinite(t.total)||(t.partial&&Number.isFinite(t.button))))return '';
+  const body='<p class="note sync-time" style="margin:4px 0 0">かかった時間：'+h(syncTimingText(t))+'</p>'+(D().admin&&!t.partial&&syncDetailText(t)?'<p class="note sync-detail" style="margin:2px 0 0;overflow-wrap:anywhere">内訳：'+h(syncDetailText(t))+'</p>':'');
+  if(t.partial||!Number.isFinite(t.total))return body;
+  return '<details class="sync-time-fold" data-keep-open="synctime"><summary class="note" style="min-height:44px;display:flex;align-items:center;cursor:pointer;margin:0">かかった時間：合計 '+h(syncSec(t.total))+'</summary>'+body+'</details>'};
 function gSyncPanel(home=false){
   const r=ui.gsync,attention=home?homeSyncAttention():{blocked:false,html:''};
   /* 社員の記録・売上報告は、読めなくても（売上報告は今日まだ更新がなくても）同期そのものは済み。外に出して目立たせる */
@@ -2923,7 +2928,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.154";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.155";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -3122,7 +3127,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.154" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.154" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.155" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.155" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -6553,6 +6558,7 @@ let updNext="",updChecking=false,updLast=0;
    ・admin:true の項目は社長の端末だけ。初めて開いた端末（覚えた版がない）は出さずに今の版を覚える。
    ・決まり：社員の画面や使い方が変わる版では、ここに1行足す（マニュアルの改訂履歴と同じ版）。 */
 const RELEASE_NOTES=[
+ {v:"1.50.155",text:"同期のあとに出る「かかった時間」を、「かかった時間：合計 ○秒」の1行にたたみました。押すと、長かったものなどの詳しい内容が開きます。"},
  {v:"1.50.154",text:"案件の検索の欄で、日本語を入れると変換の途中で切れて文字が崩れていたのを直しました（変換を確定したときに絞り込みます）。"},
  {v:"1.50.153",admin:true,text:"社長のアカウントでログインした新しい端末（パソコンなど）には、社員の初期設定ではなく「管理をはじめる」の案内が出るようにしました。"},
  {v:"1.50.152",text:"予定の週表示にも、終わりの時刻が出るようになりました（例：07:00〜17:00）。在社・退社の時間も入れておくと、誰がいつまで会社にいるか分かります。"},
