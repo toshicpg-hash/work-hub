@@ -94,6 +94,7 @@ main>.scope-bar .infobox{max-height:40vh;overflow:auto}main>.infobox.info-below{
 .alerttag{align-self:flex-start;min-height:32px;border:0;border-radius:999px;background:var(--red-soft,#fde8e8);color:var(--red);font:inherit;font-size:13px;font-weight:700;padding:4px 12px;cursor:pointer;text-align:left;max-width:100%}
 
 .sync-time-fold .fold-hint{color:var(--accent,#2b6cb0);margin-left:4px}.sync-time-fold[open] .fold-hint{display:none}
+.sales-st tr.sales-wip td.num{color:var(--blue)}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -540,8 +541,8 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 </style>
 
 <header class="top"><div class="top-in">
-  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.157" title="使い方マニュアルを開く">v1.50.157・11/27更新</a><span class="proto" hidden>試作・架空データ</span></span>
-  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.157" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
+  <span class="brandbox"><span class="brand">CPG HUB</span><a class="ver" href="./manual.html?v=1.50.158" title="使い方マニュアルを開く">v1.50.158・11/27更新</a><span class="proto" hidden>試作・架空データ</span></span>
+  <a class="mbtn" id="manualLink" href="./manual.html?v=1.50.158" aria-label="使い方マニュアルを開く"><span class="mpill"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.3a1.9 1.9 0 1 1 2.6 1.75c-.5.22-.8.6-.8 1.15v.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".85" fill="currentColor"/></svg>使い方</span></a>
   <span class="sp"></span>
   <button class="btn pri sm" type="button" data-act="new">＋ 受付</button>
 </div></header>
@@ -601,10 +602,10 @@ main{padding-bottom:calc(7em + env(safe-area-inset-bottom,0px))}
 <script src="./receipt-input.js?v=1.43"></script>
 <script src="shared-receipts.js?v=1.44"></script>
 <script src="./request-box-employee.js?v=1.47.1"></script>
-<script src="./share-management.js?v=1.50.157"></script>
+<script src="./share-management.js?v=1.50.158"></script>
 <script src="./staff-names.js?v=1.48.7"></script>
-<script src="./view-scope.js?v=1.50.157"></script>
-<script src="./calendar-view-scope.js?v=1.50.157"></script>
+<script src="./view-scope.js?v=1.50.158"></script>
+<script src="./calendar-view-scope.js?v=1.50.158"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
@@ -2486,7 +2487,7 @@ function syncReqCount(url,method){if(!syncDiag)return;const u=String(url),q=sync
 const syncDiagSet=(k,v)=>{if(syncDiag)syncDiag[k]=v};
 async function syncDiagTime(k,fn){const t=Date.now();try{return await fn()}finally{if(syncDiag){syncDiag.ord=syncDiag.ord||{};syncDiag.ord[k]=(syncDiag.ord[k]||0)+Date.now()-t}}}
 function syncDetailText(t){const d=t&&t.detail;if(!d)return "";const out=[];
-  if(d.corp){const c=d.corp;out.push("社員の記録："+c.n+"人・前回の控え "+(c.prevN??"?")+"人・読み直さず "+(c.reused||0)+"人（うち「情報」で確認 "+(c.probed||0)+"人）・全部読んだ "+(c.full??"?")+"人・いちばん遅い人 "+syncSec(c.slow||0)+(c.slowWho?"（"+c.slowWho+(c.slowTries>1?"・"+c.slowTries+"回試した"+(c.slowWhy?"："+c.slowWhy.split(",").map(k=>({rate:"回数制限",server:"Google側の不具合",timeout:"時間切れ",network:"通信の失敗"})[k]||k).join("・"):""):"")+"）":"")+(c.prep!=null?"・読む前の準備 "+syncSec(c.prep):"")+(c.ms!=null?"・読み込み全体 "+syncSec(c.ms):"")+(!("shared" in c)?"":c.shared==null?"・社長の更新日時 なし/古い":"・社長の更新日時 "+c.shared+"分前")+"・控えの保存 "+(c.keep?(c.keep.ok?"できた ":"できなかった ")+c.keep.kb+"KB":"?"))}
+  if(d.corp){const c=d.corp;out.push("社員の記録："+c.n+"人・前回の控え "+(c.prevN??"?")+"人・読み直さず "+(c.reused||0)+"人（うち「情報」で確認 "+(c.probed||0)+"人）・全部読んだ "+(c.full??"?")+"人"+(c.boxReused?"（うち指示箱は読み直さず "+c.boxReused+"人）":"")+(c.tabsAsked!=null?"・タブの一覧の確認 "+c.tabsAsked+"回":"")+(c.tabsAdded?"・タブの読み足し "+c.tabsAdded+"人":"")+"・いちばん遅い人 "+syncSec(c.slow||0)+(c.slowWho?"（"+c.slowWho+(c.slowTries>1?"・"+c.slowTries+"回試した"+(c.slowWhy?"："+c.slowWhy.split(",").map(k=>({rate:"回数制限",server:"Google側の不具合",timeout:"時間切れ",network:"通信の失敗"})[k]||k).join("・"):""):"")+"）":"")+(c.prep!=null?"・読む前の準備 "+syncSec(c.prep):"")+(c.ms!=null?"・読み込み全体 "+syncSec(c.ms):"")+(!("shared" in c)?"":c.shared==null?"・社長の更新日時 なし/古い":"・社長の更新日時 "+c.shared+"分前")+"・控えの保存 "+(c.keep?(c.keep.ok?"できた ":"できなかった ")+c.keep.kb+"KB":"?"))}
   {const post=[["corpList","一覧の読み込み"],["corpSave","画面の作り直しと保存"],["corpBoss","済みの印の保存"],["corpNum","会社の数字の書き出し"]].filter(([k])=>d[k]!=null);
    if(d.names){const n=d.names;out.push("担当の候補など："+n.n+"人・書いた "+n.wrote+"人・同じ "+n.same+"人・前に済み "+n.skip+"人"+(n.bad?"・できなかった "+n.bad+"人（次の同期でその人だけ）":"")+(n.retry?"・やり直し "+n.retry+"回":""))}
    const lp=d.corpListParts;if(post.length)out.push("社員の記録の前後："+post.map(([k,l])=>l+" "+syncSec(d[k])+(k==="corpList"&&lp?"（移転の確認 "+syncSec(lp.follow)+"・一覧 "+syncSec(lp.list)+"・氏名の履歴 "+syncSec(lp.names)+"）":"")).join("・"))}
@@ -2935,7 +2936,7 @@ function foldSec(key,title,body,force,sub){
   return '<details class="sec fold" data-fold="'+key+'"'+(open?' open':'')+(force?' data-forced="1"':'')+'><summary class="foldh"><h2>'+(title.includes("|")?title.split("|").map(t=>'<span class="foldw">'+h(t)+'</span>').join(""):h(title))+(sub?'<span class="foldsub">'+h(sub)+'</span>':'')+'</h2></summary>'+body+'</details>';
 }
 /* GMの端末（役割がGMで全社ではない人）は、GMを務める会社に固定する。全社の人と社長は全社から選べる */
-const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.157";
+const manualHref=()=>(D().admin||D().viewListId?"./manual-admin.html":"./manual.html")+"?v=1.50.158";
 const statsGmCo=()=>{if(D().admin||!D().viewListId)return "";const me=(ui.viewList||[]).find(s=>eq(s.email,D().viewEmail));return me&&me.role==="GM"&&COMPANIES.includes(me.gmCo)?me.gmCo:""};
 const statsCo=()=>statsGmCo()||ui.sCo||"all";
 /* 会社の動きの絞り込みも、GMの端末はGMの会社に固定 */
@@ -3134,7 +3135,7 @@ function vStats(){
     '<div class="row"><button class="btn pri" type="submit">保存する</button></div>'+
     ''+
     '</form>')+
-  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.157" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.157" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
+  '<section class="sec"><a class="btn" href="./manual.html?v=1.50.158" style="text-decoration:none;text-align:center">使い方マニュアルを開く</a>'+(D().admin||D().viewListId?'<a class="btn" href="./manual-admin.html?v=1.50.158" style="text-decoration:none;text-align:center">管理者向けマニュアルを開く</a>':'')+'</section>';
 }
 function gSettings(){
   const head='', F=b=>foldSec("gcal","Googleカレンダー連携",b);
@@ -3734,7 +3735,7 @@ async function dataSync(step){
   /* v1.50.18 タブの一覧は、はじめの確認（sharedCheck）で読んだものを使う（前は同じ問い合わせを2回していた） */
   let tabs=g.tabs||[],tabsKnown=Array.isArray(g.tabs);
   try{if(!tabsKnown){tabs=await sheetTabNames(id);tabsKnown=true}
-    if(!tabs.includes("ToDo"))await gReq(SHEETS+"/"+encodeURIComponent(id)+":batchUpdate",{method:"POST",body:{requests:[{addSheet:{properties:{title:"ToDo"}}}]}})}
+    if(!tabs.includes("ToDo")){await gReq(SHEETS+"/"+encodeURIComponent(id)+":batchUpdate",{method:"POST",body:{requests:[{addSheet:{properties:{title:"ToDo"}}}]}});tabs=tabs.concat("ToDo")}}
   catch(err){if(err.message==="signin")throw err}
   /* v1.50.17 社長が振った受付番号の記号を受け取る（この記録シートの分として残す。読めなくても同期は続ける） */
   if(tabs.includes(CODE_TAB)){try{const code=codeNorm((((g.rows[CODE_TAB]?g.rows:await sheetRead(id,[CODE_TAB]))[CODE_TAB]||[])[1]||[])[0]);const c=D().caseCodeFor;if(code&&!(c&&c.sheetId===id&&c.code===code)){D().caseCodeFor={sheetId:id,code};save()}}catch(err){if(err.message==="signin")throw err}}
@@ -3757,7 +3758,9 @@ async function dataSync(step){
   else if(ui.wrongAccount&&ui.wrongAccount.id===id&&res.every(x=>x.status==="fulfilled"))ui.wrongAccount=null;
   const at=new Date();
   /* 「情報」（最終同期）は、ほかのタブを書いたあと。前の中身を読んであれば、消さずに1回で上書きする */
-  try{await sheetWrite(id,"情報",[["項目","値"],["氏名",RS().name||""],["最終同期",ymd(at)+" "+hm(at)],["版",(document.querySelector(".ver")||{}).textContent||""],["管理者",ADMIN_ACCOUNT],...((t=>t?[["前回の同期の時間",syncTimingText(t)+"・"+(t.ver||"")+"・"+(t.at?ymd(new Date(t.at))+" "+hm(new Date(t.at)):"")],...(syncDetailText(t)?[["前回の同期の内訳",syncDetailText(t)]]:[])]:[])(syncTimingLoad()))],g.rows["情報"]);D().lastSync=at.toISOString();save();step("記録シート「情報」",true,"最終同期 "+md(ymd(at))+" "+hm(at))}
+  /* v1.50.158 自分のシートのタブの一覧を「情報」の「タブ」の行に書く（社長・見る人の端末が、タブの一覧を毎回問い合わせなくて済むように）。一覧が分からないときは書かない */
+  const tabRow=tabsKnown?[["タブ",[...new Set(tabs.concat([...ownTabsNew]))].join("|")]]:[];ownTabsNew.clear();
+  try{await sheetWrite(id,"情報",[["項目","値"],["氏名",RS().name||""],["最終同期",ymd(at)+" "+hm(at)],["版",(document.querySelector(".ver")||{}).textContent||""],["管理者",ADMIN_ACCOUNT],...tabRow,...((t=>t?[["前回の同期の時間",syncTimingText(t)+"・"+(t.ver||"")+"・"+(t.at?ymd(new Date(t.at))+" "+hm(new Date(t.at)):"")],...(syncDetailText(t)?[["前回の同期の内訳",syncDetailText(t)]]:[])]:[])(syncTimingLoad()))],g.rows["情報"]);D().lastSync=at.toISOString();save();step("記録シート「情報」",true,"最終同期 "+md(ymd(at))+" "+hm(at))}
   catch(err){step("記録シート「情報」",false,dMsg(err))}
 }
 const sheetTabNames=async id=>{const v=await gReq(SHEETS+"/"+encodeURIComponent(id)+"?fields=sheets.properties.title");return ((v&&v.sheets)||[]).map(x=>x.properties&&x.properties.title)};
@@ -3869,13 +3872,15 @@ function requestBoxRow(t){return '<div class="card boss">'+todoCardHeading(t,'<s
  '<p class="note">'+h(t.sender||"出した人未確認")+'から</p><button class="btn sm" type="button" data-bdone="'+h(t.requestId)+'"'+(t.stale?' disabled':'')+'>完了を報告</button>'+
  (ui.bDone?.id===t.requestId?'<div class="ro" role="alert"><p>'+h(t.title)+'を完了として報告しますか？</p><label class="f">完了メモ（なくてもよい）<textarea id="bd_memo" maxlength="2000"></textarea></label><div class="row"><button class="btn pri" type="button" data-act="bdonedo">完了報告を保存</button><button class="btn" type="button" data-act="bdoneno">やめる</button></div><p class="note" id="bd_status" role="status">端末に保存後、次の同期で送信します。</p></div>':'')+'</div>';}
 function requestBoxCommit(next){if(!saveCaseChange(DB,{requestBoxEmployee:next}))throw Error("完了報告の端末保存を確認できません。入力を控え、再読み込みしてください。");}
+/* v1.50.158 この同期の中で自分の記録シートに作ったタブ（「情報」の「タブ」の行に足す） */
+const ownTabsNew=new Set();
 async function requestBoxSync(own){
  const api=requestBoxApi();if(!api)throw Error("指示箱の機能を読み込めません。再読み込みしてください。");
  const epoch=G.readEpoch,token=G.token;
  const check=()=>{if(caseSaveUncertain||D().sheetId!==own||G.readEpoch!==epoch||G.token!==token||localStorage.getItem(KEY)!==dbPersistedRaw)throw Object.assign(Error("接続先または端末記録が変わったため、指示箱の報告を止めました。"),{requestBoxStopped:true});};
  return api.sync({own,state:DB.requestBoxEmployee,check,commit:requestBoxCommit,tabs:sheetTabNames,
  read:async(id,tab)=>(await sheetRead(id,[tab]))[tab]||[],
- addReportTab:()=>gReq(SHEETS+"/"+encodeURIComponent(own)+":batchUpdate",{method:"POST",body:{requests:[{addSheet:{properties:{title:"指示の報告"}}}]}}),
+ addReportTab:async()=>{const r=await gReq(SHEETS+"/"+encodeURIComponent(own)+":batchUpdate",{method:"POST",body:{requests:[{addSheet:{properties:{title:"指示の報告"}}}]}});ownTabsNew.add("指示の報告");return r},
  initReportHeader:()=>gReq(SHEETS+"/"+encodeURIComponent(own)+"/values/"+encodeURIComponent(A1("指示の報告")+"!A1:E1")+"?valueInputOption=RAW",{method:"PUT",body:{values:[api.REPORT]}}),
  appendReport:rows=>gReq(SHEETS+"/"+encodeURIComponent(own)+"/values/"+encodeURIComponent(A1("指示の報告")+"!A:E")+":append?valueInputOption=RAW&insertDataOption=INSERT_ROWS",{method:"POST",body:{values:rows}})});
 }
@@ -3911,7 +3916,7 @@ async function adminOrderAdd(x,title,due){
   const id=x.s.sheetId;
   if(!(await sheetTabNames(id)).includes("指示")){
     await gReq(SHEETS+"/"+encodeURIComponent(id)+":batchUpdate",{method:"POST",body:{requests:[{addSheet:{properties:{title:"指示"}}}]}});
-    await sheetWrite(id,"指示",[ORDER_COLS]);
+    await sheetWrite(id,"指示",[ORDER_COLS]);corpTabsAdd(id,"指示");
   }
   let oid;do{oid="I-"+todayS().replace(/-/g,"")+"-"+Math.random().toString(36).slice(2,8)}while((x.orders||[]).some(o=>o["指示ID"]===oid));
   const row=[oid,title,due,todayS(),"未完了","",""];
@@ -4746,9 +4751,10 @@ function salesSec(){
     prof=(p,a)=>p==null?"—":yn(p)+'<span class="sales-pct">粗利率 '+pt(pc(p,a))+'</span>',
     /* 粗利が1つも入っていない（施工中など）ときは0円ではなく「—」 */
     sumP=a=>a.some(x=>x.prof!=null)?sumBy(a,"prof"):null,
+    /* v1.50.158 トシさんの指示（11/27）：施工中の行の数字（件数・金額）を青にする（.sales-wip） */
     /* v1.50.49 名前は1人1回。同じ人の続きの行（施工中など）は状態だけ */
-    row=(x,i,a)=>{const first=!i||a[i-1].name!==x.name;return '<tr class="'+[x.state==="完了"?'sales-done':'',first?'sales-who':''].join(' ').trim()+'"><td'+(String(x.name).length<=6?' style="white-space:nowrap"':'')+'>'+(first?h(x.name):'')+'<span class="sales-state">'+h(x.state)+'</span></td><td class="num">'+cnt(x.n)+'</td>'+(hasBase?'<td class="num">'+yn(x.base)+'</td>':'')+'<td class="num">'+yn(x.amt)+'</td><td class="num">'+prof(x.prof,x.amt)+'</td></tr>'};
-    const part=(label,a)=>'<tr class="sales-sum'+(label==="完了物件"?' sales-done':'')+'"><td><b>'+label+'</b></td><td class="num"><b>'+cnt(sumBy(a,"n"))+'</b></td>'+(hasBase?'<td></td>':'')+'<td class="num"><b>'+yn(sumBy(a,"amt"))+'</b></td><td class="num"><b>'+prof(sumP(a),sumBy(a,"amt"))+'</b></td></tr>';
+    row=(x,i,a)=>{const first=!i||a[i-1].name!==x.name;return '<tr class="'+[x.state==="完了"?'sales-done':'',x.state==="施工中"?'sales-wip':'',first?'sales-who':''].filter(Boolean).join(' ')+'"><td'+(String(x.name).length<=6?' style="white-space:nowrap"':'')+'>'+(first?h(x.name):'')+'<span class="sales-state">'+h(x.state)+'</span></td><td class="num">'+cnt(x.n)+'</td>'+(hasBase?'<td class="num">'+yn(x.base)+'</td>':'')+'<td class="num">'+yn(x.amt)+'</td><td class="num">'+prof(x.prof,x.amt)+'</td></tr>'};
+    const part=(label,a)=>'<tr class="sales-sum'+(label==="完了物件"?' sales-done':label==="施工中"?' sales-wip':'')+'"><td><b>'+label+'</b></td><td class="num"><b>'+cnt(sumBy(a,"n"))+'</b></td>'+(hasBase?'<td></td>':'')+'<td class="num"><b>'+yn(sumBy(a,"amt"))+'</b></td><td class="num"><b>'+prof(sumP(a),sumBy(a,"amt"))+'</b></td></tr>';
     /* v1.50.46 合計は完了＋施工中（営業外売上などの「その他」は入れない。今の3社報告の合計と同じ） */
     const done=st.filter(x=>x.state==="完了"),wip=st.filter(x=>x.state==="施工中"),main=done.concat(wip),other=st.some(x=>x.state==="その他"),n=sumBy(main,"n");
     return '<div class="tbl-wrap"><table class="items sales-st" style="min-width:0"><thead><tr><th>担当</th><th>件数</th>'+(hasBase?'<th>基準値</th>':'')+'<th>金額（円）</th><th>粗利（円）<span class="sales-pct">粗利率</span></th></tr></thead><tbody>'+
@@ -5507,7 +5513,17 @@ const CORP_POOL=5, TABS_KEY="workhub_corp_tabs_v1";
 let corpTabsMem=null;
 function corpTabsAll(){if(corpTabsMem)return corpTabsMem;try{const v=JSON.parse(localStorage.getItem(TABS_KEY)||"{}");corpTabsMem=v&&typeof v==="object"&&!Array.isArray(v)?v:{}}catch(e){corpTabsMem={}}return corpTabsMem}
 const corpTabsGet=id=>{const t=corpTabsAll()[id];return Array.isArray(t)&&t.every(x=>typeof x==="string")?t:null};
-function corpTabsSet(id,tabs){const all=corpTabsAll();if(tabs)all[id]=tabs.map(String);else delete all[id];try{localStorage.setItem(TABS_KEY,JSON.stringify(all))}catch(e){}}
+function corpTabsSet(id,tabs,keepAt){const all=corpTabsAll();if(tabs)all[id]=tabs.map(String);else delete all[id];try{localStorage.setItem(TABS_KEY,JSON.stringify(all))}catch(e){}
+  if(!keepAt){const a=corpTabsAtAll();if(tabs)a[id]=Date.now();else delete a[id];try{localStorage.setItem(TABS_AT_KEY,JSON.stringify(a))}catch(e){}}}
+/* v1.50.158 トシさんの指示（11/27 夕方の同期 115.8秒・Googleへの問い合わせ103回）：あとから増えるタブがそろっていない人（「指示の報告」がまだない人がほとんど）は、
+   読み直すたびにタブの一覧を問い合わせていた。一覧を問い合わせた時刻を残し、6時間（CORP_TABS_MS）は問い合わせない。
+   その間にタブが増えても読み漏らさないよう、社員の端末は同期のたびに「情報」の「タブ」の行に自分のシートのタブの一覧を書き、こちらは「情報」と一緒に読んで、増えていればそのタブだけ読み足す。
+   社長の端末が「指示」タブを作ったときは、この端末の一覧に足す */
+const TABS_AT_KEY="workhub_corp_tabsat_v1",CORP_TABS_MS=6*3600e3;
+let corpTabsAtMem=null;
+function corpTabsAtAll(){if(corpTabsAtMem)return corpTabsAtMem;try{const v=JSON.parse(localStorage.getItem(TABS_AT_KEY)||"{}");corpTabsAtMem=v&&typeof v==="object"&&!Array.isArray(v)?v:{}}catch(e){corpTabsAtMem={}}return corpTabsAtMem}
+const corpTabsRecent=id=>Date.now()-(Number(corpTabsAtAll()[id])||0)<CORP_TABS_MS;
+function corpTabsAdd(id,tab){const t=corpTabsGet(id);if(t&&!t.includes(tab))corpTabsSet(id,t.concat(tab),true)}
 /* v1.50.31 変わっていない人は読み直さない：
    Googleドライブのスプレッドシートの更新日時を1回（多くても数回）でまとめて読む。
    前に読んだときと記録シート・指示箱の更新日時が同じで、読み方（見る人・役割・担当・指示箱）も同じなら、前の内容をそのまま使う。
@@ -5569,7 +5585,7 @@ async function corpLoad(){
   const dirty=viewer?corpDirtyAll():{}, wrote=(id,t)=>!!id&&dirty[id]>=(t||0);
   /* v1.50.18 3人ずつ同時に読む（前は1人ずつ順番）。並びは一覧の順のまま。読めなかった人のやり直しは今までどおり */
   /* v1.50.43 だれかが回数制限（429）に当たったら、ほかの人の読み込みもその間は始めない（同時に読み続けると上限が戻らない） */
-  let cool=0;const gate=async()=>{const w=cool-Date.now();if(w>0)await corpWait(w,"gate")};
+  let cool=0,boxReused=0,tabsAdded=0,tabsAsked=0;const gate=async()=>{const w=cool-Date.now();if(w>0)await corpWait(w,"gate")};
   const one=async s=>{
     const started=Date.now();let tries=0,x=null,fresh=false;const why=[];
     const noRc0=viewer&&noReceipts(me)&&s.sheetId!==me.sheetId, boxOn=!!s.boxId&&(!viewer||s.sheetId===me.sheetId||canOrder(me,s)), key=corpReadKey(viewer,me,s,noRc0,boxOn);
@@ -5601,21 +5617,29 @@ async function corpLoad(){
     try{/* a sheet synced from before v1.29 has no 「ToDo」 tab, and reading a missing tab fails the whole read */
       /* v1.50.18 タブの一覧は、あとから増えるタブ（ToDo・指示・指示の報告・予定の共有の記録）が全部そろっていれば、前に読んだものを使う（増えようがないので問い合わせない）。
          そろっていない人は毎回問い合わせる。前の一覧で読めなかったとき（タブを消した・名前を変えた）は、問い合わせ直して読み直す */
-      const opt=["ToDo","指示",REPORT_TAB].concat(viewer?[]:[CALREC_TAB],!viewer&&salesChkAny(s)?[SCHK_TAB]:[]),known=fresh?null:corpTabsGet(s.sheetId),useKnown=!!known&&opt.every(t=>known.includes(t));
-      const tabs=useKnown?known:await sheetTabNames(s.sheetId);if(!useKnown)corpTabsSet(s.sheetId,tabs);
-      const hasTodo=tabs.includes("ToDo"), hasOrd=tabs.includes("指示"), hasRep=tabs.includes(REPORT_TAB), hasCal=!viewer&&tabs.includes(CALREC_TAB), hasChk=!viewer&&tabs.includes(SCHK_TAB);
+      const opt=["ToDo","指示",REPORT_TAB].concat(viewer?[]:[CALREC_TAB],!viewer&&salesChkAny(s)?[SCHK_TAB]:[]),known=fresh?null:corpTabsGet(s.sheetId),useKnown=!!known&&(opt.every(t=>known.includes(t))||corpTabsRecent(s.sheetId));
+      let tabs=useKnown?known:await sheetTabNames(s.sheetId);if(!useKnown){corpTabsSet(s.sheetId,tabs);tabsAsked++}
+      let hasTodo=tabs.includes("ToDo"), hasOrd=tabs.includes("指示"), hasRep=tabs.includes(REPORT_TAB), hasCal=!viewer&&tabs.includes(CALREC_TAB), hasChk=!viewer&&tabs.includes(SCHK_TAB);
       /* v1.50.0 業務管理の端末は、ほかの人の立替・領収書を読まない */
       const noRc=viewer&&noReceipts(me)&&s.sheetId!==me.sheetId;
       /* v1.50.31 指示箱は記録シートと同時に読む（前は記録シートのあと） */
-      const boxP=boxOn?sheetRead(s.boxId,[BOX_TAB]).then(r=>objRows(r[BOX_TAB]).filter(o=>o["指示ID"]),err=>{if(err.message==="signin")throw err;return null}):Promise.resolve(null);
+      /* v1.50.158 社長の端末：指示箱の更新日時が前に読んだときと同じなら、前に読んだ中身を使う（指示箱は書かれると更新日時が変わる）。
+         記録シートの12時間ごとの読み直しでは指示箱は読み直さず、指示箱を読んでから7日（CORP_PROBE_MS）たったら読み直す */
+      const boxSame=!viewer&&boxOn&&!!old&&Array.isArray(old.box)&&!!bmt&&old.bmt===bmt&&Date.now()-(Number(old.boxAt)||0)<CORP_PROBE_MS;if(boxSame)boxReused++;
+      const boxP=boxSame?Promise.resolve(old.box):boxOn?sheetRead(s.boxId,[BOX_TAB]).then(r=>objRows(r[BOX_TAB]).filter(o=>o["指示ID"]),err=>{if(err.message==="signin")throw err;return null}):Promise.resolve(null);
       boxP.catch(()=>{});
       let v;try{v=await sheetRead(s.sheetId,["案件","入金"].concat(noRc?[]:["立替"],["情報"],hasTodo?["ToDo"]:[],hasOrd?["指示"]:[],hasRep?[REPORT_TAB]:[],hasCal?[CALREC_TAB]:[],hasChk?[SCHK_TAB]:[]))}
       catch(err){await boxP.catch(()=>{});if(useKnown&&err.status===400){corpTabsSet(s.sheetId,null);fresh=true;tries--;continue}throw err}
       /* 指示箱：読めるのは社長（持ち主）と、その社員に出せる人（編集者）。読めなければ null */
       const box=await boxP;
       const info=Object.fromEntries((v["情報"]||[]).slice(1).map(r=>[r[0],r[1]]));
+      /* v1.50.158 「情報」の「タブ」の行（社員の端末が書いた、そのシートのタブの一覧）に、まだ読んでいないタブがあれば、そのタブだけ読み足す */
+      if(useKnown){const extra=String(info["タブ"]||"").split("|").filter(t=>opt.includes(t)&&!tabs.includes(t));
+        if(extra.length){try{Object.assign(v,await sheetRead(s.sheetId,extra))}catch(err){if(err.message==="signin")throw err;corpTabsSet(s.sheetId,null);fresh=true;tries--;continue}
+          tabs=tabs.concat(extra);corpTabsSet(s.sheetId,tabs,true);tabsAdded++;
+          hasTodo=tabs.includes("ToDo");hasOrd=tabs.includes("指示");hasRep=tabs.includes(REPORT_TAB);hasCal=!viewer&&tabs.includes(CALREC_TAB);hasChk=!viewer&&tabs.includes(SCHK_TAB)}}
       s.lastSync=String(info["最終同期"]||"");
-      x={s,ok:true,salesChk:hasChk?objRows(v[SCHK_TAB]):null,calRec:hasCal?objRows(v[CALREC_TAB]).map(r=>String(r["Gmail"]||"").trim()).filter(mailOK):null,receiptRead:noRc?{state:"hidden",at:Date.now(),version:String(info["版"]||"")}:{...(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.parseSheet(v["立替"]):{state:"invalid",message:"領収書の表示機能を読み込めません。"}),at:Date.now(),version:String(info["版"]||"")},cases:objRows(v["案件"]),rc:noRc?[]:rcFor(me,s,objRows(v["立替"])),todo:hasTodo?objRows(v["ToDo"]):null,orders:hasOrd?objRows(v["指示"]).filter(o=>o["指示ID"]):[],box,reports:hasRep?objRows(v[REPORT_TAB]).filter(r=>r["指示ID"]):[],mt,bmt:box===null?"":bmt,rk:key,readAt:started,infoJ:viewer?JSON.stringify(v["情報"]||[]):undefined,ordJ:viewer?(hasOrd?JSON.stringify(v["指示"]||[]):"-"):undefined,boxJ:viewer&&boxOn?JSON.stringify(box):undefined}}
+      x={s,ok:true,salesChk:hasChk?objRows(v[SCHK_TAB]):null,calRec:hasCal?objRows(v[CALREC_TAB]).map(r=>String(r["Gmail"]||"").trim()).filter(mailOK):null,receiptRead:noRc?{state:"hidden",at:Date.now(),version:String(info["版"]||"")}:{...(globalThis.WorkHubSharedReceipts?WorkHubSharedReceipts.parseSheet(v["立替"]):{state:"invalid",message:"領収書の表示機能を読み込めません。"}),at:Date.now(),version:String(info["版"]||"")},cases:objRows(v["案件"]),rc:noRc?[]:rcFor(me,s,objRows(v["立替"])),todo:hasTodo?objRows(v["ToDo"]):null,orders:hasOrd?objRows(v["指示"]).filter(o=>o["指示ID"]):[],box,reports:hasRep?objRows(v[REPORT_TAB]).filter(r=>r["指示ID"]):[],mt,bmt:box===null?"":bmt,boxAt:boxSame?old.boxAt:started,rk:key,readAt:started,infoJ:viewer?JSON.stringify(v["情報"]||[]):undefined,ordJ:viewer?(hasOrd?JSON.stringify(v["指示"]||[]):"-"):undefined,boxJ:viewer&&boxOn?JSON.stringify(box):undefined}}
     catch(err){if(err.message==="signin")throw err;
       const wait=corpRetryWait(err,tries);why.push(corpErrKind(err)||String(err.status||err.message||"?"));if(wait!==null){if(corpErrKind(err)==="rate")cool=Math.max(cool,Date.now()+wait);await corpWait(wait);continue}
       x={s,ok:false,accessDenied:err.status===403||err.status===404,msg:corpReadMsg(err)+(tries>1?"・"+tries+"回試しました":""),status:err.status||(err.name==="AbortError"?"timeout":err.network?"network":"")}}
@@ -5624,7 +5648,7 @@ async function corpLoad(){
   const prepMs=Date.now()-tPrep;
   {let next=0,stop=null;const work=async()=>{while(!stop&&next<list.length){const i=next++;try{out[i]=await one(list[i])}catch(e){stop=stop||e}}};
    await Promise.all(Array.from({length:Math.min(CORP_POOL,list.length)},work));if(stop)throw stop;}
-  out.timing={ms:Date.now()-t0,n:list.length,reused:out.filter(x=>x&&x.reused).length,probed:out.filter(x=>x&&x.probed).length,prevN:Object.keys(prev).length,prep:prepMs,full:out.filter(x=>x&&x.ok&&!x.reused).length,slow:Math.max(0,...out.map(x=>x&&x.ms||0))};
+  out.timing={ms:Date.now()-t0,n:list.length,reused:out.filter(x=>x&&x.reused).length,probed:out.filter(x=>x&&x.probed).length,prevN:Object.keys(prev).length,prep:prepMs,full:out.filter(x=>x&&x.ok&&!x.reused).length,boxReused,tabsAsked,tabsAdded,slow:Math.max(0,...out.map(x=>x&&x.ms||0))};
   /* v1.50.137 いちばん遅い人の名前と、やり直した回数・理由（専務の端末で1人に238秒かかっていた。だれが・なぜかを内訳に出す） */
   {const w=out.filter(Boolean).reduce((a,x)=>!a||(x.ms||0)>(a.ms||0)?x:a,null);if(w&&w.s){out.timing.slowWho=dispName(w.s)||w.s.name||"";out.timing.slowTries=w.tries||0;out.timing.slowWhy=(w.why||[]).join(",")}}
   if(viewer)out.timing.shared=shared?Math.round(shared.age/60e3):null;
@@ -6565,6 +6589,7 @@ let updNext="",updChecking=false,updLast=0;
    ・admin:true の項目は社長の端末だけ。初めて開いた端末（覚えた版がない）は出さずに今の版を覚える。
    ・決まり：社員の画面や使い方が変わる版では、ここに1行足す（マニュアルの改訂履歴と同じ版）。 */
 const RELEASE_NOTES=[
+ {v:"1.50.158",admin:true,text:"社員の記録の読み込みで、Googleへの問い合わせを減らしました（タブの一覧を毎回問い合わせない・変わっていない指示箱は読み直さない）。担当者別の表で、施工中の数字を青にしました。"},
  {v:"1.50.157",text:"裏で同期を続けている間の赤い字に「入力は可能です」と足しました（領収書の保存だけは、終わってからにしてください）。「かかった時間」を開いたとき、合計が2回出ていたのを1回にしました。"},
  {v:"1.50.156",text:"たたんだ「かかった時間」の後ろに「（押すと詳しい内容）」と出すようにしました。"},
  {v:"1.50.155",text:"同期のあとに出る「かかった時間」を、「かかった時間：合計 ○秒」の1行にたたみました。押すと、長かったものなどの詳しい内容が開きます。"},

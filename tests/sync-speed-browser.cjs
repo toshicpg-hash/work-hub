@@ -5,7 +5,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 let playwright;try{playwright=require('playwright')}catch{playwright=require('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')}
 const root=path.resolve(__dirname,'..');
-const hook='window.SP={get db(){return DB},get ui(){return ui},render,save,corpRun,dataSync,setup(){gAuthorize=async()=>{G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000};gAuthorize();adminSync=async()=>({});corpWait=async()=>{};backupPhotos=async()=>({done:0,fail:0})}};';
+const hook='window.SP={tabsOld(){const a=corpTabsAtAll();for(const k of Object.keys(a))a[k]-=7*3600e3},get db(){return DB},get ui(){return ui},render,save,corpRun,dataSync,setup(){gAuthorize=async()=>{G.token="synthetic";G.scope=GSCOPE+" "+DSCOPE;G.exp=Date.now()+3600000};gAuthorize();adminSync=async()=>({});corpWait=async()=>{};backupPhotos=async()=>({done:0,fail:0})}};';
 const ALL=['案件','入金','立替','情報','ToDo','指示','指示の報告','予定の共有の記録'];
 const ids=[1,2,3,4,5,6,7].map(i=>'synthetic-speed-sheet-00000000'+i);
 const staff=ids.map((id,i)=>({name:'見本 '+(i+1)+'郎',email:'s'+(i+1)+'@example.com',sheetId:id,company:'CP',role:'社員'}));
@@ -51,8 +51,29 @@ async function main(){
   d.reset();await d.p.evaluate(async()=>{await SP.corpRun()});
   const tabQ=id=>d.log.filter(x=>x.id===id&&x.rest===''&&x.method==='GET').length;
   for(const id of ids.slice(0,4))assert.equal(tabQ(id),0,id);
-  for(const id of ids.slice(4))assert.equal(tabQ(id),1,id);
+  /* v1.50.158 そろっていない人も、タブの一覧を問い合わせてから6時間は問い合わせない */
+  for(const id of ids.slice(4))assert.equal(tabQ(id),0,id);
   assert.equal(await d.p.evaluate(()=>!!localStorage.getItem('workhub_corp_tabs_v1')&&!/見本荘/.test(localStorage.getItem('workhub_corp_tabs_v1'))),true,'only tab names are kept');
+ });
+ await check('v1.50.158 6時間たったら、そろっていない人だけタブの一覧を問い合わせ直す',async()=>{
+  await d.p.evaluate(()=>SP.tabsOld());
+  d.reset();await d.p.evaluate(async()=>{await SP.corpRun()});
+  const tabQ=id=>d.log.filter(x=>x.id===id&&x.rest===''&&x.method==='GET').length;
+  for(const id of ids.slice(0,4))assert.equal(tabQ(id),0,id);
+  for(const id of ids.slice(4))assert.equal(tabQ(id),1,id);
+ });
+ await check('v1.50.158 「情報」の「タブ」の行に、まだ読んでいないタブがあれば、そのタブだけ読み足す（一覧は問い合わせない）',async()=>{
+  const id=ids[4],sh=store[id],has=Object.keys(sh);
+  const add=['指示','ToDo','指示の報告','予定の共有の記録'].find(t=>!has.includes(t));assert.ok(add,'fixture lacks an optional tab: '+has.join(','));
+  sh[add]=add==='指示'?[['指示ID','内容'],['I-TEST-1','架空の指示']]:[['見出し']];
+  sh['情報']=(sh['情報']||[['項目','値']]).filter(r=>r[0]!=='タブ').concat([['タブ',Object.keys(sh).join('|')]]);
+  d.reset();const r=await d.p.evaluate(async id=>{const x=(await SP.corpRun()).find(x=>x.s.sheetId===id);return {ok:x.ok,t:SP.ui.corp.timing.tabsAdded}},id);
+  assert.equal(r.ok,true);assert.ok(r.t>=1,JSON.stringify(r));
+  assert.equal(d.log.filter(x=>x.id===id&&x.rest===''&&x.method==='GET').length,0,'no tab list query');
+  const gets=d.log.filter(x=>x.id===id&&x.rest==='/values:batchGet');assert.equal(gets.length,2,'one read plus one read for the new tab');
+  assert.ok(await d.p.evaluate(id=>JSON.parse(localStorage.getItem('workhub_corp_tabs_v1'))[id].length>0,id));
+  d.reset();await d.p.evaluate(async()=>{await SP.corpRun()});
+  assert.equal(d.log.filter(x=>x.id===id&&x.rest==='/values:batchGet').length,1,'next time read together');
  });
  await check('タブが消えていたら（前の一覧で読めない）、問い合わせ直して読み直す。「読めませんでした」にしない',async()=>{
   delete store[ids[0]]['指示'];store[ids[0]]['予定の共有の記録']=[];d.reset();
