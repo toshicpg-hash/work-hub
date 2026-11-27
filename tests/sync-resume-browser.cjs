@@ -132,9 +132,10 @@ const mark=p=>p.evaluate(()=>localStorage.getItem('workhub_sync_resume_v1'));
   assert.match(await d.p.textContent('.sync-detail'),/^内訳：Googleへの問い合わせ：4回/);
   /* v1.50.155 かかった時間・内訳はたたんで、「かかった時間：合計 ○秒」の1行だけ出す。押すと開き、描き直しても開いたまま */
   const fold=await d.p.evaluate(()=>{const f=document.querySelector('details.sync-time-fold');return f&&{open:f.open,sum:f.querySelector('summary').textContent,hasTime:!!f.querySelector('.sync-time'),hasDetail:!!f.querySelector('.sync-detail'),timeShown:f.querySelector('.sync-time').checkVisibility()}});
-  assert.ok(fold,'folded');assert.equal(fold.open,false);assert.match(fold.sum,/^かかった時間：合計 0\.\d秒$/);assert.equal(fold.hasTime&&fold.hasDetail,true);assert.equal(fold.timeShown,false,'hidden until opened');
+  assert.ok(fold,'folded');assert.equal(fold.open,false);assert.match(fold.sum,/^かかった時間：合計 0\.\d秒（押すと詳しい内容）$/);assert.equal(fold.hasTime&&fold.hasDetail,true);assert.equal(fold.timeShown,false,'hidden until opened');
   await d.p.click('details.sync-time-fold summary');await d.p.evaluate(()=>SR.render());
   assert.equal(await d.p.evaluate(()=>document.querySelector('details.sync-time-fold').open&&document.querySelector('.sync-detail').checkVisibility()),true,'opens and stays open');
+  assert.equal(await d.p.evaluate(()=>document.querySelector('.sync-time-fold .fold-hint').checkVisibility()),false,'v1.50.156 hint hidden once opened');
   assert.ok(await d.p.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)<=0,'overflow');
   await d.p.evaluate(()=>{SR.db.settings.data.admin=false;SR.render()});
   assert.deepEqual(d.errors,[]);await d.c.close();
