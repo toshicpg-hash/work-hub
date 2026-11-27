@@ -220,6 +220,11 @@ async function main(){
    assert.deepEqual(await A.p.evaluate(()=>{const w=sel=>getComputedStyle(document.querySelector(sel)).fontWeight;return [w('#stats-sales .sales-st tbody tr.sales-done:not(.sales-sum) td.num'),w('#stats-sales .sales-st tbody tr:not(.sales-done):not(.sales-sum) td.num')]}),['600','400']);
    const done=await A.p.$$eval('#stats-sales tr.sales-done',a=>a.map(r=>r.textContent));assert.ok(done.length>=7&&done.every(x=>/完了/.test(x)),'完了 rows are tinted');
    assert.ok(await A.p.$$eval('#stats-sales tr.sales-done td',a=>a.every(td=>getComputedStyle(td).backgroundColor!=='rgba(0, 0, 0, 0)')));
+   /* v1.50.158 施工中の行（と施工中の合計）の数字は青 */
+   {const r=await A.p.evaluate(()=>{const blue=(()=>{const x=document.createElement('span');x.style.color='var(--blue)';document.body.append(x);const c=getComputedStyle(x).color;x.remove();return c})();
+     const wip=[...document.querySelectorAll('#stats-sales .sales-st tr.sales-wip')];return {n:wip.length,allWip:wip.every(t=>/施工中/.test(t.textContent)),blue:wip.every(t=>[...t.querySelectorAll('td.num')].every(td=>getComputedStyle(td).color===blue)),
+       doneNot:[...document.querySelectorAll('#stats-sales .sales-st tr.sales-done td.num')].every(td=>getComputedStyle(td).color!==blue)}});
+    assert.ok(r.n>=2&&r.allWip&&r.blue&&r.doneNot,JSON.stringify(r));}
    assert.match(await A.p.textContent('#stats-sales .sales-st thead'),/金額（円）.*粗利（円）粗利率/);assert.match(await A.p.textContent('#stats-sales .sales-st tbody'),/[\d,]+粗利率 \d+%/);assert.match(await A.p.locator('#stats-sales .sales-st tr.sales-sum').last().textContent(),/合計.*[\d,]+粗利率 \d+%/);
    /* v1.50.48 状態は名前の下。表は右が切れない（横にはみ出さない） */
    assert.match(await A.p.locator('#stats-sales .sales-st tbody tr.sales-done td').first().textContent(),/^見本 .郎完了$/);

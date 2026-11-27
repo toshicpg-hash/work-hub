@@ -451,7 +451,9 @@ async function main(){
   const sB=G.files[info.find(x=>x.name==='管理 見本').id],caseTab=sB.tabs.find(t=>t.title==='案件');
   if(!caseTab.rows.length)caseTab.rows.push(['受付番号','物件']);const hdr=caseTab.rows[0];touch(sB);caseTab.rows.push(hdr.map(k=>k==='受付番号'?'TEST-0001':k==='物件'||k==='物件名'?'見本ハイツ（テスト）':''));
   mark=G.calls.length;await A.p.evaluate(()=>RB.corpRun());
-  {const m=info.find(x=>x.id===sB.id);assert.deepEqual([...new Set(sheetReads(mark,ids))].sort(),[m.id,m.box].filter(Boolean).sort(),'only that person (sheet and box)')}
+  {const m=info.find(x=>x.id===sB.id);/* v1.50.158 社長の端末：指示箱は変わっていないので読み直さない（前に読んだ中身を使う） */
+   assert.deepEqual([...new Set(sheetReads(mark,ids))].sort(),[m.id],'only that person (sheet only; the box did not change)');
+   assert.equal(await A.p.evaluate(id=>JSON.stringify(RB.ui.corp.data.find(x=>x.s.sheetId===id).box),m.id),m.box2,'box kept');assert.ok(m.box?await A.p.evaluate(()=>RB.ui.corp.timing.boxReused>=1):true)}
   assert.ok(await A.p.evaluate(id=>RB.ui.corp.data.find(x=>x.s.sheetId===id).cases.some(r=>r['受付番号']==='TEST-0001'),sB.id));
   /* 社員 一郎の指示箱だけ変わった：その人（記録シートと指示箱）を読み直す */
   const a=info.find(x=>x.name==='社員 一郎'),bA=G.files[a.box];touch(bA);tab(bA,'指示').push(['B-TEST-0001','箱だけ変わった（テスト）','','2026-10-30','未完了',ZEN,'見本 太郎','','']);
@@ -465,7 +467,12 @@ async function main(){
   await A.p.evaluate(()=>RB.corpRun());
   await A.p.clock.setSystemTime(new Date('2026-10-30T14:30:00Z'));
   mark=G.calls.length;await A.p.evaluate(()=>RB.corpRun());
-  assert.equal(new Set(sheetReads(mark,ids)).size,ids.length,'all read after 12 hours');
+  /* v1.50.158 12時間後：記録シートは全員読み直す。指示箱は変わっていなければ読み直さない */
+  {const sh=info.map(x=>x.id),got=new Set(sheetReads(mark,ids));assert.deepEqual([...got].sort(),sh.sort(),'all record sheets read after 12 hours, boxes kept');}
+  /* 指示箱も、読んでから7日たったら読み直す */
+  await A.p.clock.setSystemTime(new Date('2026-11-07T15:00:00Z'));
+  mark=G.calls.length;await A.p.evaluate(()=>RB.corpRun());
+  assert.equal(new Set(sheetReads(mark,ids)).size,ids.length,'all read (boxes too) after 7 days');
   assert.deepEqual(A.errors,[]);
  });
  await check('v1.50.94 見る人の端末：社長の端末が30分以内に取った更新日時（見る人用一覧の「更新日時」タブ）で、変わっていない人は読み直さない。古い・自分のシート・自分が書いたシートは読む',async()=>{
