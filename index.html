@@ -96,6 +96,7 @@ main>.scope-bar .infobox{max-height:40vh;overflow:auto}main>.infobox.info-below{
 .sync-time-fold .fold-hint{color:var(--accent,#2b6cb0);margin-left:4px}.sync-time-fold[open] .fold-hint{display:none}
 .sales-st tr.sales-wip td.num{color:var(--blue)}
 .sales-rv{display:block;font-size:.78em;font-weight:400;color:var(--muted);white-space:nowrap}.sales-rv.stale{color:var(--red);font-weight:700}.sales-rv-why{margin:4px 0;color:var(--red);overflow-wrap:anywhere}.sales-rv-list{list-style:none;margin:6px 0 0;padding:0}.sales-rv-list li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;padding:6px 0;border-top:1px solid var(--muted)}.sales-rv-list li.stale span{color:var(--red)}
+.sales-pgap span{white-space:nowrap;display:inline-block}.sales-pgap span.red{color:var(--red);font-weight:700}.sales-kind{overflow-wrap:anywhere}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -4608,7 +4609,7 @@ async function salesChkPress(co,k){
    もう日付が入っていても押せる（確定までは数字が変わるので、見直したらその日に書き換える）。だれができるかは毎日の確認と同じ（社長・本部長＝全社・その会社のGM）。
    シートを開けない端末は、自分の記録シートの「売上の確認」に1行書き（日＝「月」、役割＝hq_m・gm_m）、社長の端末の同期で会社の行に入れる */
 const SMON_COL={boss:"社長確認日",hq:"本部長確認日",gm:"GM確認日"},SMON_LABEL={boss:"社長",hq:"本部長",gm:"GM"};
-const salesMonBtn=(key,co,k,busy)=>'<button class="btn sm" type="button" data-act="salesmon" data-key="'+h(key)+'" data-co="'+h(co)+'" data-k="'+k+'"'+(busy||"")+'>'+Number(key.slice(5))+'月分を確認済みにする（'+SMON_LABEL[k]+'）</button>';
+const salesMonBtn=(key,co,k,busy)=>'<button class="btn sm" type="button" data-act="salesmon" data-key="'+h(key)+'" data-co="'+h(co)+'" data-k="'+k+'"'+(busy||"")+'>【月1回】'+Number(key.slice(5))+'月分を確認済みにする（'+SMON_LABEL[k]+'）</button>';
 /* v1.50.120 トシさんの指示（A）：どの月を開いても（今月・先の月も）「この月の確認」を出す。押した日がその月の確認日に入る */
 const salesMonDone=key=>/^\d{4}-\d{2}$/.test(String(key||""));
 const salesMonMd=iso=>{const j=jstDay(iso);return j?j.slice(5,7)+"/"+j.slice(8,10):""};
@@ -4849,7 +4850,7 @@ function salesSec(){
     const pOn=pchkMonth(M.key),tdS=todayS(),pAll=pOn?(S.pchk||[]).filter(x=>x.key===M.key&&x.co===c.co&&x.date<=tdS):[],tdp=pAll.find(x=>x.date===tdS)||null;
     const pWho=pOn?['boss','hq','gm'].filter(k=>k==="boss"?admin:salesChkCan(chkMe,c.co,k)):[];
     const pPend=k=>!!pend[[M.key,c.co,"p"+tdS,k].join("|")];
-    const pBtn=k=>'<button class="btn sm pri" type="button" data-act="salespchk" data-key="'+h(M.key)+'" data-co="'+h(c.co)+'" data-k="'+k+'"'+busy+'>'+Number(M.key.slice(5))+'月（確定前）の今日の分を確認済みにする（'+SMON_LABEL[k]+'）</button>';
+    const pBtn=k=>'<button class="btn sm pri" type="button" data-act="salespchk" data-key="'+h(M.key)+'" data-co="'+h(c.co)+'" data-k="'+k+'"'+busy+'>【毎日】'+Number(M.key.slice(5))+'月（確定前）の今日の分を確認済みにする（'+SMON_LABEL[k]+'）</button>';
     const pTodo=pWho.filter(k=>!(tdp&&tdp[k])&&!pPend(k));
     /* v1.50.159 担当の見直し：3日以内に見直していない担当がいると、確定前の確認は押せない（理由をボタンの近くに出す） */
     const rvP=pOn?rvPeople(S,M,c.co):[],rvSt=rvP.filter(x=>x.stale),rvMe=pOn&&rvCan(chkMe,c.co);
@@ -4858,15 +4859,21 @@ function salesSec(){
     const rvBox=pOn&&rvP.length?'<details class="sales-open sub sales-rv-box"'+(rvSt.length||(ui.salesRvOpen||{})[c.co]?' open':'')+' data-rv-co="'+h(c.co)+'"><summary>担当の見直し<span class="sales-open-sub">'+(rvSt.length?'見直していない '+rvSt.length+'人':'全員 3日以内')+'</span></summary>'+
       '<p class="note" style="margin:0">担当ごとの最後に見直した日です。数字を直したとき、または「見直した（変わりなし）」を押したときに残ります。'+RV_DAYS+'日より前の人がいると、確定前の確認は押せません。</p>'+
       '<ul class="sales-rv-list">'+rvP.map(x=>'<li class="'+(x.stale?'stale':'')+'"><span><b>'+h(x.name)+'</b>　最終見直し '+h(rvText(x))+'</span>'+(rvMe&&x.ago!==0?'<button class="btn sm" type="button" data-act="salesrv" data-key="'+h(M.key)+'" data-co="'+h(c.co)+'" data-name="'+h(x.name)+'"'+busy+'>見直した（変わりなし）</button>':'')+'</li>').join("")+'</ul></details>':'';
-    const pBox=pOn?'<div class="sales-chk sales-pchk"><div class="sales-lab">毎日の確認（確定前・今日 '+tdN+'日）</div>'+
+    /* v1.50.159 トシさんの気づき（11/28「進藤はボタンの意味伝わってない」）：毎日の確認（確定前）と月に1回の確認の違いを見出しと説明で分ける。
+       毎日の確認を、役割ごとに何日押していないかを出す */
+    const mN=Number(M.key.slice(5)),pGap=k=>{const last=pAll.filter(x=>x[k]).map(x=>x.date).sort().at(-1)||"";if(!last)return {t:'まだ押していない',red:true};const a=rvAgo(last);return a===0?{t:'今日押した',red:false}:{t:a+'日押していない（最後 '+md(last)+'）',red:a>=2}};
+    const pBox=pOn?'<div class="sales-chk sales-pchk"><div class="sales-lab">'+mN+'月分・毎日の確認（確定前・今日 '+tdN+'日）</div>'+
       '<div class="row" style="gap:6px">'+SALES_ROLES.map(([k,l])=>{const on=!!(tdp&&tdp[k]);return '<span class="sales-chip '+(on?'on':'off')+'">'+l+' '+(on?'✓ 済':'未')+'</span>'}).join("")+'</div>'+
       '<div class="note num">確定前の間（'+md(salesFixDate(M.key))+'確定）：'+SALES_ROLES.map(([k,l])=>l+' '+pAll.filter(x=>x[k]).length+'日').join("・")+'</div>'+
+      '<p class="note sales-pgap" style="margin:0">'+SALES_ROLES.map(([k,l])=>{const g=pGap(k);return '<span'+(g.red?' class="red"':'')+'>'+l+'：'+h(g.t)+'</span>'}).join("　")+'</p>'+
+      '<p class="note sales-kind" style="margin:0"><b>毎日押すボタンです。</b>'+mN+'月の数字が確定する'+md(salesFixDate(M.key))+'まで、毎日その日の時点の'+mN+'月の数字（会社・担当ごと）を見直して押します。下の「この月の確認（月に1回）」とは別です。</p>'+
       pWho.filter(k=>!(tdp&&tdp[k])&&pPend(k)).map(k=>'<p class="note" style="margin:0">'+SMON_LABEL[k]+'の確認：押しました（社長の端末の同期で、シートに入ります）</p>').join("")+
-      (pWho.length?'<p class="note sales-chk-hint" style="margin:0">'+Number(M.key.slice(5))+'月の会社の数字と担当ごとの数字を、今日の時点で見てから押してください。確定日（'+md(salesFixDate(M.key))+'）まで毎日です。</p>':'')+
+      /* v1.50.159 前の説明（今日の時点で見てから押す）は、上の「毎日押すボタンです」にまとめた */
       rvWhy+(pTodo.length?'<div class="row in-box" style="gap:6px">'+pTodo.map(pBtnX).join("")+'</div>':'')+rvBox+'</div>':'';
     /* v1.50.119 終わった月：月に1回の確認（押した日が、その月の会社の行の確認日に入る） */
     const monWho=salesMonDone(M.key)?['boss','hq','gm'].filter(k=>k==="boss"?admin:salesChkCan(chkMe,c.co,k)):[];
-    const monBox=salesMonDone(M.key)?'<div class="sales-chk sales-mon"><div class="sales-lab">この月の確認（月に1回）</div>'+
+    const monBox=salesMonDone(M.key)?'<div class="sales-chk sales-mon"><div class="sales-lab">この月の確認（月に1回）<span class="sales-open-sub">'+Number(M.key.slice(5))+'月分</span></div>'+
+      '<p class="note sales-kind" style="margin:0"><b>月に1回だけ押すボタンです。</b>'+Number(M.key.slice(5))+'月の数字をまとめて見たときに押します。'+(pchkMonth(M.key)?'上の「毎日の確認（確定前）」とは別で、こちらを押しても毎日の確認は付きません。':'')+'</p>'+
       '<div class="row" style="gap:6px">'+['boss','hq','gm'].map(k=>{const v=String(c[SMON_COL[k]]??"").trim();return '<span class="sales-chip '+(v?'on':'off')+'">'+(k==="gm"?h(c["GMの名前"]||"GM"):SMON_LABEL[k])+' '+(v?'✓ '+h(v):'未')+'</span>'}).join("")+'</div>'+
       monWho.filter(k=>pend[[M.key,c.co,"月",k].join("|")]).map(k=>'<p class="note" style="margin:0">'+SMON_LABEL[k]+'の確認：押しました（社長の端末の同期で、シートに入ります）</p>').join("")+
       (monWho.length?'<p class="note sales-chk-hint" style="margin:0">この月の会社の数字と、担当ごとの数字を見てから押してください。押した日が確認日に入ります（もう入っていても、見直したら押し直せます）。</p>':'')+
@@ -6660,7 +6667,7 @@ let updNext="",updChecking=false,updLast=0;
    ・admin:true の項目は社長の端末だけ。初めて開いた端末（覚えた版がない）は出さずに今の版を覚える。
    ・決まり：社員の画面や使い方が変わる版では、ここに1行足す（マニュアルの改訂履歴と同じ版）。 */
 const RELEASE_NOTES=[
- {v:"1.50.159",text:"売上報告の確定前の月に、担当ごとの「最終見直し」の日を出すようにしました。GM・本部長・社長が担当ごとに「見直した（変わりなし）」を押すか数字を直すと日付が残り、3日より前の担当がいる会社は、確定前の確認を押せません。"},
+ {v:"1.50.159",text:"売上報告の確定前の月に、担当ごとの「最終見直し」の日を出すようにしました。GM・本部長・社長が担当ごとに「見直した（変わりなし）」を押すか数字を直すと日付が残り、3日より前の担当がいる会社は、確定前の確認を押せません。「毎日の確認（確定前）」と「この月の確認（月に1回）」の違いが分かるよう、ボタンの言葉に【毎日】【月1回】を付けました。"},
  {v:"1.50.158",admin:true,text:"社員の記録の読み込みで、Googleへの問い合わせを減らしました（タブの一覧を毎回問い合わせない・変わっていない指示箱は読み直さない）。担当者別の表で、施工中の数字を青にしました。"},
  {v:"1.50.157",text:"裏で同期を続けている間の赤い字に「入力は可能です」と足しました（領収書の保存だけは、終わってからにしてください）。「かかった時間」を開いたとき、合計が2回出ていたのを1回にしました。"},
  {v:"1.50.156",text:"たたんだ「かかった時間」の後ろに「（押すと詳しい内容）」と出すようにしました。"},

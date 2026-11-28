@@ -45,6 +45,10 @@ async function main(){
   assert.equal(await p.locator(card+' .sales-rv.stale').count(),2);
   const err=await p.evaluate(async()=>{try{await PC.salesPchkPress('2026-10','CP','boss');return ''}catch(e){return e.message}});assert.match(err,/見直していない担当があるので、確認は押せません/);
   assert.equal(F['確定前の確認'],undefined,'nothing written');
+  /* トシさんの気づき（進藤GMが2つのボタンを取り違え）：見出し・説明・ボタンの言葉で分ける。何日押していないかを出す */
+  const pb=await p.textContent(card+' .sales-pchk');assert.match(pb,/10月分・毎日の確認（確定前・今日 24日）/);assert.match(pb,/毎日押すボタンです。/);assert.match(pb,/社長：まだ押していない/);
+  assert.match(await b.textContent(),/^【毎日】10月（確定前）の今日の分を確認済みにする（社長）$/);
+  const mb=await p.textContent(card+' .sales-mon');assert.match(mb,/この月の確認（月に1回）10月分/);assert.match(mb,/月に1回だけ押すボタンです。.*「毎日の確認（確定前）」とは別/);assert.match(mb,/【月1回】10月分を確認済みにする（社長）/);
   /* 11月（今月）・9月（確定済み）には出さない */
   assert.deepEqual(await p.evaluate(()=>{const S=PC.ui.sales;return S.months.filter(m=>m.key!=='2026-10').map(m=>PC.pchkMonth(m.key))}),[false,false]);
   const ov=await p.evaluate(()=>{const d=document.documentElement;return Math.max(d.scrollWidth-d.clientWidth,...[...document.querySelectorAll('.panel,section')].map(x=>x.scrollWidth-x.clientWidth))});assert.ok(ov<=0,'overflow '+ov);
@@ -63,6 +67,10 @@ async function main(){
   assert.equal(await p.locator(card+' .sales-rv-why').count(),0);
   await p.click(card+' .sales-pchk [data-act=salespchk][data-k=boss]');await p.waitForFunction(()=>!PC.ui.salesBusy);
   assert.equal(await p.evaluate(()=>PC.ui.salesMsg&&PC.ui.salesMsg.ok),true);assert.deepEqual(F['確定前の確認'][1],['2026-10','CP','2026-11-24',true,false,false]);
+  await open();assert.match(await p.textContent(card+' .sales-pgap'),/社長：今日押した/);
+  /* 本部長が2日前に押したきり */
+  await p.evaluate(()=>{PC.ui.sales.pchk.push({key:'2026-10',co:'CP',date:'2026-11-22',boss:false,hq:true,gm:false,row:9});PC.render()});await open();
+  assert.match(await p.textContent(card+' .sales-pgap'),/本部長：2日押していない（最後 11\/22）/);assert.equal(await p.locator(card+' .sales-pgap span.red').count(),2,'本部長 2 days and GM never are red');
  });
  await check('3日前までは押せる、4日前になると押せない（日付が進んだとき）',async()=>{
   const st=async day=>{await p.evaluate(day=>{PC.ui.sales.rv=PC.ui.sales.rv.map(x=>({...x,date:day}))},day);return p.evaluate(()=>{const S=PC.ui.sales,M=S.months.find(m=>m.key==='2026-10');return PC.rvPeople(S,M,'CP').map(x=>[x.name,x.ago,x.stale])})};
